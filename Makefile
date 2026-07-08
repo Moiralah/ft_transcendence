@@ -1,7 +1,7 @@
 
 include docker/.env
 
-NAME = ftree
+NAME = ft
 SRC_DIR = docker/srcs
 DOCKER_COMPOSE = $(SRC_DIR)/docker-compose.yml
 LOGIN = $(WORDPRESS_URL)
@@ -54,4 +54,4 @@ fclean: clean
 
 re: clean all
 
-.PHONY: all setup up down logs ps clean flcean re
+.PHONY: all setup up down logs ps clean fclean re
