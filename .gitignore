@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+/npm-debug.log*
+/yarn-error.log*
+/yarn-debug.log*
+/pnpm-debug.log*
+
+# Next.js Build and Cache
+.next/
+out/
+.next_meta/
+
+# NestJS / TypeScript Build Outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Monorepo / Build Tools
+.turbo/
+.cache/
+
+# Environment Variables and Secrets
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local
+# *.env.*
+# *.pem
+# *.key
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# IDEs and Editors
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs and Diagnostics
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
