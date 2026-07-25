@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, sans-serif; background: #f7f7f9; color: #1a1a1a; }
 .card { max-width: 360px; margin: 80px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
