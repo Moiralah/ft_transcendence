@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PgService } from '../prisma/pg.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PersonsService {
-  constructor(private readonly pg: PgService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    const { rows } = await this.pg.client.query(`
+    const { rows } = await this.prisma.$queryRaw(`
       SELECT
         p.id, p.name, p.gender, p.birth_date,
         m.name AS mother_name,
@@ -20,7 +20,7 @@ export class PersonsService {
   }
 
   async findOne(id: string) {
-    const { rows } = await this.pg.client.query(
+    const { rows } = await this.prisma.$queryRaw(
       `SELECT p.*, m.name AS mother_name, f.name AS father_name
        FROM persons p
        LEFT JOIN persons m ON m.id = p.mother_id
@@ -38,7 +38,7 @@ export class PersonsService {
     father_id?: string;
     birth_date?: string;
   }) {
-    const { rows } = await this.pg.client.query(
+    const { rows } = await this.prisma.$queryRaw(
       `INSERT INTO persons (name, gender, mother_id, father_id, birth_date)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,

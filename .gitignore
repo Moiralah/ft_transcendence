@@ -53,3 +53,10 @@ logs/
 *.seed
 *.pid.lock
 
+
+/generated/prisma
+
+#SUpabase AI
+.agents/
+.claude/
+.windsurf/

@@ -7,6 +7,13 @@
     "start:prod": "node dist/main.js",
     "build": "nest build"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
   "dependencies": {
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.0.0",
@@ -16,14 +23,19 @@
     "@nestjs/platform-express": "^10.3.0",
     "@nestixis/nestjs-supabase": "^1.0.0",
     "@supabase/supabase-js": "^2.39.0",
+    "express": "^5.1.0",
     "bcryptjs": "^2.4.3",
     "class-validator": "^0.14.0", 
     "class-transformer": "^0.5.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "pg": "^8.11.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "pg": "^8.22.0",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.9.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.0",
@@ -32,7 +44,9 @@
     "@types/node": "^20.11.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.11.0",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+
   }
 }
