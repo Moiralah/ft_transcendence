@@ -2,26 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 import { AppModule } from './app.module';
+import { config } from 'dotenv';
+// import router from './routes/userRoutes';
 
 async function bootstrap() {
+
+  config();
   const app = await NestFactory.create(AppModule);
-
-  // ----- raw body logger (temporary) -----
-  // app.use((req, res, next) => {
-  //   if (req.method === 'POST' && req.path === '/auth/login') {
-  //     let data = '';
-  //     req.on('data', chunk => { data += chunk; });
-  //     req.on('end', () => {
-  //       console.log('🔍 Raw login body:', data);
-  //       next();
-  //     });
-  //   } else {
-  //     next();
-  //   }
-  // });
-  // ----------------------------------------
-
-  //app.use(express.json({ limit: '10mb' }));
 
   app.use(express.json({
     limit: '10mb',
@@ -30,8 +17,11 @@ async function bootstrap() {
     }
   }));
 
+  // API routes
+  // app.use('/user', router);
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '[localhost](http://localhost:3000)',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
