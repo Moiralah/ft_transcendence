@@ -58,7 +58,7 @@ datasource db {
 
 // ------------------- Users -------------------
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id
   username  String   @unique
   email     String   @unique
   createdAt DateTime @default(now())
@@ -85,7 +85,7 @@ model Tree {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  ownerId     Int
+  ownerId     String
   owner       User     @relation("TreeOwner", fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -106,7 +106,7 @@ model Tree {
 // ------------------- Tree Members (Roles) -------------------
 model TreeMember {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  userId    String
   treeId    Int
   role      Role     // ADMIN, EDITOR, VIEWER
   joinedAt  DateTime @default(now())
@@ -126,7 +126,7 @@ enum Role {
 // ------------------- Invitations -------------------
 model Invitation {
   id          Int      @id @default(autoincrement())
-  inviterId   Int      // user who sends the invite
+  inviterId   String   // user who sends the invite
   inviteeEmail String  // email of the person being invited (could be existing or new user)
   treeId      Int
   role        Role     // proposed role
@@ -191,7 +191,7 @@ model Person {
 // ------------------- Person Verification (User claims identity) -------------------
 model PersonVerification {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  userId    String
   personId  Int
   verifiedAt DateTime @default(now())
   // optional: proof of identity, notes
@@ -237,7 +237,7 @@ model AuditLog {
   id        Int      @id @default(autoincrement())
   treeId    Int
   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  userId    Int
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
   action    String   // e.g., "CREATE_PERSON", "UPDATE_PERSON", "DELETE_PERSON", "INVITE_USER", "CHANGE_ROLE"
   details   String?  // JSON string of extra details (e.g., person name, field changes)

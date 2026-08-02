@@ -17,7 +17,7 @@ export default function homepage() {
 
           {/* Button navigates to the builder workspace page */}
           <div className="flex items-center">
-            <Link href="/login" className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm hover:shadow inline-block">
+            <Link href="/signup" className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm hover:shadow inline-block">
               Get Started
             </Link>
           </div>
@@ -38,7 +38,7 @@ export default function homepage() {
                 <span>My Simple Family Tree is 100% free, private, and simple. No sign-up, no membership, and no paywalls. Build your family tree and discover your roots—all in your browser.</span>
             </div>
             <div>
-                <Link href="/login" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 flex gap-2">
+                <Link href="/signup" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 flex gap-2">
                   <span>Start Building Your Tree &rarr; </span>
                 </Link>
             </div>

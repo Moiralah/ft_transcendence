@@ -10,3 +10,5 @@ button { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: n
 button:hover { background: #1d4ed8; }
 .error { color: #dc2626; font-size: 13px; margin-top: 8px; }
 ul { padding-left: 20px; }
+.success { color: #16a34a; font-size: 13px; margin-top: 8px; }
+
