@@ -1,54 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-// generator client {
-//   provider = "prisma-client"
-//   output   = "../generated/prisma"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-// }
-
-// model User {
-//   id       Int    @id @default(autoincrement())
-//   username String
-//   email    String @unique
-// }
-
-// model Tree {
-//   id       Int    @id @default(autoincrement())
-//   name     String
-//   relayId  Int?   @unique
-//   infoId   Int?   @unique
-
-// }
-
-// model Info {
-//   id       Int    @id @default(autoincrement())
-//   name     String
-//   Age      Int
-//   DOB     DateTime
-//   DOD     DateTime?
-// }
-
-// model Relay {
-//   id             Int    @id @default(autoincrement())
-//   motherName     String //infoID
-//   fatherName     String //infoID
-//   spouseName     String? //infoID
-//   childrenNames  String? //infoID //probably needs it's own table
-// }
-
-// model Level {
-//   id    Int    @id @default(autoincrement())
-//   logrecord String?
-// }
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../generated"
 }
 
 datasource db {

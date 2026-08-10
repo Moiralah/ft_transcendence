@@ -101,14 +101,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { PrismaService } from '../prisma/prisma.service'; // assume you have a PrismaService
+import { PrismaService } from '../prisma/prisma.service'; 
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
 
   constructor(
-    private readonly prisma: PrismaService, // Prisma client
+    private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {

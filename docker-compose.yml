@@ -1,22 +1,5 @@
 
 services:
-  # db:
-  #   image: postgres:16-alpine
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_USER: family
-  #     POSTGRES_PASSWORD: familypass
-  #     POSTGRES_DB: familytree
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-  #     - dbdata:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U family -d familytree"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
 
   backend:
     build: ./backend
@@ -32,6 +15,9 @@ services:
       CORS_ORIGIN: "http://localhost:3000"
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
 
   frontend:
     build: ./frontend
