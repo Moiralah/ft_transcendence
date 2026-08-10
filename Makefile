@@ -82,8 +82,8 @@ frontend-shell:
 db-shell:
 	docker compose exec db psql -U family -d familytree
 
-seed:
-	docker compose exec db psql -U family -d familytree -f /docker-entrypoint-initdb.d/init.sql
+#seed:
+#	docker compose exec db psql -U family -d familytree -f /docker-entrypoint-initdb.d/init.sql
 
 clean: down
 	docker compose rm -f

@@ -6,44 +6,78 @@ export class PersonsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    const { rows } = await this.prisma.$queryRaw(`
-      SELECT
-        p.id, p.name, p.gender, p.birth_date,
-        m.name AS mother_name,
-        f.name AS father_name
-      FROM persons p
-      LEFT JOIN persons m ON m.id = p.mother_id
-      LEFT JOIN persons f ON f.id = p.father_id
-      ORDER BY p.birth_date
-    `);
-    return rows;
+    // Include mother and father relations
+    const persons = await this.prisma.person.findMany({
+      include: {
+        mother: true,
+        father: true,
+      },
+      orderBy: {
+        birthDate: 'asc',
+      },
+    });
+
+    // Map to expected frontend format (name, mother_name, father_name)
+    return persons.map((p) => ({
+      id: p.id,
+      name: [p.firstName, p.lastName].filter(Boolean).join(' '),
+      gender: p.gender,
+      birth_date: p.birthDate,
+      mother_name: p.mother ? [p.mother.firstName, p.mother.lastName].filter(Boolean).join(' ') : null,
+      father_name: p.father ? [p.father.firstName, p.father.lastName].filter(Boolean).join(' ') : null,
+    }));
   }
 
   async findOne(id: string) {
-    const { rows } = await this.prisma.$queryRaw(
-      `SELECT p.*, m.name AS mother_name, f.name AS father_name
-       FROM persons p
-       LEFT JOIN persons m ON m.id = p.mother_id
-       LEFT JOIN persons f ON f.id = p.father_id
-       WHERE p.id = $1`,
-      [id],
-    );
-    return rows[0];
+    // Convert string id to number
+    const personId = Number(id);
+    if (isNaN(personId)) return null;
+
+    const person = await this.prisma.person.findUnique({
+      where: { id: personId },
+      include: {
+        mother: true,
+        father: true,
+      },
+    });
+    if (!person) return null;
+
+    return {
+      ...person,
+      name: [person.firstName, person.lastName].filter(Boolean).join(' '),
+      mother_name: person.mother ? [person.mother.firstName, person.mother.lastName].filter(Boolean).join(' ') : null,
+      father_name: person.father ? [person.father.firstName, person.father.lastName].filter(Boolean).join(' ') : null,
+    };
   }
 
   async create(data: {
-    name: string;
+    name: string; // frontend sends single name
     gender?: string;
-    mother_id?: string;
+    mother_id?: string; // frontend sends as string
     father_id?: string;
     birth_date?: string;
+    tree_id?: number;
   }) {
-    const { rows } = await this.prisma.$queryRaw(
-      `INSERT INTO persons (name, gender, mother_id, father_id, birth_date)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [data.name, data.gender ?? null, data.mother_id ?? null, data.father_id ?? null, data.birth_date ?? null],
-    );
-    return rows[0];
+    // Split name into firstName and lastName (simple, could be improved)
+    const nameParts = data.name?.split(' ') || [];
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || null;
+
+    // Convert string IDs to numbers
+    const motherId = data.mother_id ? Number(data.mother_id) : null;
+    const fatherId = data.father_id ? Number(data.father_id) : null;
+
+    const created = await this.prisma.person.create({
+      data: {
+        firstName,
+        lastName,
+        gender: data.gender,
+        motherId: motherId,
+        fatherId: fatherId,
+        birthDate: data.birth_date ? new Date(data.birth_date) : null,
+        treeId: data.tree_id,
+      },
+    });
+    return created;
   }
 }
