@@ -73,6 +73,12 @@ logs:
 ps:
 	docker compose ps
 
+backend:
+	docker compose up -d --build backend
+
+frontend:
+	docker compose up -d --build frontend
+
 backend-shell:
 	docker compose exec backend sh
 
