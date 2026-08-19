@@ -80,4 +80,32 @@ export class PersonsService {
     });
     return created;
   }
+
+  // Add to PersonsService
+  async update(id: number, data: {
+    firstName?: string;
+    lastName?: string;
+    gender?: string;
+    birthDate?: string;
+    deathDate?: string;
+    motherId?: number | null;
+    fatherId?: number | null;
+  }) {
+    return this.prisma.person.update({
+      where: { id },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gender: data.gender,
+        birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+        deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
+        motherId: data.motherId ?? undefined,
+        fatherId: data.fatherId ?? undefined,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    return this.prisma.person.delete({ where: { id } });
+  }
 }
