@@ -7,4 +7,4 @@ RUN npx prisma generate --config=prisma.config.js
 # ✅ Create index.ts so TypeScript can resolve the directory
 RUN echo "export { PrismaClient } from './client';" > src/generated/index.ts
 EXPOSE 4000
-CMD ["npm", "run", "start:dev"]
+CMD sh -c "npx prisma generate --config=prisma.config.js && npm run start:dev"
