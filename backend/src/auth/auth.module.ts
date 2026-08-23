@@ -8,19 +8,19 @@ import { JwtStrategy } from './jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
-  imports: [
-    PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'dev-secret',
-        signOptions: { expiresIn: `${config.get<string>('JWT_EXPIRES_IN') || 3600}s` },
-      }),
-    }),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PrismaService],
-  exports: [AuthService],
+	imports: [
+		PassportModule,
+		ConfigModule,
+		JwtModule.registerAsync({
+			inject: [ConfigService],
+			useFactory: (config: ConfigService) => ({
+				secret: config.get<string>('JWT_SECRET') || 'dev-secret',
+				signOptions: { expiresIn: `${config.get<string>('JWT_EXPIRES_IN') || 3600}s` },
+			}),
+		}),
+	],
+	controllers: [AuthController],
+	providers: [AuthService, JwtStrategy, PrismaService],
+	exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }
