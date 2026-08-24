@@ -3,8 +3,6 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
-RUN npx prisma generate --config=prisma.config.js
-# ✅ Create index.ts so TypeScript can resolve the directory
-RUN echo "export { PrismaClient } from './client';" > src/generated/index.ts
+RUN npx prisma generate
 EXPOSE 4000
-CMD sh -c "npx prisma generate --config=prisma.config.js && npm run start:dev"
+CMD sh -c "npx prisma generate && npm run start:dev"

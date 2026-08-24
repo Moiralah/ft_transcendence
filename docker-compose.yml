@@ -2,22 +2,28 @@
 services:
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        DATABASE_URL: ${DATABASE_URL}
     restart: unless-stopped
     depends_on: []
     environment:
-      PORT: 4000
-      JWT_SECRET: dev-secret-change-me
-      JWT_EXPIRES_IN: 3600
+      PORT: ${PORT}
+      NODE_ENV: ${NODE_ENV}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      CORS_ORIGIN: ${CORS_ORIGIN}
       SUPABASE_AUTH_URL: ${SUPABASE_AUTH_URL}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      DIRECT_URL: ${DIRECT_URL}
       DATABASE_URL: ${DATABASE_URL}
-      CORS_ORIGIN: "http://localhost:3000"
     ports:
       - "4000:4000"
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - ./certs:/app/certs
 
   frontend:
     build: ./frontend
@@ -25,11 +31,12 @@ services:
     depends_on:
       - backend
     environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - ./certs:/app/certs
