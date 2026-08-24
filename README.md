@@ -1,4 +1,11 @@
 # ft_transcendence
+
+Script to copy all file with path to feed to AI
+run at wsl terminal
+
+find /home/huidris/Desktop/ft_transcendence/ -type f -not -path '*/.git/*' -not -path '*/.agents/*' -not -path '*/.claude/*' -not -path '*/.windsurf/*' -not -path '*/.next/*' -not -path '*/dist/*' -not -path '*/node_modules/*' -not -name '*.gz' -not -name 'package-lock.json' | while read -r file; do echo -e "\n=== FILENAME: ${file#/home/huidris/Desktop/ft_transcendence/} ===\n" >> /home/huidris/Desktop/ft_transcendence/code.txt; cat "$file" >> /home/huidris/Desktop/ft_transcendence/code.txt; done
+
+
 Creating a family tree platform
 
 How to run
@@ -8,7 +15,7 @@ make logs
 
 Open on browser http://localhost:3000/login
 
-Sign in with 
+Sign in with
 Email: admin@family.test
 Password: password
 
