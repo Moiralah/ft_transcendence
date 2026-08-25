@@ -34,6 +34,5 @@ seed:
 
 clean: down
 	docker compose rm -f
-	docker volume rm family-tree_dbdata || true
 
 .PHONY: up down build logs ps backend-shell frontend-shell db-shell seed clean

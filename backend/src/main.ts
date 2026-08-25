@@ -7,13 +7,14 @@ import * as fs from 'fs';
 
 async function bootstrap() {
 
+	config();
+
 	const httpsOptions = {
 		key: fs.readFileSync('/app/certs/localhost-key.pem'),
 		cert: fs.readFileSync('/app/certs/localhost.pem'),
 	};
 
-	config();
-	const app = await NestFactory.create(AppModule, {httpsOptions});
+	const app = await NestFactory.create(AppModule, httpsOptions ? { httpsOptions } : {});
 
 	app.use(express.json({
 		limit: '10mb',
@@ -25,6 +26,7 @@ async function bootstrap() {
 	app.enableCors({
 		origin: process.env.CORS_ORIGIN,
 		credentials: true,
+		optionsSuccessStatus: 200,
 	});
 	app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 	await app.listen(process.env.PORT);
