@@ -2,7 +2,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
-@Controller('auth') // Base route path prefix: /auth
+@Controller(`auth`) // Base route path prefix: /auth
 export class AuthController {
 	constructor(private readonly auth: AuthService) { }
 
