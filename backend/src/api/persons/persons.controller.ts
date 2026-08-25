@@ -3,7 +3,7 @@ import { Controller, Body, Delete, Get, Param,
 import { PersonsService } from './persons.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('persons')
+@Controller(`persons`)
 export class PersonsController {
 	constructor(private readonly persons: PersonsService) { }
 

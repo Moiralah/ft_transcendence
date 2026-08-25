@@ -16,6 +16,9 @@ async function bootstrap() {
 
 	const app = await NestFactory.create(AppModule, httpsOptions ? { httpsOptions } : {});
 
+	const apiPrefix = process.env.API_PREFIX || 'api';
+	app.setGlobalPrefix(apiPrefix);
+
 	app.use(express.json({
 		limit: '10mb',
 		verify: (req, res, buf) => {
