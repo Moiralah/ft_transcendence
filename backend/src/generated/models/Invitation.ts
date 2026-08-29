@@ -322,7 +322,7 @@ export type InvitationScalarWhereWithAggregatesInput = {
 
 export type InvitationCreateInput = {
   inviteeEmail: string
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -336,7 +336,7 @@ export type InvitationUncheckedCreateInput = {
   inviterId: string
   inviteeEmail: string
   treeId: number
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -371,7 +371,7 @@ export type InvitationCreateManyInput = {
   inviterId: string
   inviteeEmail: string
   treeId: number
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -554,7 +554,7 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 
 export type InvitationCreateWithoutInviterInput = {
   inviteeEmail: string
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -566,7 +566,7 @@ export type InvitationUncheckedCreateWithoutInviterInput = {
   id?: number
   inviteeEmail: string
   treeId: number
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -616,7 +616,7 @@ export type InvitationScalarWhereInput = {
 
 export type InvitationCreateWithoutTreeInput = {
   inviteeEmail: string
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -628,7 +628,7 @@ export type InvitationUncheckedCreateWithoutTreeInput = {
   id?: number
   inviterId: string
   inviteeEmail: string
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -665,7 +665,7 @@ export type InvitationCreateManyInviterInput = {
   id?: number
   inviteeEmail: string
   treeId: number
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -708,7 +708,7 @@ export type InvitationCreateManyTreeInput = {
   id?: number
   inviterId: string
   inviteeEmail: string
-  role: $Enums.Role
+  role?: $Enums.Role
   status?: $Enums.InviteStatus
   createdAt?: Date | string
   updatedAt?: Date | string

@@ -38,20 +38,15 @@ export type TreeMember = Prisma.TreeMemberModel
  */
 export type Invitation = Prisma.InvitationModel
 /**
- * Model Person
+ * Model Profile
  * 
  */
-export type Person = Prisma.PersonModel
+export type Profile = Prisma.ProfileModel
 /**
- * Model PersonVerification
+ * Model ProfileSpouse
  * 
  */
-export type PersonVerification = Prisma.PersonVerificationModel
-/**
- * Model PersonSpouse
- * 
- */
-export type PersonSpouse = Prisma.PersonSpouseModel
+export type ProfileSpouse = Prisma.ProfileSpouseModel
 /**
  * Model Event
  * 
