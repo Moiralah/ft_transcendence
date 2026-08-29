@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class PersonsService {
+export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
 
 	async findAll() {
 		// Include mother and father relations
-		const persons = await this.prisma.person.findMany({
+		const persons = await this.prisma.profile.findMany({
 			include: {
 				mother: true,
 				father: true,
@@ -33,20 +33,20 @@ export class PersonsService {
 		const personId = Number(id);
 		if (isNaN(personId)) return null;
 
-		const person = await this.prisma.person.findUnique({
+		const profile = await this.prisma.profile.findUnique({
 			where: { id: personId },
 			include: {
 				mother: true,
 				father: true,
 			},
 		});
-		if (!person) return null;
+		if (!profile) return null;
 
 		return {
-			...person,
-			name: [person.firstName, person.lastName].filter(Boolean).join(' '),
-			mother_name: person.mother ? [person.mother.firstName, person.mother.lastName].filter(Boolean).join(' ') : null,
-			father_name: person.father ? [person.father.firstName, person.father.lastName].filter(Boolean).join(' ') : null,
+			...profile,
+			name: [profile.firstName, profile.lastName].filter(Boolean).join(' '),
+			mother_name: profile.mother ? [profile.mother.firstName, profile.mother.lastName].filter(Boolean).join(' ') : null,
+			father_name: profile.father ? [profile.father.firstName, profile.father.lastName].filter(Boolean).join(' ') : null,
 		};
 	}
 
@@ -67,7 +67,7 @@ export class PersonsService {
 		const motherId = data.mother_id ? Number(data.mother_id) : null;
 		const fatherId = data.father_id ? Number(data.father_id) : null;
 
-		const created = await this.prisma.person.create({
+		const created = await this.prisma.profile.create({
 			data: {
 				firstName,
 				lastName,
@@ -81,7 +81,7 @@ export class PersonsService {
 		return created;
 	}
 
-	// Add to PersonsService
+	// Add to ProfileService
 	async update(id: number, data: {
 		firstName?: string;
 		lastName?: string;
@@ -91,7 +91,7 @@ export class PersonsService {
 		motherId?: number | null;
 		fatherId?: number | null;
 	}) {
-		return this.prisma.person.update({
+		return this.prisma.profile.update({
 			where: { id },
 			data: {
 				firstName: data.firstName,
@@ -106,6 +106,6 @@ export class PersonsService {
 	}
 
 	async remove(id: number) {
-		return this.prisma.person.delete({ where: { id } });
+		return this.prisma.profile.delete({ where: { id } });
 	}
 }

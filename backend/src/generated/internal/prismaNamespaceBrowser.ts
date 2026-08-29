@@ -55,9 +55,8 @@ export const ModelName = {
   Tree: 'Tree',
   TreeMember: 'TreeMember',
   Invitation: 'Invitation',
-  Person: 'Person',
-  PersonVerification: 'PersonVerification',
-  PersonSpouse: 'PersonSpouse',
+  Profile: 'Profile',
+  ProfileSpouse: 'ProfileSpouse',
   Event: 'Event',
   AuditLog: 'AuditLog'
 } as const
@@ -92,10 +91,12 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 export const TreeScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  code: 'code',
   description: 'description',
   ownerId: 'ownerId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  isPublic: 'isPublic'
 } as const
 
 export type TreeScalarFieldEnum = (typeof TreeScalarFieldEnum)[keyof typeof TreeScalarFieldEnum]
@@ -127,7 +128,7 @@ export const InvitationScalarFieldEnum = {
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
 
 
-export const PersonScalarFieldEnum = {
+export const ProfileScalarFieldEnum = {
   id: 'id',
   firstName: 'firstName',
   lastName: 'lastName',
@@ -140,37 +141,28 @@ export const PersonScalarFieldEnum = {
   treeId: 'treeId',
   motherId: 'motherId',
   fatherId: 'fatherId',
+  claimedById: 'claimedById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
-export type PersonScalarFieldEnum = (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum]
+export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeof ProfileScalarFieldEnum]
 
 
-export const PersonVerificationScalarFieldEnum = {
+export const ProfileSpouseScalarFieldEnum = {
   id: 'id',
-  userId: 'userId',
-  personId: 'personId',
-  verifiedAt: 'verifiedAt'
-} as const
-
-export type PersonVerificationScalarFieldEnum = (typeof PersonVerificationScalarFieldEnum)[keyof typeof PersonVerificationScalarFieldEnum]
-
-
-export const PersonSpouseScalarFieldEnum = {
-  id: 'id',
-  person1Id: 'person1Id',
-  person2Id: 'person2Id',
+  profile1Id: 'profile1Id',
+  profile2Id: 'profile2Id',
   marriageDate: 'marriageDate',
   divorceDate: 'divorceDate'
 } as const
 
-export type PersonSpouseScalarFieldEnum = (typeof PersonSpouseScalarFieldEnum)[keyof typeof PersonSpouseScalarFieldEnum]
+export type ProfileSpouseScalarFieldEnum = (typeof ProfileSpouseScalarFieldEnum)[keyof typeof ProfileSpouseScalarFieldEnum]
 
 
 export const EventScalarFieldEnum = {
   id: 'id',
-  personId: 'personId',
+  profileId: 'profileId',
   eventType: 'eventType',
   description: 'description',
   eventDate: 'eventDate',

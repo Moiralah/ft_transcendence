@@ -7,6 +7,196 @@ datasource db {
   provider = "postgresql"
 }
 
+// // ------------------- Users -------------------
+// model User {
+//   id        String   @id
+//   username  String   @unique
+//   email     String   @unique
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   // Trees this user owns (created by them)
+//   ownedTrees Tree[]    @relation("TreeOwner")
+
+//   // Memberships in trees (with roles)
+//   treeMembers TreeMember[]
+
+//   // Verification: user can claim a person identity in a tree
+//   verifiedPersons PersonVerification[]
+
+//   // Invitations sent by this user
+//   sentInvitations Invitation[] @relation("Inviter")
+
+//   // Audit logs for actions performed by this user ()
+//   auditLogs AuditLog[]
+// }
+
+// // ------------------- Family Trees -------------------
+// model Tree {
+//   id          Int      @id @default(autoincrement())
+//   name        String
+//   description String?
+//   ownerId     String
+//   owner       User     @relation("TreeOwner", fields: [ownerId], references: [id])
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+
+//   // All people in this tree
+//   people Person[]
+
+//   // Members (users with roles)
+//   members TreeMember[]
+
+//   // Invitations sent for this tree
+//   invitations Invitation[]
+
+//   // Audit logs
+//   auditLogs AuditLog[]
+// }
+
+// // ------------------- Tree Members (Roles) -------------------
+// model TreeMember {
+//   id        Int      @id @default(autoincrement())
+//   userId    String
+//   treeId    Int
+//   role      Role     // ADMIN, EDITOR, VIEWER
+//   joinedAt  DateTime @default(now())
+
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+//   @@unique([userId, treeId])
+// }
+
+// enum Role {
+//   ADMIN
+//   EDITOR
+//   VIEWER
+// }
+
+// // ------------------- Invitations -------------------
+// model Invitation {
+//   id          Int      @id @default(autoincrement())
+//   inviterId   String   // user who sends the invite
+//   inviteeEmail String  // email of the person being invited (could be existing or new user)
+//   treeId      Int
+//   role        Role     // proposed role
+//   status      InviteStatus @default(PENDING)
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+//   respondedAt DateTime?
+
+//   inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
+//   tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+//   @@unique([inviteeEmail, treeId]) // prevent duplicate invites for same tree+email
+// }
+
+// enum InviteStatus {
+//   PENDING
+//   ACCEPTED
+//   REJECTED
+// }
+
+// // ------------------- People (Family Members) -------------------
+// model Person {
+//   id          Int      @id @default(autoincrement())
+//   firstName   String
+//   lastName    String?
+//   gender      String?  // male, female, other
+//   birthDate   DateTime?
+//   deathDate   DateTime?
+//   bio         String?
+//   photoUrl    String?
+//   verified    Boolean  @default(false) // if someone has claimed this person
+
+//   // Tree this person belongs to
+//   treeId      Int
+//   tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+//   // Parents (self-referential)
+//   motherId    Int?     @map("mother_id")
+//   fatherId    Int?     @map("father_id")
+//   mother      Person?  @relation("MotherChildren", fields: [motherId], references: [id])
+//   father      Person?  @relation("FatherChildren", fields: [fatherId], references: [id])
+
+//   childrenAsMother Person[] @relation("MotherChildren")
+//   childrenAsFather Person[] @relation("FatherChildren")
+
+//   // Spouses (via join table)
+//   spousesFrom PersonSpouse[] @relation("Spouse1")
+//   spousesTo   PersonSpouse[] @relation("Spouse2")
+
+//   // Life events
+//   events Event[]
+
+//   // Verification links
+//   verifications PersonVerification[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@map("persons")
+// }
+
+// // ------------------- Person Verification (User claims identity) -------------------
+// model PersonVerification {
+//   id        Int      @id @default(autoincrement())
+//   userId    String
+//   personId  Int
+//   verifiedAt DateTime @default(now())
+//   // optional: proof of identity, notes
+
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+//   @@unique([userId, personId])
+// }
+
+// // ------------------- Spouse Relationship -------------------
+// model PersonSpouse {
+//   id            Int      @id @default(autoincrement())
+//   person1Id     Int
+//   person2Id     Int
+//   marriageDate  DateTime?
+//   divorceDate   DateTime?
+//   // additional fields like location, notes
+
+//   person1       Person   @relation("Spouse1", fields: [person1Id], references: [id], onDelete: Cascade)
+//   person2       Person   @relation("Spouse2", fields: [person2Id], references: [id], onDelete: Cascade)
+
+//   @@unique([person1Id, person2Id])
+//   @@map("person_spouses")
+// }
+
+// // ------------------- Life Events (for persons) -------------------
+// model Event {
+//   id          Int      @id @default(autoincrement())
+//   personId    Int
+//   person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+//   eventType   String   // e.g., Birth, Marriage, Death, Graduation, etc.
+//   description String?
+//   eventDate   DateTime?
+//   location    String?
+//   createdAt   DateTime @default(now())
+
+//   @@map("events")
+// }
+
+// // ------------------- Audit Log (for tree activity) -------------------
+// model AuditLog {
+//   id        Int      @id @default(autoincrement())
+//   treeId    Int
+//   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+//   userId    String
+//   user      User     @relation(fields: [userId], references: [id])
+//   action    String   // e.g., "CREATE_PERSON", "UPDATE_PERSON", "DELETE_PERSON", "INVITE_USER", "CHANGE_ROLE"
+//   details   String?  // JSON string of extra details (e.g., person name, field changes)
+//   createdAt DateTime @default(now())
+
+//   @@index([treeId, createdAt])
+// }
+
 // ------------------- Users -------------------
 model User {
   id        String   @id
@@ -21,37 +211,39 @@ model User {
   // Memberships in trees (with roles)
   treeMembers TreeMember[]
 
-  // Verification: user can claim a person identity in a tree
-  verifiedPersons PersonVerification[]
+  // Profiles (persons claimed by this user)
+  profiles Profile[]
 
-  // Invitations sent by this user
-  sentInvitations Invitation[] @relation("Inviter")
-
-  // Audit logs for actions performed by this user ()
+  // Audit logs
   auditLogs AuditLog[]
+
+  // Invitations sent
+  sentInvitations Invitation[] @relation("Inviter")
 }
 
 // ------------------- Family Trees -------------------
 model Tree {
   id          Int      @id @default(autoincrement())
-  name        String
+  name        String   @unique
+  code        String?  @unique// 6-8 character alphanumeric join code
   description String?
   ownerId     String
   owner       User     @relation("TreeOwner", fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // All people in this tree
-  people Person[]
+  isPublic    Boolean  @default(false)  // If true, viewers can view without code
 
   // Members (users with roles)
   members TreeMember[]
 
-  // Invitations sent for this tree
-  invitations Invitation[]
+  // Profiles (people in this tree)
+  profiles Profile[]
 
   // Audit logs
   auditLogs AuditLog[]
+
+  // Invitations sent for this tree
+  invitations Invitation[]
 }
 
 // ------------------- Tree Members (Roles) -------------------
@@ -59,7 +251,7 @@ model TreeMember {
   id        Int      @id @default(autoincrement())
   userId    String
   treeId    Int
-  role      Role     // ADMIN, EDITOR, VIEWER
+  role      Role     // ADMIN, MODERATOR, MEMBER, VIEWER
   joinedAt  DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -69,18 +261,19 @@ model TreeMember {
 }
 
 enum Role {
-  ADMIN
-  EDITOR
-  VIEWER
+  ADMIN      // Full control: edit tree, manage members, delete tree
+  MODERATOR  // Can edit profiles, manage invitations
+  MEMBER     // Can view full tree, add/edit own profiles, add persons
+  VIEWER     // Read-only: view tree and profiles only
 }
 
 // ------------------- Invitations -------------------
 model Invitation {
   id          Int      @id @default(autoincrement())
-  inviterId   String   // user who sends the invite
-  inviteeEmail String  // email of the person being invited (could be existing or new user)
+  inviterId   String
+  inviteeEmail String
   treeId      Int
-  role        Role     // proposed role
+  role        Role     @default(MEMBER)
   status      InviteStatus @default(PENDING)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -89,7 +282,7 @@ model Invitation {
   inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
   tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
-  @@unique([inviteeEmail, treeId]) // prevent duplicate invites for same tree+email
+  @@unique([inviteeEmail, treeId])
 }
 
 enum InviteStatus {
@@ -98,83 +291,69 @@ enum InviteStatus {
   REJECTED
 }
 
-// ------------------- People (Family Members) -------------------
-model Person {
+// ------------------- Profiles (formerly Person) -------------------
+model Profile {
   id          Int      @id @default(autoincrement())
   firstName   String
   lastName    String?
-  gender      String?  // male, female, other
+  gender      String?
   birthDate   DateTime?
   deathDate   DateTime?
   bio         String?
   photoUrl    String?
-  verified    Boolean  @default(false) // if someone has claimed this person
+  verified    Boolean  @default(false)
 
-  // Tree this person belongs to
+  // Tree this profile belongs to
   treeId      Int
   tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
   // Parents (self-referential)
   motherId    Int?     @map("mother_id")
   fatherId    Int?     @map("father_id")
-  mother      Person?  @relation("MotherChildren", fields: [motherId], references: [id])
-  father      Person?  @relation("FatherChildren", fields: [fatherId], references: [id])
+  mother      Profile? @relation("MotherChildren", fields: [motherId], references: [id])
+  father      Profile? @relation("FatherChildren", fields: [fatherId], references: [id])
 
-  childrenAsMother Person[] @relation("MotherChildren")
-  childrenAsFather Person[] @relation("FatherChildren")
+  childrenAsMother Profile[] @relation("MotherChildren")
+  childrenAsFather Profile[] @relation("FatherChildren")
 
-  // Spouses (via join table)
-  spousesFrom PersonSpouse[] @relation("Spouse1")
-  spousesTo   PersonSpouse[] @relation("Spouse2")
+  // Spouses
+  spousesFrom ProfileSpouse[] @relation("Spouse1")
+  spousesTo   ProfileSpouse[] @relation("Spouse2")
 
   // Life events
   events Event[]
 
-  // Verification links
-  verifications PersonVerification[]
+  // User who claimed this profile (optional)
+  claimedById String?
+  claimedBy   User?    @relation(fields: [claimedById], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@map("persons")
-}
-
-// ------------------- Person Verification (User claims identity) -------------------
-model PersonVerification {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  personId  Int
-  verifiedAt DateTime @default(now())
-  // optional: proof of identity, notes
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, personId])
+  @@map("profiles")
 }
 
 // ------------------- Spouse Relationship -------------------
-model PersonSpouse {
+model ProfileSpouse {
   id            Int      @id @default(autoincrement())
-  person1Id     Int
-  person2Id     Int
+  profile1Id    Int
+  profile2Id    Int
   marriageDate  DateTime?
   divorceDate   DateTime?
-  // additional fields like location, notes
 
-  person1       Person   @relation("Spouse1", fields: [person1Id], references: [id], onDelete: Cascade)
-  person2       Person   @relation("Spouse2", fields: [person2Id], references: [id], onDelete: Cascade)
+  profile1      Profile  @relation("Spouse1", fields: [profile1Id], references: [id], onDelete: Cascade)
+  profile2      Profile  @relation("Spouse2", fields: [profile2Id], references: [id], onDelete: Cascade)
 
-  @@unique([person1Id, person2Id])
-  @@map("person_spouses")
+  @@unique([profile1Id, profile2Id])
+  @@map("profile_spouses")
 }
 
-// ------------------- Life Events (for persons) -------------------
+// ------------------- Life Events -------------------
 model Event {
   id          Int      @id @default(autoincrement())
-  personId    Int
-  person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
-  eventType   String   // e.g., Birth, Marriage, Death, Graduation, etc.
+  profileId   Int
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  eventType   String
   description String?
   eventDate   DateTime?
   location    String?
@@ -183,15 +362,15 @@ model Event {
   @@map("events")
 }
 
-// ------------------- Audit Log (for tree activity) -------------------
+// ------------------- Audit Log -------------------
 model AuditLog {
   id        Int      @id @default(autoincrement())
   treeId    Int
   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  action    String   // e.g., "CREATE_PERSON", "UPDATE_PERSON", "DELETE_PERSON", "INVITE_USER", "CHANGE_ROLE"
-  details   String?  // JSON string of extra details (e.g., person name, field changes)
+  action    String
+  details   String?
   createdAt DateTime @default(now())
 
   @@index([treeId, createdAt])

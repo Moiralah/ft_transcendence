@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './api/auth/auth.module';
-import { PersonsModule } from './api/persons/persons.module';
+import { ProfileModule } from './api/profile/profile.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
+import { TreeModule } from './api/tree/tree.module';
 
 @Module({
 	imports: [
@@ -15,7 +16,8 @@ import { PrismaService } from './prisma/prisma.service';
 		SupabaseModule,
 		PrismaModule,
 		AuthModule,
-		PersonsModule,
+		ProfileModule,
+		TreeModule,
 	],
 	providers:[PrismaService],
 })

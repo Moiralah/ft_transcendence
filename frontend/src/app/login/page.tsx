@@ -45,7 +45,7 @@ export default function LoginPage() {
 		const data = await res.json();
 		if (res.ok) {
 			localStorage.setItem('ft_token', data.accessToken);
-			router.push('/dashboard');
+			router.push('/tree');
 		} else {
 			setError(data.message || 'Login failed');
 		}

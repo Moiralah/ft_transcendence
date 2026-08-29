@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.9.1
- * Query Engine version: e922089b7d7502aff4249d5da3420f6fa55fc6ad
+ * Prisma Client JS version: 7.10.0
+ * Query Engine version: 0edf323efd1d98336f3f0a68684b56f689b900d3
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.9.1",
-  engine: "e922089b7d7502aff4249d5da3420f6fa55fc6ad"
+  client: "7.10.0",
+  engine: "0edf323efd1d98336f3f0a68684b56f689b900d3"
 }
 
 /**
@@ -401,9 +401,8 @@ export const ModelName = {
   Tree: 'Tree',
   TreeMember: 'TreeMember',
   Invitation: 'Invitation',
-  Person: 'Person',
-  PersonVerification: 'PersonVerification',
-  PersonSpouse: 'PersonSpouse',
+  Profile: 'Profile',
+  ProfileSpouse: 'ProfileSpouse',
   Event: 'Event',
   AuditLog: 'AuditLog'
 } as const
@@ -421,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "tree" | "treeMember" | "invitation" | "person" | "personVerification" | "personSpouse" | "event" | "auditLog"
+    modelProps: "user" | "tree" | "treeMember" | "invitation" | "profile" | "profileSpouse" | "event" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -721,225 +720,151 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Person: {
-      payload: Prisma.$PersonPayload<ExtArgs>
-      fields: Prisma.PersonFieldRefs
+    Profile: {
+      payload: Prisma.$ProfilePayload<ExtArgs>
+      fields: Prisma.ProfileFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.PersonFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload> | null
+          args: Prisma.ProfileFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.PersonFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         findFirst: {
-          args: Prisma.PersonFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload> | null
+          args: Prisma.ProfileFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.PersonFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         findMany: {
-          args: Prisma.PersonFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
+          args: Prisma.ProfileFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>[]
         }
         create: {
-          args: Prisma.PersonCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         createMany: {
-          args: Prisma.PersonCreateManyArgs<ExtArgs>
+          args: Prisma.ProfileCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.PersonCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
+          args: Prisma.ProfileCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>[]
         }
         delete: {
-          args: Prisma.PersonDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         update: {
-          args: Prisma.PersonUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         deleteMany: {
-          args: Prisma.PersonDeleteManyArgs<ExtArgs>
+          args: Prisma.ProfileDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.PersonUpdateManyArgs<ExtArgs>
+          args: Prisma.ProfileUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.PersonUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
+          args: Prisma.ProfileUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>[]
         }
         upsert: {
-          args: Prisma.PersonUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
+          args: Prisma.ProfileUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfilePayload>
         }
         aggregate: {
-          args: Prisma.PersonAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregatePerson>
+          args: Prisma.ProfileAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProfile>
         }
         groupBy: {
-          args: Prisma.PersonGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonGroupByOutputType>[]
+          args: Prisma.ProfileGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProfileGroupByOutputType>[]
         }
         count: {
-          args: Prisma.PersonCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonCountAggregateOutputType> | number
+          args: Prisma.ProfileCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProfileCountAggregateOutputType> | number
         }
       }
     }
-    PersonVerification: {
-      payload: Prisma.$PersonVerificationPayload<ExtArgs>
-      fields: Prisma.PersonVerificationFieldRefs
+    ProfileSpouse: {
+      payload: Prisma.$ProfileSpousePayload<ExtArgs>
+      fields: Prisma.ProfileSpouseFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.PersonVerificationFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload> | null
+          args: Prisma.ProfileSpouseFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.PersonVerificationFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         findFirst: {
-          args: Prisma.PersonVerificationFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload> | null
+          args: Prisma.ProfileSpouseFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.PersonVerificationFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         findMany: {
-          args: Prisma.PersonVerificationFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>[]
+          args: Prisma.ProfileSpouseFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
         }
         create: {
-          args: Prisma.PersonVerificationCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         createMany: {
-          args: Prisma.PersonVerificationCreateManyArgs<ExtArgs>
+          args: Prisma.ProfileSpouseCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.PersonVerificationCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>[]
+          args: Prisma.ProfileSpouseCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
         }
         delete: {
-          args: Prisma.PersonVerificationDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         update: {
-          args: Prisma.PersonVerificationUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         deleteMany: {
-          args: Prisma.PersonVerificationDeleteManyArgs<ExtArgs>
+          args: Prisma.ProfileSpouseDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.PersonVerificationUpdateManyArgs<ExtArgs>
+          args: Prisma.ProfileSpouseUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.PersonVerificationUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>[]
+          args: Prisma.ProfileSpouseUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
         }
         upsert: {
-          args: Prisma.PersonVerificationUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonVerificationPayload>
+          args: Prisma.ProfileSpouseUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
         }
         aggregate: {
-          args: Prisma.PersonVerificationAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregatePersonVerification>
+          args: Prisma.ProfileSpouseAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProfileSpouse>
         }
         groupBy: {
-          args: Prisma.PersonVerificationGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonVerificationGroupByOutputType>[]
+          args: Prisma.ProfileSpouseGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProfileSpouseGroupByOutputType>[]
         }
         count: {
-          args: Prisma.PersonVerificationCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonVerificationCountAggregateOutputType> | number
-        }
-      }
-    }
-    PersonSpouse: {
-      payload: Prisma.$PersonSpousePayload<ExtArgs>
-      fields: Prisma.PersonSpouseFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.PersonSpouseFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.PersonSpouseFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        findFirst: {
-          args: Prisma.PersonSpouseFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.PersonSpouseFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        findMany: {
-          args: Prisma.PersonSpouseFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>[]
-        }
-        create: {
-          args: Prisma.PersonSpouseCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        createMany: {
-          args: Prisma.PersonSpouseCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.PersonSpouseCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>[]
-        }
-        delete: {
-          args: Prisma.PersonSpouseDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        update: {
-          args: Prisma.PersonSpouseUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        deleteMany: {
-          args: Prisma.PersonSpouseDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.PersonSpouseUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.PersonSpouseUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>[]
-        }
-        upsert: {
-          args: Prisma.PersonSpouseUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonSpousePayload>
-        }
-        aggregate: {
-          args: Prisma.PersonSpouseAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregatePersonSpouse>
-        }
-        groupBy: {
-          args: Prisma.PersonSpouseGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonSpouseGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.PersonSpouseCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.PersonSpouseCountAggregateOutputType> | number
+          args: Prisma.ProfileSpouseCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProfileSpouseCountAggregateOutputType> | number
         }
       }
     }
@@ -1144,10 +1069,12 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 export const TreeScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  code: 'code',
   description: 'description',
   ownerId: 'ownerId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  isPublic: 'isPublic'
 } as const
 
 export type TreeScalarFieldEnum = (typeof TreeScalarFieldEnum)[keyof typeof TreeScalarFieldEnum]
@@ -1179,7 +1106,7 @@ export const InvitationScalarFieldEnum = {
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
 
 
-export const PersonScalarFieldEnum = {
+export const ProfileScalarFieldEnum = {
   id: 'id',
   firstName: 'firstName',
   lastName: 'lastName',
@@ -1192,37 +1119,28 @@ export const PersonScalarFieldEnum = {
   treeId: 'treeId',
   motherId: 'motherId',
   fatherId: 'fatherId',
+  claimedById: 'claimedById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
-export type PersonScalarFieldEnum = (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum]
+export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeof ProfileScalarFieldEnum]
 
 
-export const PersonVerificationScalarFieldEnum = {
+export const ProfileSpouseScalarFieldEnum = {
   id: 'id',
-  userId: 'userId',
-  personId: 'personId',
-  verifiedAt: 'verifiedAt'
-} as const
-
-export type PersonVerificationScalarFieldEnum = (typeof PersonVerificationScalarFieldEnum)[keyof typeof PersonVerificationScalarFieldEnum]
-
-
-export const PersonSpouseScalarFieldEnum = {
-  id: 'id',
-  person1Id: 'person1Id',
-  person2Id: 'person2Id',
+  profile1Id: 'profile1Id',
+  profile2Id: 'profile2Id',
   marriageDate: 'marriageDate',
   divorceDate: 'divorceDate'
 } as const
 
-export type PersonSpouseScalarFieldEnum = (typeof PersonSpouseScalarFieldEnum)[keyof typeof PersonSpouseScalarFieldEnum]
+export type ProfileSpouseScalarFieldEnum = (typeof ProfileSpouseScalarFieldEnum)[keyof typeof ProfileSpouseScalarFieldEnum]
 
 
 export const EventScalarFieldEnum = {
   id: 'id',
-  personId: 'personId',
+  profileId: 'profileId',
   eventType: 'eventType',
   description: 'description',
   eventDate: 'eventDate',
@@ -1318,6 +1236,13 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Role'
  */
 export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
@@ -1342,13 +1267,6 @@ export type EnumInviteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'InviteStatus[]'
  */
 export type ListEnumInviteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InviteStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1520,9 +1438,8 @@ export type GlobalOmitConfig = {
   tree?: Prisma.TreeOmit
   treeMember?: Prisma.TreeMemberOmit
   invitation?: Prisma.InvitationOmit
-  person?: Prisma.PersonOmit
-  personVerification?: Prisma.PersonVerificationOmit
-  personSpouse?: Prisma.PersonSpouseOmit
+  profile?: Prisma.ProfileOmit
+  profileSpouse?: Prisma.ProfileSpouseOmit
   event?: Prisma.EventOmit
   auditLog?: Prisma.AuditLogOmit
 }

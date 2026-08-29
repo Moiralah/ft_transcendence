@@ -1,39 +1,40 @@
 import { Controller, Body, Delete, Get, Param,
 			Patch, Post, UseGuards } from '@nestjs/common';
-import { PersonsService } from './persons.service';
+import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Profile } from '../../generated/browser';
 
 @Controller(`persons`)
-export class PersonsController {
-	constructor(private readonly persons: PersonsService) { }
+export class ProfileController {
+	constructor(private readonly profile: ProfileService) { }
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
 	findAll() {
-		return this.persons.findAll();
+		return this.profile.findAll();
 	}
 
 	@Get(':id')
 	@UseGuards(JwtAuthGuard)
 	findOne(@Param('id') id: string) {
-		return this.persons.findOne(id);
+		return this.profile.findOne(id);
 	}
 
 	@Post()
 	@UseGuards(JwtAuthGuard)
 	create(@Body() body: any) {
-		return this.persons.create(body);
+		return this.profile.create(body);
 	}
 
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
 	update(@Param('id') id: string, @Body() body: any) {
-		return this.persons.update(Number(id), body);
+		return this.profile.update(Number(id), body);
 	}
 
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard)
 	remove(@Param('id') id: string) {
-		return this.persons.remove(Number(id));
+		return this.profile.remove(Number(id));
 	}
 }
