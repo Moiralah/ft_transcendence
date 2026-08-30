@@ -1,14 +1,23 @@
 import React from 'react';
+import { componentTokens } from './colorPalete';
 
 interface TextProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   as?: 'h1' | 'h2' | 'h3' | 'p' | 'span';
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption';
   className?: string;
   id?: string;
+  themeMode?: 'light';
 }
 
-export function Typography({ children, as = 'p', variant = 'body', className = '', id }: TextProps) {
+export function Typography({ 
+  children, as = 'p', 
+  variant = 'body', 
+  className = '', 
+  id, 
+  themeMode = 'light'
+  }: TextProps) {
+  
   const Component = as;
 
   const styles = {
@@ -19,8 +28,14 @@ export function Typography({ children, as = 'p', variant = 'body', className = '
     caption: 'text-xs font-bold text-slate-600 tracking-wider uppercase',
   };
 
+  const token = componentTokens.typograph(themeMode);
+
   return (
-    <Component id={id} className={`${styles[variant]} ${className}`}>
+    <Component 
+      id={id} 
+      className={`${styles[variant]} ${className}`}
+      styles={{ color: token[variant]}}
+    >
       {children}
     </Component>
   );
