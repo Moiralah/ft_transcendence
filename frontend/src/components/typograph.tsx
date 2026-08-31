@@ -11,7 +11,8 @@ interface TextProps {
 }
 
 export function Typography({ 
-  children, as = 'p', 
+  children, 
+  as = 'p', 
   variant = 'body', 
   className = '', 
   id, 

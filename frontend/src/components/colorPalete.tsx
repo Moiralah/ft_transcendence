@@ -1,5 +1,7 @@
 // colorPalete.ts
 
+import { FeaturesGrid } from "./featureGrid";
+
 export const primitives = {
     slate: {
       50: '#F8FAFC',
@@ -50,6 +52,7 @@ export const primitives = {
       surface: {
         footer: primitives.slate[900],
         navbar: primitives.whiteAlpha90,
+        featuresGrid: primitives.white,
       },
       bg: {
         low: primitives.slate[100],
@@ -67,11 +70,13 @@ export const primitives = {
         caption: primitives.slate[600],
         badge: primitives.amber[700],
         highlight: primitives.amber[700],
+        Card: primitives.amber[800],
       },
       border: {
         subtle: primitives.slate[800],
         navbar: primitives.slate[200],
         banner: primitives.slate[200],
+        featureCard: primitives.slate[100],
       },
       interactive: {
         focusRing: primitives.amber[400],
@@ -130,5 +135,16 @@ export const primitives = {
         badgeText: s.text.badge,
         highlightText: s.text.highlight,
       };
+    },
+    featuresGrid: (themeMode: 'light') => {
+        const s = semantics[themeMode] || semantics.light;
+        return {
+            bg: s.surface.featuresGrid,
+            bgCard: s.bg.high,
+            bgCard2: s.bg.badge,
+            text: s.text.Card,
+            border: s.border.banner,
+            borderCard: s.border.featureCard,
+        };
     },
   };

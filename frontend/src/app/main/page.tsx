@@ -4,6 +4,10 @@ import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
 import { Banner } from '../../components/banner';
+import { FeaturesGrid } from '../../components/featureGrid';
+
+import { featureItems } from '../../data/featureItem';
+import { toolItems } from '../../data/toolItem';
 
 export default function main() {
     return (
@@ -24,6 +28,21 @@ export default function main() {
                         { label: 'Start Building Your Tree', href: '/builder', variant: 'primary', showArrow: true },
                     ]}
                 />
+
+                <FeaturesGrid 
+                    id="features-heading"
+                    title="The Simplest Free Family Tree Builder Online"
+                    subtitle="We believe genealogy should be accessible to everyone."
+                    features={featureItems}
+                />
+                
+                <FeaturesGrid 
+                    id="tool-heading"
+                    title="Free Genealogy Tools to Find Your Ancestors"
+                    subtitle="Everything you need to map, analyze, and narrate your family's history."
+                    features={toolItems}
+                />
+
                 <Banner
                     id="cta-heading"
                     headingLevel="h2"
