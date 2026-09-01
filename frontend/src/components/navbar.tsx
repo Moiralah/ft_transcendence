@@ -4,16 +4,16 @@ import { Button } from './button';
 import { componentTokens } from './colorPalete';
 
 interface NavbarProps {
-  brandName?: string; 
-  ctaText?: string; 
+  brandName?: string;
+  ctaText?: string;
   ctaHref?: string;
   themeMode?: 'light';
 }
 
-export function Navbar({ 
-  brandName = "My Simple Family Tree", 
-  ctaText = "Get Started", 
-  ctaHref = "/builder",
+export function Navbar({
+  brandName = "My Simple Family Tree",
+  ctaText = "Get Started",
+  ctaHref ,
   themeMode = 'light',
   } : NavbarProps) {
 
@@ -26,12 +26,12 @@ export function Navbar({
         borderColor: tokens.border,
       }}
     >
-      <nav 
-        aria-label="Main navigation" 
+      <nav
+        aria-label="Main navigation"
         className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center"
       >
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="rounded-md font-bold text-lg sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
           aria-label={`${brandName} Home`}
           style={{
