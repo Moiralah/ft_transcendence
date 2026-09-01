@@ -8,13 +8,23 @@ import { FeaturesGrid } from '../components/featureGrid';
 
 import { featureItems } from '../data/featureItem';
 import { toolItems } from '../data/toolItem';
+import { componentTokens } from '@/components/colorPalete';
 
 export default function main() {
+
+    const token = componentTokens;
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans">
+        <div 
+            className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans"
+        >
             <SkipLink />
             <header id="navbar" tabIndex={-1} className="focus:outline-none">
-                <Navbar ctaHref = "/signup"/>
+                <Navbar 
+                    btnText1="Get Started" 
+                    btnHref1 = "/signup"
+                    // btnText2 ="Get Started" 
+                    // btnHref2 = "/signup"
+                />
             </header>
             <main id="main-content" tabIndex={-1} className="focus:outline-none">
                 <Banner

@@ -5,15 +5,23 @@ import { componentTokens } from './colorPalete';
 
 interface NavbarProps {
   brandName?: string;
-  ctaText?: string;
-  ctaHref?: string;
+  btnText1?: string;
+  btnHref1?: string;
+  btnOnClick1?: () => void;
+  btnText2?: string;
+  btnHref2?: string;
+  btnOnClick2?: () => void;
   themeMode?: 'light';
 }
 
 export function Navbar({
   brandName = "My Simple Family Tree",
-  ctaText = "Get Started",
-  ctaHref ,
+  btnText1 ,
+  btnHref1 ,
+  btnOnClick1,
+  btnText2 ,
+  btnHref2 ,  
+  btnOnClick2,
   themeMode = 'light',
   } : NavbarProps) {
 
@@ -42,7 +50,26 @@ export function Navbar({
           <span style={{color: tokens.brand1 }}>My Simple</span>
           <span style={{color: tokens.brand2 }}> Family Tree</span>
         </Link>
-        <Button href={ctaHref} variant="primary">{ctaText}</Button>
+        <div className="flex items-center gap-3">
+          {btnText1 && (
+            <Button 
+              href={btnHref1} 
+              onClick={btnOnClick1}
+              variant="primary"
+            >
+              {btnText1}
+            </Button>
+          )}          
+          {btnText2 && (
+            <Button 
+              href={btnHref2}
+              onClick={btnOnClick2}
+              variant="primary"
+            >
+              {btnText2}
+            </Button>
+          )}
+        </div>
       </nav>
     </header>
   );
