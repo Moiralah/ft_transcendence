@@ -313,8 +313,7 @@ export type ProfileWhereInput = {
   father?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   childrenAsMother?: Prisma.ProfileListRelationFilter
   childrenAsFather?: Prisma.ProfileListRelationFilter
-  spousesFrom?: Prisma.ProfileSpouseListRelationFilter
-  spousesTo?: Prisma.ProfileSpouseListRelationFilter
+  spouses?: Prisma.ProfileSpouseListRelationFilter
   events?: Prisma.EventListRelationFilter
   claimedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
@@ -340,8 +339,7 @@ export type ProfileOrderByWithRelationInput = {
   father?: Prisma.ProfileOrderByWithRelationInput
   childrenAsMother?: Prisma.ProfileOrderByRelationAggregateInput
   childrenAsFather?: Prisma.ProfileOrderByRelationAggregateInput
-  spousesFrom?: Prisma.ProfileSpouseOrderByRelationAggregateInput
-  spousesTo?: Prisma.ProfileSpouseOrderByRelationAggregateInput
+  spouses?: Prisma.ProfileSpouseOrderByRelationAggregateInput
   events?: Prisma.EventOrderByRelationAggregateInput
   claimedBy?: Prisma.UserOrderByWithRelationInput
 }
@@ -370,8 +368,7 @@ export type ProfileWhereUniqueInput = Prisma.AtLeast<{
   father?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   childrenAsMother?: Prisma.ProfileListRelationFilter
   childrenAsFather?: Prisma.ProfileListRelationFilter
-  spousesFrom?: Prisma.ProfileSpouseListRelationFilter
-  spousesTo?: Prisma.ProfileSpouseListRelationFilter
+  spouses?: Prisma.ProfileSpouseListRelationFilter
   events?: Prisma.EventListRelationFilter
   claimedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
@@ -436,8 +433,7 @@ export type ProfileCreateInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -460,8 +456,7 @@ export type ProfileUncheckedCreateInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -481,8 +476,7 @@ export type ProfileUpdateInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -505,8 +499,7 @@ export type ProfileUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -855,32 +848,18 @@ export type ProfileUncheckedUpdateManyWithoutFatherNestedInput = {
   deleteMany?: Prisma.ProfileScalarWhereInput | Prisma.ProfileScalarWhereInput[]
 }
 
-export type ProfileCreateNestedOneWithoutSpousesFromInput = {
-  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesFromInput, Prisma.ProfileUncheckedCreateWithoutSpousesFromInput>
-  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesFromInput
+export type ProfileCreateNestedOneWithoutSpousesInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesInput, Prisma.ProfileUncheckedCreateWithoutSpousesInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesInput
   connect?: Prisma.ProfileWhereUniqueInput
 }
 
-export type ProfileCreateNestedOneWithoutSpousesToInput = {
-  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesToInput, Prisma.ProfileUncheckedCreateWithoutSpousesToInput>
-  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesToInput
+export type ProfileUpdateOneRequiredWithoutSpousesNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesInput, Prisma.ProfileUncheckedCreateWithoutSpousesInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesInput
+  upsert?: Prisma.ProfileUpsertWithoutSpousesInput
   connect?: Prisma.ProfileWhereUniqueInput
-}
-
-export type ProfileUpdateOneRequiredWithoutSpousesFromNestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesFromInput, Prisma.ProfileUncheckedCreateWithoutSpousesFromInput>
-  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesFromInput
-  upsert?: Prisma.ProfileUpsertWithoutSpousesFromInput
-  connect?: Prisma.ProfileWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutSpousesFromInput, Prisma.ProfileUpdateWithoutSpousesFromInput>, Prisma.ProfileUncheckedUpdateWithoutSpousesFromInput>
-}
-
-export type ProfileUpdateOneRequiredWithoutSpousesToNestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesToInput, Prisma.ProfileUncheckedCreateWithoutSpousesToInput>
-  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSpousesToInput
-  upsert?: Prisma.ProfileUpsertWithoutSpousesToInput
-  connect?: Prisma.ProfileWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutSpousesToInput, Prisma.ProfileUpdateWithoutSpousesToInput>, Prisma.ProfileUncheckedUpdateWithoutSpousesToInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutSpousesInput, Prisma.ProfileUpdateWithoutSpousesInput>, Prisma.ProfileUncheckedUpdateWithoutSpousesInput>
 }
 
 export type ProfileCreateNestedOneWithoutEventsInput = {
@@ -913,8 +892,7 @@ export type ProfileCreateWithoutClaimedByInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
 }
 
@@ -935,8 +913,7 @@ export type ProfileUncheckedCreateWithoutClaimedByInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1002,8 +979,7 @@ export type ProfileCreateWithoutTreeInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -1025,8 +1001,7 @@ export type ProfileUncheckedCreateWithoutTreeInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1071,8 +1046,7 @@ export type ProfileCreateWithoutChildrenAsMotherInput = {
   mother?: Prisma.ProfileCreateNestedOneWithoutChildrenAsMotherInput
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -1094,8 +1068,7 @@ export type ProfileUncheckedCreateWithoutChildrenAsMotherInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1119,8 +1092,7 @@ export type ProfileCreateWithoutChildrenAsFatherInput = {
   mother?: Prisma.ProfileCreateNestedOneWithoutChildrenAsMotherInput
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -1142,8 +1114,7 @@ export type ProfileUncheckedCreateWithoutChildrenAsFatherInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1167,8 +1138,7 @@ export type ProfileCreateWithoutMotherInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -1190,8 +1160,7 @@ export type ProfileUncheckedCreateWithoutMotherInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1220,8 +1189,7 @@ export type ProfileCreateWithoutFatherInput = {
   mother?: Prisma.ProfileCreateNestedOneWithoutChildrenAsMotherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
@@ -1243,8 +1211,7 @@ export type ProfileUncheckedCreateWithoutFatherInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
@@ -1284,8 +1251,7 @@ export type ProfileUpdateWithoutChildrenAsMotherInput = {
   mother?: Prisma.ProfileUpdateOneWithoutChildrenAsMotherNestedInput
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -1307,8 +1273,7 @@ export type ProfileUncheckedUpdateWithoutChildrenAsMotherInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1338,8 +1303,7 @@ export type ProfileUpdateWithoutChildrenAsFatherInput = {
   mother?: Prisma.ProfileUpdateOneWithoutChildrenAsMotherNestedInput
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -1361,8 +1325,7 @@ export type ProfileUncheckedUpdateWithoutChildrenAsFatherInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1398,7 +1361,7 @@ export type ProfileUpdateManyWithWhereWithoutFatherInput = {
   data: Prisma.XOR<Prisma.ProfileUpdateManyMutationInput, Prisma.ProfileUncheckedUpdateManyWithoutFatherInput>
 }
 
-export type ProfileCreateWithoutSpousesFromInput = {
+export type ProfileCreateWithoutSpousesInput = {
   firstName: string
   lastName?: string | null
   gender?: string | null
@@ -1414,12 +1377,11 @@ export type ProfileCreateWithoutSpousesFromInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
   events?: Prisma.EventCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
 
-export type ProfileUncheckedCreateWithoutSpousesFromInput = {
+export type ProfileUncheckedCreateWithoutSpousesInput = {
   id?: number
   firstName: string
   lastName?: string | null
@@ -1437,75 +1399,26 @@ export type ProfileUncheckedCreateWithoutSpousesFromInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
   events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
 }
 
-export type ProfileCreateOrConnectWithoutSpousesFromInput = {
+export type ProfileCreateOrConnectWithoutSpousesInput = {
   where: Prisma.ProfileWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesFromInput, Prisma.ProfileUncheckedCreateWithoutSpousesFromInput>
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesInput, Prisma.ProfileUncheckedCreateWithoutSpousesInput>
 }
 
-export type ProfileCreateWithoutSpousesToInput = {
-  firstName: string
-  lastName?: string | null
-  gender?: string | null
-  birthDate?: Date | string | null
-  deathDate?: Date | string | null
-  bio?: string | null
-  photoUrl?: string | null
-  verified?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  tree: Prisma.TreeCreateNestedOneWithoutProfilesInput
-  mother?: Prisma.ProfileCreateNestedOneWithoutChildrenAsMotherInput
-  father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
-  childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
-  childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  events?: Prisma.EventCreateNestedManyWithoutProfileInput
-  claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
-}
-
-export type ProfileUncheckedCreateWithoutSpousesToInput = {
-  id?: number
-  firstName: string
-  lastName?: string | null
-  gender?: string | null
-  birthDate?: Date | string | null
-  deathDate?: Date | string | null
-  bio?: string | null
-  photoUrl?: string | null
-  verified?: boolean
-  treeId: number
-  motherId?: number | null
-  fatherId?: number | null
-  claimedById?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
-  childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  events?: Prisma.EventUncheckedCreateNestedManyWithoutProfileInput
-}
-
-export type ProfileCreateOrConnectWithoutSpousesToInput = {
-  where: Prisma.ProfileWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesToInput, Prisma.ProfileUncheckedCreateWithoutSpousesToInput>
-}
-
-export type ProfileUpsertWithoutSpousesFromInput = {
-  update: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesFromInput, Prisma.ProfileUncheckedUpdateWithoutSpousesFromInput>
-  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesFromInput, Prisma.ProfileUncheckedCreateWithoutSpousesFromInput>
+export type ProfileUpsertWithoutSpousesInput = {
+  update: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesInput, Prisma.ProfileUncheckedUpdateWithoutSpousesInput>
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesInput, Prisma.ProfileUncheckedCreateWithoutSpousesInput>
   where?: Prisma.ProfileWhereInput
 }
 
-export type ProfileUpdateToOneWithWhereWithoutSpousesFromInput = {
+export type ProfileUpdateToOneWithWhereWithoutSpousesInput = {
   where?: Prisma.ProfileWhereInput
-  data: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesFromInput, Prisma.ProfileUncheckedUpdateWithoutSpousesFromInput>
+  data: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesInput, Prisma.ProfileUncheckedUpdateWithoutSpousesInput>
 }
 
-export type ProfileUpdateWithoutSpousesFromInput = {
+export type ProfileUpdateWithoutSpousesInput = {
   firstName?: Prisma.StringFieldUpdateOperationsInput | string
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1521,12 +1434,11 @@ export type ProfileUpdateWithoutSpousesFromInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
 
-export type ProfileUncheckedUpdateWithoutSpousesFromInput = {
+export type ProfileUncheckedUpdateWithoutSpousesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   firstName?: Prisma.StringFieldUpdateOperationsInput | string
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1544,61 +1456,6 @@ export type ProfileUncheckedUpdateWithoutSpousesFromInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
-  events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
-}
-
-export type ProfileUpsertWithoutSpousesToInput = {
-  update: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesToInput, Prisma.ProfileUncheckedUpdateWithoutSpousesToInput>
-  create: Prisma.XOR<Prisma.ProfileCreateWithoutSpousesToInput, Prisma.ProfileUncheckedCreateWithoutSpousesToInput>
-  where?: Prisma.ProfileWhereInput
-}
-
-export type ProfileUpdateToOneWithWhereWithoutSpousesToInput = {
-  where?: Prisma.ProfileWhereInput
-  data: Prisma.XOR<Prisma.ProfileUpdateWithoutSpousesToInput, Prisma.ProfileUncheckedUpdateWithoutSpousesToInput>
-}
-
-export type ProfileUpdateWithoutSpousesToInput = {
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  birthDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deathDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tree?: Prisma.TreeUpdateOneRequiredWithoutProfilesNestedInput
-  mother?: Prisma.ProfileUpdateOneWithoutChildrenAsMotherNestedInput
-  father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
-  childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
-  childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  events?: Prisma.EventUpdateManyWithoutProfileNestedInput
-  claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
-}
-
-export type ProfileUncheckedUpdateWithoutSpousesToInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gender?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  birthDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deathDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  treeId?: Prisma.IntFieldUpdateOperationsInput | number
-  motherId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fatherId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  claimedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
-  childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1618,8 +1475,7 @@ export type ProfileCreateWithoutEventsInput = {
   father?: Prisma.ProfileCreateNestedOneWithoutChildrenAsFatherInput
   childrenAsMother?: Prisma.ProfileCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseCreateNestedManyWithoutProfileInput
   claimedBy?: Prisma.UserCreateNestedOneWithoutProfilesInput
 }
 
@@ -1641,8 +1497,7 @@ export type ProfileUncheckedCreateWithoutEventsInput = {
   updatedAt?: Date | string
   childrenAsMother?: Prisma.ProfileUncheckedCreateNestedManyWithoutMotherInput
   childrenAsFather?: Prisma.ProfileUncheckedCreateNestedManyWithoutFatherInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input
-  spousesTo?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input
+  spouses?: Prisma.ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type ProfileCreateOrConnectWithoutEventsInput = {
@@ -1677,8 +1532,7 @@ export type ProfileUpdateWithoutEventsInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
 
@@ -1700,8 +1554,7 @@ export type ProfileUncheckedUpdateWithoutEventsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type ProfileCreateManyClaimedByInput = {
@@ -1737,8 +1590,7 @@ export type ProfileUpdateWithoutClaimedByInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
 }
 
@@ -1759,8 +1611,7 @@ export type ProfileUncheckedUpdateWithoutClaimedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1813,8 +1664,7 @@ export type ProfileUpdateWithoutTreeInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -1836,8 +1686,7 @@ export type ProfileUncheckedUpdateWithoutTreeInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1907,8 +1756,7 @@ export type ProfileUpdateWithoutMotherInput = {
   father?: Prisma.ProfileUpdateOneWithoutChildrenAsFatherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -1930,8 +1778,7 @@ export type ProfileUncheckedUpdateWithoutMotherInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -1967,8 +1814,7 @@ export type ProfileUpdateWithoutFatherInput = {
   mother?: Prisma.ProfileUpdateOneWithoutChildrenAsMotherNestedInput
   childrenAsMother?: Prisma.ProfileUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUpdateManyWithoutProfileNestedInput
   claimedBy?: Prisma.UserUpdateOneWithoutProfilesNestedInput
 }
@@ -1990,8 +1836,7 @@ export type ProfileUncheckedUpdateWithoutFatherInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   childrenAsMother?: Prisma.ProfileUncheckedUpdateManyWithoutMotherNestedInput
   childrenAsFather?: Prisma.ProfileUncheckedUpdateManyWithoutFatherNestedInput
-  spousesFrom?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput
-  spousesTo?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput
+  spouses?: Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput
   events?: Prisma.EventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
@@ -2020,16 +1865,14 @@ export type ProfileUncheckedUpdateManyWithoutFatherInput = {
 export type ProfileCountOutputType = {
   childrenAsMother: number
   childrenAsFather: number
-  spousesFrom: number
-  spousesTo: number
+  spouses: number
   events: number
 }
 
 export type ProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   childrenAsMother?: boolean | ProfileCountOutputTypeCountChildrenAsMotherArgs
   childrenAsFather?: boolean | ProfileCountOutputTypeCountChildrenAsFatherArgs
-  spousesFrom?: boolean | ProfileCountOutputTypeCountSpousesFromArgs
-  spousesTo?: boolean | ProfileCountOutputTypeCountSpousesToArgs
+  spouses?: boolean | ProfileCountOutputTypeCountSpousesArgs
   events?: boolean | ProfileCountOutputTypeCountEventsArgs
 }
 
@@ -2060,14 +1903,7 @@ export type ProfileCountOutputTypeCountChildrenAsFatherArgs<ExtArgs extends runt
 /**
  * ProfileCountOutputType without action
  */
-export type ProfileCountOutputTypeCountSpousesFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProfileSpouseWhereInput
-}
-
-/**
- * ProfileCountOutputType without action
- */
-export type ProfileCountOutputTypeCountSpousesToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type ProfileCountOutputTypeCountSpousesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ProfileSpouseWhereInput
 }
 
@@ -2100,8 +1936,7 @@ export type ProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   father?: boolean | Prisma.Profile$fatherArgs<ExtArgs>
   childrenAsMother?: boolean | Prisma.Profile$childrenAsMotherArgs<ExtArgs>
   childrenAsFather?: boolean | Prisma.Profile$childrenAsFatherArgs<ExtArgs>
-  spousesFrom?: boolean | Prisma.Profile$spousesFromArgs<ExtArgs>
-  spousesTo?: boolean | Prisma.Profile$spousesToArgs<ExtArgs>
+  spouses?: boolean | Prisma.Profile$spousesArgs<ExtArgs>
   events?: boolean | Prisma.Profile$eventsArgs<ExtArgs>
   claimedBy?: boolean | Prisma.Profile$claimedByArgs<ExtArgs>
   _count?: boolean | Prisma.ProfileCountOutputTypeDefaultArgs<ExtArgs>
@@ -2176,8 +2011,7 @@ export type ProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   father?: boolean | Prisma.Profile$fatherArgs<ExtArgs>
   childrenAsMother?: boolean | Prisma.Profile$childrenAsMotherArgs<ExtArgs>
   childrenAsFather?: boolean | Prisma.Profile$childrenAsFatherArgs<ExtArgs>
-  spousesFrom?: boolean | Prisma.Profile$spousesFromArgs<ExtArgs>
-  spousesTo?: boolean | Prisma.Profile$spousesToArgs<ExtArgs>
+  spouses?: boolean | Prisma.Profile$spousesArgs<ExtArgs>
   events?: boolean | Prisma.Profile$eventsArgs<ExtArgs>
   claimedBy?: boolean | Prisma.Profile$claimedByArgs<ExtArgs>
   _count?: boolean | Prisma.ProfileCountOutputTypeDefaultArgs<ExtArgs>
@@ -2203,8 +2037,7 @@ export type $ProfilePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     father: Prisma.$ProfilePayload<ExtArgs> | null
     childrenAsMother: Prisma.$ProfilePayload<ExtArgs>[]
     childrenAsFather: Prisma.$ProfilePayload<ExtArgs>[]
-    spousesFrom: Prisma.$ProfileSpousePayload<ExtArgs>[]
-    spousesTo: Prisma.$ProfileSpousePayload<ExtArgs>[]
+    spouses: Prisma.$ProfileSpousePayload<ExtArgs>[]
     events: Prisma.$EventPayload<ExtArgs>[]
     claimedBy: Prisma.$UserPayload<ExtArgs> | null
   }
@@ -2623,8 +2456,7 @@ export interface Prisma__ProfileClient<T, Null = never, ExtArgs extends runtime.
   father<T extends Prisma.Profile$fatherArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$fatherArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   childrenAsMother<T extends Prisma.Profile$childrenAsMotherArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$childrenAsMotherArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   childrenAsFather<T extends Prisma.Profile$childrenAsFatherArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$childrenAsFatherArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  spousesFrom<T extends Prisma.Profile$spousesFromArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$spousesFromArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileSpousePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  spousesTo<T extends Prisma.Profile$spousesToArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$spousesToArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileSpousePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  spouses<T extends Prisma.Profile$spousesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$spousesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileSpousePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   events<T extends Prisma.Profile$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   claimedBy<T extends Prisma.Profile$claimedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$claimedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
@@ -3158,33 +2990,9 @@ export type Profile$childrenAsFatherArgs<ExtArgs extends runtime.Types.Extension
 }
 
 /**
- * Profile.spousesFrom
+ * Profile.spouses
  */
-export type Profile$spousesFromArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ProfileSpouse
-   */
-  select?: Prisma.ProfileSpouseSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ProfileSpouse
-   */
-  omit?: Prisma.ProfileSpouseOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ProfileSpouseInclude<ExtArgs> | null
-  where?: Prisma.ProfileSpouseWhereInput
-  orderBy?: Prisma.ProfileSpouseOrderByWithRelationInput | Prisma.ProfileSpouseOrderByWithRelationInput[]
-  cursor?: Prisma.ProfileSpouseWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ProfileSpouseScalarFieldEnum | Prisma.ProfileSpouseScalarFieldEnum[]
-}
-
-/**
- * Profile.spousesTo
- */
-export type Profile$spousesToArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Profile$spousesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the ProfileSpouse
    */

@@ -317,8 +317,7 @@ model Profile {
   childrenAsFather Profile[] @relation("FatherChildren")
 
   // Spouses
-  spousesFrom ProfileSpouse[] @relation("Spouse1")
-  spousesTo   ProfileSpouse[] @relation("Spouse2")
+  spouses ProfileSpouse[] @relation("Spouse")
 
   // Life events
   events Event[]
@@ -336,15 +335,13 @@ model Profile {
 // ------------------- Spouse Relationship -------------------
 model ProfileSpouse {
   id            Int      @id @default(autoincrement())
-  profile1Id    Int
-  profile2Id    Int
+  profileId    Int
   marriageDate  DateTime?
   divorceDate   DateTime?
 
-  profile1      Profile  @relation("Spouse1", fields: [profile1Id], references: [id], onDelete: Cascade)
-  profile2      Profile  @relation("Spouse2", fields: [profile2Id], references: [id], onDelete: Cascade)
+  profile      Profile  @relation("Spouse", fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@unique([profile1Id, profile2Id])
+  @@unique([profileId])
   @@map("profile_spouses")
 }
 

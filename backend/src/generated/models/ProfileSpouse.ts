@@ -28,36 +28,31 @@ export type AggregateProfileSpouse = {
 
 export type ProfileSpouseAvgAggregateOutputType = {
   id: number | null
-  profile1Id: number | null
-  profile2Id: number | null
+  profileId: number | null
 }
 
 export type ProfileSpouseSumAggregateOutputType = {
   id: number | null
-  profile1Id: number | null
-  profile2Id: number | null
+  profileId: number | null
 }
 
 export type ProfileSpouseMinAggregateOutputType = {
   id: number | null
-  profile1Id: number | null
-  profile2Id: number | null
+  profileId: number | null
   marriageDate: Date | null
   divorceDate: Date | null
 }
 
 export type ProfileSpouseMaxAggregateOutputType = {
   id: number | null
-  profile1Id: number | null
-  profile2Id: number | null
+  profileId: number | null
   marriageDate: Date | null
   divorceDate: Date | null
 }
 
 export type ProfileSpouseCountAggregateOutputType = {
   id: number
-  profile1Id: number
-  profile2Id: number
+  profileId: number
   marriageDate: number
   divorceDate: number
   _all: number
@@ -66,36 +61,31 @@ export type ProfileSpouseCountAggregateOutputType = {
 
 export type ProfileSpouseAvgAggregateInputType = {
   id?: true
-  profile1Id?: true
-  profile2Id?: true
+  profileId?: true
 }
 
 export type ProfileSpouseSumAggregateInputType = {
   id?: true
-  profile1Id?: true
-  profile2Id?: true
+  profileId?: true
 }
 
 export type ProfileSpouseMinAggregateInputType = {
   id?: true
-  profile1Id?: true
-  profile2Id?: true
+  profileId?: true
   marriageDate?: true
   divorceDate?: true
 }
 
 export type ProfileSpouseMaxAggregateInputType = {
   id?: true
-  profile1Id?: true
-  profile2Id?: true
+  profileId?: true
   marriageDate?: true
   divorceDate?: true
 }
 
 export type ProfileSpouseCountAggregateInputType = {
   id?: true
-  profile1Id?: true
-  profile2Id?: true
+  profileId?: true
   marriageDate?: true
   divorceDate?: true
   _all?: true
@@ -189,8 +179,7 @@ export type ProfileSpouseGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 
 export type ProfileSpouseGroupByOutputType = {
   id: number
-  profile1Id: number
-  profile2Id: number
+  profileId: number
   marriageDate: Date | null
   divorceDate: Date | null
   _count: ProfileSpouseCountAggregateOutputType | null
@@ -220,42 +209,34 @@ export type ProfileSpouseWhereInput = {
   OR?: Prisma.ProfileSpouseWhereInput[]
   NOT?: Prisma.ProfileSpouseWhereInput | Prisma.ProfileSpouseWhereInput[]
   id?: Prisma.IntFilter<"ProfileSpouse"> | number
-  profile1Id?: Prisma.IntFilter<"ProfileSpouse"> | number
-  profile2Id?: Prisma.IntFilter<"ProfileSpouse"> | number
+  profileId?: Prisma.IntFilter<"ProfileSpouse"> | number
   marriageDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
   divorceDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
-  profile1?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
-  profile2?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
+  profile?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
 }
 
 export type ProfileSpouseOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   marriageDate?: Prisma.SortOrderInput | Prisma.SortOrder
   divorceDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  profile1?: Prisma.ProfileOrderByWithRelationInput
-  profile2?: Prisma.ProfileOrderByWithRelationInput
+  profile?: Prisma.ProfileOrderByWithRelationInput
 }
 
 export type ProfileSpouseWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  profile1Id_profile2Id?: Prisma.ProfileSpouseProfile1IdProfile2IdCompoundUniqueInput
+  profileId?: number
   AND?: Prisma.ProfileSpouseWhereInput | Prisma.ProfileSpouseWhereInput[]
   OR?: Prisma.ProfileSpouseWhereInput[]
   NOT?: Prisma.ProfileSpouseWhereInput | Prisma.ProfileSpouseWhereInput[]
-  profile1Id?: Prisma.IntFilter<"ProfileSpouse"> | number
-  profile2Id?: Prisma.IntFilter<"ProfileSpouse"> | number
   marriageDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
   divorceDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
-  profile1?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
-  profile2?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
-}, "id" | "profile1Id_profile2Id">
+  profile?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
+}, "id" | "profileId">
 
 export type ProfileSpouseOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   marriageDate?: Prisma.SortOrderInput | Prisma.SortOrder
   divorceDate?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ProfileSpouseCountOrderByAggregateInput
@@ -270,8 +251,7 @@ export type ProfileSpouseScalarWhereWithAggregatesInput = {
   OR?: Prisma.ProfileSpouseScalarWhereWithAggregatesInput[]
   NOT?: Prisma.ProfileSpouseScalarWhereWithAggregatesInput | Prisma.ProfileSpouseScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"ProfileSpouse"> | number
-  profile1Id?: Prisma.IntWithAggregatesFilter<"ProfileSpouse"> | number
-  profile2Id?: Prisma.IntWithAggregatesFilter<"ProfileSpouse"> | number
+  profileId?: Prisma.IntWithAggregatesFilter<"ProfileSpouse"> | number
   marriageDate?: Prisma.DateTimeNullableWithAggregatesFilter<"ProfileSpouse"> | Date | string | null
   divorceDate?: Prisma.DateTimeNullableWithAggregatesFilter<"ProfileSpouse"> | Date | string | null
 }
@@ -279,14 +259,12 @@ export type ProfileSpouseScalarWhereWithAggregatesInput = {
 export type ProfileSpouseCreateInput = {
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
-  profile1: Prisma.ProfileCreateNestedOneWithoutSpousesFromInput
-  profile2: Prisma.ProfileCreateNestedOneWithoutSpousesToInput
+  profile: Prisma.ProfileCreateNestedOneWithoutSpousesInput
 }
 
 export type ProfileSpouseUncheckedCreateInput = {
   id?: number
-  profile1Id: number
-  profile2Id: number
+  profileId: number
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
 }
@@ -294,22 +272,19 @@ export type ProfileSpouseUncheckedCreateInput = {
 export type ProfileSpouseUpdateInput = {
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile1?: Prisma.ProfileUpdateOneRequiredWithoutSpousesFromNestedInput
-  profile2?: Prisma.ProfileUpdateOneRequiredWithoutSpousesToNestedInput
+  profile?: Prisma.ProfileUpdateOneRequiredWithoutSpousesNestedInput
 }
 
 export type ProfileSpouseUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile1Id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile2Id?: Prisma.IntFieldUpdateOperationsInput | number
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type ProfileSpouseCreateManyInput = {
   id?: number
-  profile1Id: number
-  profile2Id: number
+  profileId: number
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
 }
@@ -321,8 +296,7 @@ export type ProfileSpouseUpdateManyMutationInput = {
 
 export type ProfileSpouseUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile1Id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile2Id?: Prisma.IntFieldUpdateOperationsInput | number
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -337,191 +311,114 @@ export type ProfileSpouseOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type ProfileSpouseProfile1IdProfile2IdCompoundUniqueInput = {
-  profile1Id: number
-  profile2Id: number
-}
-
 export type ProfileSpouseCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   marriageDate?: Prisma.SortOrder
   divorceDate?: Prisma.SortOrder
 }
 
 export type ProfileSpouseAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
 }
 
 export type ProfileSpouseMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   marriageDate?: Prisma.SortOrder
   divorceDate?: Prisma.SortOrder
 }
 
 export type ProfileSpouseMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   marriageDate?: Prisma.SortOrder
   divorceDate?: Prisma.SortOrder
 }
 
 export type ProfileSpouseSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  profile1Id?: Prisma.SortOrder
-  profile2Id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
 }
 
-export type ProfileSpouseCreateNestedManyWithoutProfile1Input = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input> | Prisma.ProfileSpouseCreateWithoutProfile1Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile1InputEnvelope
+export type ProfileSpouseCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput> | Prisma.ProfileSpouseCreateWithoutProfileInput[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput | Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.ProfileSpouseCreateManyProfileInputEnvelope
   connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
 }
 
-export type ProfileSpouseCreateNestedManyWithoutProfile2Input = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input> | Prisma.ProfileSpouseCreateWithoutProfile2Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile2InputEnvelope
+export type ProfileSpouseUncheckedCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput> | Prisma.ProfileSpouseCreateWithoutProfileInput[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput | Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.ProfileSpouseCreateManyProfileInputEnvelope
   connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
 }
 
-export type ProfileSpouseUncheckedCreateNestedManyWithoutProfile1Input = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input> | Prisma.ProfileSpouseCreateWithoutProfile1Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile1InputEnvelope
-  connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-}
-
-export type ProfileSpouseUncheckedCreateNestedManyWithoutProfile2Input = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input> | Prisma.ProfileSpouseCreateWithoutProfile2Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile2InputEnvelope
-  connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-}
-
-export type ProfileSpouseUpdateManyWithoutProfile1NestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input> | Prisma.ProfileSpouseCreateWithoutProfile1Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input[]
-  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile1Input | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile1Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile1InputEnvelope
+export type ProfileSpouseUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput> | Prisma.ProfileSpouseCreateWithoutProfileInput[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput | Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfileInput | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.ProfileSpouseCreateManyProfileInputEnvelope
   set?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   disconnect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   delete?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile1Input | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile1Input[]
-  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile1Input | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile1Input[]
+  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfileInput | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfileInput | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfileInput[]
   deleteMany?: Prisma.ProfileSpouseScalarWhereInput | Prisma.ProfileSpouseScalarWhereInput[]
 }
 
-export type ProfileSpouseUpdateManyWithoutProfile2NestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input> | Prisma.ProfileSpouseCreateWithoutProfile2Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input[]
-  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile2Input | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile2Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile2InputEnvelope
+export type ProfileSpouseUncheckedUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput> | Prisma.ProfileSpouseCreateWithoutProfileInput[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput | Prisma.ProfileSpouseCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfileInput | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.ProfileSpouseCreateManyProfileInputEnvelope
   set?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   disconnect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   delete?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
   connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile2Input | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile2Input[]
-  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile2Input | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile2Input[]
+  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfileInput | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfileInput | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfileInput[]
   deleteMany?: Prisma.ProfileSpouseScalarWhereInput | Prisma.ProfileSpouseScalarWhereInput[]
 }
 
-export type ProfileSpouseUncheckedUpdateManyWithoutProfile1NestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input> | Prisma.ProfileSpouseCreateWithoutProfile1Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile1Input[]
-  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile1Input | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile1Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile1InputEnvelope
-  set?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  disconnect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  delete?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile1Input | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile1Input[]
-  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile1Input | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile1Input[]
-  deleteMany?: Prisma.ProfileSpouseScalarWhereInput | Prisma.ProfileSpouseScalarWhereInput[]
-}
-
-export type ProfileSpouseUncheckedUpdateManyWithoutProfile2NestedInput = {
-  create?: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input> | Prisma.ProfileSpouseCreateWithoutProfile2Input[] | Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input[]
-  connectOrCreate?: Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input | Prisma.ProfileSpouseCreateOrConnectWithoutProfile2Input[]
-  upsert?: Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile2Input | Prisma.ProfileSpouseUpsertWithWhereUniqueWithoutProfile2Input[]
-  createMany?: Prisma.ProfileSpouseCreateManyProfile2InputEnvelope
-  set?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  disconnect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  delete?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  connect?: Prisma.ProfileSpouseWhereUniqueInput | Prisma.ProfileSpouseWhereUniqueInput[]
-  update?: Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile2Input | Prisma.ProfileSpouseUpdateWithWhereUniqueWithoutProfile2Input[]
-  updateMany?: Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile2Input | Prisma.ProfileSpouseUpdateManyWithWhereWithoutProfile2Input[]
-  deleteMany?: Prisma.ProfileSpouseScalarWhereInput | Prisma.ProfileSpouseScalarWhereInput[]
-}
-
-export type ProfileSpouseCreateWithoutProfile1Input = {
+export type ProfileSpouseCreateWithoutProfileInput = {
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
-  profile2: Prisma.ProfileCreateNestedOneWithoutSpousesToInput
 }
 
-export type ProfileSpouseUncheckedCreateWithoutProfile1Input = {
+export type ProfileSpouseUncheckedCreateWithoutProfileInput = {
   id?: number
-  profile2Id: number
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
 }
 
-export type ProfileSpouseCreateOrConnectWithoutProfile1Input = {
+export type ProfileSpouseCreateOrConnectWithoutProfileInput = {
   where: Prisma.ProfileSpouseWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input>
+  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput>
 }
 
-export type ProfileSpouseCreateManyProfile1InputEnvelope = {
-  data: Prisma.ProfileSpouseCreateManyProfile1Input | Prisma.ProfileSpouseCreateManyProfile1Input[]
+export type ProfileSpouseCreateManyProfileInputEnvelope = {
+  data: Prisma.ProfileSpouseCreateManyProfileInput | Prisma.ProfileSpouseCreateManyProfileInput[]
   skipDuplicates?: boolean
 }
 
-export type ProfileSpouseCreateWithoutProfile2Input = {
-  marriageDate?: Date | string | null
-  divorceDate?: Date | string | null
-  profile1: Prisma.ProfileCreateNestedOneWithoutSpousesFromInput
-}
-
-export type ProfileSpouseUncheckedCreateWithoutProfile2Input = {
-  id?: number
-  profile1Id: number
-  marriageDate?: Date | string | null
-  divorceDate?: Date | string | null
-}
-
-export type ProfileSpouseCreateOrConnectWithoutProfile2Input = {
+export type ProfileSpouseUpsertWithWhereUniqueWithoutProfileInput = {
   where: Prisma.ProfileSpouseWhereUniqueInput
-  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input>
+  update: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfileInput, Prisma.ProfileSpouseUncheckedUpdateWithoutProfileInput>
+  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfileInput, Prisma.ProfileSpouseUncheckedCreateWithoutProfileInput>
 }
 
-export type ProfileSpouseCreateManyProfile2InputEnvelope = {
-  data: Prisma.ProfileSpouseCreateManyProfile2Input | Prisma.ProfileSpouseCreateManyProfile2Input[]
-  skipDuplicates?: boolean
-}
-
-export type ProfileSpouseUpsertWithWhereUniqueWithoutProfile1Input = {
+export type ProfileSpouseUpdateWithWhereUniqueWithoutProfileInput = {
   where: Prisma.ProfileSpouseWhereUniqueInput
-  update: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedUpdateWithoutProfile1Input>
-  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile1Input>
+  data: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfileInput, Prisma.ProfileSpouseUncheckedUpdateWithoutProfileInput>
 }
 
-export type ProfileSpouseUpdateWithWhereUniqueWithoutProfile1Input = {
-  where: Prisma.ProfileSpouseWhereUniqueInput
-  data: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfile1Input, Prisma.ProfileSpouseUncheckedUpdateWithoutProfile1Input>
-}
-
-export type ProfileSpouseUpdateManyWithWhereWithoutProfile1Input = {
+export type ProfileSpouseUpdateManyWithWhereWithoutProfileInput = {
   where: Prisma.ProfileSpouseScalarWhereInput
-  data: Prisma.XOR<Prisma.ProfileSpouseUpdateManyMutationInput, Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile1Input>
+  data: Prisma.XOR<Prisma.ProfileSpouseUpdateManyMutationInput, Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfileInput>
 }
 
 export type ProfileSpouseScalarWhereInput = {
@@ -529,78 +426,30 @@ export type ProfileSpouseScalarWhereInput = {
   OR?: Prisma.ProfileSpouseScalarWhereInput[]
   NOT?: Prisma.ProfileSpouseScalarWhereInput | Prisma.ProfileSpouseScalarWhereInput[]
   id?: Prisma.IntFilter<"ProfileSpouse"> | number
-  profile1Id?: Prisma.IntFilter<"ProfileSpouse"> | number
-  profile2Id?: Prisma.IntFilter<"ProfileSpouse"> | number
+  profileId?: Prisma.IntFilter<"ProfileSpouse"> | number
   marriageDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
   divorceDate?: Prisma.DateTimeNullableFilter<"ProfileSpouse"> | Date | string | null
 }
 
-export type ProfileSpouseUpsertWithWhereUniqueWithoutProfile2Input = {
-  where: Prisma.ProfileSpouseWhereUniqueInput
-  update: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedUpdateWithoutProfile2Input>
-  create: Prisma.XOR<Prisma.ProfileSpouseCreateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedCreateWithoutProfile2Input>
-}
-
-export type ProfileSpouseUpdateWithWhereUniqueWithoutProfile2Input = {
-  where: Prisma.ProfileSpouseWhereUniqueInput
-  data: Prisma.XOR<Prisma.ProfileSpouseUpdateWithoutProfile2Input, Prisma.ProfileSpouseUncheckedUpdateWithoutProfile2Input>
-}
-
-export type ProfileSpouseUpdateManyWithWhereWithoutProfile2Input = {
-  where: Prisma.ProfileSpouseScalarWhereInput
-  data: Prisma.XOR<Prisma.ProfileSpouseUpdateManyMutationInput, Prisma.ProfileSpouseUncheckedUpdateManyWithoutProfile2Input>
-}
-
-export type ProfileSpouseCreateManyProfile1Input = {
+export type ProfileSpouseCreateManyProfileInput = {
   id?: number
-  profile2Id: number
   marriageDate?: Date | string | null
   divorceDate?: Date | string | null
 }
 
-export type ProfileSpouseCreateManyProfile2Input = {
-  id?: number
-  profile1Id: number
-  marriageDate?: Date | string | null
-  divorceDate?: Date | string | null
-}
-
-export type ProfileSpouseUpdateWithoutProfile1Input = {
+export type ProfileSpouseUpdateWithoutProfileInput = {
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile2?: Prisma.ProfileUpdateOneRequiredWithoutSpousesToNestedInput
 }
 
-export type ProfileSpouseUncheckedUpdateWithoutProfile1Input = {
+export type ProfileSpouseUncheckedUpdateWithoutProfileInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile2Id?: Prisma.IntFieldUpdateOperationsInput | number
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
-export type ProfileSpouseUncheckedUpdateManyWithoutProfile1Input = {
+export type ProfileSpouseUncheckedUpdateManyWithoutProfileInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile2Id?: Prisma.IntFieldUpdateOperationsInput | number
-  marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-}
-
-export type ProfileSpouseUpdateWithoutProfile2Input = {
-  marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile1?: Prisma.ProfileUpdateOneRequiredWithoutSpousesFromNestedInput
-}
-
-export type ProfileSpouseUncheckedUpdateWithoutProfile2Input = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile1Id?: Prisma.IntFieldUpdateOperationsInput | number
-  marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-}
-
-export type ProfileSpouseUncheckedUpdateManyWithoutProfile2Input = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  profile1Id?: Prisma.IntFieldUpdateOperationsInput | number
   marriageDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   divorceDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -609,66 +458,54 @@ export type ProfileSpouseUncheckedUpdateManyWithoutProfile2Input = {
 
 export type ProfileSpouseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  profile1Id?: boolean
-  profile2Id?: boolean
+  profileId?: boolean
   marriageDate?: boolean
   divorceDate?: boolean
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["profileSpouse"]>
 
 export type ProfileSpouseSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  profile1Id?: boolean
-  profile2Id?: boolean
+  profileId?: boolean
   marriageDate?: boolean
   divorceDate?: boolean
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["profileSpouse"]>
 
 export type ProfileSpouseSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  profile1Id?: boolean
-  profile2Id?: boolean
+  profileId?: boolean
   marriageDate?: boolean
   divorceDate?: boolean
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["profileSpouse"]>
 
 export type ProfileSpouseSelectScalar = {
   id?: boolean
-  profile1Id?: boolean
-  profile2Id?: boolean
+  profileId?: boolean
   marriageDate?: boolean
   divorceDate?: boolean
 }
 
-export type ProfileSpouseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profile1Id" | "profile2Id" | "marriageDate" | "divorceDate", ExtArgs["result"]["profileSpouse"]>
+export type ProfileSpouseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "marriageDate" | "divorceDate", ExtArgs["result"]["profileSpouse"]>
 export type ProfileSpouseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }
 export type ProfileSpouseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }
 export type ProfileSpouseIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  profile1?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
-  profile2?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
 }
 
 export type $ProfileSpousePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ProfileSpouse"
   objects: {
-    profile1: Prisma.$ProfilePayload<ExtArgs>
-    profile2: Prisma.$ProfilePayload<ExtArgs>
+    profile: Prisma.$ProfilePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    profile1Id: number
-    profile2Id: number
+    profileId: number
     marriageDate: Date | null
     divorceDate: Date | null
   }, ExtArgs["result"]["profileSpouse"]>
@@ -1065,8 +902,7 @@ readonly fields: ProfileSpouseFieldRefs;
  */
 export interface Prisma__ProfileSpouseClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  profile1<T extends Prisma.ProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  profile2<T extends Prisma.ProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profile<T extends Prisma.ProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1097,8 +933,7 @@ export interface Prisma__ProfileSpouseClient<T, Null = never, ExtArgs extends ru
  */
 export interface ProfileSpouseFieldRefs {
   readonly id: Prisma.FieldRef<"ProfileSpouse", 'Int'>
-  readonly profile1Id: Prisma.FieldRef<"ProfileSpouse", 'Int'>
-  readonly profile2Id: Prisma.FieldRef<"ProfileSpouse", 'Int'>
+  readonly profileId: Prisma.FieldRef<"ProfileSpouse", 'Int'>
   readonly marriageDate: Prisma.FieldRef<"ProfileSpouse", 'DateTime'>
   readonly divorceDate: Prisma.FieldRef<"ProfileSpouse", 'DateTime'>
 }

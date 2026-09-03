@@ -1129,8 +1129,7 @@ export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeo
 
 export const ProfileSpouseScalarFieldEnum = {
   id: 'id',
-  profile1Id: 'profile1Id',
-  profile2Id: 'profile2Id',
+  profileId: 'profileId',
   marriageDate: 'marriageDate',
   divorceDate: 'divorceDate'
 } as const
