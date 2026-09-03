@@ -6,9 +6,9 @@ import { componentTokens } from './colorPalete';
 interface NavbarProps {
   brandName?: string;
   btnText1?: string;
-  btnHref1?: string;
+  btnHref1?: React.ReactNode;
   btnOnClick1?: () => void;
-  btnText2?: string;
+  btnText2?: React.ReactNode;
   btnHref2?: string;
   btnOnClick2?: () => void;
   themeMode?: 'light';
@@ -40,7 +40,7 @@ export function Navbar({
       >
         <Link
           href="/"
-          className="rounded-md font-bold text-lg sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
+          className="grid grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1 rounded-md font-bold text-lg sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
           aria-label={`${brandName} Home`}
           style={{
             ['--tw-ring-color' as string]: tokens.focusRing,

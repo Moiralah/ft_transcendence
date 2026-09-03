@@ -7,11 +7,12 @@ import Link from 'next/link';
 import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
+import { TreeBanner } from '../../components/treeBanner';
 
 
 export default function TreePage() {
   const router = useRouter();
-  // const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
   const [myTrees, setMyTrees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,18 +28,18 @@ export default function TreePage() {
   const [joinName, setJoinName] = useState('');
   const [joinCode, setJoinCode] = useState('');
 
-  // // Search
-  // const [searchQuery, setSearchQuery] = useState('');
-  // const [searchResults, setSearchResults] = useState([]);
-  // const [showSearch, setShowSearch] = useState(false);
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearch, setShowSearch] = useState(false);
 
-  // useEffect(() => {
-  //   if (!token) {
-  //     router.push('/login');
-  //     return;
-  //   }
-  //   fetchMyTrees(token);
-  // }, [token]);
+  useEffect(() => {
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    fetchMyTrees(token);
+  }, [token]);
   
   const fetchMyTrees = async (authToken: string) => {
     try {
@@ -57,13 +58,13 @@ export default function TreePage() {
 
   const createTree = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('ft_token');
+    // const token = localStorage.getItem('ft_token');
   
-    if (!token) {
-      alert('Please log in again.');
-      router.push('/login');
-      return;
-    }
+    // if (!token) {
+    //   alert('Please log in again.');
+    //   router.push('/login');
+    //   return;
+    // }
   
     // Ensure fallback URL if env variable is undefined
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
@@ -100,13 +101,13 @@ export default function TreePage() {
 
   const joinTree = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('ft_token');
+    // const token = localStorage.getItem('ft_token');
   
-    if (!token) {
-      alert('Please log in again.');
-      router.push('/login');
-      return;
-    }
+    // if (!token) {
+    //   alert('Please log in again.');
+    //   router.push('/login');
+    //   return;
+    // }
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
         method: 'POST',
@@ -126,20 +127,20 @@ export default function TreePage() {
     }
   };
 
-  // const searchTrees = async () => {
-  //   if (!searchQuery.trim()) return;
-  //   try {
-  //     const res = await fetch(
-  //       `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`
-  //     );
-  //     if (!res.ok) throw new Error('Search failed');
-  //     const data = await res.json();
-  //     setSearchResults(data);
-  //     setShowSearch(true);
-  //   } catch (err: any) {
-  //     alert(err.message);
-  //   }
-  // };
+  const searchTrees = async () => {
+    if (!searchQuery.trim()) return;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`
+      );
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      setSearchResults(data);
+      setShowSearch(true);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   // if (loading) return <div className="p-8">Loading your trees...</div>;
   // if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
@@ -149,15 +150,61 @@ export default function TreePage() {
       <SkipLink />
       <header id="navbar" tabIndex={-1} className="focus:outline-none">
         <Navbar 
-          btnText1="+ Create Tree" 
+          btnText1={<p className={`flex gap-1`}>
+              <span>
+                + Create
+              </span>
+              <span className={`hidden md:block`}>
+                Tree
+              </span>
+            </p>} 
           btnOnClick1={() => setShowCreateModal(true)}
-          btnText2="Join Tree" 
+          btnText2={
+            <p className="flex gap-1">
+              <span>Join</span>
+              <span className={'hidden md:block'}>Tree</span>
+            </p>
+          }
           btnOnClick2={() => setShowJoinModal(true)}
         />
       </header>
-      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
+        {/*Search*/}
+        <div className="flex w-full max-w gap-2 mb-6">
+          <input
+            type="text"
+            placeholder="Search trees or profiles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="border rounded-lg"
+          />
+          <button
+            onClick={searchTrees}
+            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+          >
+          Search
+          </button>
+        </div>
+
+          {/* My Trees List */}
+         <div className="grid gap-4">
+           <h2 className="text-xl font-semibold text-gray-700">Your Trees</h2>
+           {myTrees.length === 0 ? (
+            <p className="text-gray-500">You haven't joined any trees yet.</p>
+          ) : (
+            myTrees.map((tree: any) => (
+              <Link
+                key={tree.id}
+                href={`/dashboard?treeId=${tree.id}`}
+                className="block bg-white p-4 rounded-lg shadow hover:shadow-md transition border border-gray-200"
+              >
+                <TreeBanner name={tree.name} code={tree.code} userRole={tree.userRole} profiles={tree.profiles} owner={tree.owner}/>
+              </Link>
+            ))
+          )}
+        </div> 
       </main>
-      <footer id="footer" tabIndex={-1} className="focus:outline-none">
+      <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
         <Footer/>
       </footer>
 
@@ -239,79 +286,36 @@ export default function TreePage() {
           </div>
         )}
         
+
+
+        { /* Search Results Modal */}
+        {showSearch && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Search Results</h2>
+                <button onClick={() => setShowSearch(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              {searchResults.length === 0 ? (
+                <p className="text-gray-500">No results found.</p>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((tree: any) => (
+                    <div key={tree.id} className="border p-3 rounded-lg">
+                      <div className="font-semibold">{tree.name}</div>
+                      <div className="text-sm text-gray-500">Code: {tree.code}</div>
+                      <div className="text-sm text-gray-500">Owner: {tree.owner?.username}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )} 
+
     </div>
+
   );
 }
 
 
-//         {/* Search */}
-//         { <div className="flex gap-2 mb-6">
-//           <input
-//             type="text"
-//             placeholder="Search trees or profiles..."
-//             value={searchQuery}
-//             onChange={(e) => setSearchQuery(e.target.value)}
-//             className="flex-1 border rounded-lg px-4 py-2"
-//           />
-//           <button
-//             onClick={searchTrees}
-//             className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-//           >
-//             Search
-//           </button>
-//         </div> }
-
-//         { My Trees List
-//         <div className="grid gap-4">
-//           <h2 className="text-xl font-semibold text-gray-700">Your Trees</h2>
-//           {myTrees.length === 0 ? (
-//             <p className="text-gray-500">You haven't joined any trees yet.</p>
-//           ) : (
-//             myTrees.map((tree: any) => (
-//               <Link
-//                 key={tree.id}
-//                 href={`/dashboard?treeId=${tree.id}`}
-//                 className="block bg-white p-4 rounded-lg shadow hover:shadow-md transition border border-gray-200"
-//               >
-//                 <div className="flex justify-between items-center">
-//                   <div>
-//                     <h3 className="text-lg font-semibold text-gray-800">{tree.name}</h3>
-//                     <p className="text-sm text-gray-500">Code: {tree.code}</p>
-//                     <p className="text-sm text-gray-500">
-//                       Role: <span className="font-medium text-amber-600">{tree.userRole}</span>
-//                     </p>
-//                     <p className="text-xs text-gray-400">{tree.profiles?.length || 0} profiles</p>
-//                   </div>
-//                   <div className="text-sm text-gray-400">
-//                     Owner: {tree.owner?.username || 'Unknown'}
-//                   </div>
-//                 </div>
-//               </Link>
-//             ))
-//           )}
-//         </div> }
-
-        // { Search Results Modal
-        // {showSearch && (
-        //   <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        //     <div className="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto p-6">
-        //       <div className="flex justify-between items-center mb-4">
-        //         <h2 className="text-xl font-bold">Search Results</h2>
-        //         <button onClick={() => setShowSearch(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-        //       </div>
-        //       {searchResults.length === 0 ? (
-        //         <p className="text-gray-500">No results found.</p>
-        //       ) : (
-        //         <div className="space-y-2">
-        //           {searchResults.map((tree: any) => (
-        //             <div key={tree.id} className="border p-3 rounded-lg">
-        //               <div className="font-semibold">{tree.name}</div>
-        //               <div className="text-sm text-gray-500">Code: {tree.code}</div>
-        //               <div className="text-sm text-gray-500">Owner: {tree.owner?.username}</div>
-        //             </div>
-        //           ))}
-        //         </div>
-        //       )}
-        //     </div>
-        //   </div>
-        // )} }

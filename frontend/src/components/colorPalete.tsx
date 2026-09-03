@@ -1,6 +1,7 @@
 // colorPalete.ts
 
 import { FeaturesGrid } from "./featureGrid";
+import { TreeBanner } from "./treeBanner";
 
 export const primitives = {
     slate: {
@@ -41,6 +42,12 @@ export const primitives = {
       500: '#10B981',
       700: '#047857',
     },
+    gray: {
+      400: '#9CA3AF',
+      500: '#6B7280',
+      600: '#4B5563',
+      800: '#1F2937',
+    },
     white: '#FFFFFF',
     black: '#000000',
     transparent: 'transparent',
@@ -71,6 +78,9 @@ export const primitives = {
         badge: primitives.amber[700],
         highlight: primitives.amber[700],
         Card: primitives.amber[800],
+        bannerHeading: primitives.gray[800],
+        bannerSpan: primitives.gray[400],
+        bannerRole: primitives.amber[600],
       },
       border: {
         subtle: primitives.slate[800],
@@ -146,5 +156,13 @@ export const primitives = {
             border: s.border.banner,
             borderCard: s.border.featureCard,
         };
+    },
+    TreeBanner: (themeMode: 'light') => {
+      const s = semantics[themeMode] || semantics.light;
+      return {
+            textHeader: s.text.bannerHeading,
+            textSpan: s.text.bannerSpan,
+            textRole: s.text.bannerRole,
+      };
     },
   };
