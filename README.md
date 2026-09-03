@@ -1,58 +1,184 @@
-# ft_transcendence
+👨‍👩‍👧‍👦 Family Tree – ft_transcendence
+📍 Summary
 
-Script to copy all file with path to feed to AI
-run at wsl terminal
+We are building a family tree & collaboration platform using Next.js (frontend), NestJS (backend), Prisma (ORM), Supabase (auth), PostgreSQL, and Tailwind CSS.
 
-find /home/huidris/Desktop/ft_transcendence/ -type f -not -path '*/.git/*' -not -path '*/.agents/*' -not -path '*/.claude/*' -not -path '*/.windsurf/*' -not -path '*/.next/*' -not -path '*/dist/*' -not -path '*/node_modules/*' -not -name '*.gz' -not -name 'package-lock.json' | while read -r file; do echo -e "\n=== FILENAME: ${file#/home/huidris/Desktop/ft_transcendence/} ===\n" >> /home/huidris/Desktop/ft_transcendence/code.txt; cat "$file" >> /home/huidris/Desktop/ft_transcendence/code.txt; done
+The current codebase have:
 
+    User authentication with Supabase (email/password + Google/GitHub OAuth)
 
-Creating a family tree platform
+    JWT token handling
 
-How to run
+    Basic tree and profile (person) management
 
-make up
-make logs
+    Role‑based permissions within trees (ADMIN, MODERATOR, MEMBER, VIEWER)
 
-Open on browser http://localhost:3000/login
+    A custom design system with a colour palette, typography, and reusable components (10+ components)
 
-Sign in with
-Email: admin@family.test
-Password: password
+    Containerised deployment with Docker / docker‑compose
 
-PROJECT FLOW
-Database – PostgreSQL 16 (containerised), storing users and persons tables.
+All services run with a single make up command.
+🧩 Modules – Progress & To‑Do
 
-Backend – NestJS (Node.js framework) with:
+We have chosen the following modules.
+Completed ✅ are already functional; In‑progress 🔄 need finishing; Not started ❌ need implementation.
+Module	Type	Points	Status	Notes
+Use a frontend framework (React/Next.js)	Minor	1	✅ Done	Next.js 14
+Use a backend framework (NestJS)	Minor	1	✅ Done	NestJS 10
+Use an ORM (Prisma)	Minor	1	✅ Done	Prisma with Supabase Postgres
+Custom design system with ≥10 reusable components	Minor	1	✅ Done	Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink
+Remote authentication with OAuth 2.0 (Google, GitHub)	Minor	1	✅ Done	Supabase OAuth integrated
+Standard user management and authentication	Major	2	🔄 Partial	Login/signup working, but still need: avatar upload, friends system, online status, profile page
+Advanced permissions system (global roles)	Major	2	🔄 Partial	Tree‑specific roles exist, but global user roles (admin, moderator) are missing; need CRUD for users
+Organization system (trees as orgs)	Major	2	🔄 Partial	Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system
+Real‑time features (WebSockets)	Major	2	❌ Not started	Chat, real‑time updates, notifications
+Public API with secured API key, rate limiting, docs, ≥5 endpoints	Major	2	❌ Not started	Need to expose a public API for e.g. public trees or profiles
+Complete notification system for CRUD actions	Minor	1	❌ Not started	Should be integrated with WebSockets
+Real‑time collaborative features (shared workspaces, live editing)	Minor	1	❌ Not started	Could be part of WebSocket real‑time features
+Advanced search with filters, sorting, pagination	Minor	1	❌ Not started	For trees and profiles
+Complete accessibility compliance (WCAG 2.1 AA)	Major	2	❌ Not started	Need audit and fixes (keyboard nav, screen reader, ARIA)
+Support for additional browsers (Firefox, Safari, Edge)	Minor	1	❌ Not started	Test and document cross‑browser compatibility
+2FA (Two‑Factor Authentication)	Minor	1	❌ Not started	TOTP or SMS
+User activity analytics dashboard	Minor	1	❌ Not started	Show user actions, logs, insights
+Total possible points
 
-pg for raw SQL queries (no ORM, though you have class-validator and class-transformer installed).
+Completed so far: 1+1+1+1+1 = 5 points
+Remaining (if we implement everything) = 2+2+2+2+2+1+1+1+1+2+1+1+1+1 = 18 points
+Minimum required: 14 points – we have more than enough, so we can choose which to prioritise.
+📋 1‑Week Plan (4 People)
 
-@nestjs/jwt + passport-jwt for JWT‑based authentication.
+We have one week left. Below is a task breakdown by person. Each task includes a rough effort estimate.
+👤 Person A – Real‑time & Notifications
 
-@nestjs/config for environment variables.
+    Real‑time features (WebSockets) – 2 pts
 
-bcryptjs for password hashing.
+        Set up WebSocket gateway in NestJS
 
-Frontend – Next.js 14 (React framework) with client‑side authentication and a simple dashboard.
+        Implement chat between users (direct and tree‑based)
 
-Docker orchestrates three services:
+        Handle connection/disconnection, broadcast events
 
-db – PostgreSQL container with initialisation script (init.sql).
+    Notification system – 1 pt
 
-backend – NestJS API, depends on a healthy db.
+        Create notification model (Prisma)
 
-frontend – Next.js app, depends on backend.
+        Push notifications on create/update/delete actions
 
-AUTHENTICATION FLOW
-User visits http://localhost:3000/login, enters admin@family.test / password.
+        Display notifications in frontend (with real‑time updates)
 
-Frontend sends a POST /auth/login request to the backend API (http://backend:4000 via container networking, or http://localhost:4000 if running natively).
+👤 Person B – Public API & Search
 
-Backend (in AuthService.login) queries the users table for the given email, compares the provided password with the stored hash using bcrypt.compare, and if valid, generates a JWT token using @nestjs/jwt.
+    Public API – 2 pts
 
-The backend responds with { accessToken: "...", user: {...} }.
+        Design public endpoints (e.g., /api/public/trees, /api/public/profiles)
 
-Frontend stores the token in localStorage (key 'ft_token') and redirects to /dashboard.
+        Secure with API key (header)
 
-The dashboard fetches /persons by including the token in the Authorization: Bearer <token> header.
+        Add rate limiting (e.g., using @nestjs/throttler)
 
-The backend validates the JWT via JwtStrategy and returns the list of persons.
+        Document using OpenAPI/Swagger
+
+    Advanced search – 1 pt
+
+        Implement search endpoint with filters (name, date, tree)
+
+        Add sorting and pagination (Prisma skip/take)
+
+        Frontend search UI
+
+👤 Person C – User Management
+
+    Complete user management – 2 pts
+
+        Profile page (view/edit)
+
+        Avatar upload (file upload)
+
+        Friends system (add/remove, list)
+
+        Online status (using WebSocket presence)
+
+	Advanced permissions (global roles) – 2 pts
+
+        Add role field to User (admin, user, moderator)
+
+        Implement user management UI (list, edit, delete, change roles)
+
+        Restrict admin panel to admins
+
+👤 Person D – Accessibility, Permissions & Browsers
+
+    Accessibility (WCAG 2.1 AA) – 2 pts
+
+        Audit with Lighthouse/axe
+
+        Fix keyboard navigation, ARIA labels, semantic HTML
+
+        Ensure screen reader compatibility
+
+    Additional browsers – 1 pt
+
+        Test on Firefox, Safari (macOS), Edge
+
+        Fix layout/CSS issues
+
+        Document differences
+
+	2FA – 1 pt
+
+        TOTP setup, verification, recovery codes
+
+Shared / Overflow Tasks
+
+    Organization system (trees as orgs) – 2 pts (can be split among A, C, D)
+
+        Edit/delete tree (admin only)
+
+        Add/remove members via UI (admin only)
+
+        Invitation system (already has model, need frontend)
+
+    Real‑time collaborative features – 1 pt (can be included in Person A’s WebSocket work)
+
+🗃️ Codebase Overview (What’s Already Done)
+Frontend (Next.js)
+
+    /app/page.tsx – landing page with design system components
+
+    /app/login – login with email/password and OAuth buttons
+
+    /app/signup – signup with validation
+
+    /app/tree – list of user’s trees, create/join/search modals
+
+    /app/dashboard – tree view with members, profiles, role management
+
+    /app/consent – OAuth callback handler
+
+    Design system: components (Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink)
+
+Backend (NestJS)
+
+    src/api/auth – Supabase OAuth + JWT
+
+    src/api/profile – CRUD for persons (renamed Profile)
+
+    src/api/tree – tree creation, joining, search, members, roles
+
+    src/prisma – Prisma client with PrismaPg driver adapter
+
+    src/supabase – Supabase client module
+
+    Database schema (Prisma) with User, Tree, TreeMember, Invitation, Profile, ProfileSpouse, Event, AuditLog
+
+    Global prefix /api – routes are /api/auth/login, /api/trees/..., etc.
+
+Deployment
+
+    Docker & docker‑compose with development volumes
+
+    make up starts all services
+
+    Backend uses HTTPS with self‑signed certificate (mounted from ./certs)
+
+    Frontend uses next dev --experimental-https
