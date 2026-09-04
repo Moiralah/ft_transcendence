@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography } from './typograph';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface SectionHeaderProps {
   id: string;

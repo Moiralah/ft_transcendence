@@ -1,5 +1,3 @@
-// colorPalete.ts
-
 import { FeaturesGrid } from "./featureGrid";
 import { TreeBanner } from "./treeBanner";
 

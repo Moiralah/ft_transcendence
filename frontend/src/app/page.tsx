@@ -8,7 +8,7 @@ import { FeaturesGrid } from '../components/featureGrid';
 
 import { featureItems } from '../data/featureItem';
 import { toolItems } from '../data/toolItem';
-import { componentTokens } from '@/components/colorPalete';
+import { componentTokens } from '@/components/colorPalette';
 
 export default function main() {
 

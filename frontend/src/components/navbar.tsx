@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from './button';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface NavbarProps {
   brandName?: string;

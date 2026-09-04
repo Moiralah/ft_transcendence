@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { Icon } from './icon';
 import { Typography } from './typograph';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface FeatureCardProps {
     icon: string;

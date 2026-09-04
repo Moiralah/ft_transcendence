@@ -2,7 +2,7 @@
 import React from 'react';
 import { Typography } from './typograph';
 import { Button } from './button';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface BannerAction {
   label: string;

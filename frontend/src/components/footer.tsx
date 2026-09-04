@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface FooterProps {
   copyrightText?: string;

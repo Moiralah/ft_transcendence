@@ -1,5 +1,6 @@
 "use client";
 
+import { React } from 'react'; 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,25 +9,23 @@ import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
 import { TreeBanner } from '../../components/treeBanner';
+import { ModalBanner } from '@/components/modalBanner';
 
 
 export default function TreePage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
-  const [myTrees, setMyTrees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // // Create Tree Modal
+  // //  Modal  
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
   const [newTreeName, setNewTreeName] = useState('');
   const [newTreeDesc, setNewTreeDesc] = useState('');
 
-  // // Join Tree Modal
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [joinName, setJoinName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const [myTrees, setMyTrees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,15 +57,7 @@ export default function TreePage() {
 
   const createTree = async (e: React.FormEvent) => {
     e.preventDefault();
-    // const token = localStorage.getItem('ft_token');
-  
-    // if (!token) {
-    //   alert('Please log in again.');
-    //   router.push('/login');
-    //   return;
-    // }
-  
-    // Ensure fallback URL if env variable is undefined
+ 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
   
     try {
@@ -101,13 +92,7 @@ export default function TreePage() {
 
   const joinTree = async (e: React.FormEvent) => {
     e.preventDefault();
-    // const token = localStorage.getItem('ft_token');
-  
-    // if (!token) {
-    //   alert('Please log in again.');
-    //   router.push('/login');
-    //   return;
-    // }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
         method: 'POST',
@@ -208,43 +193,14 @@ export default function TreePage() {
         <Footer/>
       </footer>
 
-      { /* Create Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-md w-full p-6">
-              <h2 className="text-2xl font-bold mb-4">Create New Tree</h2>
-              <form onSubmit={createTree}>
-                <input
-                  type="text"
-                  placeholder="Tree Name"
-                  value={newTreeName}
-                  onChange={(e) => setNewTreeName(e.target.value)}
-                  className="w-full border rounded px-4 py-2 mb-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Description (optional)"
-                  value={newTreeDesc}
-                  onChange={(e) => setNewTreeDesc(e.target.value)}
-                  className="w-full border rounded px-4 py-2 mb-3"
-                />
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-amber-500 text-white py-2 rounded-lg hover:bg-amber-600">
-                    Create
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+      {/* Create Modal */}
+      {showCreateModal && (
+      <ModalBanner
+        modalForm={createTree} 
+        title="Create Tree"
+        onClose={() => setShowCreateModal(false)} 
+      />
+      )}
 
 
         {/* Join Modal */}
