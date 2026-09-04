@@ -5,6 +5,10 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
+import { SkipLink } from '@/components/SkipLink';
+import { Navbar } from '@/components/navbar';
+import { Footer } from '@/components/footer';
+
 export default function LoginPage() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
@@ -52,17 +56,30 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="card">
-			<h1>Login</h1>
-			<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
-			<button onClick={() => handleOAuthLogin('github')}>Sign in with GitHub</button>
-			<hr />
-			<form onSubmit={handleEmailLogin}>
-				<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-				<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-				<button type="submit">Sign in with email</button>
-			</form>
-			{error && <div className="error">{error}</div>}
-		</div>
+	    <div className="flex flex-col min-h-screen text-slate-800 font-sans">
+      		<SkipLink />
+    		<header>
+      			<Navbar />
+    		</header>
+    		<main className="flex flex-1 ">
+				<div className="card">
+					<h1>Login</h1>
+					<hr />
+					<form onSubmit={handleEmailLogin} className="mb-3">
+						<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+						<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+						<button type="submit">Sign in with email</button>
+					</form>
+					{error && <div className="error">{error}</div>}
+					<div  className="flex flex-col gap-3 ">
+						<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
+						<button onClick={() => handleOAuthLogin('github')}>Sign in with GitHub</button>
+					</div>
+				</div>
+		    </main>
+      		<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
+        		<Footer/>
+      		</footer>
+    	</div>
 	);
 }

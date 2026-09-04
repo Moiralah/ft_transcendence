@@ -127,8 +127,8 @@ export default function TreePage() {
     }
   };
 
-  // if (loading) return <div className="p-8">Loading your trees...</div>;
-  // if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
+  if (loading) return <div className="p-8">Loading your trees...</div>;
+  if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen text-slate-800 font-sans">
@@ -165,7 +165,7 @@ export default function TreePage() {
           />
           <button
             onClick={searchTrees}
-            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
           >
           Search
           </button>
@@ -203,45 +203,15 @@ export default function TreePage() {
       )}
 
 
-        {/* Join Modal */}
-        { showJoinModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-md w-full p-6">
-              <h2 className="text-2xl font-bold mb-4">Join a Tree</h2>
-              <form onSubmit={joinTree}>
-                <input
-                  type="text"
-                  placeholder="Tree Name"
-                  value={joinName}
-                  onChange={(e) => setJoinName(e.target.value)}
-                  className="w-full border rounded px-4 py-2 mb-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Tree Code"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  className="w-full border rounded px-4 py-2 mb-3 uppercase"
-                  required
-                />
-                <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
-                    Join
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowJoinModal(false)}
-                    className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        
+      {/* Join Modal */}
+      { showJoinModal && (
+      <ModalBanner
+        modalForm={joinTree} 
+        title="Join Tree"
+        onClose={() => setShowJoinModal(false)} 
+      />
+      )}
+
 
 
         { /* Search Results Modal */}
