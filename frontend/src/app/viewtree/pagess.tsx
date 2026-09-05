@@ -1,8 +1,10 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, isWithinInterval, addDays, parseISO } from "date-fns";
+import Tree from 'react-d3-tree';
 
 // ---------- Types ----------
 type Person = {
@@ -33,11 +35,7 @@ type PersonFormData = {
 // ---------- Main Component ----------
 export default function ViewTree() {
 	const router = useRouter();
-	const searchParams = useSearchParams();   // ✅ now defined
 	const token = typeof window !== "undefined" ? localStorage.getItem("ft_token") : null;
-
-	// Get the treeId from URL (optional)
-	const treeId = searchParams.get('treeId'); // e.g., ?treeId=5
 
 	// --- State ---
 	const [persons, setPersons] = useState<Person[]>([]);
@@ -64,6 +62,8 @@ export default function ViewTree() {
 		motherId: "",
 		fatherId: "",
 	});
+
+	const [treeData, setTreeData] = useState<any>(null);
 
 	// --- Fetch persons ---
 	const fetchPersons = async () => {
@@ -92,6 +92,24 @@ export default function ViewTree() {
 			setLoading(false);
 		}
 	};
+
+	const searchParams = useSearchParams();   // ✅ now defined
+
+	// Get the treeId from URL
+	const treeId = searchParams.get('treeId'); // e.g., ?treeId=5
+
+	useEffect(() => {
+		const fetchTree = async () => {
+			// Get rootId from URL query (e.g., ?rootId=1) or use a default (first person)
+			const rootId = searchParams.get('rootId') || '1'; // implement searchParams
+			const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/tree/${rootId}`, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			const data = await res.json();
+			setTreeData(data);
+		};
+		if (token) fetchTree();
+	}, [token]);
 
 	useEffect(() => {
 		fetchPersons();
@@ -211,6 +229,7 @@ export default function ViewTree() {
 			.filter((p) => p.birthDate)
 			.filter((p) => {
 				const birth = parseISO(p.birthDate!);
+				// Approximate: check if month/day falls within next 30 days (ignoring year)
 				const thisYearBirth = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
 				return isWithinInterval(thisYearBirth, { start: today, end: next30Days });
 			})
@@ -223,6 +242,16 @@ export default function ViewTree() {
 				return aThisYear.getTime() - bThisYear.getTime();
 			});
 	}, [persons]);
+
+	function convertToD3Tree(node: any): any {
+		if (!node) return null;
+		const name = `${node.firstName} ${node.lastName || ''}`.trim() || 'Unknown';
+		return {
+			name,
+			attributes: { birthDate: node.birthDate, deathDate: node.deathDate },
+			children: (node.children || []).map(convertToD3Tree).filter(Boolean),
+		};
+	}
 
 	if (loading) return <div className="flex items-center justify-center h-screen">Loading your family tree...</div>;
 	if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -321,6 +350,38 @@ export default function ViewTree() {
 					onMouseUp={handleMouseUp}
 					onWheel={handleWheel}
 				>
+					<div
+						style={{
+							transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+							transformOrigin: "0 0",
+							width: "100%",
+							height: "100%",
+							position: "relative",
+						}}
+					>
+						{treeData && (
+							<Tree
+								data={convertToD3Tree(treeData)}
+								orientation="vertical"
+								pathFunc="step"
+								translate={{ x: 400, y: 100 }} // adjust to center
+								nodeSize={{ x: 200, y: 100 }}
+								separation={{ siblings: 1.5, nonSiblings: 2 }}
+								renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
+									<g>
+										<circle r={20} fill={nodeDatum.attributes?.gender === 'female' ? '#f9a8d4' : '#93c5fd'} />
+										<text fill="black" x="0" y="5" textAnchor="middle" fontSize="10">
+											{nodeDatum.name}
+										</text>
+										<text fill="gray" x="0" y="20" textAnchor="middle" fontSize="8">
+											{nodeDatum.attributes?.birthDate ? format(parseISO(nodeDatum.attributes.birthDate), 'dd MMM yyyy') : ''}
+										</text>
+									</g>
+								)}
+							/>
+						)}
+					</div>
+
 					<div
 						style={{
 							transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,

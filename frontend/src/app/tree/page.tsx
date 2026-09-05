@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import toast, { Toaster } from 'react-hot-toast';
-import { useAuditLogNotifications } from '@/hooks/notifications';
+import { useAuditLogNotifications } from '@/hooks/notification';
 
 type Profile = {
 	id: number;
