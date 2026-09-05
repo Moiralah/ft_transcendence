@@ -49,7 +49,7 @@ export default function LoginPage() {
 		const data = await res.json();
 		if (res.ok) {
 			localStorage.setItem('ft_token', data.accessToken);
-			router.push('/tree');
+			router.push('/dashboard');
 		} else {
 			setError(data.message || 'Login failed');
 		}

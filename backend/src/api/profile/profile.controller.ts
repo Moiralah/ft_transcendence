@@ -4,7 +4,7 @@ import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Profile } from '../../generated/browser';
 
-@Controller(`persons`)
+@Controller(`profile`)
 export class ProfileController {
 	constructor(private readonly profile: ProfileService) { }
 

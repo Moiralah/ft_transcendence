@@ -1,53 +1,73 @@
+// frontend/src/app/dashboard/page.tsx
 "use client";
 
-import { React } from 'react'; 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
 
-import { SkipLink } from '../../components/SkipLink';
-import { Navbar } from '../../components/navbar';
-import { Footer } from '../../components/footer';
-import { TreeBanner } from '../../components/treeBanner';
-import { ModalBanner } from '@/components/modalBanner';
+type Profile = {
+  id: number;
+  firstName: string;
+  lastName: string | null;
+  gender: string | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  motherId: number | null;
+  fatherId: number | null;
+};
 
+type TreeMember = {
+  id: number;
+  userId: string;
+  user: { username: string; email: string };
+  role: string;
+};
 
-export default function TreePage() {
+type Tree = {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  ownerId: string;
+  owner: { username: string };
+  userRole: string;
+  members: TreeMember[];
+  profiles: Profile[];
+};
+
+export default function Tree() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const treeIdParam = searchParams.get('treeId');
+
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
-  // //  Modal  
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const [newTreeName, setNewTreeName] = useState('');
-  const [newTreeDesc, setNewTreeDesc] = useState('');
-
-  const [myTrees, setMyTrees] = useState([]);
+  const [tree, setTree] = useState<Tree | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearch, setShowSearch] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
 
   useEffect(() => {
     if (!token) {
       router.push('/login');
       return;
     }
-    fetchMyTrees(token);
-  }, [token]);
-  
-  const fetchMyTrees = async (authToken: string) => {
+    if (treeIdParam) {
+      fetchTree(Number(treeIdParam));
+    } else {
+      router.push('/trees');
+    }
+  }, [treeIdParam]);
+
+  const fetchTree = async (id: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) throw new Error('Failed to fetch tree');
       const data = await res.json();
-      setMyTrees(data);
+      setTree(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -55,193 +75,140 @@ export default function TreePage() {
     }
   };
 
-  const createTree = async (e: React.FormEvent) => {
-    e.preventDefault();
- 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
-  
-    try {
-      const res = await fetch(`${apiUrl}/trees/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: newTreeName, description: newTreeDesc }),
-      });
-  
-      const data = await res.json().catch(() => ({}));
-  
-      if (!res.ok) {
-        // Show the actual server error message (e.g., data.message) instead of generic text
-        throw new Error(data.message || `Server responded with status ${res.status}`);
-      }
-  
-      setShowCreateModal(false);
-      setNewTreeName('');
-      setNewTreeDesc('');
-      
-      // Pass token to fetch updated trees list
-      if (typeof fetchMyTrees === 'function') {
-        fetchMyTrees(token);
-      }
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
-    }
-  };
+  const canEdit = (role: string) => ['ADMIN', 'MODERATOR', 'MEMBER'].includes(role);
+  const canManageMembers = (role: string) => ['ADMIN', 'MODERATOR'].includes(role);
 
-  const joinTree = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: joinName, code: joinCode }),
-      });
-      if (!res.ok) throw new Error('Join failed');
-      setShowJoinModal(false);
-      setJoinName('');
-      setJoinCode('');
-      fetchMyTrees(token);
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  const searchTrees = async () => {
-    if (!searchQuery.trim()) return;
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`
-      );
-      if (!res.ok) throw new Error('Search failed');
-      const data = await res.json();
-      setSearchResults(data);
-      setShowSearch(true);
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  if (loading) return <div className="p-8">Loading your trees...</div>;
+  if (loading) return <div className="p-8">Loading tree...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
+  if (!tree) return <div className="p-8">Tree not found. <Link href="/trees" className="text-amber-500">Go back</Link></div>;
 
   return (
-    <div className="flex flex-col min-h-screen text-slate-800 font-sans">
-      <SkipLink />
-      <header id="navbar" tabIndex={-1} className="focus:outline-none">
-        <Navbar 
-          btnText1={<p className={`flex gap-1`}>
-              <span>
-                + Create
-              </span>
-              <span className={`hidden md:block`}>
-                Tree
-              </span>
-            </p>} 
-          btnOnClick1={() => setShowCreateModal(true)}
-          btnText2={
-            <p className="flex gap-1">
-              <span>Join</span>
-              <span className={'hidden md:block'}>Tree</span>
-            </p>
-          }
-          btnOnClick2={() => setShowJoinModal(true)}
-        />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm p-4 border-b">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">{tree.name}</h1>
+            <p className="text-sm text-gray-500">Code: {tree.code} • Role: <span className="font-medium text-amber-600">{tree.userRole}</span></p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/trees" className="text-gray-600 hover:text-gray-800">← All Trees</Link>
+            <button
+              onClick={() => router.push('/login')}
+              className="text-red-500 hover:text-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </header>
-      <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
-        {/*Search*/}
-        <div className="flex w-full max-w gap-2 mb-6">
-          <input
-            type="text"
-            placeholder="Search trees or profiles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border rounded-lg"
-          />
+
+      <div className="flex-1 max-w-6xl mx-auto w-full p-4">
+        {/* Members Section */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
           <button
-            onClick={searchTrees}
-            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
+            onClick={() => setShowMembers(!showMembers)}
+            className="text-left w-full flex justify-between items-center"
           >
-          Search
+            <h2 className="text-lg font-semibold">Members ({tree.members.length})</h2>
+            <span>{showMembers ? '▼' : '▶'}</span>
           </button>
+          {showMembers && (
+            <div className="mt-2 space-y-2">
+              {tree.members.map((m) => (
+                <div key={m.id} className="flex justify-between items-center border-b pb-2">
+                  <div>
+                    <span className="font-medium">{m.user.username}</span>
+                    <span className="text-sm text-gray-500 ml-2">({m.user.email})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      m.role === 'ADMIN' ? 'bg-amber-100 text-amber-700' :
+                      m.role === 'MODERATOR' ? 'bg-blue-100 text-blue-700' :
+                      m.role === 'MEMBER' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {m.role}
+                    </span>
+                    {canManageMembers(tree.userRole) && m.userId !== tree.ownerId && (
+                      <select
+                        value={m.role}
+                        onChange={async (e) => {
+                          try {
+                            await fetch(
+                              `${process.env.NEXT_PUBLIC_API_URL}/trees/${tree.id}/role/${m.userId}`,
+                              {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ role: e.target.value }),
+                              }
+                            );
+                            fetchTree(tree.id);
+                          } catch (err) {
+                            alert('Failed to update role');
+                          }
+                        }}
+                        className="text-xs border rounded px-1 py-0.5"
+                      >
+                        <option value="ADMIN">Admin</option>
+                        <option value="MODERATOR">Moderator</option>
+                        <option value="MEMBER">Member</option>
+                        <option value="VIEWER">Viewer</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-          {/* My Trees List */}
-         <div className="grid gap-4">
-           <h2 className="text-xl font-semibold text-gray-700">Your Trees</h2>
-           {myTrees.length === 0 ? (
-            <p className="text-gray-500">You haven't joined any trees yet.</p>
+        {/* Profiles List */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-lg font-semibold mb-3">Profiles ({tree.profiles.length})</h2>
+          {tree.profiles.length === 0 ? (
+            <p className="text-gray-500">No profiles yet. Add your first family member!</p>
           ) : (
-            myTrees.map((tree: any) => (
-              <Link
-                key={tree.id}
-                href={`/dashboard?treeId=${tree.id}`}
-                className="block bg-white p-4 rounded-lg shadow hover:shadow-md transition border border-gray-200"
-              >
-                <TreeBanner name={tree.name} code={tree.code} userRole={tree.userRole} profiles={tree.profiles} owner={tree.owner}/>
-              </Link>
-            ))
-          )}
-        </div> 
-      </main>
-      <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
-        <Footer/>
-      </footer>
-
-      {/* Create Modal */}
-      {showCreateModal && (
-      <ModalBanner
-        modalForm={createTree} 
-        title="Create Tree"
-        onClose={() => setShowCreateModal(false)} 
-      />
-      )}
-
-
-      {/* Join Modal */}
-      { showJoinModal && (
-      <ModalBanner
-        modalForm={joinTree} 
-        title="Join Tree"
-        onClose={() => setShowJoinModal(false)} 
-      />
-      )}
-
-
-
-        { /* Search Results Modal */}
-        {showSearch && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Search Results</h2>
-                <button onClick={() => setShowSearch(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-              </div>
-              {searchResults.length === 0 ? (
-                <p className="text-gray-500">No results found.</p>
-              ) : (
-                <div className="space-y-2">
-                  {searchResults.map((tree: any) => (
-                    <div key={tree.id} className="border p-3 rounded-lg">
-                      <div className="font-semibold">{tree.name}</div>
-                      <div className="text-sm text-gray-500">Code: {tree.code}</div>
-                      <div className="text-sm text-gray-500">Owner: {tree.owner?.username}</div>
-                    </div>
-                  ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {tree.profiles.map((p) => (
+                <div key={p.id} className="border rounded-lg p-3 hover:shadow transition">
+                  <div className="font-semibold">
+                    {p.firstName} {p.lastName}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {p.birthDate ? format(parseISO(p.birthDate), 'dd MMM yyyy') : '?'}
+                    {p.deathDate && ` – †${format(parseISO(p.deathDate), 'dd MMM yyyy')}`}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {p.motherId ? 'Has mother' : ''}
+                    {p.fatherId ? ' • Has father' : ''}
+                  </div>
+                  {canEdit(tree.userRole) && (
+                    <button className="mt-2 text-xs text-blue-500 hover:text-blue-700">
+                      Edit
+                    </button>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          </div>
-        )} 
+          )}
+        </div>
 
+        {/* Quick Actions */}
+        <div className="mt-4 flex gap-2">
+          {canEdit(tree.userRole) && (
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm">
+              + Add Profile
+            </button>
+          )}
+          <button className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">
+            📊 View Tree
+          </button>
+        </div>
+      </div>
     </div>
-
   );
 }
-
-
