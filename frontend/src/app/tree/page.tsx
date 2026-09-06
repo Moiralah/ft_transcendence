@@ -23,6 +23,7 @@ export default function TreePage() {
   const [newTreeName, setNewTreeName] = useState('');
   const [newTreeDesc, setNewTreeDesc] = useState('');
 
+  const [myUser, setMyUser] = useState<{ id: string; username: string } | null>(null);  
   const [myTrees, setMyTrees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +39,48 @@ export default function TreePage() {
       return;
     }
     fetchMyTrees(token);
+    fetchMyUser(token);
   }, [token]);
+
+  const fetchMyUser = async(authToken: string) => {
+    try {
+      // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:3000';
+    const res = await fetch(`${apiUrl}/profile/me`, {
+        method: 'GET',
+        headers: {
+         'Content-Type': 'application/json', 
+          Authorization: `Bearer ${authToken}`,
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch user: ${res.statusText}`);
+      }
+      const userData = await res.json();
+      setMyUser(userData);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
   
   const fetchMyTrees = async (authToken: string) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        }
       });
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch use: ${res.statusText}`);
+      }
       const data = await res.json();
       setMyTrees(data);
     } catch (err: any) {
@@ -154,6 +189,8 @@ export default function TreePage() {
         />
       </header>
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
+        { /* user name */}
+        <div> {myUser?.username || 'xxx'} </div>
         {/*Search*/}
         <div className="flex w-full max-w gap-2 mb-6">
           <input

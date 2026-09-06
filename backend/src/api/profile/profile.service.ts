@@ -1,9 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
+
+// 1. New method for `GET /persons/me`
+	async findMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true, // Only returns id and username
+      },
+    });
+
+	if (!user)
+        throw new NotFoundException(`User with ID "${userId}" not found`);    
+	return user;
+  }
 
 	async findAll() {
 		// Include mother and father relations

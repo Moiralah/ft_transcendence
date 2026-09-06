@@ -1,12 +1,26 @@
-import { Controller, Body, Delete, Get, Param,
+// backend/src/api/profile/profile.controller.ts
+import { Controller, Body, Delete, Get, Param, Req
 			Patch, Post, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Profile } from '../../generated/browser';
 
-@Controller(`persons`)
+type UserReq = {
+	user: {
+		id: string;
+		username: string;
+	}
+}
+
+@Controller(`profile`)
 export class ProfileController {
 	constructor(private readonly profile: ProfileService) { }
+
+	@Get('me')
+	@UseGuards(JwtAuthGuard)
+	findMe(@Req() req: UserReq) {
+    	return this.profile.findMe(req.user.id);
+	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
