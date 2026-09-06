@@ -1,5 +1,5 @@
 import React from 'react';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface TextProps {
   children?: React.ReactNode;

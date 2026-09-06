@@ -2,7 +2,7 @@
 import React from 'react';
 import { SectionHeader } from './sectionHeader';
 import { FeatureCard } from './featureCard';
-import { componentTokens } from './colorPalete';
+import { componentTokens } from './colorPalette';
 
 interface featureItem {
     icon: string;

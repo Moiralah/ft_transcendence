@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+import { SkipLink } from '@/components/SkipLink';
+import { Navbar } from '@/components/navbar';
+import { Footer } from '@/components/footer';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function SignupPage() {
@@ -88,6 +92,12 @@ export default function SignupPage() {
   };
 
   return (
+    <div className="flex flex-col min-h-screen text-slate-800 font-sans">
+      <SkipLink />
+    <header>
+      <Navbar />
+    </header>
+    <main className="flex flex-1">
     <div className="card">
       <h1>Create an Account</h1>
       <form onSubmit={handleSignup}>
@@ -121,6 +131,11 @@ export default function SignupPage() {
       <p style={{ marginTop: 16, textAlign: 'center' }}>
         Already have an account? <Link href="/login">Log in</Link>
       </p>
+    </div>
+    </main>
+      <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
+        <Footer/>
+      </footer>
     </div>
   );
 }

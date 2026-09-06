@@ -20,14 +20,14 @@ build/
 .cache/
 
 # Environment Variables and Secrets
-# .env
-# .env.local
-# .env.development.local
-# .env.test.local
-# .env.production.local
-# *.env.*
-# *.pem
-# *.key
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env.*
+*.pem
+*.key
 
 # Operating System Files
 .DS_Store
@@ -35,6 +35,8 @@ build/
 ._*
 Thumbs.db
 ehthumbs.db
+
+code.txt
 
 # IDEs and Editors
 .vscode/
