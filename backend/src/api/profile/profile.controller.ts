@@ -1,5 +1,5 @@
 // backend/src/api/profile/profile.controller.ts
-import { Controller, Body, Delete, Get, Param, Req
+import { Controller, Body, Delete, Get, Param, Req,
 			Patch, Post, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';

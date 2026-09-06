@@ -61,6 +61,7 @@ export default function TreePage() {
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
       const userData = await res.json();
+      console.log('API response payload:', userData);
       setMyUser(userData);
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -82,6 +83,7 @@ export default function TreePage() {
         throw new Error(`Failed to fetch use: ${res.statusText}`);
       }
       const data = await res.json();
+      
       setMyTrees(data);
     } catch (err: any) {
       setError(err.message);
