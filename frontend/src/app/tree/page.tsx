@@ -23,7 +23,10 @@ export default function TreePage() {
   const [newTreeName, setNewTreeName] = useState('');
   const [newTreeDesc, setNewTreeDesc] = useState('');
 
-  const [myUser, setMyUser] = useState<{ id: string; username: string } | null>(null);  
+  const [joinName, setJoinName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+
+  const [myProfile, setMyProfile] = useState<{ id: string; username: string } | null>(null);  
   const [myTrees, setMyTrees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +42,13 @@ export default function TreePage() {
       return;
     }
     fetchMyTrees(token);
-    fetchMyUser(token);
+    fetchMyProfile(token);
   }, [token]);
 
-  const fetchMyUser = async(authToken: string) => {
+  const fetchMyProfile = async(authToken: string) => {
     try {
       // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const res = await fetch(`${apiUrl}/profile/me`, {
         method: 'GET',
         headers: {
@@ -60,9 +63,8 @@ export default function TreePage() {
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
-      const userData = await res.json();
-      console.log('API response payload:', userData);
-      setMyUser(userData);
+      const profileData = await res.json();
+      setMyProfile(profileData);
     } catch (error) {
       console.error('Error fetching current user:', error);
     }
@@ -104,7 +106,11 @@ export default function TreePage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newTreeName, description: newTreeDesc }),
+        body: JSON.stringify
+        ({ 
+          name: newTreeName, 
+          description: newTreeDesc 
+        }),
       });
   
       const data = await res.json().catch(() => ({}));
@@ -191,8 +197,17 @@ export default function TreePage() {
         />
       </header>
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
-        { /* user name */}
-        <div> {myUser?.username || 'xxx'} </div>
+        { /* profile showcase */}
+        <div>
+          <div> 
+          {myProfile?.username || ''}
+          // firstName , lastName , gender , birthDate, deathDate , bio, photoUrl 
+          </div>
+          { /* bio */}
+          <div>
+            { myProfile?.bio }
+          </div>
+        </div>
         {/*Search*/}
         <div className="flex w-full max-w gap-2 mb-6">
           <input
@@ -238,20 +253,25 @@ export default function TreePage() {
         modalForm={createTree} 
         title="Create Tree"
         onClose={() => setShowCreateModal(false)} 
+        name={newTreeName}
+        setName={setNewTreeName}
+        description={newTreeDesc}
+        setDescription={setNewTreeDesc}
       />
       )}
-
 
       {/* Join Modal */}
       { showJoinModal && (
       <ModalBanner
         modalForm={joinTree} 
         title="Join Tree"
-        onClose={() => setShowJoinModal(false)} 
+        onClose={() => setShowJoinModal(false)}
+        name={joinName}
+        setName={setJoinName}
+        description={joinCode}
+        setDescription={setJoinCode}
       />
       )}
-
-
 
         { /* Search Results Modal */}
         {showSearch && (

@@ -74,6 +74,7 @@ export default function SignupPage() {
           if (!res.ok) throw new Error(result.message || 'Login failed');
 
           localStorage.setItem('ft_token', result.accessToken);
+          
           router.push('/dashboard');
         } else {
           throw new Error('No access token received');

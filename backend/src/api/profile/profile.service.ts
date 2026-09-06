@@ -5,13 +5,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
 
-// 1. New method for `GET /persons/me`
 	async findMe(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.profile.????({
+      where: { claimedById: userId },
       select: {
         id: true,
-        username: true, // Only returns id and username
+        username: true,
       },
     });
 
