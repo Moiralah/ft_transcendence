@@ -52,7 +52,7 @@ async function main() {
       lastName: 'Smith',
       gender: 'female',
       birthDate: new Date('1980-01-01'),
-      treeId: tree.id,
+//      treeId: tree.id,
     },
   });
 
@@ -62,7 +62,7 @@ async function main() {
       lastName: 'Smith',
       gender: 'male',
       birthDate: new Date('1979-05-12'),
-      treeId: tree.id,
+//      treeId: tree.id,
     },
   });
 
@@ -74,7 +74,7 @@ async function main() {
       birthDate: new Date('2005-09-23'),
       motherId: alice.id,
       fatherId: bob.id,
-      treeId: tree.id,
+//      treeId: tree.id,
     },
   });
 

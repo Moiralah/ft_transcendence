@@ -40,9 +40,9 @@ export class ProfileController {
 		return this.profile.remove(Number(id));
 	}
 
-	@Get('tree/:rootId')
-	@UseGuards(JwtAuthGuard)
-	async getTree(@Param('rootId') rootId: string) {
-		return this.profile.getTree(Number(rootId));
-	}
+	// @Get('tree/:rootId')
+	// @UseGuards(JwtAuthGuard)
+	// async getTree(@Param('rootId') rootId: string) {
+	// 	return this.profile.getTree(Number(rootId));
+	// }
 }

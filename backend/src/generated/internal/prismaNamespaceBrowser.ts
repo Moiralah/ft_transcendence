@@ -82,7 +82,8 @@ export const UserScalarFieldEnum = {
   username: 'username',
   email: 'email',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  profileId: 'profileId'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -138,10 +139,9 @@ export const ProfileScalarFieldEnum = {
   bio: 'bio',
   photoUrl: 'photoUrl',
   verified: 'verified',
-  treeId: 'treeId',
   motherId: 'motherId',
   fatherId: 'fatherId',
-  claimedById: 'claimedById',
+  userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
