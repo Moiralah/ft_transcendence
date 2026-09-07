@@ -23,6 +23,9 @@ export default function TreePage() {
   const [newTreeName, setNewTreeName] = useState('');
   const [newTreeDesc, setNewTreeDesc] = useState('');
 
+  const [joinName, setJoinName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+
   const [myTrees, setMyTrees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,15 +41,63 @@ export default function TreePage() {
       return;
     }
     fetchMyTrees(token);
+    fetchMyProfile(token);
   }, [token]);
+
+  interface Profile {
+    id: number;
+    firstName: string;
+    lastName?: string;
+    gender?: string;
+    birthDate?: string;
+    deathDate?: string;
+    bio?: string;
+    photoUrl?: string;
+  }
+
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
+
+  const fetchMyProfile = async(authToken: string) => {
+    try {
+      // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${apiUrl}/profile/me`, {
+        method: 'GET',
+        headers: {
+         'Content-Type': 'application/json', 
+          Authorization: `Bearer ${authToken}`,
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch user: ${res.statusText}`);
+      }
+      const profileData = await res.json();
+      setMyProfile(profileData);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
   
   const fetchMyTrees = async (authToken: string) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        }
       });
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch use: ${res.statusText}`);
+      }
       const data = await res.json();
+      
       setMyTrees(data);
     } catch (err: any) {
       setError(err.message);
@@ -67,7 +118,11 @@ export default function TreePage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newTreeName, description: newTreeDesc }),
+        body: JSON.stringify
+        ({ 
+          name: newTreeName, 
+          description: newTreeDesc 
+        }),
       });
   
       const data = await res.json().catch(() => ({}));
@@ -154,6 +209,28 @@ export default function TreePage() {
         />
       </header>
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
+        { /* profile showcase */}
+        <div className="flex flex-col w-full max-w gap-2 mb-6 bg-white p-4 shadow rounded-lg border border-gray-200">
+          <div className="flex flex-col md:flex-row"> 
+            <div className="flex w-48 h-48 shrink-0 bg-black rounded-full object-cover hover outline outline-5 outline-offset-2 outline-indigo-500 hover:outline-amber-400">
+                myProfile.photoUrl: string;
+            </div>
+            <div className="flex">
+                <span>username: {myProfile?.username || ''} </span>
+                firstName: string;
+                lastName?: string;
+                gender?: string;
+                birthDate?: string;
+                deathDate?: string;
+            </div>
+          </div>
+          {/* Bio Section */}
+          <div className="flex w-full pt-3 flex justify-center items-center">
+            <p className="text-sm text-gray-600 ">
+              {myProfile?.profile?.bio || 'Bio is empty'}
+            </p>
+          </div>
+        </div>
         {/*Search*/}
         <div className="flex w-full max-w gap-2 mb-6">
           <input
@@ -199,20 +276,25 @@ export default function TreePage() {
         modalForm={createTree} 
         title="Create Tree"
         onClose={() => setShowCreateModal(false)} 
+        name={newTreeName}
+        setName={setNewTreeName}
+        description={newTreeDesc}
+        setDescription={setNewTreeDesc}
       />
       )}
-
 
       {/* Join Modal */}
       { showJoinModal && (
       <ModalBanner
         modalForm={joinTree} 
         title="Join Tree"
-        onClose={() => setShowJoinModal(false)} 
+        onClose={() => setShowJoinModal(false)}
+        name={joinName}
+        setName={setJoinName}
+        description={joinCode}
+        setDescription={setJoinCode}
       />
       )}
-
-
 
         { /* Search Results Modal */}
         {showSearch && (

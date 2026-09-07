@@ -20,14 +20,14 @@ build/
 .cache/
 
 # Environment Variables and Secrets
-# .env
-# .env.local
-# .env.development.local
-# .env.test.local
-# .env.production.local
-# *.env.*
-# *.pem
-# *.key
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env.*
+*.pem
+*.key
 
 # Operating System Files
 .DS_Store
@@ -53,6 +53,7 @@ logs/
 *.seed
 *.pid.lock
 
+code.txt
 
 /generated/prisma
 

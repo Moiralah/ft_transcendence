@@ -6,13 +6,22 @@ interface modalBannerProps {
     modalForm: (e: React.FormEvent) => void;
     title: string;
     onClose?: () => void;
+    name: string;
+    setName: (val: string) => void;
+    description?: string;
+    setDescription?: (val: string) => void;
 }
 
-export function ModalBanner({ modalForm, title, onClose } : modalBannerProps) {
+export function ModalBanner({ 
+  modalForm, 
+  title, 
+  onClose ,
+  name,
+  setName,
+  description = '',
+  setDescription,
+} : modalBannerProps) {
 
-  const [joinName, setJoinName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
-  
   return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl max-w-md w-full p-6">
@@ -21,16 +30,16 @@ export function ModalBanner({ modalForm, title, onClose } : modalBannerProps) {
                 <input
                   type="text"
                   placeholder="Tree Name"
-                  value={joinName}
-                  onChange={(e) => setJoinName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="w-full border rounded px-4 py-2 mb-3"
                   required
                 />
                 <input
                   type="text"
                   placeholder="Tree Code"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.toUpperCase())}
                   className="w-full border rounded px-4 py-2 mb-3 uppercase"
                   required
                 />
