@@ -42,6 +42,13 @@ export class AuthService {
 					id: supabaseUser.id, // use the Supabase UUID
 					email: supabaseUser.email,
 					username: supabaseUser.email.split('@')[0], // or use user_metadata.full_name
+
+					profile: {
+						create: {
+							firstName: '',
+							userId: supabaseUser.id,
+						}
+					}
 				},
 			});
 		}

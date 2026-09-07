@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: true,
@@ -6,19 +8,3 @@ const nextConfig = {
 	},
 };
 module.exports = nextConfig;
-
-// const fs = require('fs');
-
-// module.exports = {
-// 	reactStrictMode: true,
-// 	// Enable HTTPS for dev server
-// 	devServer: {
-// 		https: {
-// 			key: fs.readFileSync('/app/certs/localhost-key.pem'),
-// 			cert: fs.readFileSync('/app/certs/localhost.pem'),
-// 		},
-// 	},
-// 	env: {
-// 		NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-// 	},
-// };

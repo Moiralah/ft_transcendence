@@ -1,6 +1,7 @@
-// backend/src/api/profile/profile.controller.ts
-import { Controller, Body, Delete, Get, Param, Req,
-			Patch, Post, UseGuards } from '@nestjs/common';
+import {
+	Controller, Body, Delete, Get, Param, Req,
+	Patch, Post, UseGuards
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Profile } from '../../generated/browser';
@@ -53,4 +54,10 @@ export class ProfileController {
 	remove(@Param('id') id: string) {
 		return this.profile.remove(Number(id));
 	}
+
+	// @Get('tree/:rootId')
+	// @UseGuards(JwtAuthGuard)
+	// async getTree(@Param('rootId') rootId: string) {
+	// 	return this.profile.getTree(Number(rootId));
+	// }
 }

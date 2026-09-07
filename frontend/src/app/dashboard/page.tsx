@@ -1,6 +1,6 @@
 "use client";
 
-import { React } from 'react'; 
+import { React } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ export default function TreePage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
-  // //  Modal  
+  // //  Modal
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -64,7 +64,7 @@ export default function TreePage() {
     const res = await fetch(`${apiUrl}/profile/me`, {
         method: 'GET',
         headers: {
-         'Content-Type': 'application/json', 
+         'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
         }
       });
@@ -81,7 +81,7 @@ export default function TreePage() {
       console.error('Error fetching current user:', error);
     }
   };
-  
+
   const fetchMyTrees = async (authToken: string) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
@@ -97,7 +97,7 @@ export default function TreePage() {
         throw new Error(`Failed to fetch use: ${res.statusText}`);
       }
       const data = await res.json();
-      
+
       setMyTrees(data);
     } catch (err: any) {
       setError(err.message);
@@ -108,9 +108,9 @@ export default function TreePage() {
 
   const createTree = async (e: React.FormEvent) => {
     e.preventDefault();
- 
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
-  
+
     try {
       const res = await fetch(`${apiUrl}/trees/create`, {
         method: 'POST',
@@ -119,23 +119,23 @@ export default function TreePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify
-        ({ 
-          name: newTreeName, 
-          description: newTreeDesc 
+        ({
+          name: newTreeName,
+          description: newTreeDesc
         }),
       });
-  
+
       const data = await res.json().catch(() => ({}));
-  
+
       if (!res.ok) {
         // Show the actual server error message (e.g., data.message) instead of generic text
         throw new Error(data.message || `Server responded with status ${res.status}`);
       }
-  
+
       setShowCreateModal(false);
       setNewTreeName('');
       setNewTreeDesc('');
-      
+
       // Pass token to fetch updated trees list
       if (typeof fetchMyTrees === 'function') {
         fetchMyTrees(token);
@@ -183,13 +183,14 @@ export default function TreePage() {
   };
 
   if (loading) return <div className="p-8">Loading your trees...</div>;
+  if (loading) return <div className="p-8">Loading your trees...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen text-slate-800 font-sans">
       <SkipLink />
       <header id="navbar" tabIndex={-1} className="focus:outline-none">
-        <Navbar 
+        <Navbar
           btnText1={<p className={`flex gap-1`}>
               <span>
                 + Create
@@ -197,7 +198,7 @@ export default function TreePage() {
               <span className={`hidden md:block`}>
                 Tree
               </span>
-            </p>} 
+            </p>}
           btnOnClick1={() => setShowCreateModal(true)}
           btnText2={
             <p className="flex gap-1">
@@ -211,7 +212,7 @@ export default function TreePage() {
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
         { /* profile showcase */}
         <div className="flex flex-col w-full max-w gap-2 mb-6 bg-white p-4 shadow rounded-lg border border-gray-200">
-          <div className="flex flex-col md:flex-row"> 
+          <div className="flex flex-col md:flex-row">
             <div className="flex w-48 h-48 shrink-0 bg-black rounded-full object-cover hover outline outline-5 outline-offset-2 outline-indigo-500 hover:outline-amber-400">
                 myProfile.photoUrl: string;
             </div>
@@ -245,6 +246,7 @@ export default function TreePage() {
             className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
           >
           Search
+          Search
           </button>
         </div>
 
@@ -264,7 +266,7 @@ export default function TreePage() {
               </Link>
             ))
           )}
-        </div> 
+        </div>
       </main>
       <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
         <Footer/>
@@ -273,9 +275,9 @@ export default function TreePage() {
       {/* Create Modal */}
       {showCreateModal && (
       <ModalBanner
-        modalForm={createTree} 
+        modalForm={createTree}
         title="Create Tree"
-        onClose={() => setShowCreateModal(false)} 
+        onClose={() => setShowCreateModal(false)}
         name={newTreeName}
         setName={setNewTreeName}
         description={newTreeDesc}
@@ -286,7 +288,7 @@ export default function TreePage() {
       {/* Join Modal */}
       { showJoinModal && (
       <ModalBanner
-        modalForm={joinTree} 
+        modalForm={joinTree}
         title="Join Tree"
         onClose={() => setShowJoinModal(false)}
         name={joinName}
@@ -319,7 +321,7 @@ export default function TreePage() {
               )}
             </div>
           </div>
-        )} 
+        )}
 
     </div>
 

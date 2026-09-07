@@ -36,6 +36,8 @@ build/
 Thumbs.db
 ehthumbs.db
 
+code.txt
+
 # IDEs and Editors
 .vscode/
 !.vscode/extensions.json

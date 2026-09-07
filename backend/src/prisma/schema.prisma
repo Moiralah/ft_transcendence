@@ -21,8 +21,9 @@ model User {
   // Memberships in trees (with roles)
   treeMembers TreeMember[]
 
-  // Profiles (persons claimed by this user)
-  profiles Profile[]
+  // Profile (assigned to user when sign up)
+  profileId Int? @unique
+  profile Profile? @relation(fields: [profileId], references: [id])
 
   // Audit logs
   auditLogs AuditLog[]
@@ -113,9 +114,8 @@ model Profile {
   photoUrl    String?
   verified    Boolean  @default(false)
 
-  // Tree this profile belongs to
-  treeId      Int
-  tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  // Trees this profile belongs to
+  trees       Tree []
 
   // Parents (self-referential)
   motherId    Int?     @map("mother_id")
@@ -127,15 +127,14 @@ model Profile {
   childrenAsFather Profile[] @relation("FatherChildren")
 
   // Spouses
-  spousesFrom ProfileSpouse[] @relation("Spouse1")
-  spousesTo   ProfileSpouse[] @relation("Spouse2")
+  spouses ProfileSpouse[] @relation("Spouse")
 
   // Life events
   events Event[]
 
-  // User who claimed this profile (optional)
-  claimedById String?
-  claimedBy   User?    @relation(fields: [claimedById], references: [id])
+  // User who owned this profile (optional)
+  userId String? @unique
+  user User? @relation
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -146,15 +145,13 @@ model Profile {
 // ------------------- Spouse Relationship -------------------
 model ProfileSpouse {
   id            Int      @id @default(autoincrement())
-  profile1Id    Int
-  profile2Id    Int
+  profileId    Int
   marriageDate  DateTime?
   divorceDate   DateTime?
 
-  profile1      Profile  @relation("Spouse1", fields: [profile1Id], references: [id], onDelete: Cascade)
-  profile2      Profile  @relation("Spouse2", fields: [profile2Id], references: [id], onDelete: Cascade)
+  profile      Profile  @relation("Spouse", fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@unique([profile1Id, profile2Id])
+  @@unique([profileId])
   @@map("profile_spouses")
 }
 

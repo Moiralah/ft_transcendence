@@ -20,8 +20,18 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  profileId: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  profileId: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -30,6 +40,7 @@ export type UserMinAggregateOutputType = {
   email: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  profileId: number | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -38,6 +49,7 @@ export type UserMaxAggregateOutputType = {
   email: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  profileId: number | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -46,9 +58,18 @@ export type UserCountAggregateOutputType = {
   email: number
   createdAt: number
   updatedAt: number
+  profileId: number
   _all: number
 }
 
+
+export type UserAvgAggregateInputType = {
+  profileId?: true
+}
+
+export type UserSumAggregateInputType = {
+  profileId?: true
+}
 
 export type UserMinAggregateInputType = {
   id?: true
@@ -56,6 +77,7 @@ export type UserMinAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  profileId?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -64,6 +86,7 @@ export type UserMaxAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  profileId?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -72,6 +95,7 @@ export type UserCountAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  profileId?: true
   _all?: true
 }
 
@@ -113,6 +137,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -143,6 +179,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -153,7 +191,10 @@ export type UserGroupByOutputType = {
   email: string
   createdAt: Date
   updatedAt: Date
+  profileId: number | null
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -182,9 +223,10 @@ export type UserWhereInput = {
   email?: Prisma.StringFilter<"User"> | string
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  profileId?: Prisma.IntNullableFilter<"User"> | number | null
   ownedTrees?: Prisma.TreeListRelationFilter
   treeMembers?: Prisma.TreeMemberListRelationFilter
-  profiles?: Prisma.ProfileListRelationFilter
+  profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   auditLogs?: Prisma.AuditLogListRelationFilter
   sentInvitations?: Prisma.InvitationListRelationFilter
 }
@@ -195,9 +237,10 @@ export type UserOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  profileId?: Prisma.SortOrderInput | Prisma.SortOrder
   ownedTrees?: Prisma.TreeOrderByRelationAggregateInput
   treeMembers?: Prisma.TreeMemberOrderByRelationAggregateInput
-  profiles?: Prisma.ProfileOrderByRelationAggregateInput
+  profile?: Prisma.ProfileOrderByWithRelationInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   sentInvitations?: Prisma.InvitationOrderByRelationAggregateInput
 }
@@ -206,6 +249,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   username?: string
   email?: string
+  profileId?: number
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
@@ -213,10 +257,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   ownedTrees?: Prisma.TreeListRelationFilter
   treeMembers?: Prisma.TreeMemberListRelationFilter
-  profiles?: Prisma.ProfileListRelationFilter
+  profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
   auditLogs?: Prisma.AuditLogListRelationFilter
   sentInvitations?: Prisma.InvitationListRelationFilter
-}, "id" | "username" | "email">
+}, "id" | "username" | "email" | "profileId">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -224,9 +268,12 @@ export type UserOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  profileId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -238,6 +285,7 @@ export type UserScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
+  profileId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
 }
 
 export type UserCreateInput = {
@@ -248,7 +296,7 @@ export type UserCreateInput = {
   updatedAt?: Date | string
   ownedTrees?: Prisma.TreeCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileCreateNestedManyWithoutClaimedByInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
@@ -259,9 +307,9 @@ export type UserUncheckedCreateInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
   ownedTrees?: Prisma.TreeUncheckedCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutClaimedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
@@ -274,7 +322,7 @@ export type UserUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ownedTrees?: Prisma.TreeUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUpdateManyWithoutClaimedByNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
@@ -285,9 +333,9 @@ export type UserUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   ownedTrees?: Prisma.TreeUncheckedUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUncheckedUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutClaimedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
@@ -298,6 +346,7 @@ export type UserCreateManyInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
 }
 
 export type UserUpdateManyMutationInput = {
@@ -314,6 +363,7 @@ export type UserUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type UserCountOrderByAggregateInput = {
@@ -322,6 +372,11 @@ export type UserCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  profileId?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -330,6 +385,7 @@ export type UserMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -338,6 +394,11 @@ export type UserMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  profileId?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -356,6 +417,14 @@ export type StringFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type UserCreateNestedOneWithoutOwnedTreesInput = {
@@ -400,20 +469,36 @@ export type UserUpdateOneRequiredWithoutSentInvitationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSentInvitationsInput, Prisma.UserUpdateWithoutSentInvitationsInput>, Prisma.UserUncheckedUpdateWithoutSentInvitationsInput>
 }
 
-export type UserCreateNestedOneWithoutProfilesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutProfilesInput, Prisma.UserUncheckedCreateWithoutProfilesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfilesInput
+export type UserCreateNestedOneWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfileInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneWithoutProfilesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutProfilesInput, Prisma.UserUncheckedCreateWithoutProfilesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfilesInput
-  upsert?: Prisma.UserUpsertWithoutProfilesInput
+export type UserUncheckedCreateNestedOneWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfileInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfileInput
+  upsert?: Prisma.UserUpsertWithoutProfileInput
   disconnect?: Prisma.UserWhereInput | boolean
   delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutProfilesInput, Prisma.UserUpdateWithoutProfilesInput>, Prisma.UserUncheckedUpdateWithoutProfilesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutProfileInput, Prisma.UserUpdateWithoutProfileInput>, Prisma.UserUncheckedUpdateWithoutProfileInput>
+}
+
+export type UserUncheckedUpdateOneWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutProfileInput
+  upsert?: Prisma.UserUpsertWithoutProfileInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutProfileInput, Prisma.UserUpdateWithoutProfileInput>, Prisma.UserUncheckedUpdateWithoutProfileInput>
 }
 
 export type UserCreateNestedOneWithoutAuditLogsInput = {
@@ -437,7 +522,7 @@ export type UserCreateWithoutOwnedTreesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   treeMembers?: Prisma.TreeMemberCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileCreateNestedManyWithoutClaimedByInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
@@ -448,8 +533,8 @@ export type UserUncheckedCreateWithoutOwnedTreesInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
   treeMembers?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutClaimedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
@@ -477,7 +562,7 @@ export type UserUpdateWithoutOwnedTreesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   treeMembers?: Prisma.TreeMemberUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUpdateManyWithoutClaimedByNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
@@ -488,8 +573,8 @@ export type UserUncheckedUpdateWithoutOwnedTreesInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   treeMembers?: Prisma.TreeMemberUncheckedUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutClaimedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
@@ -501,7 +586,7 @@ export type UserCreateWithoutTreeMembersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   ownedTrees?: Prisma.TreeCreateNestedManyWithoutOwnerInput
-  profiles?: Prisma.ProfileCreateNestedManyWithoutClaimedByInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
@@ -512,8 +597,8 @@ export type UserUncheckedCreateWithoutTreeMembersInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
   ownedTrees?: Prisma.TreeUncheckedCreateNestedManyWithoutOwnerInput
-  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutClaimedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
@@ -541,7 +626,7 @@ export type UserUpdateWithoutTreeMembersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ownedTrees?: Prisma.TreeUpdateManyWithoutOwnerNestedInput
-  profiles?: Prisma.ProfileUpdateManyWithoutClaimedByNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
@@ -552,8 +637,8 @@ export type UserUncheckedUpdateWithoutTreeMembersInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   ownedTrees?: Prisma.TreeUncheckedUpdateManyWithoutOwnerNestedInput
-  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutClaimedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
@@ -566,7 +651,7 @@ export type UserCreateWithoutSentInvitationsInput = {
   updatedAt?: Date | string
   ownedTrees?: Prisma.TreeCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileCreateNestedManyWithoutClaimedByInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
 }
 
@@ -576,9 +661,9 @@ export type UserUncheckedCreateWithoutSentInvitationsInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
   ownedTrees?: Prisma.TreeUncheckedCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutClaimedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -606,7 +691,7 @@ export type UserUpdateWithoutSentInvitationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ownedTrees?: Prisma.TreeUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUpdateManyWithoutClaimedByNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
 }
 
@@ -616,13 +701,13 @@ export type UserUncheckedUpdateWithoutSentInvitationsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   ownedTrees?: Prisma.TreeUncheckedUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUncheckedUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutClaimedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
-export type UserCreateWithoutProfilesInput = {
+export type UserCreateWithoutProfileInput = {
   id: string
   username: string
   email: string
@@ -634,7 +719,7 @@ export type UserCreateWithoutProfilesInput = {
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
 
-export type UserUncheckedCreateWithoutProfilesInput = {
+export type UserUncheckedCreateWithoutProfileInput = {
   id: string
   username: string
   email: string
@@ -646,23 +731,23 @@ export type UserUncheckedCreateWithoutProfilesInput = {
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
 
-export type UserCreateOrConnectWithoutProfilesInput = {
+export type UserCreateOrConnectWithoutProfileInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutProfilesInput, Prisma.UserUncheckedCreateWithoutProfilesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
 }
 
-export type UserUpsertWithoutProfilesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutProfilesInput, Prisma.UserUncheckedUpdateWithoutProfilesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutProfilesInput, Prisma.UserUncheckedCreateWithoutProfilesInput>
+export type UserUpsertWithoutProfileInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutProfileInput, Prisma.UserUncheckedUpdateWithoutProfileInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutProfileInput, Prisma.UserUncheckedCreateWithoutProfileInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutProfilesInput = {
+export type UserUpdateToOneWithWhereWithoutProfileInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutProfilesInput, Prisma.UserUncheckedUpdateWithoutProfilesInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutProfileInput, Prisma.UserUncheckedUpdateWithoutProfileInput>
 }
 
-export type UserUpdateWithoutProfilesInput = {
+export type UserUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -674,7 +759,7 @@ export type UserUpdateWithoutProfilesInput = {
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
 
-export type UserUncheckedUpdateWithoutProfilesInput = {
+export type UserUncheckedUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -694,7 +779,7 @@ export type UserCreateWithoutAuditLogsInput = {
   updatedAt?: Date | string
   ownedTrees?: Prisma.TreeCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileCreateNestedManyWithoutClaimedByInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
 
@@ -704,9 +789,9 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileId?: number | null
   ownedTrees?: Prisma.TreeUncheckedCreateNestedManyWithoutOwnerInput
   treeMembers?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutUserInput
-  profiles?: Prisma.ProfileUncheckedCreateNestedManyWithoutClaimedByInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
 
@@ -734,7 +819,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ownedTrees?: Prisma.TreeUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUpdateManyWithoutClaimedByNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
 
@@ -744,9 +829,9 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   ownedTrees?: Prisma.TreeUncheckedUpdateManyWithoutOwnerNestedInput
   treeMembers?: Prisma.TreeMemberUncheckedUpdateManyWithoutUserNestedInput
-  profiles?: Prisma.ProfileUncheckedUpdateManyWithoutClaimedByNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
 
@@ -758,7 +843,6 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
 export type UserCountOutputType = {
   ownedTrees: number
   treeMembers: number
-  profiles: number
   auditLogs: number
   sentInvitations: number
 }
@@ -766,7 +850,6 @@ export type UserCountOutputType = {
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ownedTrees?: boolean | UserCountOutputTypeCountOwnedTreesArgs
   treeMembers?: boolean | UserCountOutputTypeCountTreeMembersArgs
-  profiles?: boolean | UserCountOutputTypeCountProfilesArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
   sentInvitations?: boolean | UserCountOutputTypeCountSentInvitationsArgs
 }
@@ -798,13 +881,6 @@ export type UserCountOutputTypeCountTreeMembersArgs<ExtArgs extends runtime.Type
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountProfilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ProfileWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AuditLogWhereInput
 }
@@ -823,9 +899,10 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  profileId?: boolean
   ownedTrees?: boolean | Prisma.User$ownedTreesArgs<ExtArgs>
   treeMembers?: boolean | Prisma.User$treeMembersArgs<ExtArgs>
-  profiles?: boolean | Prisma.User$profilesArgs<ExtArgs>
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   sentInvitations?: boolean | Prisma.User$sentInvitationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -837,6 +914,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  profileId?: boolean
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -845,6 +924,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  profileId?: boolean
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -853,26 +934,31 @@ export type UserSelectScalar = {
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  profileId?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt" | "profileId", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   ownedTrees?: boolean | Prisma.User$ownedTreesArgs<ExtArgs>
   treeMembers?: boolean | Prisma.User$treeMembersArgs<ExtArgs>
-  profiles?: boolean | Prisma.User$profilesArgs<ExtArgs>
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   sentInvitations?: boolean | Prisma.User$sentInvitationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+}
+export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+}
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
     ownedTrees: Prisma.$TreePayload<ExtArgs>[]
     treeMembers: Prisma.$TreeMemberPayload<ExtArgs>[]
-    profiles: Prisma.$ProfilePayload<ExtArgs>[]
+    profile: Prisma.$ProfilePayload<ExtArgs> | null
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     sentInvitations: Prisma.$InvitationPayload<ExtArgs>[]
   }
@@ -882,6 +968,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     email: string
     createdAt: Date
     updatedAt: Date
+    profileId: number | null
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -1278,7 +1365,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   ownedTrees<T extends Prisma.User$ownedTreesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ownedTreesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TreePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   treeMembers<T extends Prisma.User$treeMembersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$treeMembersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TreeMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  profiles<T extends Prisma.User$profilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  profile<T extends Prisma.User$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profileArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sentInvitations<T extends Prisma.User$sentInvitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentInvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1315,6 +1402,7 @@ export interface UserFieldRefs {
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly profileId: Prisma.FieldRef<"User", 'Int'>
 }
     
 
@@ -1569,6 +1657,10 @@ export type UserCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    */
   data: Prisma.UserCreateManyInput | Prisma.UserCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1639,6 +1731,10 @@ export type UserUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many Users to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1756,9 +1852,9 @@ export type User$treeMembersArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * User.profiles
+ * User.profile
  */
-export type User$profilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$profileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Profile
    */
@@ -1772,11 +1868,6 @@ export type User$profilesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   include?: Prisma.ProfileInclude<ExtArgs> | null
   where?: Prisma.ProfileWhereInput
-  orderBy?: Prisma.ProfileOrderByWithRelationInput | Prisma.ProfileOrderByWithRelationInput[]
-  cursor?: Prisma.ProfileWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ProfileScalarFieldEnum | Prisma.ProfileScalarFieldEnum[]
 }
 
 /**
