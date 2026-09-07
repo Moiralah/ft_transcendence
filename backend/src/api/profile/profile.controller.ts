@@ -1,6 +1,6 @@
 import {
 	Controller, Body, Delete, Get, Param, Req,
-	Patch, Post, UseGuards
+	Patch, Post, UseGuards, BadRequestException
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -8,10 +8,10 @@ import { Profile } from '../../generated/browser';
 
 
 interface AuthenticatedRequest {
-  user: {
-    id: string; // The user ID extracted from JWT token payload
-    username?: string;
-  };
+	user: {
+		id: string; // The user ID extracted from JWT token payload
+		username?: string;
+	};
 }
 
 @Controller(`profile`)
@@ -21,8 +21,8 @@ export class ProfileController {
 	@Get('me')
 	@UseGuards(JwtAuthGuard)
 	findMe(@Req() req: AuthenticatedRequest) {
-	    return this.profile.findMe(req.user.id);
-  	}
+		return this.profile.findMe(req.user.id);
+	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
@@ -44,7 +44,7 @@ export class ProfileController {
 
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
-	update(@Param('id') id: string, @Body() body: any) {
+	async update(@Param('id') id: string, @Body() body: any) {
 		return this.profile.update(Number(id), body);
 	}
 

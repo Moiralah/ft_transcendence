@@ -61,7 +61,8 @@ export default function TreePage() {
     try {
       // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${apiUrl}/profile/me`, {
+	const profileId = localStorage.getItem('profileId')
+    const res = await fetch(`${apiUrl}/profile/${profileId}`, {
         method: 'GET',
         headers: {
          'Content-Type': 'application/json',
@@ -217,12 +218,12 @@ export default function TreePage() {
                 myProfile.photoUrl: string;
             </div>
             <div className="flex">
-                <span>username: {myProfile?.id || ''} </span>
-                {/* firstName: string;
+                <span>username: {myProfile?.username || ''} </span>
+                firstName: string;
                 lastName?: string;
                 gender?: string;
                 birthDate?: string;
-                deathDate?: string; */}
+                deathDate?: string;
             </div>
           </div>
           {/* Bio Section */}
@@ -245,6 +246,7 @@ export default function TreePage() {
             onClick={searchTrees}
             className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
           >
+          Search
           Search
           </button>
         </div>
