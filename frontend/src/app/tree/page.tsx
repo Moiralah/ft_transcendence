@@ -26,7 +26,6 @@ export default function TreePage() {
   const [joinName, setJoinName] = useState('');
   const [joinCode, setJoinCode] = useState('');
 
-  const [myProfile, setMyProfile] = useState<{ id: string; username: string } | null>(null);  
   const [myTrees, setMyTrees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +43,19 @@ export default function TreePage() {
     fetchMyTrees(token);
     fetchMyProfile(token);
   }, [token]);
+
+  interface Profile {
+    id: number;
+    firstName: string;
+    lastName?: string;
+    gender?: string;
+    birthDate?: string;
+    deathDate?: string;
+    bio?: string;
+    photoUrl?: string;
+  }
+
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
 
   const fetchMyProfile = async(authToken: string) => {
     try {
@@ -198,14 +210,25 @@ export default function TreePage() {
       </header>
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
         { /* profile showcase */}
-        <div>
-          <div> 
-          {myProfile?.username || ''}
-          // firstName , lastName , gender , birthDate, deathDate , bio, photoUrl 
+        <div className="flex flex-col w-full max-w gap-2 mb-6 bg-white p-4 shadow rounded-lg border border-gray-200">
+          <div className="flex flex-col md:flex-row"> 
+            <div className="flex w-48 h-48 shrink-0 bg-black rounded-full object-cover hover outline outline-5 outline-offset-2 outline-indigo-500 hover:outline-amber-400">
+                myProfile.photoUrl: string;
+            </div>
+            <div className="flex">
+                <span>username: {myProfile?.username || ''} </span>
+                firstName: string;
+                lastName?: string;
+                gender?: string;
+                birthDate?: string;
+                deathDate?: string;
+            </div>
           </div>
-          { /* bio */}
-          <div>
-            { myProfile?.bio }
+          {/* Bio Section */}
+          <div className="flex w-full pt-3 flex justify-center items-center">
+            <p className="text-sm text-gray-600 ">
+              {myProfile?.profile?.bio || 'Bio is empty'}
+            </p>
           </div>
         </div>
         {/*Search*/}

@@ -6,18 +6,23 @@ export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
 
 	async findMe(userId: string) {
-    const user = await this.prisma.profile.????({
-      where: { claimedById: userId },
-      select: {
-        id: true,
-        username: true,
-      },
-    });
-
-	if (!user)
-        throw new NotFoundException(`User with ID "${userId}" not found`);    
-	return user;
-  }
+    	const profile = await this.prisma.profile.findFirst({
+      		where: { claimedById: userId },
+      		select: {
+        		id: true,
+        		firstName: true,
+				lastName: true,
+				gender: true,
+  				birthDate: true,
+  				deathDate: true,
+  				bio: true,
+  				photoUrl: true,
+      		},
+    	});
+		if (!profile)
+        	throw new NotFoundException(`User with ID "${userId}" not found`);    
+		return profile;
+  	}
 
 	async findAll() {
 		// Include mother and father relations

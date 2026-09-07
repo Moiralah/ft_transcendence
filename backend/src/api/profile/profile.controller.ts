@@ -5,21 +5,23 @@ import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Profile } from '../../generated/browser';
 
-type UserReq = {
-	user: {
-		id: string;
-		username: string;
-	}
+// Define the request structure populated by JwtAuthGuard
+interface AuthenticatedRequest {
+  user: {
+    id: string; // The user ID extracted from JWT token payload
+    username?: string;
+  };
 }
 
 @Controller(`profile`)
 export class ProfileController {
-	constructor(private readonly profile: ProfileService) { }
+	constructor(private readonly profileService: ProfileService) { }
 
 	@Get('me')
 	@UseGuards(JwtAuthGuard)
-	findMe(@Req() req: UserReq) {
-    	return this.profile.findMe(req.user.id);
+	findMe(@Req() req: AuthenticatedRequest) {
+	    return this.profileService.findMe(req.user.id);
+  	}
 	}
 
 	@Get()
