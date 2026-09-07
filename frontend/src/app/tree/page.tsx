@@ -194,7 +194,7 @@ export default function Dashboard() {
             onClick={searchTrees}
             className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
           >
-          Search
+            Search
           </button>
         </div>
 

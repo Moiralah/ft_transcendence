@@ -5,9 +5,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
 
-	async findMe(userId: string) {
+	async findMe(Id: string) {
     	const profile = await this.prisma.profile.findFirst({
-      		where: { claimedById: userId },
+			where: { userId :Id},
       		select: {
         		id: true,
         		firstName: true,
@@ -19,8 +19,8 @@ export class ProfileService {
   				photoUrl: true,
       		},
     	});
-		if (!profile)
-        	throw new NotFoundException(`User with ID "${userId}" not found`);
+		// if (!profile)
+        // 	throw new NotFoundException(`User with ID "${userId}" not found`);    
 		return profile;
   	}
 
