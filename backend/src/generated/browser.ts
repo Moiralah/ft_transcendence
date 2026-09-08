@@ -43,11 +43,6 @@ export type Invitation = Prisma.InvitationModel
  */
 export type Profile = Prisma.ProfileModel
 /**
- * Model ProfileSpouse
- * 
- */
-export type ProfileSpouse = Prisma.ProfileSpouseModel
-/**
  * Model Event
  * 
  */

@@ -28,17 +28,19 @@ export type AggregateTreeMember = {
 
 export type TreeMemberAvgAggregateOutputType = {
   id: number | null
+  profileId: number | null
   treeId: number | null
 }
 
 export type TreeMemberSumAggregateOutputType = {
   id: number | null
+  profileId: number | null
   treeId: number | null
 }
 
 export type TreeMemberMinAggregateOutputType = {
   id: number | null
-  userId: string | null
+  profileId: number | null
   treeId: number | null
   role: $Enums.Role | null
   joinedAt: Date | null
@@ -46,7 +48,7 @@ export type TreeMemberMinAggregateOutputType = {
 
 export type TreeMemberMaxAggregateOutputType = {
   id: number | null
-  userId: string | null
+  profileId: number | null
   treeId: number | null
   role: $Enums.Role | null
   joinedAt: Date | null
@@ -54,7 +56,7 @@ export type TreeMemberMaxAggregateOutputType = {
 
 export type TreeMemberCountAggregateOutputType = {
   id: number
-  userId: number
+  profileId: number
   treeId: number
   role: number
   joinedAt: number
@@ -64,17 +66,19 @@ export type TreeMemberCountAggregateOutputType = {
 
 export type TreeMemberAvgAggregateInputType = {
   id?: true
+  profileId?: true
   treeId?: true
 }
 
 export type TreeMemberSumAggregateInputType = {
   id?: true
+  profileId?: true
   treeId?: true
 }
 
 export type TreeMemberMinAggregateInputType = {
   id?: true
-  userId?: true
+  profileId?: true
   treeId?: true
   role?: true
   joinedAt?: true
@@ -82,7 +86,7 @@ export type TreeMemberMinAggregateInputType = {
 
 export type TreeMemberMaxAggregateInputType = {
   id?: true
-  userId?: true
+  profileId?: true
   treeId?: true
   role?: true
   joinedAt?: true
@@ -90,7 +94,7 @@ export type TreeMemberMaxAggregateInputType = {
 
 export type TreeMemberCountAggregateInputType = {
   id?: true
-  userId?: true
+  profileId?: true
   treeId?: true
   role?: true
   joinedAt?: true
@@ -185,7 +189,7 @@ export type TreeMemberGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 
 export type TreeMemberGroupByOutputType = {
   id: number
-  userId: string
+  profileId: number
   treeId: number
   role: $Enums.Role
   joinedAt: Date
@@ -216,41 +220,41 @@ export type TreeMemberWhereInput = {
   OR?: Prisma.TreeMemberWhereInput[]
   NOT?: Prisma.TreeMemberWhereInput | Prisma.TreeMemberWhereInput[]
   id?: Prisma.IntFilter<"TreeMember"> | number
-  userId?: Prisma.StringFilter<"TreeMember"> | string
+  profileId?: Prisma.IntFilter<"TreeMember"> | number
   treeId?: Prisma.IntFilter<"TreeMember"> | number
   role?: Prisma.EnumRoleFilter<"TreeMember"> | $Enums.Role
   joinedAt?: Prisma.DateTimeFilter<"TreeMember"> | Date | string
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  profile?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
   tree?: Prisma.XOR<Prisma.TreeScalarRelationFilter, Prisma.TreeWhereInput>
 }
 
 export type TreeMemberOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  userId?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
-  user?: Prisma.UserOrderByWithRelationInput
+  profile?: Prisma.ProfileOrderByWithRelationInput
   tree?: Prisma.TreeOrderByWithRelationInput
 }
 
 export type TreeMemberWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  userId_treeId?: Prisma.TreeMemberUserIdTreeIdCompoundUniqueInput
+  profileId_treeId?: Prisma.TreeMemberProfileIdTreeIdCompoundUniqueInput
   AND?: Prisma.TreeMemberWhereInput | Prisma.TreeMemberWhereInput[]
   OR?: Prisma.TreeMemberWhereInput[]
   NOT?: Prisma.TreeMemberWhereInput | Prisma.TreeMemberWhereInput[]
-  userId?: Prisma.StringFilter<"TreeMember"> | string
+  profileId?: Prisma.IntFilter<"TreeMember"> | number
   treeId?: Prisma.IntFilter<"TreeMember"> | number
   role?: Prisma.EnumRoleFilter<"TreeMember"> | $Enums.Role
   joinedAt?: Prisma.DateTimeFilter<"TreeMember"> | Date | string
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  profile?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
   tree?: Prisma.XOR<Prisma.TreeScalarRelationFilter, Prisma.TreeWhereInput>
-}, "id" | "userId_treeId">
+}, "id" | "profileId_treeId">
 
 export type TreeMemberOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  userId?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
@@ -266,7 +270,7 @@ export type TreeMemberScalarWhereWithAggregatesInput = {
   OR?: Prisma.TreeMemberScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TreeMemberScalarWhereWithAggregatesInput | Prisma.TreeMemberScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"TreeMember"> | number
-  userId?: Prisma.StringWithAggregatesFilter<"TreeMember"> | string
+  profileId?: Prisma.IntWithAggregatesFilter<"TreeMember"> | number
   treeId?: Prisma.IntWithAggregatesFilter<"TreeMember"> | number
   role?: Prisma.EnumRoleWithAggregatesFilter<"TreeMember"> | $Enums.Role
   joinedAt?: Prisma.DateTimeWithAggregatesFilter<"TreeMember"> | Date | string
@@ -275,13 +279,13 @@ export type TreeMemberScalarWhereWithAggregatesInput = {
 export type TreeMemberCreateInput = {
   role: $Enums.Role
   joinedAt?: Date | string
-  user: Prisma.UserCreateNestedOneWithoutTreeMembersInput
+  profile: Prisma.ProfileCreateNestedOneWithoutTreeMembersInput
   tree: Prisma.TreeCreateNestedOneWithoutMembersInput
 }
 
 export type TreeMemberUncheckedCreateInput = {
   id?: number
-  userId: string
+  profileId: number
   treeId: number
   role: $Enums.Role
   joinedAt?: Date | string
@@ -290,13 +294,13 @@ export type TreeMemberUncheckedCreateInput = {
 export type TreeMemberUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  user?: Prisma.UserUpdateOneRequiredWithoutTreeMembersNestedInput
+  profile?: Prisma.ProfileUpdateOneRequiredWithoutTreeMembersNestedInput
   tree?: Prisma.TreeUpdateOneRequiredWithoutMembersNestedInput
 }
 
 export type TreeMemberUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
   treeId?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -304,7 +308,7 @@ export type TreeMemberUncheckedUpdateInput = {
 
 export type TreeMemberCreateManyInput = {
   id?: number
-  userId: string
+  profileId: number
   treeId: number
   role: $Enums.Role
   joinedAt?: Date | string
@@ -317,7 +321,7 @@ export type TreeMemberUpdateManyMutationInput = {
 
 export type TreeMemberUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
   treeId?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -333,14 +337,14 @@ export type TreeMemberOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type TreeMemberUserIdTreeIdCompoundUniqueInput = {
-  userId: string
+export type TreeMemberProfileIdTreeIdCompoundUniqueInput = {
+  profileId: number
   treeId: number
 }
 
 export type TreeMemberCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userId?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
@@ -348,12 +352,13 @@ export type TreeMemberCountOrderByAggregateInput = {
 
 export type TreeMemberAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
 }
 
 export type TreeMemberMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userId?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
@@ -361,7 +366,7 @@ export type TreeMemberMaxOrderByAggregateInput = {
 
 export type TreeMemberMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userId?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
@@ -369,49 +374,8 @@ export type TreeMemberMinOrderByAggregateInput = {
 
 export type TreeMemberSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  profileId?: Prisma.SortOrder
   treeId?: Prisma.SortOrder
-}
-
-export type TreeMemberCreateNestedManyWithoutUserInput = {
-  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput> | Prisma.TreeMemberCreateWithoutUserInput[] | Prisma.TreeMemberUncheckedCreateWithoutUserInput[]
-  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutUserInput | Prisma.TreeMemberCreateOrConnectWithoutUserInput[]
-  createMany?: Prisma.TreeMemberCreateManyUserInputEnvelope
-  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-}
-
-export type TreeMemberUncheckedCreateNestedManyWithoutUserInput = {
-  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput> | Prisma.TreeMemberCreateWithoutUserInput[] | Prisma.TreeMemberUncheckedCreateWithoutUserInput[]
-  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutUserInput | Prisma.TreeMemberCreateOrConnectWithoutUserInput[]
-  createMany?: Prisma.TreeMemberCreateManyUserInputEnvelope
-  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-}
-
-export type TreeMemberUpdateManyWithoutUserNestedInput = {
-  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput> | Prisma.TreeMemberCreateWithoutUserInput[] | Prisma.TreeMemberUncheckedCreateWithoutUserInput[]
-  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutUserInput | Prisma.TreeMemberCreateOrConnectWithoutUserInput[]
-  upsert?: Prisma.TreeMemberUpsertWithWhereUniqueWithoutUserInput | Prisma.TreeMemberUpsertWithWhereUniqueWithoutUserInput[]
-  createMany?: Prisma.TreeMemberCreateManyUserInputEnvelope
-  set?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  disconnect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  delete?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  update?: Prisma.TreeMemberUpdateWithWhereUniqueWithoutUserInput | Prisma.TreeMemberUpdateWithWhereUniqueWithoutUserInput[]
-  updateMany?: Prisma.TreeMemberUpdateManyWithWhereWithoutUserInput | Prisma.TreeMemberUpdateManyWithWhereWithoutUserInput[]
-  deleteMany?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
-}
-
-export type TreeMemberUncheckedUpdateManyWithoutUserNestedInput = {
-  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput> | Prisma.TreeMemberCreateWithoutUserInput[] | Prisma.TreeMemberUncheckedCreateWithoutUserInput[]
-  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutUserInput | Prisma.TreeMemberCreateOrConnectWithoutUserInput[]
-  upsert?: Prisma.TreeMemberUpsertWithWhereUniqueWithoutUserInput | Prisma.TreeMemberUpsertWithWhereUniqueWithoutUserInput[]
-  createMany?: Prisma.TreeMemberCreateManyUserInputEnvelope
-  set?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  disconnect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  delete?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
-  update?: Prisma.TreeMemberUpdateWithWhereUniqueWithoutUserInput | Prisma.TreeMemberUpdateWithWhereUniqueWithoutUserInput[]
-  updateMany?: Prisma.TreeMemberUpdateManyWithWhereWithoutUserInput | Prisma.TreeMemberUpdateManyWithWhereWithoutUserInput[]
-  deleteMany?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
 }
 
 export type TreeMemberCreateNestedManyWithoutTreeInput = {
@@ -460,65 +424,57 @@ export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
 }
 
-export type TreeMemberCreateWithoutUserInput = {
-  role: $Enums.Role
-  joinedAt?: Date | string
-  tree: Prisma.TreeCreateNestedOneWithoutMembersInput
+export type TreeMemberCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput> | Prisma.TreeMemberCreateWithoutProfileInput[] | Prisma.TreeMemberUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutProfileInput | Prisma.TreeMemberCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.TreeMemberCreateManyProfileInputEnvelope
+  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
 }
 
-export type TreeMemberUncheckedCreateWithoutUserInput = {
-  id?: number
-  treeId: number
-  role: $Enums.Role
-  joinedAt?: Date | string
+export type TreeMemberUncheckedCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput> | Prisma.TreeMemberCreateWithoutProfileInput[] | Prisma.TreeMemberUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutProfileInput | Prisma.TreeMemberCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.TreeMemberCreateManyProfileInputEnvelope
+  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
 }
 
-export type TreeMemberCreateOrConnectWithoutUserInput = {
-  where: Prisma.TreeMemberWhereUniqueInput
-  create: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput>
+export type TreeMemberUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput> | Prisma.TreeMemberCreateWithoutProfileInput[] | Prisma.TreeMemberUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutProfileInput | Prisma.TreeMemberCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.TreeMemberUpsertWithWhereUniqueWithoutProfileInput | Prisma.TreeMemberUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.TreeMemberCreateManyProfileInputEnvelope
+  set?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  disconnect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  delete?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  update?: Prisma.TreeMemberUpdateWithWhereUniqueWithoutProfileInput | Prisma.TreeMemberUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.TreeMemberUpdateManyWithWhereWithoutProfileInput | Prisma.TreeMemberUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
 }
 
-export type TreeMemberCreateManyUserInputEnvelope = {
-  data: Prisma.TreeMemberCreateManyUserInput | Prisma.TreeMemberCreateManyUserInput[]
-  skipDuplicates?: boolean
-}
-
-export type TreeMemberUpsertWithWhereUniqueWithoutUserInput = {
-  where: Prisma.TreeMemberWhereUniqueInput
-  update: Prisma.XOR<Prisma.TreeMemberUpdateWithoutUserInput, Prisma.TreeMemberUncheckedUpdateWithoutUserInput>
-  create: Prisma.XOR<Prisma.TreeMemberCreateWithoutUserInput, Prisma.TreeMemberUncheckedCreateWithoutUserInput>
-}
-
-export type TreeMemberUpdateWithWhereUniqueWithoutUserInput = {
-  where: Prisma.TreeMemberWhereUniqueInput
-  data: Prisma.XOR<Prisma.TreeMemberUpdateWithoutUserInput, Prisma.TreeMemberUncheckedUpdateWithoutUserInput>
-}
-
-export type TreeMemberUpdateManyWithWhereWithoutUserInput = {
-  where: Prisma.TreeMemberScalarWhereInput
-  data: Prisma.XOR<Prisma.TreeMemberUpdateManyMutationInput, Prisma.TreeMemberUncheckedUpdateManyWithoutUserInput>
-}
-
-export type TreeMemberScalarWhereInput = {
-  AND?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
-  OR?: Prisma.TreeMemberScalarWhereInput[]
-  NOT?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
-  id?: Prisma.IntFilter<"TreeMember"> | number
-  userId?: Prisma.StringFilter<"TreeMember"> | string
-  treeId?: Prisma.IntFilter<"TreeMember"> | number
-  role?: Prisma.EnumRoleFilter<"TreeMember"> | $Enums.Role
-  joinedAt?: Prisma.DateTimeFilter<"TreeMember"> | Date | string
+export type TreeMemberUncheckedUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput> | Prisma.TreeMemberCreateWithoutProfileInput[] | Prisma.TreeMemberUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.TreeMemberCreateOrConnectWithoutProfileInput | Prisma.TreeMemberCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.TreeMemberUpsertWithWhereUniqueWithoutProfileInput | Prisma.TreeMemberUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.TreeMemberCreateManyProfileInputEnvelope
+  set?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  disconnect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  delete?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  connect?: Prisma.TreeMemberWhereUniqueInput | Prisma.TreeMemberWhereUniqueInput[]
+  update?: Prisma.TreeMemberUpdateWithWhereUniqueWithoutProfileInput | Prisma.TreeMemberUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.TreeMemberUpdateManyWithWhereWithoutProfileInput | Prisma.TreeMemberUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
 }
 
 export type TreeMemberCreateWithoutTreeInput = {
   role: $Enums.Role
   joinedAt?: Date | string
-  user: Prisma.UserCreateNestedOneWithoutTreeMembersInput
+  profile: Prisma.ProfileCreateNestedOneWithoutTreeMembersInput
 }
 
 export type TreeMemberUncheckedCreateWithoutTreeInput = {
   id?: number
-  userId: string
+  profileId: number
   role: $Enums.Role
   joinedAt?: Date | string
 }
@@ -549,36 +505,59 @@ export type TreeMemberUpdateManyWithWhereWithoutTreeInput = {
   data: Prisma.XOR<Prisma.TreeMemberUpdateManyMutationInput, Prisma.TreeMemberUncheckedUpdateManyWithoutTreeInput>
 }
 
-export type TreeMemberCreateManyUserInput = {
+export type TreeMemberScalarWhereInput = {
+  AND?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
+  OR?: Prisma.TreeMemberScalarWhereInput[]
+  NOT?: Prisma.TreeMemberScalarWhereInput | Prisma.TreeMemberScalarWhereInput[]
+  id?: Prisma.IntFilter<"TreeMember"> | number
+  profileId?: Prisma.IntFilter<"TreeMember"> | number
+  treeId?: Prisma.IntFilter<"TreeMember"> | number
+  role?: Prisma.EnumRoleFilter<"TreeMember"> | $Enums.Role
+  joinedAt?: Prisma.DateTimeFilter<"TreeMember"> | Date | string
+}
+
+export type TreeMemberCreateWithoutProfileInput = {
+  role: $Enums.Role
+  joinedAt?: Date | string
+  tree: Prisma.TreeCreateNestedOneWithoutMembersInput
+}
+
+export type TreeMemberUncheckedCreateWithoutProfileInput = {
   id?: number
   treeId: number
   role: $Enums.Role
   joinedAt?: Date | string
 }
 
-export type TreeMemberUpdateWithoutUserInput = {
-  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tree?: Prisma.TreeUpdateOneRequiredWithoutMembersNestedInput
+export type TreeMemberCreateOrConnectWithoutProfileInput = {
+  where: Prisma.TreeMemberWhereUniqueInput
+  create: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput>
 }
 
-export type TreeMemberUncheckedUpdateWithoutUserInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  treeId?: Prisma.IntFieldUpdateOperationsInput | number
-  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+export type TreeMemberCreateManyProfileInputEnvelope = {
+  data: Prisma.TreeMemberCreateManyProfileInput | Prisma.TreeMemberCreateManyProfileInput[]
+  skipDuplicates?: boolean
 }
 
-export type TreeMemberUncheckedUpdateManyWithoutUserInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  treeId?: Prisma.IntFieldUpdateOperationsInput | number
-  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
-  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+export type TreeMemberUpsertWithWhereUniqueWithoutProfileInput = {
+  where: Prisma.TreeMemberWhereUniqueInput
+  update: Prisma.XOR<Prisma.TreeMemberUpdateWithoutProfileInput, Prisma.TreeMemberUncheckedUpdateWithoutProfileInput>
+  create: Prisma.XOR<Prisma.TreeMemberCreateWithoutProfileInput, Prisma.TreeMemberUncheckedCreateWithoutProfileInput>
+}
+
+export type TreeMemberUpdateWithWhereUniqueWithoutProfileInput = {
+  where: Prisma.TreeMemberWhereUniqueInput
+  data: Prisma.XOR<Prisma.TreeMemberUpdateWithoutProfileInput, Prisma.TreeMemberUncheckedUpdateWithoutProfileInput>
+}
+
+export type TreeMemberUpdateManyWithWhereWithoutProfileInput = {
+  where: Prisma.TreeMemberScalarWhereInput
+  data: Prisma.XOR<Prisma.TreeMemberUpdateManyMutationInput, Prisma.TreeMemberUncheckedUpdateManyWithoutProfileInput>
 }
 
 export type TreeMemberCreateManyTreeInput = {
   id?: number
-  userId: string
+  profileId: number
   role: $Enums.Role
   joinedAt?: Date | string
 }
@@ -586,19 +565,46 @@ export type TreeMemberCreateManyTreeInput = {
 export type TreeMemberUpdateWithoutTreeInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  user?: Prisma.UserUpdateOneRequiredWithoutTreeMembersNestedInput
+  profile?: Prisma.ProfileUpdateOneRequiredWithoutTreeMembersNestedInput
 }
 
 export type TreeMemberUncheckedUpdateWithoutTreeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TreeMemberUncheckedUpdateManyWithoutTreeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.IntFieldUpdateOperationsInput | number
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TreeMemberCreateManyProfileInput = {
+  id?: number
+  treeId: number
+  role: $Enums.Role
+  joinedAt?: Date | string
+}
+
+export type TreeMemberUpdateWithoutProfileInput = {
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tree?: Prisma.TreeUpdateOneRequiredWithoutMembersNestedInput
+}
+
+export type TreeMemberUncheckedUpdateWithoutProfileInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  treeId?: Prisma.IntFieldUpdateOperationsInput | number
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TreeMemberUncheckedUpdateManyWithoutProfileInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  treeId?: Prisma.IntFieldUpdateOperationsInput | number
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   joinedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -607,65 +613,65 @@ export type TreeMemberUncheckedUpdateManyWithoutTreeInput = {
 
 export type TreeMemberSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userId?: boolean
+  profileId?: boolean
   treeId?: boolean
   role?: boolean
   joinedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["treeMember"]>
 
 export type TreeMemberSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userId?: boolean
+  profileId?: boolean
   treeId?: boolean
   role?: boolean
   joinedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["treeMember"]>
 
 export type TreeMemberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userId?: boolean
+  profileId?: boolean
   treeId?: boolean
   role?: boolean
   joinedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["treeMember"]>
 
 export type TreeMemberSelectScalar = {
   id?: boolean
-  userId?: boolean
+  profileId?: boolean
   treeId?: boolean
   role?: boolean
   joinedAt?: boolean
 }
 
-export type TreeMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "treeId" | "role" | "joinedAt", ExtArgs["result"]["treeMember"]>
+export type TreeMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "treeId" | "role" | "joinedAt", ExtArgs["result"]["treeMember"]>
 export type TreeMemberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }
 export type TreeMemberIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }
 export type TreeMemberIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
   tree?: boolean | Prisma.TreeDefaultArgs<ExtArgs>
 }
 
 export type $TreeMemberPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TreeMember"
   objects: {
-    user: Prisma.$UserPayload<ExtArgs>
+    profile: Prisma.$ProfilePayload<ExtArgs>
     tree: Prisma.$TreePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    userId: string
+    profileId: number
     treeId: number
     role: $Enums.Role
     joinedAt: Date
@@ -1063,7 +1069,7 @@ readonly fields: TreeMemberFieldRefs;
  */
 export interface Prisma__TreeMemberClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profile<T extends Prisma.ProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tree<T extends Prisma.TreeDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TreeDefaultArgs<ExtArgs>>): Prisma.Prisma__TreeClient<runtime.Types.Result.GetResult<Prisma.$TreePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1095,7 +1101,7 @@ export interface Prisma__TreeMemberClient<T, Null = never, ExtArgs extends runti
  */
 export interface TreeMemberFieldRefs {
   readonly id: Prisma.FieldRef<"TreeMember", 'Int'>
-  readonly userId: Prisma.FieldRef<"TreeMember", 'String'>
+  readonly profileId: Prisma.FieldRef<"TreeMember", 'Int'>
   readonly treeId: Prisma.FieldRef<"TreeMember", 'Int'>
   readonly role: Prisma.FieldRef<"TreeMember", 'Role'>
   readonly joinedAt: Prisma.FieldRef<"TreeMember", 'DateTime'>

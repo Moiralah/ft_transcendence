@@ -56,7 +56,6 @@ export const ModelName = {
   TreeMember: 'TreeMember',
   Invitation: 'Invitation',
   Profile: 'Profile',
-  ProfileSpouse: 'ProfileSpouse',
   Event: 'Event',
   AuditLog: 'AuditLog'
 } as const
@@ -105,7 +104,7 @@ export type TreeScalarFieldEnum = (typeof TreeScalarFieldEnum)[keyof typeof Tree
 
 export const TreeMemberScalarFieldEnum = {
   id: 'id',
-  userId: 'userId',
+  profileId: 'profileId',
   treeId: 'treeId',
   role: 'role',
   joinedAt: 'joinedAt'
@@ -141,22 +140,13 @@ export const ProfileScalarFieldEnum = {
   verified: 'verified',
   motherId: 'motherId',
   fatherId: 'fatherId',
+  spouseId: 'spouseId',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeof ProfileScalarFieldEnum]
-
-
-export const ProfileSpouseScalarFieldEnum = {
-  id: 'id',
-  profileId: 'profileId',
-  marriageDate: 'marriageDate',
-  divorceDate: 'divorceDate'
-} as const
-
-export type ProfileSpouseScalarFieldEnum = (typeof ProfileSpouseScalarFieldEnum)[keyof typeof ProfileSpouseScalarFieldEnum]
 
 
 export const EventScalarFieldEnum = {
