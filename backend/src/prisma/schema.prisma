@@ -54,13 +54,13 @@ model Tree {
 // ------------------- Tree Members (Roles) -------------------
 model TreeMember {
   id        Int      @id @default(autoincrement())
-  profileId Int
-  treeId    Int
+  profileId Int?
+  treeId    Int?
   role      Role     // ADMIN, MODERATOR, MEMBER, VIEWER
   joinedAt  DateTime @default(now())
 
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  profile   Profile?  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tree      Tree?     @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, treeId])
 }

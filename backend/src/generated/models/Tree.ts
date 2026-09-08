@@ -445,6 +445,11 @@ export type TreeSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
 }
 
+export type TreeNullableScalarRelationFilter = {
+  is?: Prisma.TreeWhereInput | null
+  isNot?: Prisma.TreeWhereInput | null
+}
+
 export type TreeScalarRelationFilter = {
   is?: Prisma.TreeWhereInput
   isNot?: Prisma.TreeWhereInput
@@ -514,10 +519,12 @@ export type TreeCreateNestedOneWithoutMembersInput = {
   connect?: Prisma.TreeWhereUniqueInput
 }
 
-export type TreeUpdateOneRequiredWithoutMembersNestedInput = {
+export type TreeUpdateOneWithoutMembersNestedInput = {
   create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
   upsert?: Prisma.TreeUpsertWithoutMembersInput
+  disconnect?: Prisma.TreeWhereInput | boolean
+  delete?: Prisma.TreeWhereInput | boolean
   connect?: Prisma.TreeWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutMembersInput, Prisma.TreeUpdateWithoutMembersInput>, Prisma.TreeUncheckedUpdateWithoutMembersInput>
 }

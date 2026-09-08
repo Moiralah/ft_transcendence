@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -75,7 +75,6 @@ export class ProfileService {
 				motherId: motherId,
 				fatherId: fatherId,
 				birthDate: data.birth_date ? new Date(data.birth_date) : null,
-//				treeId: data.tree_id,
 			},
 		});
 		return created;
@@ -109,22 +108,26 @@ export class ProfileService {
 		return this.prisma.profile.delete({ where: { id } });
 	}
 
-	async getTree(rootId: number): Promise<any> {
+	async getTree(rootId: number, treeId?): Promise<any> {
 		// 1. Fetch all profiles in the same tree (to avoid multiple queries)
 		const root = await this.prisma.profile.findUnique({
 			where: { id: rootId },
-			select: { treeId: true },
+			include: { treeMembers: true },
 		});
 		if (!root) throw new NotFoundException('Person not found');
-		if (root.treeId === null) throw new NotFoundException('Person Profile is not in tree');
-		const treeId = root.treeId;
+		if (root.treeMembers.length === null) throw new NotFoundException('Person Profile is not in tree');
+		const streeId = treeId ?? root.treeMembers[0].treeId;
 		const allProfiles = await this.prisma.profile.findMany({
-			where: { treeId: root.treeId },
+			where: { treeMembers: { some: { treeId: streeId } }, },
 			select: {
-				mother: true,
-				father: true,
-				childrenAsMother: true,
-				childrenAsFather: true,
+				id: true,
+				firstName: true,
+				lastName: true,
+				gender: true,
+				birthDate: true,
+				deathDate: true,
+				motherId: true,
+				fatherId: true,
 			},
 		});
 

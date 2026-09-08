@@ -569,11 +569,6 @@ export type ProfileNullableScalarRelationFilter = {
   isNot?: Prisma.ProfileWhereInput | null
 }
 
-export type ProfileScalarRelationFilter = {
-  is?: Prisma.ProfileWhereInput
-  isNot?: Prisma.ProfileWhereInput
-}
-
 export type ProfileListRelationFilter = {
   every?: Prisma.ProfileWhereInput
   some?: Prisma.ProfileWhereInput
@@ -652,6 +647,11 @@ export type ProfileSumOrderByAggregateInput = {
   spouseId?: Prisma.SortOrder
 }
 
+export type ProfileScalarRelationFilter = {
+  is?: Prisma.ProfileWhereInput
+  isNot?: Prisma.ProfileWhereInput
+}
+
 export type ProfileCreateNestedOneWithoutUserInput = {
   create?: Prisma.XOR<Prisma.ProfileCreateWithoutUserInput, Prisma.ProfileUncheckedCreateWithoutUserInput>
   connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutUserInput
@@ -674,10 +674,12 @@ export type ProfileCreateNestedOneWithoutTreeMembersInput = {
   connect?: Prisma.ProfileWhereUniqueInput
 }
 
-export type ProfileUpdateOneRequiredWithoutTreeMembersNestedInput = {
+export type ProfileUpdateOneWithoutTreeMembersNestedInput = {
   create?: Prisma.XOR<Prisma.ProfileCreateWithoutTreeMembersInput, Prisma.ProfileUncheckedCreateWithoutTreeMembersInput>
   connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutTreeMembersInput
   upsert?: Prisma.ProfileUpsertWithoutTreeMembersInput
+  disconnect?: Prisma.ProfileWhereInput | boolean
+  delete?: Prisma.ProfileWhereInput | boolean
   connect?: Prisma.ProfileWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutTreeMembersInput, Prisma.ProfileUpdateWithoutTreeMembersInput>, Prisma.ProfileUncheckedUpdateWithoutTreeMembersInput>
 }
