@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { React } from 'react';
 import { componentTokens } from "./colorPalette";
+import { Button } from './button';
 
 interface modalBannerProps {
     modalForm: (e: React.FormEvent) => void;
@@ -44,19 +45,19 @@ export function ModalBanner({
                   required
                 />
                 <div className="flex gap-2">
-                  <button 
-                    type="submit" 
-                    className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+                  <Button
+                    type="submit"
+                    variant='primary'
                   >
-                    { title }
-                  </button>
-                  <button
+                    {title}
+                  </Button>
+                  <Button
                     type="button"
                     onClick={onClose}
-                    className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
+                    variant='primary'
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>

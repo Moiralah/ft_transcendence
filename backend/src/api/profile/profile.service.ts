@@ -24,6 +24,32 @@ export class ProfileService {
 		return profile;
   	}
 
+	// Add to ProfileService
+	async update(UserId: number, data: {
+		firstName?: string;
+		lastName?: string;
+		gender?: string;
+		birthDate?: string;
+		deathDate?: string;
+		motherId?: number | null;
+		fatherId?: number | null;
+		bio?: string | null;
+	}) {
+		return this.prisma.profile.update({
+			where: { id : UserId},
+			data: {
+				firstName: data.firstName,
+				lastName: data.lastName,
+				gender: data.gender,
+				birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+				deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
+				motherId: data.motherId ?? undefined,
+				fatherId: data.fatherId ?? undefined,
+				bio: data.bio ?? undefined,
+			},
+		});
+	}
+
 	async findAll() {
 		// Include mother and father relations
 		const persons = await this.prisma.profile.findMany({
@@ -94,90 +120,69 @@ export class ProfileService {
 				motherId: motherId,
 				fatherId: fatherId,
 				birthDate: data.birth_date ? new Date(data.birth_date) : null,
-//				treeId: data.tree_id,
 			},
 		});
 		return created;
-	}
-
-	// Add to ProfileService
-	async update(id: number, data: {
-		firstName?: string;
-		lastName?: string;
-		gender?: string;
-		birthDate?: string;
-		deathDate?: string;
-		motherId?: number | null;
-		fatherId?: number | null;
-	}) {
-		return this.prisma.profile.update({
-			where: { id },
-			data: {
-				firstName: data.firstName,
-				lastName: data.lastName,
-				gender: data.gender,
-				birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
-				deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
-				motherId: data.motherId ?? undefined,
-				fatherId: data.fatherId ?? undefined,
-			},
-		});
 	}
 
 	async remove(id: number) {
 		return this.prisma.profile.delete({ where: { id } });
 	}
 
-	// async getTree(rootId: number): Promise<any> {
-	// 	// 1. Fetch all profiles in the same tree (to avoid multiple queries)
-	// 	const root = await this.prisma.profile.findUnique({
-	// 		where: { id: rootId },
-	// 		include: { tree: true },
-	// 	});
-	// 	if (!root) throw new NotFoundException('Person not found');
+	async getTree(rootId: number, treeId?): Promise<any> {
+		// 1. Fetch all profiles in the same tree (to avoid multiple queries)
+		const root = await this.prisma.profile.findUnique({
+			where: { id: rootId },
+			include: { treeMembers: true },
+		});
+		if (!root) throw new NotFoundException('Person not found');
+		if (root.treeMembers.length === null) throw new NotFoundException('Person Profile is not in tree');
+		const streeId = treeId ?? root.treeMembers[0].treeId;
+		const allProfiles = await this.prisma.profile.findMany({
+			where: { treeMembers: { some: { treeId: streeId } }, },
+			select: {
+				id: true,
+				firstName: true,
+				lastName: true,
+				gender: true,
+				birthDate: true,
+				deathDate: true,
+				motherId: true,
+				fatherId: true,
+			},
+		});
 
-	// 	const treeId = root.treeId;
-	// 	const allProfiles = await this.prisma.profile.findMany({
-	// 		where: { treeId },
-	// 		include: {
-	// 			mother: true,
-	// 			father: true,
-	// 			childrenAsMother: true,
-	// 			childrenAsFather: true,
-	// 		},
-	// 	});
+		// 2. Build a map of id -> profile with children arrays
+		const profileMap: Record<number, any> = {};
+		allProfiles.forEach(p => {
+			profileMap[p.id] = { ...p, children: [] };
+		});
 
-	// 	// 2. Build a map of id -> profile with children arrays
-	// 	const profileMap: Record<number, any> = {};
-	// 	allProfiles.forEach(p => {
-	// 		profileMap[p.id] = { ...p, children: [] };
-	// 	});
+		// 3. Populate children arrays
+		allProfiles.forEach(p => {
+			if (p.motherId) {
+				profileMap[p.motherId]?.children.push(p.id);
+			}
+			if (p.fatherId) {
+				profileMap[p.fatherId]?.children.push(p.id);
+			}
+		});
 
-	// 	// 3. Populate children arrays
-	// 	allProfiles.forEach(p => {
-	// 		if (p.motherId) {
-	// 			profileMap[p.motherId]?.children.push(p.id);
-	// 		}
-	// 		if (p.fatherId) {
-	// 			profileMap[p.fatherId]?.children.push(p.id);
-	// 		}
-	// 	});
+		// 4. Recursive function to build tree from a root id
+		function buildNode(id: number): any {
+			const p = profileMap[id];
+			if (!p) return null;
+			return {
+				id: p.id,
+				firstName: p.firstName,
+				lastName: p.lastName,
+				gender: p.gender,
+				birthDate: p.birthDate,
+				deathDate: p.deathDate,
+				children: (p.children || []).map((childId: number) => buildNode(childId)).filter(Boolean),
+			};
+		}
 
-	// 	// 4. Recursive function to build tree from a root id
-	// 	function buildNode(id: number): any {
-	// 		const p = profileMap[id];
-	// 		if (!p) return null;
-	// 		return {
-	// 			id: p.id,
-	// 			firstName: p.firstName,
-	// 			lastName: p.lastName,
-	// 			gender: p.gender,
-	// 			birthDate: p.birthDate,
-	// 			deathDate: p.deathDate,
-	// 			children: (p.children || []).map((childId: number) => buildNode(childId)).filter(Boolean),
-	// 		};
-	// 	}
-
-	// 	return buildNode(rootId);
-	// }
+		return buildNode(rootId);
+	}
 }

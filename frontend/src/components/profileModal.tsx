@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-interface Profile {
-  firstName: string;
+export interface Profile {
+  id?: number | string;
+  firstName?: string;
   lastName?: string;
   gender?: string;
   birthDate?: string;
@@ -13,178 +14,156 @@ interface Profile {
 }
 
 interface ProfileModalProps {
+  existingProfile: Profile | null;
   onClose?: () => void;
+  onSave?: (updatedProfile: Profile) => void;
 }
 
-export function ProfileModal({ onClose }: ProfileModalProps) {
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
+export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalProps) {
+
   const [formData, setFormData] = useState<Profile>({
-    firstName: '',
-    lastName: '',
-    gender: '',
-    birthDate: '',
-    deathDate: '',
-    bio: '',
-    photoUrl: '',
+    id: "",
+    firstName: "",
+    lastName: "",
+    gender: "",
+    birthDate: "",
+    deathDate: "",
+    bio: "",
+    photoUrl: "",
   });
 
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
+  const fields: { key: keyof typeof formData; label: string; type: string }[] = [
+    { key: "firstName", label: "first name", type: "text" },
+    { key: "lastName", label: "last name", type: "text" },
+    { key: "gender", label: "gender", type: "text" },
+    { key: "birthDate", label: "birth date", type: "date" },
+    { key: "deathDate", label: "death date", type: "date" },
+    { key: "bio", label: "bio", type: "text" },
+  ];
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   useEffect(() => {
-    if (token) {
-      fetchMyProfile(token);
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchMyProfile = async (authToken: string | null) => {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/profile/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
+    if (existingProfile) {
+      setFormData({
+        id: existingProfile.id ?? "",
+        firstName: existingProfile.firstName ?? "",
+        lastName: existingProfile.lastName ?? "",
+        gender: existingProfile.gender ?? "",
+        birthDate: existingProfile.birthDate
+          ? existingProfile.birthDate.split("T")[0]
+          : "",
+        deathDate: existingProfile.deathDate
+          ? existingProfile.deathDate.split("T")[0]
+          : "",
+        bio: existingProfile.bio ?? "",
+        photoUrl: existingProfile.photoUrl ?? "",
       });
-
-      const profileData = await res.json();
-      setMyProfile(profileData);
-      setFormData(profileData);
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [existingProfile]);
 
-  const handleInputChange = (field: keyof Profile, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter" || e.key === "Escape") {
       setEditingField(null);
     }
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/profile/update`, {
-        method: 'PUT', // or 'PATCH' depending on your backend
+      const token = localStorage.getItem("ft_token");
+      if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/profile/${formData.id}`, {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error('Failed to update profile');
-
-      const updatedProfile = await res.json();
-      setMyProfile(updatedProfile);
-      if (onClose) onClose();
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
-    } finally {
-      setSaving(false);
+        },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      const updatedProfile: Profile = await res.json();
+      if (onSave) {
+        onSave(updatedProfile);
+      }
+      if (onClose) {
+        onClose();
+      } 
+    } catch (err: any) {
+    console.error("Save error:", err.message);
     }
   };
 
   const handleCancel = () => {
-    setFormData(myProfile || { firstName: '' });
-    setEditingField(null);
-    if (onClose) onClose();
+    if (onClose) {
+      onClose();
+    }
   };
 
-  const renderEditableField = (label: string, field: keyof Profile, type: string = 'text') => {
-    const isEditing = editingField === field;
-    const value = formData[field] || '';
-
-    return (
-      <div className="flex items-center justify-between gap-2 py-1">
-        <strong className="font-semibold text-slate-900 w-28 shrink-0">{label}:</strong>
-        {isEditing ? (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => handleInputChange(field, e.target.value)}
-            onBlur={() => setEditingField(null)}
-            onKeyDown={handleKeyDown}
-            autoFocus
-            className="border border-indigo-500 rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-        ) : (
-          <div
-            onClick={() => setEditingField(field)}
-            className="group flex-1 flex items-center justify-between cursor-pointer rounded px-2 py-1 hover:bg-slate-100 transition border border-transparent hover:border-slate-300"
-            title="Click to edit"
-          >
-            <span className="text-slate-800">{value || 'N/A'}</span>
-            <span className="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-medium">
-              Edit
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 relative flex flex-col gap-4 shadow-lg">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b pb-3">
-          <h2 className="text-xl font-bold text-slate-800">
-            {formData?.firstName || formData?.lastName
-              ? `${formData.firstName} ${formData.lastName}`
-              : 'User Profile'}
-          </h2>
-          {onClose && (
-            <button
-              onClick={handleCancel}
-              className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/50 p-4">
+      { /* form fill section */}
+      <div className="flex flex-col gap-6 bg-white rounded-xl max-w-4xl p-6 ">
+        {/* field map render each field row */}
+        { fields.map(({ key, label, type }) => (
+        <div key={key} className="flex items-center gap-2">
+          <span className="text-xl p-5">
+            { label } :
+          </span>
+          <div className="w-64">
+            {editingField === key ? (
+            <input
+              type={ type }
+              name= {key}
+              value={formData[key] || "" }
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onBlur={() => setEditingField(null)}
+              autoFocus
+              className="text-xl outline-none border border-none w-full"
+            />
+            ) : (
+            <span
+              onClick={() => setEditingField(key)}
+              className="cursor-pointer hover:bg-gray-100 rounded text-xl "
             >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Profile Content */}
-        {loading ? (
-          <p className="text-slate-500 py-4">Loading profile...</p>
-        ) : (
-          <div className="flex flex-col gap-1 text-sm">
-            {renderEditableField('First Name', 'firstName')}
-            {renderEditableField('Last Name', 'lastName')}
-            {renderEditableField('Gender', 'gender')}
-            {renderEditableField('Birth Date', 'birthDate', 'date')}
-            {renderEditableField('Death Date', 'deathDate', 'date')}
+              {formData[key] || 'Click to add '+label}
+            </span>
+            )}
           </div>
-        )}
+        </div>
+        ))}
 
-        {/* Footer Banner Actions */}
-        <div className="flex justify-end gap-2 border-t pt-4 mt-2">
+        { /* button section */}
+        <div className="flex items-center justify-end gap-3 pt-4">
           <button
+            type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 rounded-lg shadow transition"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
           >
-            {saving ? 'Saving...' : 'Save'}
+            Save
           </button>
         </div>
       </div>

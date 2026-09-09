@@ -48,6 +48,7 @@ export default function TreePage() {
   }, [token]);
 
   interface Profile {
+    id?: number;
     firstName: string;
     lastName?: string;
     gender?: string;
@@ -183,8 +184,8 @@ export default function TreePage() {
     }
   };
 
-  if (loading) return <div className="p-8">Loading your trees...</div>;
-  if (loading) return <div className="p-8">Loading your trees...</div>;
+  // if (loading) return <div className="p-8">Loading your trees...</div>;
+  // if (loading) return <div className="p-8">Loading your trees...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
   return (
@@ -234,25 +235,25 @@ export default function TreePage() {
           {/* Bio Section */}
           <div className="flex w-full py-8 px-4 flex justify-center items-center">
             <p className="text-sm text-gray-600 ">
-              {myProfile?.profile?.bio || 'Bio is empty'}
+              {myProfile?.bio || 'Bio is empty'}
             </p>
           </div>
         </div>
         {/*Search*/}
-        <div className="flex w-full max-w gap-2 mb-6">
+        <div className="flex w-full max-w gap-2 item-center">
           <input
             type="text"
             placeholder="Search trees or profiles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border rounded-lg"
+            className="border rounded-lg h-12"
           />
-          <button
+          <Button
             onClick={searchTrees}
-            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
+            variant='ghost'
           >
           Search
-          </button>
+          </Button>
         </div>
 
           {/* My Trees List */}
@@ -305,7 +306,11 @@ export default function TreePage() {
 
       {/* Profile Modal */}
       { showProfileModal && (
-        <ProfileModal/>
+        <ProfileModal 
+          existingProfile={myProfile}
+          onClose={() => setShowProfileModal(false)} 
+          onSave={(updatedProfile) => {setMyProfile(updatedProfile)}}
+        />
       )}
 
         { /* Search Results Modal */}

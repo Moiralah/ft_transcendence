@@ -402,7 +402,6 @@ export const ModelName = {
   TreeMember: 'TreeMember',
   Invitation: 'Invitation',
   Profile: 'Profile',
-  ProfileSpouse: 'ProfileSpouse',
   Event: 'Event',
   AuditLog: 'AuditLog'
 } as const
@@ -420,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "tree" | "treeMember" | "invitation" | "profile" | "profileSpouse" | "event" | "auditLog"
+    modelProps: "user" | "tree" | "treeMember" | "invitation" | "profile" | "event" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -794,80 +793,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    ProfileSpouse: {
-      payload: Prisma.$ProfileSpousePayload<ExtArgs>
-      fields: Prisma.ProfileSpouseFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.ProfileSpouseFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.ProfileSpouseFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        findFirst: {
-          args: Prisma.ProfileSpouseFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.ProfileSpouseFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        findMany: {
-          args: Prisma.ProfileSpouseFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
-        }
-        create: {
-          args: Prisma.ProfileSpouseCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        createMany: {
-          args: Prisma.ProfileSpouseCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.ProfileSpouseCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
-        }
-        delete: {
-          args: Prisma.ProfileSpouseDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        update: {
-          args: Prisma.ProfileSpouseUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        deleteMany: {
-          args: Prisma.ProfileSpouseDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.ProfileSpouseUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.ProfileSpouseUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>[]
-        }
-        upsert: {
-          args: Prisma.ProfileSpouseUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProfileSpousePayload>
-        }
-        aggregate: {
-          args: Prisma.ProfileSpouseAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateProfileSpouse>
-        }
-        groupBy: {
-          args: Prisma.ProfileSpouseGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ProfileSpouseGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.ProfileSpouseCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ProfileSpouseCountAggregateOutputType> | number
-        }
-      }
-    }
     Event: {
       payload: Prisma.$EventPayload<ExtArgs>
       fields: Prisma.EventFieldRefs
@@ -1083,7 +1008,7 @@ export type TreeScalarFieldEnum = (typeof TreeScalarFieldEnum)[keyof typeof Tree
 
 export const TreeMemberScalarFieldEnum = {
   id: 'id',
-  userId: 'userId',
+  profileId: 'profileId',
   treeId: 'treeId',
   role: 'role',
   joinedAt: 'joinedAt'
@@ -1119,22 +1044,13 @@ export const ProfileScalarFieldEnum = {
   verified: 'verified',
   motherId: 'motherId',
   fatherId: 'fatherId',
+  spouseId: 'spouseId',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeof ProfileScalarFieldEnum]
-
-
-export const ProfileSpouseScalarFieldEnum = {
-  id: 'id',
-  profileId: 'profileId',
-  marriageDate: 'marriageDate',
-  divorceDate: 'divorceDate'
-} as const
-
-export type ProfileSpouseScalarFieldEnum = (typeof ProfileSpouseScalarFieldEnum)[keyof typeof ProfileSpouseScalarFieldEnum]
 
 
 export const EventScalarFieldEnum = {
@@ -1438,7 +1354,6 @@ export type GlobalOmitConfig = {
   treeMember?: Prisma.TreeMemberOmit
   invitation?: Prisma.InvitationOmit
   profile?: Prisma.ProfileOmit
-  profileSpouse?: Prisma.ProfileSpouseOmit
   event?: Prisma.EventOmit
   auditLog?: Prisma.AuditLogOmit
 }

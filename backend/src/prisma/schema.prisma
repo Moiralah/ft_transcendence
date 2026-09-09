@@ -18,9 +18,6 @@ model User {
   // Trees this user owns (created by them)
   ownedTrees Tree[]    @relation("TreeOwner")
 
-  // Memberships in trees (with roles)
-  treeMembers TreeMember[]
-
   // Profile (assigned to user when sign up)
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
@@ -47,9 +44,6 @@ model Tree {
   // Members (users with roles)
   members TreeMember[]
 
-  // Profiles (people in this tree)
-  profiles Profile[]
-
   // Audit logs
   auditLogs AuditLog[]
 
@@ -60,15 +54,15 @@ model Tree {
 // ------------------- Tree Members (Roles) -------------------
 model TreeMember {
   id        Int      @id @default(autoincrement())
-  userId    String
-  treeId    Int
+  profileId Int?
+  treeId    Int?
   role      Role     // ADMIN, MODERATOR, MEMBER, VIEWER
   joinedAt  DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  profile   Profile?  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tree      Tree?     @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, treeId])
+  @@unique([profileId, treeId])
 }
 
 enum Role {
@@ -114,8 +108,8 @@ model Profile {
   photoUrl    String?
   verified    Boolean  @default(false)
 
-  // Trees this profile belongs to
-  trees       Tree []
+  // Memberships in trees (with roles)
+  treeMembers TreeMember[]
 
   // Parents (self-referential)
   motherId    Int?     @map("mother_id")
@@ -127,7 +121,9 @@ model Profile {
   childrenAsFather Profile[] @relation("FatherChildren")
 
   // Spouses
-  spouses ProfileSpouse[] @relation("Spouse")
+  spouseId    Int? @map("spouse_id") @unique
+  spouse      Profile? @relation("Spouse", fields: [spouseId], references: [id])
+  spouseOf    Profile? @relation("Spouse")
 
   // Life events
   events Event[]
@@ -140,19 +136,6 @@ model Profile {
   updatedAt   DateTime @updatedAt
 
   @@map("profiles")
-}
-
-// ------------------- Spouse Relationship -------------------
-model ProfileSpouse {
-  id            Int      @id @default(autoincrement())
-  profileId    Int
-  marriageDate  DateTime?
-  divorceDate   DateTime?
-
-  profile      Profile  @relation("Spouse", fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@unique([profileId])
-  @@map("profile_spouses")
 }
 
 // ------------------- Life Events -------------------
