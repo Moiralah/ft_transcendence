@@ -29,21 +29,21 @@ export function TreeBanner({name, code, userRole, profiles, owner, themeMode}: T
             as='p'
             variant='caption'
           >
-            Code: <span style={{color : token.textRole}}>{code}</span>
+            Code: <b style={{color : token.textRole}}>{code}</b>
           </Typography>
           
           <Typography
             as='p'
             variant='caption'
           >
-            Role: <span style={{color : token.textRole}}>{userRole}</span>
+            Role: <b style={{color : token.textRole}}>{userRole}</b>
           </Typography>
 
           <Typography
             as='p'
             variant='caption'
           >
-            <p>{profiles?.length || 0} profiles</p>
+            <b>{profiles?.length || 0} profiles</b>
           </Typography>
 
         </div>
@@ -52,7 +52,7 @@ export function TreeBanner({name, code, userRole, profiles, owner, themeMode}: T
             as='p'
             variant='caption'
           >
-            <p>Owner: {owner?.username || 'Unknown'}</p>
+            <b>Owner: {owner?.username || 'Unknown'}</b>
           </Typography>
           
         </div>

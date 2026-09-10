@@ -5,6 +5,51 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
 
+	async findMe(Id: string) {
+    	const profile = await this.prisma.profile.findFirst({
+			where: { userId :Id},
+      		select: {
+        		id: true,
+        		firstName: true,
+				lastName: true,
+				gender: true,
+  				birthDate: true,
+  				deathDate: true,
+  				bio: true,
+  				photoUrl: true,
+      		},
+    	});
+		// if (!profile)
+        // 	throw new NotFoundException(`User with ID "${userId}" not found`);
+		return profile;
+  	}
+
+	// Add to ProfileService
+	async update(UserId: number, data: {
+		firstName?: string;
+		lastName?: string;
+		gender?: string;
+		birthDate?: string;
+		deathDate?: string;
+		motherId?: number | null;
+		fatherId?: number | null;
+		bio?: string | null;
+	}) {
+		return this.prisma.profile.update({
+			where: { id : UserId},
+			data: {
+				firstName: data.firstName,
+				lastName: data.lastName,
+				gender: data.gender,
+				birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+				deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
+				motherId: data.motherId ?? undefined,
+				fatherId: data.fatherId ?? undefined,
+				bio: data.bio ?? undefined,
+			},
+		});
+	}
+
 	async findAll() {
 		// Include mother and father relations
 		const persons = await this.prisma.profile.findMany({
@@ -78,30 +123,6 @@ export class ProfileService {
 			},
 		});
 		return created;
-	}
-
-	// Add to ProfileService
-	async update(id: number, data: {
-		firstName?: string;
-		lastName?: string;
-		gender?: string;
-		birthDate?: string;
-		deathDate?: string;
-		motherId?: number | null;
-		fatherId?: number | null;
-	}) {
-		return this.prisma.profile.update({
-			where: { id },
-			data: {
-				firstName: data.firstName,
-				lastName: data.lastName,
-				gender: data.gender,
-				birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
-				deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
-				motherId: data.motherId ?? undefined,
-				fatherId: data.fatherId ?? undefined,
-			},
-		});
 	}
 
 	async remove(id: number) {
