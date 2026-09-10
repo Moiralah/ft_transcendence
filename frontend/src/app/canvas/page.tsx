@@ -38,10 +38,6 @@ export default function Content() {
     });
   };
 
-  // Name state
-  const [name, setName] = useState("my tree");
-  const [isEditing, setIsEditing] = useState(false);
-  const [modal, setModal] = useState(false);
 
   // achievement state
   const [points, setPoints] = useState(10);
@@ -50,30 +46,37 @@ export default function Content() {
   const [levelName, setLevelName] = useState("newbie");
   const percentage = Math.min(100, Math.max(0, (Math.round(points / fullPoints* 100))));
 
-  /* achievement point API
-  useEffect(() => {
-    async function fetchPoints() {
-      try {
-        const response = await fetch(`/api/user-points?userId=${userId}`);
-        const data = await response.json();
-        setPoints(data.achievementPoints);
-      } catch (error) {
-        console.error('Error fetching achievement points:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const [editTreeName, setEditTreeName] = useState(false);
 
-    if (userId) {
-      fetchPoints();
+  const [treeMemberModal, setTreeMemberModal] = useState(false); 
+
+  const [name, setName] = useState("my tree");
+
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+  };
+
+  const handleNameKeyDown = (e) => {
+    if (e.key == "Enter" || e.key == "Escape") {
+      setEditTreeName(false);
     }
-  }, [userId]);
-  */
+  }
+
+  const handleNameStaticKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setEditTreeName(true);
+    }
+  }
+
+  const handleNameBlur = () => {
+    setEditTreeName(false);
+  }
 
   return (
     <div className="w-full h-screen bg-white flex flex-col overflow-hidden">
       {/* Header Bar */}
-      <header className="relative flex flex-col justify-between items-center bg-white shadow-md z-30 p-4 border-b font-bold text-sm sm:text-xl">
+      <header className="relative justify-between items-center bg-white shadow-md z-30 p-4 border-b">
         {/* top header part */}
         <div className='flex flex-row w-full justify-between items-center'>
           <div>
@@ -86,131 +89,66 @@ export default function Content() {
               <span>Family Tree</span>
             </div>
           </div>
-          {/* edit name */}
-          <div className='hidden md:block items-center'>
-            {isEditing ? (
-              <input
-                type="text"
-                value={name}
-                size={Math.max(name.length, 1)}
-                onChange={(e) =>setName(e.target.value)}
-                onBlur={() => setIsEditing(false)}
-                onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
-                autoFocus
-                className="px-6 py-2 rounded-lg border-2 outline-none border-solid border-amber-500 text-center bg-white"
-              />
-            ) : (
-              <div
-                onClick={() => setIsEditing(true)}
-                className="cursor-pointer px-3 py-1 rounded-lg border border-transparent hover:bg-gray-200 transition-all text-gray-700"
-              >
-                {name.trim() || "My Family Tree"}
-              </div>
-            )}
-          </div>
           {/*} achievement and nav bar */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            { /* here the pop up button */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setModal(true)}
-                className="flex items-center gap-1 bg-amber-100  border border-amber-400 text-black font-bold px-1.5 py-0.5 rounded-full hover:bg-amber-200 transition-colors shadow-sm"
-              >
-                <span className="text-amber-400 text-sm">
-                  {"\u2605"}
-                </span>
-                <span className="ml-0.1 text-sm font-sans p-0.5">
-                  {points}
-                </span>
-              </button>
-              {/* Modal Overlay & Popup */}
-              {modal && (
-                <div className="fixed inset-0 z-50 flex items-center bg-gray-500/50 justify-center">
-                  <div className="relative flex flex-col bg-white rounded-2xl max-w-lg w-full p-6 mx-4 gap-4">
-                    {/* col 1 modal head */}
-                    <div className="flex justify-between">
-                      {/* Title */}
-                      <div className="text-lg font-bold text-gray-800 text-center font-bold">
-                        Your Genealogy Journey
-                      </div>
-                      {/* Close 'X' Button */}
-                      <button
-                        type="button"
-                        onClick={() => setModal(false)}
-                        className="w-7 h-7 items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors font-bold text-lg"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    {/* col 2 progress box*/}
-                    <div className="bg-amber-100  border border-amber-400 rounded-xl p-4 flex flex-col gap-1">
-                      {/* row 1 progress level */}
-                      <div className="justify-between flex">
-                        <div className="text-left text-amber-800 text-lg font-bold font-sans">
-                          Level {levels}: {levelName}
-                        </div>
-                        {/* Top right current point*/}
-                        <div className="top-4 right-4 flex items-center">
-                          <span className="text-amber-400 text-sm">
-                            {"\u2605"}
-                          </span>
-                          <span className="ml-0.1 text-sm font-sans p-0.5">
-                            {points}
-                          </span>
-                        </div>
-                      </div>
-                    <div className="w-full">
-                      {/* row 2 Progress Bar Track */}
-                      <div className="w-full bg-amber-300 rounded-full h-2.5 dark:bg-amber-900/30">
-                        {/* Progress Bar Fill - Change w-[??]to your actual percentage variable */}
-                        <div className="bg-amber-500 h-2.5 rounded-full"  style={{ width: `${percentage}%` }}></div>
-                        </div>
-                      </div>
-                      {/* row 3 star left to next level */}
-                      <div className="font-thin text-sm text-amber-600 text-right">
-                        {fullPoints - points} Stars to next level
-                      </div>
-                    </div>
-                    {/* col 3 achievement overflow box */}
-                    <div className="text-lg font-bold text-gray-800 text-center font-bold text-left">
-                      Achievements
-                    </div>
-                    {/* achievement pictures*/}
-                    <div>
-                      
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+ 
            
           </div>
         </div>
-        { /* optional bottom header part*/}
-        {/* edit name */}
-        <div className='md:hidden items-center'>
-          {isEditing ? (
-            <input
-              type="text"
-              value={name}
-              size={Math.max(name.length, 1)}
-              onChange={(e) =>setName(e.target.value)}
-              onBlur={() => setIsEditing(false)}
-              onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
-              autoFocus
-               className="px-6 py-2 rounded-lg border-2 outline-none border-solid border-amber-500 text-center bg-white"
-              />
-          ) : (
-            <div
-              onClick={() => setIsEditing(true)}
-              className="cursor-pointer px-3 py-1 rounded-lg border border-transparent hover:bg-gray-200 transition-all text-gray-700"
-            >
-              {name.trim() || "My Family Tree"}
-            </div>
-          )}
-        </div>
+
       </header>
+     <main className="flex">
+  {/* Tree member card */}
+  <div className="w-80 flex flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
+    
+    {/* Top Row: Editable Title + Home Button */}
+    <div className="flex flex-row items-center justify-between gap-3">
+      <div className="h-12 flex flex-1 items-center">
+        {editTreeName ? (
+          <input
+            type="text"
+            value={name}
+            onChange={handleNameChange}
+            onKeyDown={handleNameKeyDown}
+            onBlur={handleNameBlur}
+            autoFocus
+            aria-label="Edit tree name"
+            className="w-full h-full px-3 text-lg font-semibold text-gray-800 border-2 border-amber-600 rounded-lg outline-none focus:ring-amber-600 box-border"
+          />
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`tree name: ${name || "my tree"}`}
+            onKeyDown={handleNameStaticKeyDown}
+            onClick={() => setEditTreeName(true)}
+            className="flex w-full h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+          >
+            {name || "my tree"}
+          </div>
+        )}
+      </div>
+
+      <button 
+        type="button"
+        tabIndex={0}
+        aria-label="Home"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200"
+      >
+        home
+      </button>
+    </div>
+
+    {/* Bottom Row: Centered People Counter */}
+    <button 
+      // onclick={}
+      className="flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 mt-3 bg-white hover:bg-white"
+    >
+      { } people
+    </button>
+
+  </div>
+</main>
 
       {/* Interactive Workspace */}
       <div 
