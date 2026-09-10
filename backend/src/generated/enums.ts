@@ -13,16 +13,18 @@ export const Role = {
   ADMIN: 'ADMIN',
   MODERATOR: 'MODERATOR',
   MEMBER: 'MEMBER',
-  VIEWER: 'VIEWER'
+  JOINER: 'JOINER',
+  HOLDER: 'HOLDER'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
 
 
-export const InviteStatus = {
+export const Status = {
+  EMPTY: 'EMPTY',
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
 } as const
 
-export type InviteStatus = (typeof InviteStatus)[keyof typeof InviteStatus]
+export type Status = (typeof Status)[keyof typeof Status]

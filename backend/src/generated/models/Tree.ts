@@ -28,10 +28,14 @@ export type AggregateTree = {
 
 export type TreeAvgAggregateOutputType = {
   id: number | null
+  ownerId: number | null
+  rootId: number | null
 }
 
 export type TreeSumAggregateOutputType = {
   id: number | null
+  ownerId: number | null
+  rootId: number | null
 }
 
 export type TreeMinAggregateOutputType = {
@@ -39,10 +43,11 @@ export type TreeMinAggregateOutputType = {
   name: string | null
   code: string | null
   description: string | null
-  ownerId: string | null
+  ownerId: number | null
   createdAt: Date | null
   updatedAt: Date | null
   isPublic: boolean | null
+  rootId: number | null
 }
 
 export type TreeMaxAggregateOutputType = {
@@ -50,10 +55,11 @@ export type TreeMaxAggregateOutputType = {
   name: string | null
   code: string | null
   description: string | null
-  ownerId: string | null
+  ownerId: number | null
   createdAt: Date | null
   updatedAt: Date | null
   isPublic: boolean | null
+  rootId: number | null
 }
 
 export type TreeCountAggregateOutputType = {
@@ -65,16 +71,21 @@ export type TreeCountAggregateOutputType = {
   createdAt: number
   updatedAt: number
   isPublic: number
+  rootId: number
   _all: number
 }
 
 
 export type TreeAvgAggregateInputType = {
   id?: true
+  ownerId?: true
+  rootId?: true
 }
 
 export type TreeSumAggregateInputType = {
   id?: true
+  ownerId?: true
+  rootId?: true
 }
 
 export type TreeMinAggregateInputType = {
@@ -86,6 +97,7 @@ export type TreeMinAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   isPublic?: true
+  rootId?: true
 }
 
 export type TreeMaxAggregateInputType = {
@@ -97,6 +109,7 @@ export type TreeMaxAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   isPublic?: true
+  rootId?: true
 }
 
 export type TreeCountAggregateInputType = {
@@ -108,6 +121,7 @@ export type TreeCountAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   isPublic?: true
+  rootId?: true
   _all?: true
 }
 
@@ -202,10 +216,11 @@ export type TreeGroupByOutputType = {
   name: string
   code: string | null
   description: string | null
-  ownerId: string
+  ownerId: number
   createdAt: Date
   updatedAt: Date
   isPublic: boolean
+  rootId: number
   _count: TreeCountAggregateOutputType | null
   _avg: TreeAvgAggregateOutputType | null
   _sum: TreeSumAggregateOutputType | null
@@ -236,11 +251,13 @@ export type TreeWhereInput = {
   name?: Prisma.StringFilter<"Tree"> | string
   code?: Prisma.StringNullableFilter<"Tree"> | string | null
   description?: Prisma.StringNullableFilter<"Tree"> | string | null
-  ownerId?: Prisma.StringFilter<"Tree"> | string
+  ownerId?: Prisma.IntFilter<"Tree"> | number
   createdAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   isPublic?: Prisma.BoolFilter<"Tree"> | boolean
-  owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  rootId?: Prisma.IntFilter<"Tree"> | number
+  owner?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
+  root?: Prisma.XOR<Prisma.TreeMemberScalarRelationFilter, Prisma.TreeMemberWhereInput>
   members?: Prisma.TreeMemberListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
@@ -255,7 +272,9 @@ export type TreeOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
-  owner?: Prisma.UserOrderByWithRelationInput
+  rootId?: Prisma.SortOrder
+  owner?: Prisma.ProfileOrderByWithRelationInput
+  root?: Prisma.TreeMemberOrderByWithRelationInput
   members?: Prisma.TreeMemberOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
@@ -265,19 +284,21 @@ export type TreeWhereUniqueInput = Prisma.AtLeast<{
   id?: number
   name?: string
   code?: string
+  rootId?: number
   AND?: Prisma.TreeWhereInput | Prisma.TreeWhereInput[]
   OR?: Prisma.TreeWhereInput[]
   NOT?: Prisma.TreeWhereInput | Prisma.TreeWhereInput[]
   description?: Prisma.StringNullableFilter<"Tree"> | string | null
-  ownerId?: Prisma.StringFilter<"Tree"> | string
+  ownerId?: Prisma.IntFilter<"Tree"> | number
   createdAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   isPublic?: Prisma.BoolFilter<"Tree"> | boolean
-  owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  owner?: Prisma.XOR<Prisma.ProfileScalarRelationFilter, Prisma.ProfileWhereInput>
+  root?: Prisma.XOR<Prisma.TreeMemberScalarRelationFilter, Prisma.TreeMemberWhereInput>
   members?: Prisma.TreeMemberListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
-}, "id" | "name" | "code">
+}, "id" | "name" | "code" | "rootId">
 
 export type TreeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -288,6 +309,7 @@ export type TreeOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
   _count?: Prisma.TreeCountOrderByAggregateInput
   _avg?: Prisma.TreeAvgOrderByAggregateInput
   _max?: Prisma.TreeMaxOrderByAggregateInput
@@ -303,10 +325,11 @@ export type TreeScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Tree"> | string
   code?: Prisma.StringNullableWithAggregatesFilter<"Tree"> | string | null
   description?: Prisma.StringNullableWithAggregatesFilter<"Tree"> | string | null
-  ownerId?: Prisma.StringWithAggregatesFilter<"Tree"> | string
+  ownerId?: Prisma.IntWithAggregatesFilter<"Tree"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Tree"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Tree"> | Date | string
   isPublic?: Prisma.BoolWithAggregatesFilter<"Tree"> | boolean
+  rootId?: Prisma.IntWithAggregatesFilter<"Tree"> | number
 }
 
 export type TreeCreateInput = {
@@ -316,7 +339,8 @@ export type TreeCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
-  owner: Prisma.UserCreateNestedOneWithoutOwnedTreesInput
+  owner: Prisma.ProfileCreateNestedOneWithoutOwnedTreesInput
+  root: Prisma.TreeMemberCreateNestedOneWithoutRootProfileInput
   members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
@@ -327,10 +351,11 @@ export type TreeUncheckedCreateInput = {
   name: string
   code?: string | null
   description?: string | null
-  ownerId: string
+  ownerId: number
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  rootId: number
   members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
@@ -343,7 +368,8 @@ export type TreeUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedTreesNestedInput
+  owner?: Prisma.ProfileUpdateOneRequiredWithoutOwnedTreesNestedInput
+  root?: Prisma.TreeMemberUpdateOneRequiredWithoutRootProfileNestedInput
   members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
@@ -354,10 +380,11 @@ export type TreeUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
   members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
@@ -368,10 +395,11 @@ export type TreeCreateManyInput = {
   name: string
   code?: string | null
   description?: string | null
-  ownerId: string
+  ownerId: number
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  rootId: number
 }
 
 export type TreeUpdateManyMutationInput = {
@@ -388,10 +416,69 @@ export type TreeUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
+}
+
+export type TreeCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  code?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
+}
+
+export type TreeAvgOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
+}
+
+export type TreeMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  code?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
+}
+
+export type TreeMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  name?: Prisma.SortOrder
+  code?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
+}
+
+export type TreeSumOrderByAggregateInput = {
+  id?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrder
+  rootId?: Prisma.SortOrder
+}
+
+export type TreeNullableScalarRelationFilter = {
+  is?: Prisma.TreeWhereInput | null
+  isNot?: Prisma.TreeWhereInput | null
+}
+
+export type TreeScalarRelationFilter = {
+  is?: Prisma.TreeWhereInput
+  isNot?: Prisma.TreeWhereInput
 }
 
 export type TreeListRelationFilter = {
@@ -404,55 +491,82 @@ export type TreeOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type TreeCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  ownerId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-  isPublic?: Prisma.SortOrder
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
 }
 
-export type TreeAvgOrderByAggregateInput = {
-  id?: Prisma.SortOrder
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
-export type TreeMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  ownerId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-  isPublic?: Prisma.SortOrder
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
-export type TreeMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-  name?: Prisma.SortOrder
-  code?: Prisma.SortOrder
-  description?: Prisma.SortOrder
-  ownerId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-  isPublic?: Prisma.SortOrder
+export type TreeCreateNestedOneWithoutMembersInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
+  connect?: Prisma.TreeWhereUniqueInput
 }
 
-export type TreeSumOrderByAggregateInput = {
-  id?: Prisma.SortOrder
+export type TreeCreateNestedOneWithoutRootInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutRootInput
+  connect?: Prisma.TreeWhereUniqueInput
 }
 
-export type TreeNullableScalarRelationFilter = {
-  is?: Prisma.TreeWhereInput | null
-  isNot?: Prisma.TreeWhereInput | null
+export type TreeUncheckedCreateNestedOneWithoutRootInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutRootInput
+  connect?: Prisma.TreeWhereUniqueInput
 }
 
-export type TreeScalarRelationFilter = {
-  is?: Prisma.TreeWhereInput
-  isNot?: Prisma.TreeWhereInput
+export type TreeUpdateOneWithoutMembersNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
+  upsert?: Prisma.TreeUpsertWithoutMembersInput
+  disconnect?: Prisma.TreeWhereInput | boolean
+  delete?: Prisma.TreeWhereInput | boolean
+  connect?: Prisma.TreeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutMembersInput, Prisma.TreeUpdateWithoutMembersInput>, Prisma.TreeUncheckedUpdateWithoutMembersInput>
+}
+
+export type TreeUpdateOneWithoutRootNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutRootInput
+  upsert?: Prisma.TreeUpsertWithoutRootInput
+  disconnect?: Prisma.TreeWhereInput | boolean
+  delete?: Prisma.TreeWhereInput | boolean
+  connect?: Prisma.TreeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutRootInput, Prisma.TreeUpdateWithoutRootInput>, Prisma.TreeUncheckedUpdateWithoutRootInput>
+}
+
+export type TreeUncheckedUpdateOneWithoutRootNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutRootInput
+  upsert?: Prisma.TreeUpsertWithoutRootInput
+  disconnect?: Prisma.TreeWhereInput | boolean
+  delete?: Prisma.TreeWhereInput | boolean
+  connect?: Prisma.TreeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutRootInput, Prisma.TreeUpdateWithoutRootInput>, Prisma.TreeUncheckedUpdateWithoutRootInput>
+}
+
+export type TreeCreateNestedOneWithoutInvitationsInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutInvitationsInput
+  connect?: Prisma.TreeWhereUniqueInput
+}
+
+export type TreeUpdateOneRequiredWithoutInvitationsNestedInput = {
+  create?: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
+  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutInvitationsInput
+  upsert?: Prisma.TreeUpsertWithoutInvitationsInput
+  connect?: Prisma.TreeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutInvitationsInput, Prisma.TreeUpdateWithoutInvitationsInput>, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
 }
 
 export type TreeCreateNestedManyWithoutOwnerInput = {
@@ -497,52 +611,6 @@ export type TreeUncheckedUpdateManyWithoutOwnerNestedInput = {
   deleteMany?: Prisma.TreeScalarWhereInput | Prisma.TreeScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type TreeCreateNestedOneWithoutMembersInput = {
-  create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
-  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
-  connect?: Prisma.TreeWhereUniqueInput
-}
-
-export type TreeUpdateOneWithoutMembersNestedInput = {
-  create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
-  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
-  upsert?: Prisma.TreeUpsertWithoutMembersInput
-  disconnect?: Prisma.TreeWhereInput | boolean
-  delete?: Prisma.TreeWhereInput | boolean
-  connect?: Prisma.TreeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutMembersInput, Prisma.TreeUpdateWithoutMembersInput>, Prisma.TreeUncheckedUpdateWithoutMembersInput>
-}
-
-export type TreeCreateNestedOneWithoutInvitationsInput = {
-  create?: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
-  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutInvitationsInput
-  connect?: Prisma.TreeWhereUniqueInput
-}
-
-export type TreeUpdateOneRequiredWithoutInvitationsNestedInput = {
-  create?: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
-  connectOrCreate?: Prisma.TreeCreateOrConnectWithoutInvitationsInput
-  upsert?: Prisma.TreeUpsertWithoutInvitationsInput
-  connect?: Prisma.TreeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutInvitationsInput, Prisma.TreeUpdateWithoutInvitationsInput>, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
-}
-
 export type TreeCreateNestedOneWithoutAuditLogsInput = {
   create?: Prisma.XOR<Prisma.TreeCreateWithoutAuditLogsInput, Prisma.TreeUncheckedCreateWithoutAuditLogsInput>
   connectOrCreate?: Prisma.TreeCreateOrConnectWithoutAuditLogsInput
@@ -557,6 +625,216 @@ export type TreeUpdateOneRequiredWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TreeUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.TreeUpdateWithoutAuditLogsInput>, Prisma.TreeUncheckedUpdateWithoutAuditLogsInput>
 }
 
+export type TreeCreateWithoutMembersInput = {
+  name: string
+  code?: string | null
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  owner: Prisma.ProfileCreateNestedOneWithoutOwnedTreesInput
+  root: Prisma.TreeMemberCreateNestedOneWithoutRootProfileInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
+}
+
+export type TreeUncheckedCreateWithoutMembersInput = {
+  id?: number
+  name: string
+  code?: string | null
+  description?: string | null
+  ownerId: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  rootId: number
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
+}
+
+export type TreeCreateOrConnectWithoutMembersInput = {
+  where: Prisma.TreeWhereUniqueInput
+  create: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
+}
+
+export type TreeCreateWithoutRootInput = {
+  name: string
+  code?: string | null
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  owner: Prisma.ProfileCreateNestedOneWithoutOwnedTreesInput
+  members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
+}
+
+export type TreeUncheckedCreateWithoutRootInput = {
+  id?: number
+  name: string
+  code?: string | null
+  description?: string | null
+  ownerId: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
+}
+
+export type TreeCreateOrConnectWithoutRootInput = {
+  where: Prisma.TreeWhereUniqueInput
+  create: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+}
+
+export type TreeUpsertWithoutMembersInput = {
+  update: Prisma.XOR<Prisma.TreeUpdateWithoutMembersInput, Prisma.TreeUncheckedUpdateWithoutMembersInput>
+  create: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
+  where?: Prisma.TreeWhereInput
+}
+
+export type TreeUpdateToOneWithWhereWithoutMembersInput = {
+  where?: Prisma.TreeWhereInput
+  data: Prisma.XOR<Prisma.TreeUpdateWithoutMembersInput, Prisma.TreeUncheckedUpdateWithoutMembersInput>
+}
+
+export type TreeUpdateWithoutMembersInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  owner?: Prisma.ProfileUpdateOneRequiredWithoutOwnedTreesNestedInput
+  root?: Prisma.TreeMemberUpdateOneRequiredWithoutRootProfileNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
+}
+
+export type TreeUncheckedUpdateWithoutMembersInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
+}
+
+export type TreeUpsertWithoutRootInput = {
+  update: Prisma.XOR<Prisma.TreeUpdateWithoutRootInput, Prisma.TreeUncheckedUpdateWithoutRootInput>
+  create: Prisma.XOR<Prisma.TreeCreateWithoutRootInput, Prisma.TreeUncheckedCreateWithoutRootInput>
+  where?: Prisma.TreeWhereInput
+}
+
+export type TreeUpdateToOneWithWhereWithoutRootInput = {
+  where?: Prisma.TreeWhereInput
+  data: Prisma.XOR<Prisma.TreeUpdateWithoutRootInput, Prisma.TreeUncheckedUpdateWithoutRootInput>
+}
+
+export type TreeUpdateWithoutRootInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  owner?: Prisma.ProfileUpdateOneRequiredWithoutOwnedTreesNestedInput
+  members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
+}
+
+export type TreeUncheckedUpdateWithoutRootInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
+}
+
+export type TreeCreateWithoutInvitationsInput = {
+  name: string
+  code?: string | null
+  description?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  owner: Prisma.ProfileCreateNestedOneWithoutOwnedTreesInput
+  root: Prisma.TreeMemberCreateNestedOneWithoutRootProfileInput
+  members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
+}
+
+export type TreeUncheckedCreateWithoutInvitationsInput = {
+  id?: number
+  name: string
+  code?: string | null
+  description?: string | null
+  ownerId: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  isPublic?: boolean
+  rootId: number
+  members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
+}
+
+export type TreeCreateOrConnectWithoutInvitationsInput = {
+  where: Prisma.TreeWhereUniqueInput
+  create: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
+}
+
+export type TreeUpsertWithoutInvitationsInput = {
+  update: Prisma.XOR<Prisma.TreeUpdateWithoutInvitationsInput, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
+  create: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
+  where?: Prisma.TreeWhereInput
+}
+
+export type TreeUpdateToOneWithWhereWithoutInvitationsInput = {
+  where?: Prisma.TreeWhereInput
+  data: Prisma.XOR<Prisma.TreeUpdateWithoutInvitationsInput, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
+}
+
+export type TreeUpdateWithoutInvitationsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  owner?: Prisma.ProfileUpdateOneRequiredWithoutOwnedTreesNestedInput
+  root?: Prisma.TreeMemberUpdateOneRequiredWithoutRootProfileNestedInput
+  members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
+}
+
+export type TreeUncheckedUpdateWithoutInvitationsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
+  members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
+}
+
 export type TreeCreateWithoutOwnerInput = {
   name: string
   code?: string | null
@@ -564,6 +842,7 @@ export type TreeCreateWithoutOwnerInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  root: Prisma.TreeMemberCreateNestedOneWithoutRootProfileInput
   members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
@@ -577,6 +856,7 @@ export type TreeUncheckedCreateWithoutOwnerInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  rootId: number
   members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
@@ -616,142 +896,11 @@ export type TreeScalarWhereInput = {
   name?: Prisma.StringFilter<"Tree"> | string
   code?: Prisma.StringNullableFilter<"Tree"> | string | null
   description?: Prisma.StringNullableFilter<"Tree"> | string | null
-  ownerId?: Prisma.StringFilter<"Tree"> | string
+  ownerId?: Prisma.IntFilter<"Tree"> | number
   createdAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
   isPublic?: Prisma.BoolFilter<"Tree"> | boolean
-}
-
-export type TreeCreateWithoutMembersInput = {
-  name: string
-  code?: string | null
-  description?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  isPublic?: boolean
-  owner: Prisma.UserCreateNestedOneWithoutOwnedTreesInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
-  invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
-}
-
-export type TreeUncheckedCreateWithoutMembersInput = {
-  id?: number
-  name: string
-  code?: string | null
-  description?: string | null
-  ownerId: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  isPublic?: boolean
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
-}
-
-export type TreeCreateOrConnectWithoutMembersInput = {
-  where: Prisma.TreeWhereUniqueInput
-  create: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
-}
-
-export type TreeUpsertWithoutMembersInput = {
-  update: Prisma.XOR<Prisma.TreeUpdateWithoutMembersInput, Prisma.TreeUncheckedUpdateWithoutMembersInput>
-  create: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
-  where?: Prisma.TreeWhereInput
-}
-
-export type TreeUpdateToOneWithWhereWithoutMembersInput = {
-  where?: Prisma.TreeWhereInput
-  data: Prisma.XOR<Prisma.TreeUpdateWithoutMembersInput, Prisma.TreeUncheckedUpdateWithoutMembersInput>
-}
-
-export type TreeUpdateWithoutMembersInput = {
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedTreesNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
-  invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
-}
-
-export type TreeUncheckedUpdateWithoutMembersInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
-}
-
-export type TreeCreateWithoutInvitationsInput = {
-  name: string
-  code?: string | null
-  description?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  isPublic?: boolean
-  owner: Prisma.UserCreateNestedOneWithoutOwnedTreesInput
-  members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTreeInput
-}
-
-export type TreeUncheckedCreateWithoutInvitationsInput = {
-  id?: number
-  name: string
-  code?: string | null
-  description?: string | null
-  ownerId: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  isPublic?: boolean
-  members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTreeInput
-}
-
-export type TreeCreateOrConnectWithoutInvitationsInput = {
-  where: Prisma.TreeWhereUniqueInput
-  create: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
-}
-
-export type TreeUpsertWithoutInvitationsInput = {
-  update: Prisma.XOR<Prisma.TreeUpdateWithoutInvitationsInput, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
-  create: Prisma.XOR<Prisma.TreeCreateWithoutInvitationsInput, Prisma.TreeUncheckedCreateWithoutInvitationsInput>
-  where?: Prisma.TreeWhereInput
-}
-
-export type TreeUpdateToOneWithWhereWithoutInvitationsInput = {
-  where?: Prisma.TreeWhereInput
-  data: Prisma.XOR<Prisma.TreeUpdateWithoutInvitationsInput, Prisma.TreeUncheckedUpdateWithoutInvitationsInput>
-}
-
-export type TreeUpdateWithoutInvitationsInput = {
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedTreesNestedInput
-  members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
-}
-
-export type TreeUncheckedUpdateWithoutInvitationsInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
+  rootId?: Prisma.IntFilter<"Tree"> | number
 }
 
 export type TreeCreateWithoutAuditLogsInput = {
@@ -761,7 +910,8 @@ export type TreeCreateWithoutAuditLogsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
-  owner: Prisma.UserCreateNestedOneWithoutOwnedTreesInput
+  owner: Prisma.ProfileCreateNestedOneWithoutOwnedTreesInput
+  root: Prisma.TreeMemberCreateNestedOneWithoutRootProfileInput
   members?: Prisma.TreeMemberCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutTreeInput
 }
@@ -771,10 +921,11 @@ export type TreeUncheckedCreateWithoutAuditLogsInput = {
   name: string
   code?: string | null
   description?: string | null
-  ownerId: string
+  ownerId: number
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  rootId: number
   members?: Prisma.TreeMemberUncheckedCreateNestedManyWithoutTreeInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutTreeInput
 }
@@ -802,7 +953,8 @@ export type TreeUpdateWithoutAuditLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedTreesNestedInput
+  owner?: Prisma.ProfileUpdateOneRequiredWithoutOwnedTreesNestedInput
+  root?: Prisma.TreeMemberUpdateOneRequiredWithoutRootProfileNestedInput
   members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
 }
@@ -812,10 +964,11 @@ export type TreeUncheckedUpdateWithoutAuditLogsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
   members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
 }
@@ -828,6 +981,7 @@ export type TreeCreateManyOwnerInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isPublic?: boolean
+  rootId: number
 }
 
 export type TreeUpdateWithoutOwnerInput = {
@@ -837,6 +991,7 @@ export type TreeUpdateWithoutOwnerInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  root?: Prisma.TreeMemberUpdateOneRequiredWithoutRootProfileNestedInput
   members?: Prisma.TreeMemberUpdateManyWithoutTreeNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutTreeNestedInput
@@ -850,6 +1005,7 @@ export type TreeUncheckedUpdateWithoutOwnerInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
   members?: Prisma.TreeMemberUncheckedUpdateManyWithoutTreeNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTreeNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutTreeNestedInput
@@ -863,6 +1019,7 @@ export type TreeUncheckedUpdateManyWithoutOwnerInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rootId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 
@@ -923,7 +1080,9 @@ export type TreeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   updatedAt?: boolean
   isPublic?: boolean
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  rootId?: boolean
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
   members?: boolean | Prisma.Tree$membersArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Tree$auditLogsArgs<ExtArgs>
   invitations?: boolean | Prisma.Tree$invitationsArgs<ExtArgs>
@@ -939,7 +1098,9 @@ export type TreeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   isPublic?: boolean
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  rootId?: boolean
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tree"]>
 
 export type TreeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -951,7 +1112,9 @@ export type TreeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   isPublic?: boolean
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  rootId?: boolean
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tree"]>
 
 export type TreeSelectScalar = {
@@ -963,27 +1126,32 @@ export type TreeSelectScalar = {
   createdAt?: boolean
   updatedAt?: boolean
   isPublic?: boolean
+  rootId?: boolean
 }
 
-export type TreeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "code" | "description" | "ownerId" | "createdAt" | "updatedAt" | "isPublic", ExtArgs["result"]["tree"]>
+export type TreeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "code" | "description" | "ownerId" | "createdAt" | "updatedAt" | "isPublic" | "rootId", ExtArgs["result"]["tree"]>
 export type TreeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
   members?: boolean | Prisma.Tree$membersArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Tree$auditLogsArgs<ExtArgs>
   invitations?: boolean | Prisma.Tree$invitationsArgs<ExtArgs>
   _count?: boolean | Prisma.TreeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TreeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
 }
 export type TreeIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.ProfileDefaultArgs<ExtArgs>
+  root?: boolean | Prisma.TreeMemberDefaultArgs<ExtArgs>
 }
 
 export type $TreePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Tree"
   objects: {
-    owner: Prisma.$UserPayload<ExtArgs>
+    owner: Prisma.$ProfilePayload<ExtArgs>
+    root: Prisma.$TreeMemberPayload<ExtArgs>
     members: Prisma.$TreeMemberPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
@@ -993,10 +1161,11 @@ export type $TreePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     name: string
     code: string | null
     description: string | null
-    ownerId: string
+    ownerId: number
     createdAt: Date
     updatedAt: Date
     isPublic: boolean
+    rootId: number
   }, ExtArgs["result"]["tree"]>
   composites: {}
 }
@@ -1391,7 +1560,8 @@ readonly fields: TreeFieldRefs;
  */
 export interface Prisma__TreeClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  owner<T extends Prisma.ProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  root<T extends Prisma.TreeMemberDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TreeMemberDefaultArgs<ExtArgs>>): Prisma.Prisma__TreeMemberClient<runtime.Types.Result.GetResult<Prisma.$TreeMemberPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   members<T extends Prisma.Tree$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tree$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TreeMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.Tree$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tree$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.Tree$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tree$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1428,10 +1598,11 @@ export interface TreeFieldRefs {
   readonly name: Prisma.FieldRef<"Tree", 'String'>
   readonly code: Prisma.FieldRef<"Tree", 'String'>
   readonly description: Prisma.FieldRef<"Tree", 'String'>
-  readonly ownerId: Prisma.FieldRef<"Tree", 'String'>
+  readonly ownerId: Prisma.FieldRef<"Tree", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Tree", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Tree", 'DateTime'>
   readonly isPublic: Prisma.FieldRef<"Tree", 'Boolean'>
+  readonly rootId: Prisma.FieldRef<"Tree", 'Int'>
 }
     
 

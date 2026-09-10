@@ -96,7 +96,8 @@ export const TreeScalarFieldEnum = {
   ownerId: 'ownerId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  isPublic: 'isPublic'
+  isPublic: 'isPublic',
+  rootId: 'rootId'
 } as const
 
 export type TreeScalarFieldEnum = (typeof TreeScalarFieldEnum)[keyof typeof TreeScalarFieldEnum]
@@ -107,7 +108,9 @@ export const TreeMemberScalarFieldEnum = {
   profileId: 'profileId',
   treeId: 'treeId',
   role: 'role',
-  joinedAt: 'joinedAt'
+  joinedAt: 'joinedAt',
+  claim: 'claim',
+  linkId: 'linkId'
 } as const
 
 export type TreeMemberScalarFieldEnum = (typeof TreeMemberScalarFieldEnum)[keyof typeof TreeMemberScalarFieldEnum]
@@ -119,7 +122,7 @@ export const InvitationScalarFieldEnum = {
   inviteeEmail: 'inviteeEmail',
   treeId: 'treeId',
   role: 'role',
-  status: 'status',
+  invite: 'invite',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   respondedAt: 'respondedAt'
@@ -166,6 +169,7 @@ export const AuditLogScalarFieldEnum = {
   id: 'id',
   treeId: 'treeId',
   userId: 'userId',
+  profileId: 'profileId',
   action: 'action',
   details: 'details',
   createdAt: 'createdAt'

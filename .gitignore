@@ -55,10 +55,10 @@ logs/
 *.seed
 *.pid.lock
 
-
+/backend/prisma
 /generated/prisma
 
-#SUpabase AI
+#Supabase AI
 .agents/
 .claude/
 .windsurf/
