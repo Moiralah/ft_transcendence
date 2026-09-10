@@ -9,8 +9,9 @@ import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
 import { TreeBanner } from '../../components/treeBanner';
-import { ModalBanner } from '@/components/modalBanner';
-
+import { ModalBanner } from '../../components/modalBanner';
+import { Button } from '../../components/button'
+import { ProfileModal } from '../../components/profileModal'
 
 export default function TreePage() {
   const router = useRouter();
@@ -35,6 +36,8 @@ export default function TreePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
 
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   useEffect(() => {
     if (!token) {
       router.push('/login');
@@ -45,7 +48,7 @@ export default function TreePage() {
   }, [token]);
 
   interface Profile {
-    id: number;
+    id?: number;
     firstName: string;
     lastName?: string;
     gender?: string;
@@ -59,7 +62,6 @@ export default function TreePage() {
 
   const fetchMyProfile = async(authToken: string) => {
     try {
-      // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 	const profileId = localStorage.getItem('profileId')
     const res = await fetch(`${apiUrl}/profile/${profileId}`, {
@@ -183,8 +185,8 @@ export default function TreePage() {
     }
   };
 
-  if (loading) return <div className="p-8">Loading your trees...</div>;
-  if (loading) return <div className="p-8">Loading your trees...</div>;
+  // if (loading) return <div className="p-8">Loading your trees...</div>;
+  // if (loading) return <div className="p-8">Loading your trees...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
   return (
@@ -213,42 +215,46 @@ export default function TreePage() {
       <main id="main-content" tabIndex={-1} className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24">
         { /* profile showcase */}
         <div className="flex flex-col w-full max-w gap-2 mb-6 bg-white p-4 shadow rounded-lg border border-gray-200">
-          <div className="flex flex-col md:flex-row">
-            <div className="flex w-48 h-48 shrink-0 bg-black rounded-full object-cover hover outline outline-5 outline-offset-2 outline-indigo-500 hover:outline-amber-400">
-                myProfile.photoUrl: string;
+          <div className="flex flex-col sm:flex-row justify-evenly">
+            <div className="flex w-48 h-48 shrink-0 py-8 px-4 bg-black rounded-full object-cover hover outline outline-5 outline-offset-2 outline-indigo-500 hover:outline-amber-400">
+                {myProfile?.photoUrl || ''}
             </div>
-            <div className="flex">
-                <span>username: {myProfile?.username || ''} </span>
-                firstName: string;
-                lastName?: string;
-                gender?: string;
-                birthDate?: string;
-                deathDate?: string;
+            <div className="flex flex-col gap-1 py-8 px-4">
+                <span>first name: {myProfile?.firstName || ''} </span>
+                <span>last name: {myProfile?.lastName || ''} </span>
+                <span>gender: {myProfile?.gender || ''} </span>
+                <span>birth date: {myProfile?.birthDate || ''} </span>
+                <span>death date: {myProfile?.deathDate || ''} </span>
+                <Button
+                  onClick={() => setShowProfileModal(true)}
+                  variant="primary"
+                >
+                  Edit profile
+                </Button>
             </div>
           </div>
           {/* Bio Section */}
-          <div className="flex w-full pt-3 flex justify-center items-center">
+          <div className="flex w-full py-8 px-4 flex justify-center items-center">
             <p className="text-sm text-gray-600 ">
-              {myProfile?.profile?.bio || 'Bio is empty'}
+              {myProfile?.bio || 'Bio is empty'}
             </p>
           </div>
         </div>
         {/*Search*/}
-        <div className="flex w-full max-w gap-2 mb-6">
+        <div className="flex w-full max-w gap-2 item-center">
           <input
             type="text"
             placeholder="Search trees or profiles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border rounded-lg"
+            className="border rounded-lg h-12"
           />
-          <button
+          <Button
             onClick={searchTrees}
-            className="max-w-24 my-auto bg-gray-600 hover:bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-black focus:ring-offset-2 focus:ring-offset-black"
+            variant='ghost'
           >
           Search
-          Search
-          </button>
+          </Button>
         </div>
 
           {/* My Trees List */}
@@ -297,6 +303,15 @@ export default function TreePage() {
         description={joinCode}
         setDescription={setJoinCode}
       />
+      )}
+
+      {/* Profile Modal */}
+      { showProfileModal && (
+        <ProfileModal
+          existingProfile={myProfile}
+          onClose={() => setShowProfileModal(false)}
+          onSave={(updatedProfile) => {setMyProfile(updatedProfile)}}
+        />
       )}
 
         { /* Search Results Modal */}
