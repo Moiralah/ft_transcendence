@@ -15,9 +15,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Trees this user owns (created by them)
-  ownedTrees Tree[]    @relation("TreeOwner")
-
   // Profile (assigned to user when sign up)
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
@@ -35,11 +32,13 @@ model Tree {
   name        String   @unique
   code        String?  @unique// 6-8 character alphanumeric join code
   description String?
-  ownerId     String
-  owner       User     @relation("TreeOwner", fields: [ownerId], references: [id])
+  ownerId     Int
+  owner       Profile  @relation("TreeOwner", fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isPublic    Boolean  @default(false)  // If true, viewers can view without code
+  rootId      Int      @unique
+  root        TreeMember @relation("RootProfile", fields: [rootId], references: [id])
 
   // Members (users with roles)
   members TreeMember[]
@@ -56,11 +55,18 @@ model TreeMember {
   id        Int      @id @default(autoincrement())
   profileId Int?
   treeId    Int?
-  role      Role     // ADMIN, MODERATOR, MEMBER, VIEWER
+  role      Role     // ADMIN, MODERATOR, MEMBER, JOINER, HOLDER
   joinedAt  DateTime @default(now())
+
+  //Link Profile
+  claim     Status      @default(EMPTY)
+  linkId    Int?        @unique
+  link      TreeMember? @relation("Linked Profile", fields: [linkId], references: [id])
+  linkWith  TreeMember? @relation("Linked Profile")
 
   profile   Profile?  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   tree      Tree?     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  rootProfile Tree?    @relation("RootProfile")
 
   @@unique([profileId, treeId])
 }
@@ -69,7 +75,15 @@ enum Role {
   ADMIN      // Full control: edit tree, manage members, delete tree
   MODERATOR  // Can edit profiles, manage invitations
   MEMBER     // Can view full tree, add/edit own profiles, add persons
-  VIEWER     // Read-only: view tree and profiles only
+  JOINER     // Read-only: view tree and profiles only
+  HOLDER     // Placeholder profile
+}
+
+enum Status {
+  EMPTY
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 // ------------------- Invitations -------------------
@@ -78,8 +92,8 @@ model Invitation {
   inviterId   String
   inviteeEmail String
   treeId      Int
-  role        Role     @default(MEMBER)
-  status      InviteStatus @default(PENDING)
+  role        Role     @default(JOINER)
+  invite      Status   @default(PENDING)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   respondedAt DateTime?
@@ -88,12 +102,6 @@ model Invitation {
   tree        Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
   @@unique([inviteeEmail, treeId])
-}
-
-enum InviteStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
 }
 
 // ------------------- Profiles (formerly Person) -------------------
@@ -107,6 +115,10 @@ model Profile {
   bio         String?
   photoUrl    String?
   verified    Boolean  @default(false)
+
+
+  // Trees this user owns (created by them)
+  ownedTrees Tree[]    @relation("TreeOwner")
 
   // Memberships in trees (with roles)
   treeMembers TreeMember[]
@@ -128,9 +140,12 @@ model Profile {
   // Life events
   events Event[]
 
+  auditLogs AuditLog[]
+
+
   // User who owned this profile (optional)
-  userId String? @unique
-  user User? @relation
+  userId      String? @unique
+  user        User? @relation
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -159,6 +174,8 @@ model AuditLog {
   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  profileId Int
+  profile   Profile  @relation(fields: [profileId], references: [id])
   action    String
   details   String?
   createdAt DateTime @default(now())
