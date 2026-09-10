@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import Link from 'next/link';
+import React, { useState, useRef, useEffect } from 'react';
+// import Link from 'next/link';
 
 export default function Content() {
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+
   // 1. Canvas State
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -37,6 +40,7 @@ export default function Content() {
       return Math.min(Math.max(0.3, newScale), 2.5);
     });
   };
+
 
 
   // achievement state
@@ -97,7 +101,7 @@ export default function Content() {
         </div>
 
       </header>
-     <main className="flex">
+  <main className="flex">
   {/* Tree member card */}
   <div className="w-80 flex flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
     
@@ -138,18 +142,47 @@ export default function Content() {
         home
       </button>
     </div>
-
-    {/* Bottom Row: Centered People Counter */}
+      {/* Bottom Row: Centered People Counter */}
     <button 
-      // onclick={}
-      className="flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 mt-3 bg-white hover:bg-white"
-    >
-      { } people
+        onClick={() => setTreeMemberModal(true)}
+        className="flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 mt-3 bg-white hover:bg-white"
+      >
+        { } people
     </button>
-
   </div>
-</main>
-
+  </main>
+        {/* tree member modal */}
+        {treeMemberModal && (
+          <div
+            className="fixed bg-black/50 inset-0 z-50 flex justify-center items-center p-4"
+          >
+            <div className="flex flex-col bg-white rounded-xl max-w-4xl w-full max-w-lg gap-4 p-8 shadow-2xl">
+              <div
+                className="flex text-2xl font-bold"
+              >
+                Tree Member List ( )
+              </div>
+              <div className="border border-grey-200 shadow rounded-lg">
+                search bar
+              </div>
+              <div>
+                tree member list
+              </div>
+              <div
+                className="flex justify-end mt-4"
+              >
+                <button
+                  type="button"
+                  className="w-24 h-10 bg-white hover:bg-white border border-black shadow text-black focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2"
+                  onClick={() => setTreeMemberModal(false)}
+                >
+                  cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
       {/* Interactive Workspace */}
       <div 
         className="flex-1 relative cursor-grab active:cursor-grabbing"

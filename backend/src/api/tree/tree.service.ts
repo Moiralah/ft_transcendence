@@ -156,7 +156,7 @@ export class TreeService {
 
   // Powers a "My Trees" dashboard: every tree this profile belongs to,
   // plus its role in each one.
-  async getUserTrees(profileId: number) {
+  async getUserTrees(profileId: string) {
     const memberships = await this.prisma.treeMember.findMany({
       where: { profileId },
       include: {

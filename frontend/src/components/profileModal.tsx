@@ -116,9 +116,9 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center  bg-black/50 p-4">
       { /* form fill section */}
-      <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-2xl p-6 ">
+      <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 ">
         {/* field map render each field row */}
         { fields.map(({ key, label, type }) => (
         <div key={key} className="flex items-center gap-2">

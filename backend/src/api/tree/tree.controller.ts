@@ -3,6 +3,13 @@ import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards,
 import { TreeService } from './tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+interface AuthenticatedRequest {
+  user: {
+    id: string; // The user ID extracted from JWT token payload
+    username?: string;
+  };
+}
+
 @Controller('trees')
 export class TreeController {
   constructor(private readonly treeService: TreeService) {}
@@ -26,8 +33,8 @@ export class TreeController {
 
   @Get('my-trees')
   @UseGuards(JwtAuthGuard)
-  async getUserTrees(@Request() req) {
-    return this.treeService.getUserTrees(req.user.profileId);
+  async getUserTrees(@Request()req: AuthenticatedRequest) {
+    return this.treeService.getUserTrees(req.user.id);
   }
 
   @Get(':id')
