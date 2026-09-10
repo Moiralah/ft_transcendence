@@ -185,4 +185,8 @@ export class ProfileService {
 
 		return buildNode(rootId);
 	}
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> jon2
