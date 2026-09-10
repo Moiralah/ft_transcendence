@@ -75,11 +75,11 @@ export class ProfileService {
 
 	async findOne(id: string) {
 		// Convert string id to number
-		const personId = Number(id);
-		if (isNaN(personId)) return null;
-
+		const profileId = Number(id);
+		if (isNaN(profileId)) {
+			throw new NotFoundException('Invalid profile ID');}
 		const profile = await this.prisma.profile.findUnique({
-			where: { id: personId },
+			where: { id: profileId },
 			include: {
 				mother: true,
 				father: true,
@@ -185,8 +185,4 @@ export class ProfileService {
 
 		return buildNode(rootId);
 	}
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> jon2
