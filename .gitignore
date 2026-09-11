@@ -56,7 +56,7 @@ logs/
 *.pid.lock
 
 /backend/prisma
-/src/generated/prisma
+/backend/src/generated
 
 #Supabase AI
 .agents/
