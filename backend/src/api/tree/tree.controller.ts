@@ -30,6 +30,12 @@ export class TreeController {
     return this.treeService.getUserTrees(req.user.profileId);
   }
 
+  @Get(':treeId/member')
+  @UseGuards(JwtAuthGuard)
+  async getTreeMember(@Param('treeId') treeId: string) {
+    return this.treeService.getTreeMember(Number(treeId));
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getTree(@Req() req, @Param('id') id: string) {
