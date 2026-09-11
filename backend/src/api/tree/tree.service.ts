@@ -180,6 +180,40 @@ export class TreeService {
       }));
   }
 
+    async getTreeMember(treeId: number) {
+    const memberships = await this.prisma.treeMember.findMany({
+      where: { treeId },
+      include: {
+        profile: {
+          select: {
+			id: true,
+			firstName: true,
+			lastName: true,
+			photoUrl: true,
+			gender: true,
+			birthDate: true,
+			deathDate: true,
+          },
+        },
+      },
+	  orderBy: { joinedAt: 'asc'},
+    });
+
+	return memberships.map((m) => ({
+		id: m.id,
+		profileId: m.profileId,
+		treeId: m.treeId,
+		role: m.role,
+		joinedAt: m.joinedAt,
+		firstName: m.profile?.firstName ?? '',
+		lastName: m.profile?.lastName ?? '',
+		photoUrl: m.profile?.photoUrl ?? null,
+		gender: m.profile?.gender ?? null,
+		birthDate: m.profile?.birthDate ?? null,
+		deathDate: m.profile?.deathDate ?? null,
+      }));
+  }
+
   // Tree detail page. Only ever reached once the frontend already has a
   // treeId — from "My Trees" or a search result the user has since joined —
   // never from a raw typed-in code, so there's no code-guessing surface here.
