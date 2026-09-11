@@ -52,7 +52,7 @@ export class ProfileService {
 
 	async findAll() {
 		// Include mother and father relations
-		const persons = await this.prisma.profile.findMany({
+		const profile = await this.prisma.profile.findMany({
 			include: {
 				mother: true,
 				father: true,
@@ -63,11 +63,12 @@ export class ProfileService {
 		});
 
 		// Map to expected frontend format (name, mother_name, father_name)
-		return persons.map((p) => ({
+		return profile.map((p) => ({
 			id: p.id,
 			name: [p.firstName, p.lastName].filter(Boolean).join(' '),
 			gender: p.gender,
-			birth_date: p.birthDate,
+			birth_date: p.birthDate ? p.birthDate.toISOString().split('T')[0]: null,
+			death_date:  p.deathDate ? p.deathDate.toISOString().split('T')[0]: null,
 			mother_name: p.mother ? [p.mother.firstName, p.mother.lastName].filter(Boolean).join(' ') : null,
 			father_name: p.father ? [p.father.firstName, p.father.lastName].filter(Boolean).join(' ') : null,
 		}));

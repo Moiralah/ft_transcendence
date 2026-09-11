@@ -110,8 +110,8 @@ model Profile {
   firstName   String
   lastName    String?
   gender      String?
-  birthDate   DateTime?
-  deathDate   DateTime?
+  birthDate   DateTime? @db.Date
+  deathDate   DateTime? @db.Date
   bio         String?
   photoUrl    String?
   verified    Boolean  @default(false)

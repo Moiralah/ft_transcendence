@@ -63,8 +63,7 @@ export default function TreePage() {
   const fetchMyProfile = async(authToken: string) => {
     try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-	const profileId = localStorage.getItem('profileId')
-    const res = await fetch(`${apiUrl}/profile/${profileId}`, {
+    const res = await fetch(`${apiUrl}/profile/me`, {
         method: 'GET',
         headers: {
          'Content-Type': 'application/json',
@@ -185,6 +184,8 @@ export default function TreePage() {
     }
   };
 
+  const formatDate = (iso?: string) => iso ? iso.split('T')[0] : '';   // "2026-09-11"
+
   // if (loading) return <div className="p-8">Loading your trees...</div>;
   // if (loading) return <div className="p-8">Loading your trees...</div>;
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
@@ -223,8 +224,8 @@ export default function TreePage() {
                 <span>first name: {myProfile?.firstName || ''} </span>
                 <span>last name: {myProfile?.lastName || ''} </span>
                 <span>gender: {myProfile?.gender || ''} </span>
-                <span>birth date: {myProfile?.birthDate || ''} </span>
-                <span>death date: {myProfile?.deathDate || ''} </span>
+                <span>birth date: {formatDate(myProfile?.birthDate)} </span>
+                <span>death date: {formatDate(myProfile?.deathDate)} </span>
                 <Button
                   onClick={() => setShowProfileModal(true)}
                   variant="primary"
@@ -329,7 +330,7 @@ export default function TreePage() {
                   {searchResults.map((tree: any) => (
                     <div key={tree.id} className="border p-3 rounded-lg">
                       <div className="font-semibold">{tree.name}</div>
-                      <div className="text-sm text-gray-500">Code: {tree.code}</div>
+                      <div className="text-sm text-gray-500">Description: {tree.description}</div>
                       <div className="text-sm text-gray-500">Owner: {tree.owner?.username}</div>
                     </div>
                   ))}

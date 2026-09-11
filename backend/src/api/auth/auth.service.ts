@@ -62,8 +62,7 @@ export class AuthService {
 
 		return {
 			accessToken: token,
-			user: { id: user.id, email: user.email },
-			profileId: user.profileId,
+			user: { id: user.id, email: user.email, profileId: user.profileId},
 		};
 	}
 }
