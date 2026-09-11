@@ -13,9 +13,9 @@ interface modalBannerProps {
     setDescription?: (val: string) => void;
 }
 
-export function ModalBanner({ 
-  modalForm, 
-  title, 
+export function ModalBanner({
+  modalForm,
+  title,
   onClose ,
   name,
   setName,
@@ -38,10 +38,10 @@ export function ModalBanner({
                 />
                 <input
                   type="text"
-                  placeholder="Tree Code"
+                  placeholder="Descritpion"
                   value={description}
                   onChange={(e) => setDescription(e.target.value.toUpperCase())}
-                  className="w-full border rounded px-4 py-2 mb-3 uppercase"
+                  className="w-full border rounded px-4 py-2 mb-3"
                   required
                 />
                 <div className="flex gap-2">

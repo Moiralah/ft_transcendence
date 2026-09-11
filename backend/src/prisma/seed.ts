@@ -32,18 +32,18 @@ async function main() {
   }
 
   // 3. Upsert the default tree – include the required `code` field
-  const tree = await prisma.tree.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      name: 'My Family Tree',
-      description: 'Sample tree for testing',
-      code: code,                    // ✅ required unique code
-      owner: {
-        connect: { id: user.id },    // ✅ relation instead of ownerId
-      },
-    },
-  });
+//   const tree = await prisma.tree.upsert({
+//     where: { id: 1 },
+//     update: {},
+//     create: {
+//       name: 'My Family Tree',
+//       description: 'Sample tree for testing',
+//       code: code,                    // ✅ required unique code
+//       owner: {
+//         connect: { id: profile.id },    // ✅ relation instead of ownerId
+//       },
+//     },
+//   });
 
   // 4. Create profiles (family members)
   const alice = await prisma.profile.create({

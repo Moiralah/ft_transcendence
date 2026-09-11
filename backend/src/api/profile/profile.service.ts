@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class ProfileService {
       		},
     	});
 		// if (!profile)
-        // 	throw new NotFoundException(`User with ID "${userId}" not found`);    
+        // 	throw new NotFoundException(`User with ID "${userId}" not found`);
 		return profile;
   	}
 
@@ -52,7 +52,7 @@ export class ProfileService {
 
 	async findAll() {
 		// Include mother and father relations
-		const persons = await this.prisma.profile.findMany({
+		const profile = await this.prisma.profile.findMany({
 			include: {
 				mother: true,
 				father: true,
@@ -63,11 +63,12 @@ export class ProfileService {
 		});
 
 		// Map to expected frontend format (name, mother_name, father_name)
-		return persons.map((p) => ({
+		return profile.map((p) => ({
 			id: p.id,
 			name: [p.firstName, p.lastName].filter(Boolean).join(' '),
 			gender: p.gender,
-			birth_date: p.birthDate,
+			birth_date: p.birthDate ? p.birthDate.toISOString().split('T')[0]: null,
+			death_date:  p.deathDate ? p.deathDate.toISOString().split('T')[0]: null,
 			mother_name: p.mother ? [p.mother.firstName, p.mother.lastName].filter(Boolean).join(' ') : null,
 			father_name: p.father ? [p.father.firstName, p.father.lastName].filter(Boolean).join(' ') : null,
 		}));
@@ -75,11 +76,11 @@ export class ProfileService {
 
 	async findOne(id: string) {
 		// Convert string id to number
-		const personId = Number(id);
-		if (isNaN(personId)) return null;
-
+		const profileId = Number(id);
+		if (isNaN(profileId)) {
+			throw new NotFoundException('Invalid profile ID');}
 		const profile = await this.prisma.profile.findUnique({
-			where: { id: personId },
+			where: { id: profileId },
 			include: {
 				mother: true,
 				father: true,
