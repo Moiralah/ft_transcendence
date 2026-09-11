@@ -39,7 +39,7 @@ export class TreeController {
 
   @Get(':treeId/member')
   @UseGuards(JwtAuthGuard)
-  async getTreeMember(@Param('treeId') treeId: string) {
+  async getTreeMember(@Param('treeId') treeId: number) {
     return this.treeService.getTreeMember(Number(treeId));
   }
 

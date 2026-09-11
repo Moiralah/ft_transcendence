@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, router } from 'next/navigation';
+import Link from 'next/link';
+
 
 // import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
@@ -13,6 +15,37 @@ export default function Content() {
   const params = useParams();
   const treeId = params.id as number;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+
+  const [treesMember, setTreesMember] = useState('');
+  const [searchMember, setSearchMember] = useState('');
+  
+    const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
+
+  useEffect(() => {
+      fetchTreeMember(token)
+  }, [token]);
+
+  const fetchTreeMember = async (authToken: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch trees member: ${res.statusText}`);
+      }
+      const data = await res.json();
+      setTreesMember(data);
+    } catch (err: any) {
+      console.error('Error fetching current user:', err);
+    }
+  };
+
 
   // 1. Canvas State
   const [scale, setScale] = useState(1);
@@ -84,6 +117,8 @@ export default function Content() {
     setEditTreeName(false);
   }
 
+
+
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
       <SkipLink />
@@ -137,9 +172,9 @@ export default function Content() {
         {/* Bottom Row: Centered People Counter */}
         <button 
           onClick={() => setTreeMemberModal(true)}
-          className="flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 mt-3 bg-white hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+          className="flex items-center justify-center rounded-lg text-lg font-medium text-gray-600 mt-3 bg-white hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
         >
-          { } people
+          {  treesMember.length + ' people' }
         </button>
         </div>
 
@@ -175,23 +210,44 @@ export default function Content() {
           >
             <div className="flex flex-col bg-white rounded-xl max-w-4xl w-full max-w-xl gap-4 p-8 shadow-2xl">
               <div
-                className="flex text-2xl font-bold"
+                className="flex text-2xl font-bold "
               >
-                { treeId }
-                Tree Member List ( )
+                { 'Tree member ( ' + treesMember.length + ' )'}
               </div>
-              <div className="border border-grey-200 shadow rounded-lg">
-                search bar
+              {/* Working Search Bar */}
+              <div className="border-none rounded-lg p-1 focus-within:ring-2 focus-within:ring-amber-600 focus-within:ring-offset-2">
+                <input
+                  type="text"
+                  placeholder="Search members by name..."
+                  value={searchMember}
+                  onChange={(e) => setSearchMember(e.target.value)}
+                  className="border-none text-xl w-full px-3 outline-none text-gray-700 bg-transparent"
+                />
               </div>
-              <div>
-                tree member list
+              <div className="grid">
+                {treesMember.map((member: any) => (
+                <Link 
+                  key={member.id}
+                  href={`/canvas/${member.id}`}
+                >
+                  <div className="flex flex-row w-full border-t border-b border-gray-200 p-4 gap-4 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
+                    <div className="flex w-12 h-12 shrink-0 rounded-full bg-black">
+                      {member.photoUrl}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{member.firstName + ' ' + member.lastName}</span>
+                      <span className="font-light">{formatDate(member.birthDate) + ' - ' + formatDate(member.deathDate)}</span>
+                    </div>                   
+                  </div>
+                </Link>
+                )) }
               </div>
               <div
                 className="flex justify-end mt-4"
               >
                 <button
                   type="button"
-                  className="w-24 h-10 bg-white hover:bg-white border border-black shadow text-black focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2"
+                  className="w-24 h-10 bg-white hover:bg-white border border-black shadow text-black focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
                   onClick={() => setTreeMemberModal(false)}
                 >
                   cancel
