@@ -186,13 +186,13 @@ export class TreeService {
       include: {
         profile: {
           select: {
-			id: true,
-			firstName: true,
-			lastName: true,
-			photoUrl: true,
-			gender: true,
-			birthDate: true,
-			deathDate: true,
+			      id: true,
+			      firstName: true,
+			      lastName: true,
+			      photoUrl: true,
+			      gender: true,
+			      birthDate: true,
+			      deathDate: true,
           },
         },
       },

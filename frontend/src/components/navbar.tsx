@@ -28,7 +28,7 @@ export function Navbar({
   const tokens = componentTokens.navbar(themeMode);
 
   return (
-    <header className="fixed top-0 z-40 w-full backdrop-blur-md border-b"
+    <header className="fixed top-0 z-20 w-full backdrop-blur-md border-b"
       style= {{
         backgroundColor: tokens.bg,
         borderColor: tokens.border,

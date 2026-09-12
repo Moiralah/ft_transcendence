@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Button } from './button';
 
 export interface Profile {
   id?: number | string;
   firstName?: string;
   lastName?: string;
-  gender?: string;
+  gender?: "male" | "female" | null | "";
   birthDate?: string;
   deathDate?: string;
   bio?: string;
@@ -35,7 +36,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
   const fields: { key: keyof typeof formData; label: string; type: string }[] = [
     { key: "firstName", label: "first name", type: "text" },
     { key: "lastName", label: "last name", type: "text" },
-    { key: "gender", label: "gender", type: "text" },
+    { key: "gender", label: "gender", type: "select" },
     { key: "birthDate", label: "birth date", type: "date" },
     { key: "deathDate", label: "death date", type: "date" },
     { key: "bio", label: "bio", type: "text" },
@@ -127,6 +128,20 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
           </span>
           <div className="">
             {editingField === key ? (
+              type ==="select" && key==="gender") ? (
+                <select
+                    name="gender"
+                    value={formData.gender ?? ""}
+                    onChange={handleChange}
+                    onBlur={() => setEditingField(null)}
+                    autoFocus
+                    className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white"
+                  >
+                  <option value="">Not Specified (null)</option>
+                  <option value="male">male</option>
+                  <option value="female">female</option>
+                </select>
+              ) : (
             <input
               type={ type }
               name= {key}
@@ -151,20 +166,21 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
         { /* button section */}
         <div className="flex items-center justify-end gap-3 pt-4">
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            // className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+            // className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

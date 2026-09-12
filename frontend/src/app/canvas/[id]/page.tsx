@@ -16,14 +16,40 @@ export default function Content() {
   const treeId = params.id as number;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
+  const [rootMember, setRootMember] = useState();
+  const [tree, setTree] = useState();
   const [treesMember, setTreesMember] = useState('');
   const [searchMember, setSearchMember] = useState('');
+
+  const [nodeProfileModal, setNodeProfileModal] = useState(false);
   
-    const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
+  const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
+      fetchTree(token)
       fetchTreeMember(token)
   }, [token]);
+
+  const fetchTree = async (authToken: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+        }
+        throw new Error(`Failed to fetch trees member: ${res.statusText}`);
+      }
+      const data = await res.json();
+      setTree(data);
+    } catch (err: any) {
+      console.error('Error fetching current user:', err);
+    }
+  };
 
   const fetchTreeMember = async (authToken: string) => {
     try {
@@ -81,8 +107,6 @@ export default function Content() {
     });
   };
 
-
-
   // achievement state
   const [points, setPoints] = useState(10);
   const [fullPoints, setFullPoints] = useState(150);
@@ -95,6 +119,11 @@ export default function Content() {
   const [treeMemberModal, setTreeMemberModal] = useState(false); 
 
   const [name, setName] = useState("my tree");
+
+  const handleRootMember = (member) => {
+    setRootMember(member);
+    setTreeMemberModal(false);
+  }
 
   const handleNameChange = (e) => {
     setName(e.target.value);
@@ -163,21 +192,56 @@ export default function Content() {
           <button 
             type="button"
             tabIndex={0}
+            onClick={() => setRootMember('')}
             aria-label="Home"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-white border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
           >
-            X
+             home 
           </button>
         </div>
         {/* Bottom Row: Centered People Counter */}
         <button 
           onClick={() => setTreeMemberModal(true)}
-          className="flex items-center justify-center rounded-lg text-lg font-medium text-gray-600 mt-3 bg-white hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+          className="flex items-center justify-center rounded-lg text-lg font-medium text-gray-600 mt-3 bg-transparent hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
         >
-          {  treesMember.length + ' people' }
+          { treesMember.length + ' people' }
         </button>
         </div>
 
+        {/* testing node */}
+        { rootMember &&
+        <div 
+          className="flex flex-col items-center relative z-10 "
+          onClick={() => setNodeProfileModal(true)}
+        >
+          <div className={`
+            ${rootMember.gender === 'male' ? 
+              'bg-blue-200 border-blue-600' : 
+            rootMember.gender === 'female' ? 
+              'bg-red-200 border-red-600' : 
+            'bg-amber-100 border-amber-600'} 
+              border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 w-40`}>
+          { ( rootMember.firstName || rootMember.lastName ) ?
+            (
+            <span>{ rootMember.id + ' ' + rootMember.firstName + ' ' + rootMember.lastName }</span>
+            ) : ( <span>Unknown</span> )
+          }
+            <div className="text-xs font-normal flex flex-col py-1">
+            { rootMember.birthDate && 
+              <div>{ 'b. ' + formatDate(rootMember.birthDate) }</div>}
+            { rootMember.deathDate && 
+              <div>{ 'd. ' + formatDate(rootMember.deathDate) }</div>}
+            </div>
+          <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">{ rootMember.id || ' ' }</div>
+        </div>
+      
+      <div className="w-0.5 h-6 bg-black"></div>
+      <div className="flex gap-8 relative pt-6">
+      <div className="absolute top-0 left-12 right-12 h-0.5 bg-amber-600"></div>
+      </div>
+      </div>
+      
+      }
       {/* Interactive Workspace */}
       <div 
         className="flex-1 relative cursor-grab active:cursor-grabbing"
@@ -203,10 +267,41 @@ export default function Content() {
       <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
         <Footer/>
       </footer>
+        
+        {/* node profile modal */}
+        {nodeProfileModal && (
+          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-4">
+            <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6">
+              { /* form fill */}
+              <div>
+
+              </div>
+              { /* button section */}
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  // onClick={handleCancel}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  // onClick={handleSave}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         {/* tree member modal */}
         {treeMemberModal && (
           <div
-            className="fixed bg-black/50 inset-0 z-5 flex justify-center items-center p-4"
+            className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4"
           >
             <div className="flex flex-col bg-white rounded-xl max-w-4xl w-full max-w-xl gap-4 p-8 shadow-2xl">
               <div
@@ -226,9 +321,9 @@ export default function Content() {
               </div>
               <div className="grid">
                 {treesMember.map((member: any) => (
-                <Link 
+                <div 
                   key={member.id}
-                  href={`/canvas/${member.id}`}
+                  onClick={() => (handleRootMember(member))}
                 >
                   <div className="flex flex-row w-full border-t border-b border-gray-200 p-4 gap-4 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
                     <div className="flex w-12 h-12 shrink-0 rounded-full bg-black">
@@ -239,7 +334,7 @@ export default function Content() {
                       <span className="font-light">{formatDate(member.birthDate) + ' - ' + formatDate(member.deathDate)}</span>
                     </div>                   
                   </div>
-                </Link>
+                </div>
                 )) }
               </div>
               <div

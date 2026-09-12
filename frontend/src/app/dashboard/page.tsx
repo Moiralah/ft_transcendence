@@ -16,7 +16,7 @@ interface Profile {
   id?: number;
   firstName: string;
   lastName?: string;
-  gender?: string;
+  gender?: "male" | "female" | null | "";
   birthDate?: string;
   deathDate?: string;
   bio?: string;
@@ -243,11 +243,11 @@ export default function TreePage() {
             </div>
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">
-              <p><strong>First Name:</strong> {myProfile?.firstName || '—'}</p>
-              <p><strong>Last Name:</strong> {myProfile?.lastName || '—'}</p>
-              <p><strong>Gender:</strong> {myProfile?.gender || '—'}</p>
-              <p><strong>Birth Date:</strong> {formatDate(myProfile?.birthDate) || '—'}</p>
-              <p><strong>Death Date:</strong> {formatDate(myProfile?.deathDate) || '—'}</p>
+              <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span> {myProfile?.lastName || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>              
+              <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
 
               <div className="mt-2">
                 <Button onClick={() => setShowProfileModal(true)} variant="primary">
