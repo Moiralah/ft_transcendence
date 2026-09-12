@@ -399,6 +399,105 @@ export class TreeService {
     });
   }
 
+    // Add a child to an existing node.
+  // This is now the ONLY way new placeholder nodes get created (besides the
+  // mother/father auto-created alongside the root at tree creation time).
+  // There's no separate "add mother"/"add father" action any more — a
+  // parent's spouse is created automatically the first time they get a
+  // child, so every non-root node's mother AND father are set in one shot,
+  // right here, rather than being assembled node-by-node.
+  //
+  // ADMIN/MODERATOR can add a child under any existing node.
+  // MEMBER can only add a child under the node they themselves claimed —
+  // not under an arbitrary node, even one representing a relative.
+  async addChildNode(
+     treeId: number,
+     requesterProfileId: number,
+     parentProfileId: number,
+     childData: {
+      firstName: string;
+      lastName?: string;
+      gender?: string;
+      birthDate?: Date;
+    },
+  ) {
+    const requesterMembership = await this.prisma.treeMember.findUnique({
+      where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+    });
+
+    if (
+      !requesterMembership ||
+      !['ADMIN', 'MODERATOR', 'MEMBER'].includes(requesterMembership.role)
+    ) {
+      throw new ForbiddenException('You do not have permission to add children in this tree.');
+    }
+
+    const isPrivileged = ['ADMIN', 'MODERATOR'].includes(requesterMembership.role);
+
+    if (!isPrivileged) {
+      const ownProfileId = await this.getOwnClaimedProfileId(treeId, requesterMembership.id);
+      if (ownProfileId === null || ownProfileId !== parentProfileId) {
+        throw new ForbiddenException('As a member, you can only add a child to your own node.');
+      }
+    }
+
+    const parentMembership = await this.prisma.treeMember.findUnique({
+      where: { profileId_treeId: { profileId: parentProfileId, treeId } },
+    });
+    if (!parentMembership) {
+      throw new NotFoundException('That profile is not part of this tree.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let parent = await tx.profile.findUnique({ where: { id: parentProfileId } });
+      if (!parent) {
+        throw new NotFoundException('Parent profile not found.');
+      }
+
+      let spouseId = parent.spouseId;
+      if (!spouseId) {
+        const spouse = await tx.profile.create({
+          data: { firstName: 'Unknown', spouseId: parentProfileId },
+        });
+        await tx.profile.update({
+          where: { id: parentProfileId },
+          data: { spouseId: spouse.id },
+        });
+        await tx.treeMember.create({
+          data: { role: 'HOLDER', profileId: spouse.id, treeId },
+        });
+        spouseId = spouse.id;
+      }
+
+      // Gender-slot assignment: if the parent's gender tells us which slot
+      // they belong in, use it. Otherwise (unset/other), the parent
+      // defaults to the father slot and the spouse to the mother slot.
+      const parentIsMother = parent.gender?.toUpperCase() === 'FEMALE';
+      const motherId = parentIsMother ? parentProfileId : spouseId;
+      const fatherId = parentIsMother ? spouseId : parentProfileId;
+
+      const child = await tx.profile.create({
+        data: { ...childData, motherId, fatherId },
+      });
+
+      return tx.treeMember.create({
+        data: { profileId: child.id, treeId, role: 'HOLDER' },
+        include: { profile: true },
+      });
+    });
+  }
+
+    // A MEMBER's "own node" is whichever HOLDER node they've claimed (their
+  // linked TreeMember row, once accepted) — not their raw signup profileId,
+  // since that's not necessarily anywhere in this tree's family graph.
+  private async getOwnClaimedProfileId(treeId: number, requesterMemberId: number): Promise<number | null> {
+    const claimedHolder = await this.prisma.treeMember.findFirst({
+      where: { treeId, linkId: requesterMemberId, claim: 'ACCEPTED' },
+    });
+    return claimedHolder?.profileId ?? null;
+  }
+
+
   // Moderator/Admin only — remove a placeholder node that isn't claimed,
   // isn't the tree's root, and isn't load-bearing for anyone else's edges.
   async deleteProfileNode(treeId: number, requesterProfileId: number, targetMemberId: number) {
