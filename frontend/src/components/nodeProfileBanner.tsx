@@ -32,6 +32,7 @@ export function NodeProfileModal ({
   const [firstName, setFirstName] = useState(formMember?.firstName || '');
   const [lastName, setLastName] = useState(formMember?.lastName || '');
   const [gender, setGender] = useState(formMember?.gender || '');
+  const [alive, setAlive] = useState(ture);
 
   useEffect(() => {
     setFormMember(member);
@@ -160,7 +161,7 @@ export function NodeProfileModal ({
                 </div> 
                 <div className="flex flex-row text-2xl font-normal">
                   <div className="flex w-40">status</div>
-
+                  
                 </div>
                     <div>died:</div>
                   
