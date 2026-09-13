@@ -83,6 +83,29 @@ export class TreeController {
 		);
 	}
 
+	@Post(':id/spouse')
+	@UseGuards(JwtAuthGuard)
+	async addSpouseNode(
+		@Req() req,
+		@Param('id') treeId: string,
+		@Body()
+		body: {
+			partnerProfileId: number;
+			firstName: string;
+			lastName?: string;
+			gender?: string;
+			birthDate?: Date;
+		},
+	) {
+		const { partnerProfileId, ...spouseData } = body;
+		return this.treeService.addSpouseNode(
+			Number(treeId),
+			req.user.profileId,
+			partnerProfileId,
+			spouseData,
+		);
+	}
+
 	// 	@Delete(':id/profiles/:memberId')
 	// 	@UseGuards(JwtAuthGuard)
 	// 	async deleteProfileNode(

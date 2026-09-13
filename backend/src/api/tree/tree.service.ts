@@ -245,7 +245,6 @@ export class TreeService {
 		if (!tree) {
 			throw new NotFoundException('Tree not found.');
 		}
-
 		return { ...tree, userRole: member.role };
 	}
 
@@ -425,8 +424,7 @@ export class TreeService {
 			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
 		});
 
-		if (
-			!requesterMembership ||
+		if (!requesterMembership ||
 			!['ADMIN', 'MODERATOR', 'MEMBER'].includes(requesterMembership.role)
 		) {
 			throw new ForbiddenException('You do not have permission to add children in this tree.');
@@ -444,6 +442,7 @@ export class TreeService {
 		const parentMembership = await this.prisma.treeMember.findUnique({
 			where: { profileId_treeId: { profileId: parentProfileId, treeId } },
 		});
+
 		if (!parentMembership) {
 			throw new NotFoundException('That profile is not part of this tree.');
 		}
@@ -487,6 +486,77 @@ export class TreeService {
 		});
 	}
 
+	async addSpouseNode(
+		treeId: number,
+		requesterProfileId: number,
+		partnerProfileId: number,
+		spouseData: {
+			firstName: string;
+			lastName?: string;
+			gender?: string;
+			birthDate?: Date;
+		},
+	) {
+		const requesterMembership = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+		});
+
+		if (!requesterMembership ||
+			!['ADMIN', 'MODERATOR', 'MEMBER'].includes(requesterMembership.role)
+		) {
+			throw new ForbiddenException('You do not have permission to add spouse in this tree.');
+		}
+
+		const isPrivileged = ['ADMIN', 'MODERATOR'].includes(requesterMembership.role);
+
+		if (!isPrivileged) {
+			const ownProfileId = await this.getOwnClaimedProfileId(treeId, requesterMembership.id);
+			if (ownProfileId === null || ownProfileId !== partnerProfileId) {
+				throw new ForbiddenException('As a member, you can only add spouse to your own node.');
+			}
+		}
+
+		const partnerMembership = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: partnerProfileId, treeId } },
+		});
+		if (!partnerMembership) {
+			throw new NotFoundException('That profile is not part of this tree.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			let partner = await tx.profile.findUnique({ where: { id: partnerProfileId } });
+			if (!partner) {
+				throw new NotFoundException('Partner profile not found.');
+			}
+
+			let spouseId = partner.spouseId;
+			if (!spouseId) {
+				const spouse = await tx.profile.create({
+					data: { firstName: 'Unknown', spouseId: partnerProfileId },
+				});
+				await tx.profile.update({
+					where: { id: partnerProfileId },
+					data: { spouseId: spouse.id },
+				});
+				await tx.treeMember.create({
+					data: { role: 'HOLDER', profileId: spouse.id, treeId },
+				});
+				spouseId = spouse.id;
+			}
+			else
+				throw new BadRequestException('Spouse already exist. Only 1 spouse allowed per person');
+
+			const spouse = await tx.profile.create({
+				data: { ...spouseData},
+			});
+
+			return tx.treeMember.create({
+				data: { profileId: spouse.id, treeId, role: 'HOLDER' },
+				include: { profile: true },
+			});
+		});
+	}
+
 	// A MEMBER's "own node" is whichever HOLDER node they've claimed (their
 	// linked TreeMember row, once accepted) — not their raw signup profileId,
 	// since that's not necessarily anywhere in this tree's family graph.
@@ -496,7 +566,6 @@ export class TreeService {
 		});
 		return claimedHolder?.profileId ?? null;
 	}
-
 
 	// Moderator/Admin only — remove a placeholder node that isn't claimed,
 	// isn't the tree's root, and isn't load-bearing for anyone else's edges.
