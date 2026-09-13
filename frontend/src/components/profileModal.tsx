@@ -74,40 +74,6 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem("ft_token");
-      if (!token) {
-        throw new Error("No token found. please log in");
-      }
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-      const res = await fetch(`${API_URL}/profile/${formData.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-        },
-      );
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
-        throw new Error(`Failed to update profile: ${res.statusText}`);
-      }
-      const updatedProfile: Profile = await res.json();
-      if (onSave) {
-        onSave(updatedProfile);
-      }
-      if (onClose) {
-        onClose();
-      }
-    } catch (err: any) {
-    console.error("Save error:", err.message);
-    }
-  };
 
   const handleCancel = () => {
     if (onClose) {

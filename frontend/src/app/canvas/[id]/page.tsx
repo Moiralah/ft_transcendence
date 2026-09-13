@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
+import { NodeProfileModal } from '@/components/nodeProfileBanner';
 
 export default function Content() {
 
@@ -120,11 +121,6 @@ export default function Content() {
 
   const [name, setName] = useState("my tree");
 
-  const handleRootMember = (member) => {
-    setRootMember(member);
-    setTreeMemberModal(false);
-  }
-
   const handleNameChange = (e) => {
     setName(e.target.value);
   };
@@ -142,11 +138,14 @@ export default function Content() {
     }
   }
 
-  const handleNameBlur = () => {
-    setEditTreeName(false);
-  }
+    const handleNameBlur = () => {
+      setEditTreeName(false);
+    }
 
-
+  // const handleRootMember = (member: any) => {
+  //   setRootMember(member);
+  //   setTreeMemberModal(false);
+  // }
 
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
@@ -192,9 +191,14 @@ export default function Content() {
           <button 
             type="button"
             tabIndex={0}
-            onClick={() => setRootMember('')}
+            onClick={() => {
+              if (!tree?.rootId || !treesMember.length) return;
+              const rootMember = treesMember.find((m: any) => m.id === tree.rootId);
+              if (rootMember) {setRootMember(rootMember);
+              }
+            }}
             aria-label="Home"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-white border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-transparent border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
           >
              home 
           </button>
@@ -212,7 +216,7 @@ export default function Content() {
         { rootMember &&
         <div 
           className="flex flex-col items-center relative z-10 "
-          onClick={() => setNodeProfileModal(true)}
+          onClick={(rootMember) => setNodeProfileModal(true)}
         >
           <div className={`
             ${rootMember.gender === 'male' ? 
@@ -223,14 +227,12 @@ export default function Content() {
               border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 w-40`}>
           { ( rootMember.firstName || rootMember.lastName ) ?
             (
-            <span>{ rootMember.id + ' ' + rootMember.firstName + ' ' + rootMember.lastName }</span>
+            <span>{ rootMember.firstName + ' ' + rootMember.lastName }</span>
             ) : ( <span>Unknown</span> )
           }
             <div className="text-xs font-normal flex flex-col py-1">
-            { rootMember.birthDate && 
-              <div>{ 'b. ' + formatDate(rootMember.birthDate) }</div>}
-            { rootMember.deathDate && 
-              <div>{ 'd. ' + formatDate(rootMember.deathDate) }</div>}
+              <div> <span>b.</span> { (rootMember.birthDate) ? (formatDate(rootMember.birthDate)) : ('--')}</div>
+              <div> <span>d.</span> { (rootMember.deathDate) ? (formatDate(rootMember.deathDate)) : ('--')}</div>
             </div>
           <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">{ rootMember.id || ' ' }</div>
         </div>
@@ -268,35 +270,13 @@ export default function Content() {
         <Footer/>
       </footer>
         
-        {/* node profile modal */}
-        {nodeProfileModal && (
-          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-4">
-            <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6">
-              { /* form fill */}
-              <div>
-
-              </div>
-              { /* button section */}
-              <div className="flex items-center justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  // onClick={handleCancel}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  // onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Node profile modal */}
+        {nodeProfileModal && rootMember && (
+          <NodeProfileModal
+          member={rootMember}
+          onClose={() => setNodeProfileModal(false)}
+          />
         )}
-
 
         {/* tree member modal */}
         {treeMemberModal && (
@@ -323,7 +303,10 @@ export default function Content() {
                 {treesMember.map((member: any) => (
                 <div 
                   key={member.id}
-                  onClick={() => (handleRootMember(member))}
+                  onClick={() => {
+                    setRootMember(member);
+                    setTreeMemberModal(false);
+                  }}
                 >
                   <div className="flex flex-row w-full border-t border-b border-gray-200 p-4 gap-4 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
                     <div className="flex w-12 h-12 shrink-0 rounded-full bg-black">
