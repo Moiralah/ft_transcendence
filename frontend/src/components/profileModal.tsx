@@ -137,7 +137,6 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
                     autoFocus
                     className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white"
                   >
-                  <option value="">Not Specified (null)</option>
                   <option value="male">male</option>
                   <option value="female">female</option>
                 </select>

@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
-import { NodeProfileModal } from '@/components/nodeProfileBanner';
+import { TreeNode } from '@/components/treeNode';
 
 export default function Content() {
 
@@ -18,18 +18,23 @@ export default function Content() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState();
-  const [tree, setTree] = useState();
-  const [treesMember, setTreesMember] = useState('');
+  const [tree, setTree] = useState('');
+  const [treesMember, setTreesMember] = useState([]);
   const [searchMember, setSearchMember] = useState('');
-
-  const [nodeProfileModal, setNodeProfileModal] = useState(false);
   
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
       fetchTree(token)
       fetchTreeMember(token)
-  }, [token]);
+  // }, [token]);
+  }, [treeId, token]);
+
+  useEffect(() => {
+    if (tree?.name) {
+      setName(tree.name);
+    }
+  }, [tree]);
 
   const fetchTree = async (authToken: string) => {
     try {
@@ -72,7 +77,6 @@ export default function Content() {
       console.error('Error fetching current user:', err);
     }
   };
-
 
   // 1. Canvas State
   const [scale, setScale] = useState(1);
@@ -142,10 +146,10 @@ export default function Content() {
       setEditTreeName(false);
     }
 
-  // const handleRootMember = (member: any) => {
-  //   setRootMember(member);
-  //   setTreeMemberModal(false);
-  // }
+  const handleRootMember = (member: any) => {
+    setRootMember(member);
+    setTreeMemberModal(false);
+  }
 
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
@@ -164,6 +168,7 @@ export default function Content() {
         {/* Top Row: Editable Title + Home Button */}
         <div className="flex flex-row items-center justify-between gap-3">
           <div className="h-12 flex flex-1 items-center">
+
             {editTreeName ? (
             <input
               type="text"
@@ -179,7 +184,7 @@ export default function Content() {
             <div
               role="button"
               tabIndex={0}
-              aria-label={`tree name: ${name || "my tree"}`}
+              aria-label={`${name || "my tree"}`}
               onKeyDown={handleNameStaticKeyDown}
               onClick={() => setEditTreeName(true)}
               className="flex w-full h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
@@ -200,7 +205,7 @@ export default function Content() {
             aria-label="Home"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-transparent border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
           >
-             home 
+             Home
           </button>
         </div>
         {/* Bottom Row: Centered People Counter */}
@@ -211,39 +216,14 @@ export default function Content() {
           { treesMember.length + ' people' }
         </button>
         </div>
-
-        {/* testing node */}
-        { rootMember &&
-        <div 
-          className="flex flex-col items-center relative z-10 "
-          onClick={(rootMember) => setNodeProfileModal(true)}
-        >
-          <div className={`
-            ${rootMember.gender === 'male' ? 
-              'bg-blue-200 border-blue-600' : 
-            rootMember.gender === 'female' ? 
-              'bg-red-200 border-red-600' : 
-            'bg-amber-100 border-amber-600'} 
-              border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 w-40`}>
-          { ( rootMember.firstName || rootMember.lastName ) ?
-            (
-            <span>{ rootMember.firstName + ' ' + rootMember.lastName }</span>
-            ) : ( <span>Unknown</span> )
-          }
-            <div className="text-xs font-normal flex flex-col py-1">
-              <div> <span>b.</span> { (rootMember.birthDate) ? (formatDate(rootMember.birthDate)) : ('--')}</div>
-              <div> <span>d.</span> { (rootMember.deathDate) ? (formatDate(rootMember.deathDate)) : ('--')}</div>
-            </div>
-          <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">{ rootMember.id || ' ' }</div>
+      
+        <div>
+          <TreeNode
+            members={treesMember}
+            currentMember={rootMember}
+          />
         </div>
-      
-      <div className="w-0.5 h-6 bg-black"></div>
-      <div className="flex gap-8 relative pt-6">
-      <div className="absolute top-0 left-12 right-12 h-0.5 bg-amber-600"></div>
-      </div>
-      </div>
-      
-      }
+
       {/* Interactive Workspace */}
       <div 
         className="flex-1 relative cursor-grab active:cursor-grabbing"
@@ -270,13 +250,6 @@ export default function Content() {
         <Footer/>
       </footer>
         
-        {/* Node profile modal */}
-        {nodeProfileModal && rootMember && (
-          <NodeProfileModal
-          member={rootMember}
-          onClose={() => setNodeProfileModal(false)}
-          />
-        )}
 
         {/* tree member modal */}
         {treeMemberModal && (

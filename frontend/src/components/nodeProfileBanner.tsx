@@ -18,34 +18,23 @@ export interface Member {
 interface nodeProfileModalProp {
     member: Member;
     onClose: () => void;
+    onSave: (updatedMember : Member) => void;
 }
 
 export function NodeProfileModal ({
     member,
     onClose,
-    // onSave? (updatedProfile: Member) => void;
+    onSave,
 } : nodeProfileModalProp ) {
 
   const [formMember, setFormMember] = useState<Member | null>(member);
 
   const [editName, setEditName] = useState(false);
-  const [firstName, setFirstName] = useState(formMember?.firstName || '');
-  const [lastName, setLastName] = useState(formMember?.lastName || '');
-  const [gender, setGender] = useState(formMember?.gender || '');
   const [alive, setAlive] = useState(formMember?.deathDate? false : true);
 
 useEffect(() => {
   if (member) {
-    // Sync the base object
     setFormMember(member);
-
-    // Sync individual input fields to match the incoming member prop
-    setFirstName(member.firstName || '');
-    setLastName(member.lastName || '');
-    setGender(member.gender || '');
-    
-    // Set alive to true if deathDate is null/undefined, otherwise false
-    setAlive(!member.deathDate);
   }
 }, [member]); // Re-run whenever the member prop changes
 
@@ -56,6 +45,9 @@ useEffect(() => {
         throw new Error("No token found. please log in");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+    console.log("📤 BEFORE PATCH (Sending Payload):", formMember);
+    console.log("📤 Sending profileId:", formMember.profileId);
 
       const res = await fetch(`${API_URL}/profile/${formMember.profileId}`, {
         method: "PATCH",
@@ -72,10 +64,18 @@ useEffect(() => {
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      const updatedProfile: Member = await res.json();
-      // if (onSave) {
-      //   onSave(updatedProfile);
-      // }
+
+    const rawResponseBody = await res.json();
+    const serverData = rawResponseBody.data || rawResponseBody;
+
+    const updatedMember: Member = {
+      ...formMember,   // Guarantees all original fields (id, treeId, role, etc.) stay intact
+      ...serverData,   // Overwrites fields updated by the backend
+    };
+
+      if (onSave) {
+        onSave(updatedMember);
+      }
       if (onClose) {
         onClose();
       }
@@ -117,11 +117,10 @@ useEffect(() => {
                     <input
                       type="text"
                       name="firstName"
-                      value={formMember.firstName}
+                      value={formMember?.firstName}
                       onChange={handleChange}
                       onKeyDown={handleNameKeyDown}
-                      onBlur={handleNameBlur}
-                      aira-label="Edit First Name"
+                      aria-label="Edit First Name"
                       className="min-w-48 flex flex-row"
                     />
                     <input
@@ -137,7 +136,7 @@ useEffect(() => {
                     </div>
                     ) : (
                       <div className="flex flex-row font-black font-bold">
-                      <div className="flex min-w-96">{firstName + '  ' + lastName}</div>
+                      <div className="flex min-w-96">{formMember.firstName + '  ' + formMember.lastName}</div>
                       <div 
                         className="flex w-10 h-10 border border-black text-transparent hover:text-red-200 cursor-pointer"
                         onClick={() => setEditName(true)}
@@ -190,6 +189,29 @@ useEffect(() => {
                   <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>API Change date</div>
                 </div>
               </div>
+              { /* button section */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={(e) =>{
+                    e.stopPropagation();
+                    onClose();}
+                  }
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                >
+                  Save API problem
+                </button>
+              </div>
               { /* family */}
               <div className="flex flex-col">
                 <div className="font-black font-bold text-2xl">Immediate Family</div>
@@ -227,23 +249,6 @@ useEffect(() => {
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   API add spouse
-                </button>
-              </div>
-              { /* button section */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
-                >
-                  Save API problem
                 </button>
               </div>
             </div>
