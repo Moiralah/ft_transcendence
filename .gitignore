@@ -57,6 +57,7 @@ logs/
 
 /backend/prisma
 /backend/src/generated
+generated/
 
 #Supabase AI
 .agents/
