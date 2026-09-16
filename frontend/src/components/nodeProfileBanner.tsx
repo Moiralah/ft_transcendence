@@ -10,7 +10,7 @@ export interface Member {
   firstName: string;
   lastName: string;
   photoUrl?: string | null;
-  gender?: 'male' | 'female' | string | null;
+  gender?: 'male' | 'female' | null;
   birthDate?: string | Date | null;
   deathDate?: string | Date | null;
 }
@@ -31,6 +31,7 @@ export function NodeProfileModal ({
 
   const [editName, setEditName] = useState(false);
   const [alive, setAlive] = useState(formMember?.deathDate? false : true);
+  const [claim, setClaim] = useState(false);
 
 useEffect(() => {
   if (member) {
@@ -45,9 +46,6 @@ useEffect(() => {
         throw new Error("No token found. please log in");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-    console.log("📤 BEFORE PATCH (Sending Payload):", formMember);
-    console.log("📤 Sending profileId:", formMember.profileId);
 
       const res = await fetch(`${API_URL}/profile/${formMember.profileId}`, {
         method: "PATCH",
@@ -107,7 +105,7 @@ useEffect(() => {
   }
 
   return (
-          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3">
+          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
             <div className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-4">
               { /* form fill */}
               <div className="flex flex-col">
@@ -200,6 +198,16 @@ useEffect(() => {
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) =>{
+                    e.stopPropagation();
+                    onClose();}
+                  }
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                {  claim ? 'this is me' : 'this is not me'}  
                 </button>
                 <button
                   type="button"

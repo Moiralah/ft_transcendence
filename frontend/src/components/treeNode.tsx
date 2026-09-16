@@ -10,7 +10,7 @@ export interface Member {
   firstName: string;
   lastName: string;
   photoUrl?: string | null;
-  gender?: 'male' | 'female' | string | null;
+  gender?: 'male' | 'female' | null;
   birthDate?: string | Date | null;
   deathDate?: string | Date | null;
 }

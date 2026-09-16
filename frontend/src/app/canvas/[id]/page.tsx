@@ -157,66 +157,66 @@ export default function Content() {
       <header id="navbar" tabIndex={-1} className="focus:outline-none">
         <Navbar/>
       </header>
-        <main
+      <main
         id="main-content"
         tabIndex={-1}
-        className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24 space-y-8"
+        className="focus:outline-none max-w-6xl w-full mx-auto px-4  flex-1 pt-20 git pu"
       >
         {/* Tree member card */}
-        <div className="w-80 flex flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
-    
-        {/* Top Row: Editable Title + Home Button */}
-        <div className="flex flex-row items-center justify-between gap-3">
-          <div className="h-12 flex flex-1 items-center">
+        <div className="w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
+          {/* Top Row: Editable Title + Home Button */}
+          <div className="flex flex-row w-full items-center justify-between gap-3">
+            <div className="h-12 flex flex-1 items-center">
 
-            {editTreeName ? (
-            <input
-              type="text"
-              value={name}
-              onChange={handleNameChange}
-              onKeyDown={handleNameKeyDown}
-              onBlur={handleNameBlur}
-              autoFocus
-              aria-label="Edit tree name"
-              className="w-full h-full px-3 text-lg font-semibold text-gray-800 border-2 border-amber-600 rounded-lg outline-none focus:ring-amber-600 box-border"
-            />
-            ) : (
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label={`${name || "my tree"}`}
-              onKeyDown={handleNameStaticKeyDown}
-              onClick={() => setEditTreeName(true)}
-              className="flex w-full h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
-            >
-              {name || "my tree"}
+              {editTreeName ? (
+              <input
+                type="text"
+                value={name}
+                onChange={handleNameChange}
+                onKeyDown={handleNameKeyDown}
+                onBlur={handleNameBlur}
+                autoFocus
+                aria-label="Edit tree name"
+                className="w-full h-full px-3 text-lg font-semibold text-gray-800 border-2 border-amber-600 rounded-lg outline-none focus:ring-amber-600 box-border"
+              />
+              ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={`${name || "my tree"}`}
+                onKeyDown={handleNameStaticKeyDown}
+                onClick={() => setEditTreeName(true)}
+                className="flex w-full h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+              >
+                {name || "my tree"}
+              </div>
+              )}
             </div>
-            )}
+            <button 
+              type="button"
+              tabIndex={0}
+              onClick={() => {
+                if (!tree?.rootId || !treesMember.length) return;
+                const rootMember = treesMember.find((m: any) => m.id === tree.rootId);
+                if (rootMember) {setRootMember(rootMember);
+                }
+              }}
+              aria-label="Home"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-transparent border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
+            >
+              Home
+            </button>
           </div>
-          <button 
-            type="button"
-            tabIndex={0}
-            onClick={() => {
-              if (!tree?.rootId || !treesMember.length) return;
-              const rootMember = treesMember.find((m: any) => m.id === tree.rootId);
-              if (rootMember) {setRootMember(rootMember);
-              }
-            }}
-            aria-label="Home"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-semibold text-black bg-transparent border border-gray-200 outline-none transition-all hover:border-amber-600 hover:ring-2 hover:ring-amber-200 hover:bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-600"
-          >
-             Home
-          </button>
-        </div>
-        {/* Bottom Row: Centered People Counter */}
-        <button 
-          onClick={() => setTreeMemberModal(true)}
-          className="flex items-center justify-center rounded-lg text-lg font-medium text-gray-600 mt-3 bg-transparent hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
-        >
-          { treesMember.length + ' people' }
-        </button>
-        </div>
-      
+            {/* Bottom Row: Centered People Counter */}
+            <div className="flex h-12 shrink-0 items-center justify-center">
+              <button 
+                onClick={() => setTreeMemberModal(true)}
+                className="flex h-12 items-center justify-center rounded-lg text-lg font-medium text-gray-600 px-3 bg-transparent hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+              >
+                <span>{treesMember.filter((member: any) => member.role !== 'HOLDER').length}</span><span className="ml-2 hidden lg:inline">People</span>
+              </button>
+            </div>
+          </div>
         <div>
           <TreeNode
             members={treesMember}
@@ -260,7 +260,7 @@ export default function Content() {
               <div
                 className="flex text-2xl font-bold "
               >
-                { 'Tree member ( ' + treesMember.length + ' )'}
+                { 'Tree member ( ' + treesMember.filter((member: any) => member.role !== 'HOLDER').length + ' )'}
               </div>
               {/* Working Search Bar */}
               <div className="border-none rounded-lg p-1 focus-within:ring-2 focus-within:ring-amber-600 focus-within:ring-offset-2">
@@ -273,7 +273,9 @@ export default function Content() {
                 />
               </div>
               <div className="grid">
-                {treesMember.map((member: any) => (
+                {treesMember
+                .filter((member: any) => member.role !== 'HOLDER')
+                .map((member: any) => (
                 <div 
                   key={member.id}
                   onClick={() => {
