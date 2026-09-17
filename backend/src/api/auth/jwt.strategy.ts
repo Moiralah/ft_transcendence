@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
@@ -13,6 +13,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	}
 
 	async validate(payload: any) {
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId};
+		// 2FA challenge tokens are only valid for /auth/2fa/login-verify — never
+		// as a real bearer token for the rest of the API.
+		if (payload.purpose === 'mfa') {
+			throw new UnauthorizedException('MFA challenge token cannot be used for authentication');
+		}
+		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: payload.role };
 	}
 }

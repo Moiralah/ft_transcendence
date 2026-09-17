@@ -15,6 +15,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Global role (admin panel / permissions) — separate from per-tree roles (see `Role`)
+  role UserRole @default(USER)
+
+  // 2FA (TOTP)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  recoveryCodes    RecoveryCode[]
+
   // Profile (assigned to user when sign up)
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
@@ -24,6 +32,24 @@ model User {
 
   // Invitations sent
   sentInvitations Invitation[] @relation("Inviter")
+}
+
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+// ------------------- 2FA Recovery Codes -------------------
+model RecoveryCode {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 // ------------------- Family Trees -------------------

@@ -53,16 +53,31 @@ export class AuthService {
 			});
 		}
 
-		// 3. Issue your own JWT (optional, but keeps the existing flow)
+		// 3. If this user has 2FA enabled, don't issue the real JWT yet — hand
+		// back a short-lived challenge token the frontend must exchange for a
+		// real session via /auth/2fa/login-verify.
+		if (user.twoFactorEnabled) {
+			const challengeToken = await this.jwt.signAsync(
+				{ sub: user.id, purpose: 'mfa' },
+				{ expiresIn: '5m' },
+			);
+			return { twoFactorRequired: true, challengeToken };
+		}
+
+		return this.issueSession(user);
+	}
+
+	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
 		const token = await this.jwt.signAsync({
 			sub: user.id,
 			email: user.email,
 			profileId: user.profileId,
+			role: user.role,
 		});
 
 		return {
 			accessToken: token,
-			user: { id: user.id, email: user.email, profileId: user.profileId},
+			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
 	}
 }
