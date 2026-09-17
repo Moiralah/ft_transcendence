@@ -427,12 +427,6 @@ export class TreeService {
 		treeId: number,
 		requesterProfileId: number,
 		parentProfileId: number,
-		childData: {
-			firstName: string;
-			lastName?: string;
-			gender?: string;
-			birthDate?: Date;
-		},
 	) {
 		const requesterMembership = await this.prisma.treeMember.findUnique({
 			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
@@ -490,7 +484,7 @@ export class TreeService {
 			const fatherId = parentIsMother ? spouseId : parentProfileId;
 
 			const child = await tx.profile.create({
-				data: { ...childData, motherId, fatherId },
+				data: { firstName: 'New Child', motherId, fatherId },
 			});
 
 			return tx.treeMember.create({

@@ -67,6 +67,35 @@ export function NodeProfileModal ({
     }
   }, [member]); // Re-run whenever the member prop changes
 
+  const handleAddChild = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      if (onClose) {
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("ft_token");
@@ -257,7 +286,7 @@ export function NodeProfileModal ({
                     <div className="flex w-40">
                       spouse
                     </div>
-                    <div>{getMemberNameById(member.spouseId)}</div>
+                    <div>{getMemberNameById(member.spouseId) || 'None'}</div>
                   </div>
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
@@ -276,7 +305,10 @@ export function NodeProfileModal ({
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddChild();
+                  }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   Add children

@@ -67,28 +67,19 @@ export class TreeController {
 		);
 	}
 
-	@Post(':id/children')
-	@UseGuards(JwtAuthGuard)
-	async addChildNode(
-		@Req() req,
-		@Param('id') treeId: string,
-		@Body()
-		body: {
-			parentProfileId: number;
-			firstName: string;
-			lastName?: string;
-			gender?: string;
-			birthDate?: Date;
-		},
-	) {
-		const { parentProfileId, ...childData } = body;
-		return this.treeService.addChildNode(
-			Number(treeId),
-			req.user.profileId,
-			parentProfileId,
-			childData,
-		);
-	}
+	@Post(':id/children/:parentId')
+    @UseGuards(JwtAuthGuard)
+    async addChildNode(
+        @Req() req,
+        @Param('id') treeId: string,
+        @Param('parentid') parentId: string,
+    ) {
+        return this.treeService.addChildNode(
+            Number(treeId),
+            req.user.profileId,
+            Number(parentId),
+        );
+    }
 
 	@Post(':id/spouse')
 	@UseGuards(JwtAuthGuard)
