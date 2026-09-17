@@ -13,7 +13,7 @@ type AuditLog = {
   user?: { username: string };
 };
 
-export function useAuditLogNotifications(treeId: number | null) {
+export function broadcasttreeaction(treeId: number | null) {
   useEffect(() => {
     if (!treeId) return;
 
