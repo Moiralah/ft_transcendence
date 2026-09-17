@@ -3,16 +3,21 @@ import { NodeProfileModal } from './nodeProfileBanner';
 
 export interface Member {
   id: number;
-  profileId: number;
-  treeId: number;
-  role: string;
-  joinedAt?: string | Date | null;
+  profileId?: number;
+  treeId?: number;
+  role?: string;
+  joinedAt?: string | Date;
   firstName: string;
-  lastName: string;
-  photoUrl?: string | null;
+  lastName?: string | null;
   gender?: 'male' | 'female' | null;
-  birthDate?: string | Date | null;
-  deathDate?: string | Date | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
+  bio?: string | null;
+  photoUrl?: string | null;
+  motherId?: number | null;
+  fatherId?: number | null;
+  spouseId?: number | null;
+  childrenIds?: number[];
 }
 
 const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
@@ -79,6 +84,7 @@ export function TreeNode({
 
 {nodeProfileModal && nodeMember && (
   <NodeProfileModal
+    allMembers={members}
     member={nodeMember}
     onClose={() => setNodeProfileModal(false)}
     onSave={(updatedMember: Member) => {

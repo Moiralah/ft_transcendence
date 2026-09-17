@@ -27,7 +27,6 @@ export default function Content() {
   useEffect(() => {
       fetchTree(token)
       fetchTreeMember(token)
-  // }, [token]);
   }, [treeId, token]);
 
   useEffect(() => {

@@ -3,25 +3,32 @@ import { useEffect, useState } from 'react';
 
 export interface Member {
   id: number;
-  profileId: number;
-  treeId: number;
-  role: string;
-  joinedAt?: string | Date | null;
+  profileId?: number;
+  treeId?: number;
+  role?: string;
+  joinedAt?: string | Date;
   firstName: string;
-  lastName: string;
-  photoUrl?: string | null;
+  lastName?: string | null;
   gender?: 'male' | 'female' | null;
-  birthDate?: string | Date | null;
-  deathDate?: string | Date | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
+  bio?: string | null;
+  photoUrl?: string | null;
+  motherId?: number | null;
+  fatherId?: number | null;
+  spouseId?: number | null;
+  childrenIds?: number[];
 }
 
 interface nodeProfileModalProp {
+    allMembers: Member[];
     member: Member;
     onClose: () => void;
     onSave: (updatedMember : Member) => void;
 }
 
 export function NodeProfileModal ({
+    allMembers,
     member,
     onClose,
     onSave,
@@ -33,11 +40,32 @@ export function NodeProfileModal ({
   const [alive, setAlive] = useState(formMember?.deathDate? false : true);
   const [claim, setClaim] = useState(false);
 
-useEffect(() => {
-  if (member) {
-    setFormMember(member);
+  const getMemberNameById = (targetId: number | null) => {
+    if (!targetId) return null;
+    const foundMember = allMembers.find(
+      (m) => m.id === targetId || m.profileId === targetId
+    );
+    if (!foundMember) return null;
+    return `${foundMember?.firstName} ${foundMember?.lastName} || '-'`;
   }
-}, [member]); // Re-run whenever the member prop changes
+
+  const childNames = allMembers
+  .filter(m => member.childrenIds?.includes(m.id))
+  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
+  .filter(Boolean)
+  .join(', ');
+
+  const parentNames = allMembers.filter(
+  m => m.id === member.fatherId || m.id === member.motherId)
+  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
+  .filter(Boolean)
+  .join(', ');
+
+  useEffect(() => {
+    if (member) {
+      setFormMember(member);
+    }
+  }, [member]); // Re-run whenever the member prop changes
 
   const handleSave = async () => {
     try {
@@ -103,6 +131,8 @@ useEffect(() => {
   const handleNameBlur = () => {
     setEditName(false);
   }
+
+
 
   return (
           <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
@@ -227,19 +257,19 @@ useEffect(() => {
                     <div className="flex w-40">
                       spouse
                     </div>
-                    <div>API spouse</div>
+                    <div>{getMemberNameById(member.spouseId)}</div>
                   </div>
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
-                      parents
+                      Parent
                     </div>
-                    <div>API parents</div>
+                    <div>{parentNames || 'None'}</div>
                   </div>                  
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
                       children
                     </div>
-                  <div>API children</div>
+                  <div>{childNames || 'None'}</div>
                 </div>
               </div>
               {/* Add button section*/}
@@ -249,7 +279,7 @@ useEffect(() => {
                   onClick={onClose}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                  API add children
+                  Add children
                 </button>
                 <button
                   type="button"
