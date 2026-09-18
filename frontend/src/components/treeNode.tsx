@@ -31,6 +31,7 @@ export function TreeNode({
   members,
   currentMember,
 }: TreeNodeProp) {
+
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
 
@@ -39,7 +40,12 @@ export function TreeNode({
     setNodeMember(currentMember);
   }, [currentMember]);
 
+
+
   if (!nodeMember) return null;
+  const AddChildNode = () => {
+
+  }
 
   return (
     <div 
@@ -82,17 +88,21 @@ export function TreeNode({
         <div className="absolute top-0 left-12 right-12 h-0.5 bg-amber-600"></div>
       </div>
 
-{nodeProfileModal && nodeMember && (
-  <NodeProfileModal
-    allMembers={members}
-    member={nodeMember}
-    onClose={() => setNodeProfileModal(false)}
-    onSave={(updatedMember: Member) => {
-      setNodeMember(updatedMember);
-      setNodeProfileModal(false);
-    }}
-  />
-)}
+    {nodeProfileModal && nodeMember && (
+      <NodeProfileModal
+        allMembers={members}
+        member={nodeMember}
+        onClose={() => setNodeProfileModal(false)}
+        onSave={(updatedMember: Member) => {
+          setNodeMember(updatedMember);
+          setNodeProfileModal(false);
+        }}
+        onAddChild={() => {
+          AddChildNode();
+          setNodeProfileModal(false);      
+        }}
+      />
+    )}
     </div>
   );
 }

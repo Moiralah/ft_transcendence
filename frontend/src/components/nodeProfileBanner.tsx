@@ -25,6 +25,7 @@ interface nodeProfileModalProp {
     member: Member;
     onClose: () => void;
     onSave: (updatedMember : Member) => void;
+    onAddChild: ()=> void;
 }
 
 export function NodeProfileModal ({
@@ -32,6 +33,7 @@ export function NodeProfileModal ({
     member,
     onClose,
     onSave,
+    onAddChild,
 } : nodeProfileModalProp ) {
 
   const [formMember, setFormMember] = useState<Member | null>(member);
@@ -88,6 +90,8 @@ export function NodeProfileModal ({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
+      if (onAddChild)
+        onAddChild();
       if (onClose) {
         onClose();
       }
