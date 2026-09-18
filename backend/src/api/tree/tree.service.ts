@@ -184,48 +184,13 @@ export class TreeService {
 		const memberships = await this.prisma.treeMember.findMany({
 			where: { treeId },
 			include: {
-				profile: {
-					select: {
-						id: true,
-						firstName: true,
-						lastName: true,
-						photoUrl: true,
-						gender: true,
-						birthDate: true,
-						deathDate: true,
-						spouseId: true,
-						fatherId: true,
-						motherId: true,
-						childrenAsMother: { select: { id: true } },
-						childrenAsFather: { select: { id: true } },
-					},
-				},
+				profile: { select: this.memberProfileSelect },
+				link: {include: {profile: {select: this.memberProfileSelect}}}
 			},
 			orderBy: { joinedAt: 'asc' },
 		});
 
-		return memberships.map((m) => ({
-			id: m.id,
-			profileId: m.profileId,
-			treeId: m.treeId,
-			role: m.role,
-			joinedAt: m.joinedAt,
-			firstName: m.profile?.firstName ?? '',
-			lastName: m.profile?.lastName ?? '',
-			photoUrl: m.profile?.photoUrl ?? null,
-			gender: m.profile?.gender ?? null,
-			birthDate: m.profile?.birthDate ?? null,
-			deathDate: m.profile?.deathDate ?? null,
-			spouseId: m.profile?.spouseId ?? null,
-			motherId: m.profile?.motherId ?? null,
-			fatherId: m.profile?.fatherId ?? null,
-			childrenIds: [
-				...new Set([
-					...(m.profile?.childrenAsMother ?? []).map((c) => c.id),
-					...(m.profile?.childrenAsFather ?? []).map((c) => c.id),
-				]),
-			],
-		}));
+		return memberships.map((m) => this.mapMemberRow(m));
 	}
 
 	// Tree detail page. Only ever reached once the frontend already has a
@@ -329,17 +294,48 @@ export class TreeService {
 		});
 	}
 
-	// Add a child to an existing node.
-	// This is now the ONLY way new placeholder nodes get created (besides the
-	// mother/father auto-created alongside the root at tree creation time).
-	// There's no separate "add mother"/"add father" action any more — a
-	// parent's spouse is created automatically the first time they get a
-	// child, so every non-root node's mother AND father are set in one shot,
-	// right here, rather than being assembled node-by-node.
-	//
-	// ADMIN/MODERATOR can add a child under any existing node.
-	// MEMBER can only add a child under the node they themselves claimed —
-	// not under an arbitrary node, even one representing a relative.
+	private readonly memberProfileSelect = {
+		id: true,
+		firstName: true,
+		lastName: true,
+		photoUrl: true,
+		gender: true,
+		birthDate: true,
+		deathDate: true,
+		spouseId: true,
+		fatherId: true,
+		motherId: true,
+		childrenAsMother: { select: { id: true } },
+		childrenAsFather: { select: { id: true } },
+	} as const;
+
+	private mapMemberRow(m: any) {
+		const display = m.claim === 'ACCEPTED' && m.link?.profile ? m.link.profile : m.profile;
+		return {
+			id: m.id,
+			profileId: m.profileId,
+			treeId: m.treeId,
+			role: m.role,
+			claim: m.claim,
+			joinedAt: m.joinedAt,
+			firstName: display?.firstName ?? '',
+			lastName: display?.lastName ?? '',
+			photoUrl: display?.photoUrl ?? null,
+			gender: display?.gender ?? null,
+			birthDate: display?.birthDate ?? null,
+			deathDate: display?.deathDate ?? null,
+			spouseId: m.profile?.spouseId ?? null,
+			motherId: m.profile?.motherId ?? null,
+			fatherId: m.profile?.fatherId ?? null,
+			childrenIds: [
+				...new Set([
+					...(m.profile?.childrenAsMother ?? []).map((c) => c.id),
+					...(m.profile?.childrenAsFather ?? []).map((c) => c.id),
+				]),
+			],
+		};
+	}
+
 	async addChildNode(
 		treeId: number,
 		requesterProfileId: number,
@@ -379,6 +375,7 @@ export class TreeService {
 			}
 
 			let spouseId = parent.spouseId;
+			let spouseCreated = false
 			if (!spouseId) {
 				const spouse = await tx.profile.create({
 					data: { firstName: 'New Spouse', spouseId: parentProfileId },
@@ -391,6 +388,7 @@ export class TreeService {
 					data: { role: 'HOLDER', profileId: spouse.id, treeId },
 				});
 				spouseId = spouse.id;
+				spouseCreated = true;
 			}
 
 			// Gender-slot assignment: if the parent's gender tells us which slot
@@ -404,10 +402,24 @@ export class TreeService {
 				data: { firstName: 'New Child', motherId, fatherId },
 			});
 
-			return tx.treeMember.create({
+			await tx.treeMember.create({
 				data: { profileId: child.id, treeId, role: 'HOLDER' },
-				include: { profile: true },
 			});
+
+			const touchedProfileIds = [
+				parentProfileId,
+				child.id,
+				...(spouseCreated ? [spouseId] : []),
+			];
+
+			const rows = await tx.treeMember.findMany({
+				where: { treeId, profileId: { in: touchedProfileIds } },
+				include: {
+					profile: { select: this.memberProfileSelect },
+					link: { include: { profile: { select: this.memberProfileSelect } } },
+				},
+			});
+			return rows.map((r) => this.mapMemberRow(r));
 		});
 	}
 
@@ -447,32 +459,29 @@ export class TreeService {
 			if (!partner) {
 				throw new NotFoundException('Partner profile not found.');
 			}
-
-			let spouseId = partner.spouseId;
-			if (!spouseId) {
-				const spouse = await tx.profile.create({
-					data: { firstName: 'Unknown', spouseId: partnerProfileId },
-				});
-				await tx.profile.update({
-					where: { id: partnerProfileId },
-					data: { spouseId: spouse.id },
-				});
-				await tx.treeMember.create({
-					data: { role: 'HOLDER', profileId: spouse.id, treeId },
-				});
-				spouseId = spouse.id;
-			}
-			else
+			if (partner.spouseId) {
 				throw new BadRequestException('Spouse already exist. Only 1 spouse allowed per person');
+			}
 
 			const spouse = await tx.profile.create({
-				data: { firstName: 'New Spouse' },
+				data: { firstName: 'New Spouse', spouseId: partnerProfileId },
+			});
+			await tx.profile.update({
+				where: { id: partnerProfileId },
+				data: { spouseId: spouse.id },
+			});
+			await tx.treeMember.create({
+				data: { role: 'HOLDER', profileId: spouse.id, treeId },
 			});
 
-			return tx.treeMember.create({
-				data: { profileId: spouse.id, treeId, role: 'HOLDER' },
-				include: { profile: true },
+			const rows = await tx.treeMember.findMany({
+				where: {treeId, profileId: {in: [partnerProfileId, spouse.id]}},
+				include: {
+					profile: {select: this.memberProfileSelect},
+					link: {include: {profile: {select: this.memberProfileSelect}}},
+				},
 			});
+			return rows.map((r) => this.mapMemberRow(r));
 		});
 	}
 
