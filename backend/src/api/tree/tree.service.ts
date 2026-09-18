@@ -381,7 +381,7 @@ export class TreeService {
 			let spouseId = parent.spouseId;
 			if (!spouseId) {
 				const spouse = await tx.profile.create({
-					data: { firstName: 'Unknown', spouseId: parentProfileId },
+					data: { firstName: 'New Spouse', spouseId: parentProfileId },
 				});
 				await tx.profile.update({
 					where: { id: parentProfileId },

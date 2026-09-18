@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
-import { TreeNode } from '@/components/treeNode';
+import { TreeBranch } from '@/components/treeBranch';
+
 
 export default function Content() {
 
@@ -217,8 +218,8 @@ export default function Content() {
             </div>
           </div>
         <div>
-          <TreeNode
-            members={treesMember}
+          <TreeBranch
+            allMembers={treesMember}
             currentMember={rootMember}
           />
         </div>

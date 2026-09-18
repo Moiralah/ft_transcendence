@@ -72,7 +72,7 @@ export class TreeController {
     async addChildNode(
         @Req() req,
         @Param('id') treeId: string,
-        @Param('parentid') parentId: string,
+        @Param('parentId') parentId: string,
     ) {
         return this.treeService.addChildNode(
             Number(treeId),
