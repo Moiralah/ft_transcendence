@@ -81,96 +81,84 @@ export class TreeController {
         );
     }
 
-	@Post(':id/spouse')
+	@Post(':id/spouse/:partnerId')
 	@UseGuards(JwtAuthGuard)
 	async addSpouseNode(
 		@Req() req,
 		@Param('id') treeId: string,
-		@Body()
-		body: {
-			partnerProfileId: number;
-			firstName: string;
-			lastName?: string;
-			gender?: string;
-			birthDate?: Date;
-		},
+		@Param('partnerId') partnerId: string,
 	) {
-		const { partnerProfileId, ...spouseData } = body;
 		return this.treeService.addSpouseNode(
 			Number(treeId),
 			req.user.profileId,
-			partnerProfileId,
-			spouseData,
+			Number(partnerId),
 		);
 	}
 
-	// 	@Delete(':id/profiles/:memberId')
-	// 	@UseGuards(JwtAuthGuard)
-	// 	async deleteProfileNode(
-	// 		@Req() req,
-	// 		@Param('id') treeId: string,
-	// 		@Param('memberId') memberId: string,
-	// 	) {
-	// 		return this.treeService.deleteProfileNode(Number(treeId), req.user.profileId, Number(memberId));
-	// 	}
+	@Delete(':id/profiles/:memberId')
+	@UseGuards(JwtAuthGuard)
+	async deleteProfileNode(
+		@Req() req,
+		@Param('id') treeId: string,
+		@Param('memberId') memberId: string,
+	) {
+		return this.treeService.deleteProfileNode(Number(treeId), req.user.profileId, Number(memberId));
+	}
 
-	// 	@Post(':id/claims/:holderMemberId')
-	// 	@UseGuards(JwtAuthGuard)
-	// 	async requestClaim(
-	// 		@Req() req,
-	// 		@Param('id') treeId: string,
-	// 		@Param('holderMemberId') holderMemberId: string,
-	// 	) {
-	// 		return this.treeService.requestClaim(
-	// 			Number(treeId),
-	// 			req.user.profileId,
-	// 			req.user.id,
-	// 			Number(holderMemberId),
-	// 		);
-	// 	}
+	@Post(':id/claims/:holderMemberId')
+	@UseGuards(JwtAuthGuard)
+	async requestClaim(
+		@Req() req,
+		@Param('id') treeId: string,
+		@Param('holderMemberId') holderMemberId: string,
+	) {
+		return this.treeService.requestClaim(
+			Number(treeId),
+			req.user.profileId,
+			Number(holderMemberId),
+		);
+	}
 
-	// 	// Powers the claim-request notification panel.
-	// 	@Get(':id/claims/pending')
-	// 	@UseGuards(JwtAuthGuard)
-	// 	async getPendingClaims(@Req() req, @Param('id') treeId: string) {
-	// 		return this.treeService.getPendingClaims(Number(treeId), req.user.profileId);
-	// 	}
+	@Put(':id/claims/:holderMemberId/approve')
+	@UseGuards(JwtAuthGuard)
+	async approveClaim(
+		@Req() req,
+		@Param('id') treeId: string,
+		@Param('holderMemberId') holderMemberId: string,
+	) {
+		return this.treeService.approveClaim(
+			Number(treeId),
+			req.user.profileId,
+			Number(holderMemberId),
+		);
+	}
 
-	// 	@Put(':id/claims/:holderMemberId/approve')
-	// 	@UseGuards(JwtAuthGuard)
-	// 	async approveClaim(
-	// 		@Req() req,
-	// 		@Param('id') treeId: string,
-	// 		@Param('holderMemberId') holderMemberId: string,
-	// 	) {
-	// 		return this.treeService.approveClaim(
-	// 			Number(treeId),
-	// 			req.user.profileId,
-	// 			req.user.id,
-	// 			Number(holderMemberId),
-	// 		);
-	// 	}
-
-	// 	@Put(':id/claims/:holderMemberId/reject')
-	// 	@UseGuards(JwtAuthGuard)
-	// 	async rejectClaim(
-	// 		@Req() req,
-	// 		@Param('id') treeId: string,
-	// 		@Param('holderMemberId') holderMemberId: string,
-	// 	) {
-	// 		return this.treeService.rejectClaim(
-	// 			Number(treeId),
-	// 			req.user.profileId,
-	// 			req.user.id,
-	// 			Number(holderMemberId),
-	// 		);
-	// 	}
-	// }
-
+	@Put(':id/claims/:holderMemberId/reject')
+	@UseGuards(JwtAuthGuard)
+	async rejectClaim(
+		@Req() req,
+		@Param('id') treeId: string,
+		@Param('holderMemberId') holderMemberId: string,
+	) {
+		return this.treeService.rejectClaim(
+			Number(treeId),
+			req.user.profileId,
+			Number(holderMemberId),
+		);
+	}
 
 	@Post(':id/leave')
 	@UseGuards(JwtAuthGuard)
 	async leaveTree(@Req() req, @Param('id') treeId: string) {
 		return this.treeService.leaveTree(req.user.profileId, Number(treeId));
 	}
+
+	// Powers the claim-request notification panel.
+	@Get(':id/claims/pending')
+	@UseGuards(JwtAuthGuard)
+	async getPendingClaims(@Req() req, @Param('id') treeId: string) {
+		return this.treeService.getPendingClaims(Number(treeId), req.user.profileId);
+	}
+
+
 }
