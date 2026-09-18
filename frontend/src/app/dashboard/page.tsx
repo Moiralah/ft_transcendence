@@ -26,6 +26,7 @@ interface Profile {
 export default function TreePage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const role = typeof window !== 'undefined' ? localStorage.getItem('ft_role') : null;
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -249,10 +250,18 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>              
               <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
 
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <Button onClick={() => setShowProfileModal(true)} variant="primary">
                   Edit Profile
                 </Button>
+                <Button href="/settings/2fa" variant="secondary">
+                  Security (2FA)
+                </Button>
+                {role === 'ADMIN' && (
+                  <Button href="/admin/users" variant="secondary">
+                    Admin Panel
+                  </Button>
+                )}
               </div>
             </div>
           </div>

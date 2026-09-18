@@ -8,6 +8,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { supabase } from '@/lib/supabaseClient';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -64,17 +65,19 @@ export default function SignupPage() {
         // 3. Send token to backend to get our JWT
         const token = loginData.session?.access_token;
         if (token) {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accessToken: token }),
-          });
+          const result = await exchangeSupabaseToken(token);
+          // A brand-new account never has 2FA enabled yet, so this is always
+          // a normal session — but guard anyway in case of a race with an
+          // existing account.
+          if (isTwoFactorRequired(result)) {
+            setSuccess(true);
+            setError('Account created! Please log in.');
+            setTimeout(() => router.push('/login'), 2000);
+            return;
+          }
 
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.message || 'Login failed');
+          storeSession(result);
 
-          localStorage.setItem('ft_token', result.accessToken);
-          
           router.push('/dashboard');
         } else {
           throw new Error('No access token received');
