@@ -45,17 +45,17 @@ export class TreeController {
 		return this.treeService.getTreeMember(Number(treeId));
 	}
 
-	@Get(':id')
+	@Get(':treeId')
 	@UseGuards(JwtAuthGuard)
-	async getTree(@Req() req, @Param('id') id: string) {
+	async getTree(@Req() req, @Param('treeId') id: string) {
 		return this.treeService.getTreeById(Number(id), req.user.profileId);
 	}
 
-	@Put(':id/role/:targetProfileId')
+	@Put(':treeId/role/:targetProfileId')
 	@UseGuards(JwtAuthGuard)
 	async updateRole(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('targetProfileId') targetProfileId: string,
 		@Body() body: { role: string },
 	) {
@@ -67,11 +67,11 @@ export class TreeController {
 		);
 	}
 
-	@Post(':id/children/:parentId')
+	@Post(':treeId/children/:parentId')
     @UseGuards(JwtAuthGuard)
     async addChildNode(
         @Req() req,
-        @Param('id') treeId: string,
+        @Param('treeId') treeId: string,
         @Param('parentId') parentId: string,
     ) {
         return this.treeService.addChildNode(
@@ -81,11 +81,11 @@ export class TreeController {
         );
     }
 
-	@Post(':id/spouse/:partnerId')
+	@Post(':treeId/spouse/:partnerId')
 	@UseGuards(JwtAuthGuard)
 	async addSpouseNode(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('partnerId') partnerId: string,
 	) {
 		return this.treeService.addSpouseNode(
@@ -95,21 +95,21 @@ export class TreeController {
 		);
 	}
 
-	@Delete(':id/profiles/:memberId')
+	@Delete(':treeId/profiles/:memberId')
 	@UseGuards(JwtAuthGuard)
 	async deleteProfileNode(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('memberId') memberId: string,
 	) {
 		return this.treeService.deleteProfileNode(Number(treeId), req.user.profileId, Number(memberId));
 	}
 
-	@Post(':id/claims/:holderMemberId')
+	@Post(':treeId/claims/:holderMemberId')
 	@UseGuards(JwtAuthGuard)
 	async requestClaim(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('holderMemberId') holderMemberId: string,
 	) {
 		return this.treeService.requestClaim(
@@ -119,11 +119,11 @@ export class TreeController {
 		);
 	}
 
-	@Put(':id/claims/:holderMemberId/approve')
+	@Put(':treeId/claims/:holderMemberId/approve')
 	@UseGuards(JwtAuthGuard)
 	async approveClaim(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('holderMemberId') holderMemberId: string,
 	) {
 		return this.treeService.approveClaim(
@@ -133,11 +133,11 @@ export class TreeController {
 		);
 	}
 
-	@Put(':id/claims/:holderMemberId/reject')
+	@Put(':treeId/claims/:holderMemberId/reject')
 	@UseGuards(JwtAuthGuard)
 	async rejectClaim(
 		@Req() req,
-		@Param('id') treeId: string,
+		@Param('treeId') treeId: string,
 		@Param('holderMemberId') holderMemberId: string,
 	) {
 		return this.treeService.rejectClaim(
@@ -147,16 +147,16 @@ export class TreeController {
 		);
 	}
 
-	@Post(':id/leave')
+	@Post(':treeId/leave')
 	@UseGuards(JwtAuthGuard)
-	async leaveTree(@Req() req, @Param('id') treeId: string) {
+	async leaveTree(@Req() req, @Param('treeId') treeId: string) {
 		return this.treeService.leaveTree(req.user.profileId, Number(treeId));
 	}
 
 	// Powers the claim-request notification panel.
-	@Get(':id/claims/pending')
+	@Get(':treeId/claims/pending')
 	@UseGuards(JwtAuthGuard)
-	async getPendingClaims(@Req() req, @Param('id') treeId: string) {
+	async getPendingClaims(@Req() req, @Param('treeId') treeId: string) {
 		return this.treeService.getPendingClaims(Number(treeId), req.user.profileId);
 	}
 
