@@ -491,22 +491,6 @@ export type TreeOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type TreeCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.TreeCreateWithoutMembersInput, Prisma.TreeUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.TreeCreateOrConnectWithoutMembersInput
