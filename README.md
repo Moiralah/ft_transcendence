@@ -100,7 +100,7 @@ Restore your original `.env` values and you're back on the shared project
 
 ---
 
-## 🛡️ WAF (Cybersecurity module)
+## 🛡️ Cybersecurity module (WAF + Vault)
 
 ModSecurity + the OWASP Core Rule Set, fronting both `frontend` and
 `backend` — kept in a **separate** compose file
@@ -132,7 +132,41 @@ ones (not yet an exclusive path — see the diagram's callouts for why):
    restart transpeed-waf-backend-1 transpeed-waf-frontend-1` any time
    `backend`/`frontend` get recreated while the WAF is up.
 
-Vault (the secrets-management half of this module) isn't implemented yet.
+### Vault (secrets management)
+
+`make security` also starts a HashiCorp Vault (dev mode) and runs
+`scripts/vault-init.sh`, which:
+1. Writes `JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` into Vault's KV v2
+   store at `secret/data/family-tree/backend`.
+2. Sets up **AppRole** auth with a policy scoped to read-only on exactly
+   that one path — not the root token. (`vault-init.sh` itself still uses
+   the root token, since something has to bootstrap the AppRole in the
+   first place; the backend never sees it.)
+3. Starts `backend` with fresh AppRole credentials
+   (`VAULT_ROLE_ID`/`VAULT_SECRET_ID`).
+
+`backend/src/vault/load-secrets.ts` fetches these at boot (before
+anything else runs) and injects them into `process.env`, so every
+existing `ConfigService.get()`/`process.env` read elsewhere in the app is
+unchanged — it doesn't know or care whether a value came from Vault or
+`.env`. If `VAULT_ADDR` isn't set (i.e. you're running `make up` without
+`make security`), it's a no-op and everything falls back to `.env`
+exactly like before Vault existed.
+
+**Why this resets every time**: Vault here runs in **dev mode** — no
+storage backend, everything in-memory, auto-unsealed with a hardcoded
+root token. That's why `vault-init.sh` isn't a one-time setup script, it
+re-bootstraps the secret + AppRole on every `make security`, because the
+previous run's data is gone the moment the `vault` container restarts.
+This is explicitly not production-ready, same caveat the subject itself
+calls out — a real deployment needs a persistent storage backend (file or
+Raft), TLS, and proper unsealing instead of a baked-in root token.
+
+**To verify it yourself**: `docker logs transpeed-backend-1 | grep vault`
+should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
+If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
+`backend` was started without going through `make security`/`vault-init.sh`.
 
 ---
 
@@ -181,11 +215,11 @@ We have chosen the following modules.
 | **Support for additional browsers** (Firefox, Safari, Edge) | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
 | **2FA (Two‑Factor Authentication)** | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
 | **User activity analytics dashboard** | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
-| **Cybersecurity** (WAF + secrets manager) | Major | 2 | 🔄 Partial | WAF done: ModSecurity + OWASP CRS fronting both frontend and backend (`docker-compose-security.yml`, `make security`), proven blocking real SQLi/XSS payloads with a `403`. HashiCorp Vault (secrets management half) not started yet |
+| **Cybersecurity** (WAF + secrets manager) | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access not yet locked down — see README section |
 
 ### Total possible points
-Completed so far: 1+1+1+1+2+1 = **7 points**
-Remaining (if we implement everything) = 1+2+2+2+2+1+1+1+2+1+1+2 = **18 points**
+Completed so far: 1+1+1+1+2+1+2 = **9 points**
+Remaining (if we implement everything) = 1+2+2+2+2+1+1+1+2+1+1 = **16 points**
 Minimum required: **14 points** – we have more than enough, so we can choose which to prioritise.
 
 ---

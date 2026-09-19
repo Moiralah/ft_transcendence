@@ -13,6 +13,7 @@
     --bg:#F5F6FA; --panel:#FFFFFF; --ink:#1B2130; --sub:#5B6478; --line:#DEE2EC;
     --browser:#3B67E0; --browser-soft:#E9EEFD;
     --waf:#C4364E; --waf-soft:#FBE7EA;
+    --vault:#A6740A; --vault-soft:#FBF0D9;
     --backend:#7C5CFA; --backend-soft:#EFEAFF;
     --supabase:#1FA971; --supabase-soft:#E4F6EE;
     --db:#DD8A2E; --db-soft:#FBEBD6;
@@ -25,6 +26,7 @@
       --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
       --browser:#7C98FF; --browser-soft:#1C2440;
       --waf:#FF7B90; --waf-soft:#301620;
+      --vault:#E8B84B; --vault-soft:#2E2410;
       --backend:#B39CFF; --backend-soft:#241D3D;
       --supabase:#4FD69C; --supabase-soft:#12291F;
       --db:#F0AC5C; --db-soft:#332209;
@@ -37,6 +39,7 @@
     --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
     --browser:#7C98FF; --browser-soft:#1C2440;
     --waf:#FF7B90; --waf-soft:#301620;
+    --vault:#E8B84B; --vault-soft:#2E2410;
     --backend:#B39CFF; --backend-soft:#241D3D;
     --supabase:#4FD69C; --supabase-soft:#12291F;
     --db:#F0AC5C; --db-soft:#332209;
@@ -90,6 +93,7 @@
   }
   .step .n.opt{background:var(--ext-soft); color:var(--ext);}
   .step .n.waf{background:var(--waf-soft); color:var(--waf);}
+  .step .n.vault{background:var(--vault-soft); color:var(--vault);}
   .step p{margin:0; font-size:13.5px; line-height:1.5;}
   .step code{
     font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--browser-soft); color:var(--browser);
@@ -126,13 +130,14 @@
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. Everything else is
-    one path: browser → WAF → our backend → Postgres.
+    one path: browser → WAF → our backend → Postgres. Separately, the backend pulls its own
+    secrets from Vault once at boot, before any of that.
   </p>
 
   <div class="diagram-card">
-    <svg viewBox="0 0 1010 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
+    <svg viewBox="0 0 1010 624" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
-      <desc id="dDesc">Browser talks directly to Supabase Auth for login, and to a ModSecurity WAF which forwards to the NestJS backend for everything else; the backend talks to Supabase Auth and to Postgres via Prisma; Supabase Auth optionally talks to Google or GitHub.</desc>
+      <desc id="dDesc">Browser talks directly to Supabase Auth for login, and to a ModSecurity WAF which forwards to the NestJS backend for everything else; the backend talks to Supabase Auth, to Postgres via Prisma, and once at boot to HashiCorp Vault to fetch its own secrets; Supabase Auth optionally talks to Google or GitHub.</desc>
 
       <!-- ===== Group: Client ===== -->
       <text x="40" y="34" class="group-title" fill="var(--sub)">Client</text>
@@ -193,6 +198,13 @@
       <text x="762" y="266" class="box-sub mono" fill="var(--sub)">:54322 local · Supabase-hosted</text>
       <text x="762" y="284" class="box-sub" fill="var(--sub)">User · Tree · Profile · RecoveryCode…</text>
 
+      <!-- Vault -->
+      <rect x="480" y="410" width="230" height="112" rx="14" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.5"/>
+      <text x="502" y="440" class="box-label" fill="var(--vault)">Vault</text>
+      <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, dev mode</text>
+      <text x="502" y="476" class="box-sub mono" fill="var(--sub)">:8200 · AppRole auth</text>
+      <text x="502" y="494" class="box-sub" fill="var(--vault)">boot-time only, not per-request</text>
+
       <!-- ===== Arrows ===== -->
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -200,6 +212,9 @@
         </marker>
         <marker id="arrowWaf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/>
+        </marker>
+        <marker id="arrowVault" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/>
         </marker>
       </defs>
 
@@ -239,16 +254,21 @@
       <circle cx="330" cy="392" r="10" fill="var(--panel)" stroke="var(--sub)"/>
       <text x="330" y="396" class="step-num" fill="var(--sub)" text-anchor="middle">6</text>
 
+      <!-- 0: Backend -> Vault (boot-time only, before any of the numbered flow) -->
+      <path d="M595,380 L595,410" fill="none" stroke="var(--vault)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrowVault)"/>
+      <circle cx="595" cy="397" r="11" fill="var(--panel)" stroke="var(--vault)" stroke-width="1.5"/>
+      <text x="595" y="401" class="step-num" fill="var(--vault)" text-anchor="middle">0</text>
+
       <!-- Bottom labels row -->
-      <rect x="30" y="418" width="940" height="1" fill="var(--line)"/>
-      <text x="30" y="444" class="box-sub" fill="var(--sub)">
-        <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional, OAuth sign-in only.
+      <rect x="30" y="545" width="940" height="1" fill="var(--line)"/>
+      <text x="30" y="568" class="box-sub" fill="var(--sub)">
+        <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional, OAuth sign-in only. <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
-      <text x="30" y="464" class="box-sub" fill="var(--sub)">
+      <text x="30" y="588" class="box-sub" fill="var(--sub)">
         Backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are still directly reachable too (dev convenience) —
       </text>
-      <text x="30" y="480" class="box-sub" fill="var(--sub)">
-        until that&apos;s closed off, the WAF is provably working but not yet the only way in. See callout below.
+      <text x="30" y="604" class="box-sub" fill="var(--sub)">
+        until that&apos;s closed off, the WAF is provably working but not yet the only way in. See callouts below.
       </text>
     </svg>
   </div>
@@ -256,6 +276,7 @@
   <div class="legend">
     <span><i class="swatch" style="background:var(--browser)"></i>Browser</span>
     <span><i class="swatch" style="background:var(--waf)"></i>WAF (ModSecurity)</span>
+    <span><i class="swatch" style="background:var(--vault)"></i>Vault (secrets)</span>
     <span><i class="swatch" style="background:var(--supabase)"></i>Supabase Auth</span>
     <span><i class="swatch" style="background:var(--backend)"></i>Backend (NestJS)</span>
     <span><i class="swatch" style="background:var(--db)"></i>Postgres</span>
@@ -263,6 +284,10 @@
   </div>
 
   <div class="steps">
+    <div class="step">
+      <div class="n vault">0</div>
+      <p><strong>Backend → Vault</strong> — at boot, before it accepts any requests: logs in via AppRole (<code>VAULT_ROLE_ID</code>/<code>VAULT_SECRET_ID</code>), reads <code>secret/data/family-tree/backend</code>, injects <code>JWT_SECRET</code>/<code>DATABASE_URL</code>/etc. into its own <code>process.env</code>. One-time, not part of the request flow — everything below still works the same either way.<span class="tag">boot only</span></p>
+    </div>
     <div class="step">
       <div class="n">1</div>
       <p><strong>Browser → Supabase Auth</strong> — <code>signInWithPassword()</code> or <code>signInWithOAuth()</code>, called directly from the frontend. Neither our backend nor our WAF are involved yet.<span class="tag">login only</span></p>
@@ -305,6 +330,28 @@
       <pre>GET /api/trees/search?name=smith' OR '1'='1
   via :9443 (WAF)     → 403 Forbidden, blocked
   via :4000 (direct)  → reaches NestJS unfiltered</pre>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ic">🔐</div>
+    <div>
+      <strong>Vault proven working too:</strong> <code>docker logs transpeed-backend-1 | grep vault</code> shows
+      <code>[vault] loaded 5 secrets from secret/data/family-tree/backend</code>, and a real login (which needs the
+      Vault-sourced <code>DATABASE_URL</code> and <code>SUPABASE_AUTH_URL</code> to work) succeeds — not just that
+      the values loaded, that the app actually functions on them. AppRole token confirmed scoped to read-only on
+      that one path (denied on <code>sys/mounts</code>).
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ic">⚠️</div>
+    <div>
+      <strong>Vault is dev mode — resets on every restart:</strong> in-memory only, no storage backend, unsealed
+      automatically with a hardcoded root token. That's why <code>make security</code> runs
+      <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
+      all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch. A real
+      deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead.
     </div>
   </div>
 

@@ -3,10 +3,14 @@
 up: certs
 	docker compose up -d --build
 
-# WAF (ModSecurity + OWASP CRS), IV.5 Cybersecurity module — separate from
-# `up` so the rest of the team isn't forced to pull that image.
+# WAF + Vault, IV.5 Cybersecurity module — separate from `up` so the rest
+# of the team isn't forced to pull those images. Brings up everything,
+# then runs vault-init.sh: Vault dev mode is in-memory, so its secrets/
+# AppRole get set up fresh every time and backend needs those credentials
+# to boot correctly — see scripts/vault-init.sh.
 security: certs
-	docker compose -f docker-compose.yml -f docker-compose-security.yml up -d --build
+	docker compose -f docker-compose.yml -f docker-compose-security.yml up -d --build frontend waf-frontend waf-backend vault
+	./scripts/vault-init.sh
 
 security-down:
 	docker compose -f docker-compose.yml -f docker-compose-security.yml down
