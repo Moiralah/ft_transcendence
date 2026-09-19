@@ -3,6 +3,14 @@
 up: certs
 	docker compose up -d --build
 
+# WAF (ModSecurity + OWASP CRS), IV.5 Cybersecurity module — separate from
+# `up` so the rest of the team isn't forced to pull that image.
+security: certs
+	docker compose -f docker-compose.yml -f docker-compose-security.yml up -d --build
+
+security-down:
+	docker compose -f docker-compose.yml -f docker-compose-security.yml down
+
 certs:
 	@if [ ! -f certs/localhost.pem ] || [ ! -f certs/localhost-key.pem ]; then \
 		mkdir -p certs; \
@@ -46,4 +54,4 @@ seed:
 clean: down
 	docker compose rm -f
 
-.PHONY: up down build logs ps backend-shell frontend-shell db-shell seed clean
+.PHONY: up security security-down down build logs ps backend-shell frontend-shell db-shell seed clean

@@ -168,3 +168,77 @@ wastes time testing something that doesn't exist yet):
 - [ ] Avatar upload, friends system, online status — John, not started
 - [ ] Accessibility (WCAG 2.1 AA) audit/fixes — John, not started
 - [ ] Additional browser testing (Firefox/Safari/Edge) — John, not started
+
+## 11. Cybersecurity — WAF (ModSecurity + OWASP CRS)
+Unlike the sections above, this one's mostly terminal commands, not
+browser clicks — copy-paste these and check the output matches. See
+`diagram/architecture.html` for the visual, `README.md`'s "WAF
+(Cybersecurity module)" section for the full explanation.
+
+- [ ] Bring the WAF up: `make security` (builds + starts everything,
+      including the base stack if it wasn't already running)
+  - Notes:
+- [ ] **Gotcha check #1** — confirm the backend didn't silently lose its
+      DB connection (it does this on basically every `docker compose up`
+      that touches `backend`):
+      ```bash
+      docker exec transpeed-backend-1 sh -c 'echo $DATABASE_URL'
+      ```
+      Must say `host.docker.internal`, not `127.0.0.1`. If it says
+      `127.0.0.1`, re-run the override command in the README's "Running
+      Supabase Locally" section before continuing.
+  - Notes:
+- [ ] **Gotcha check #2** — if `backend`/`frontend` were recreated at any
+      point while the WAF was already up (e.g. you just fixed gotcha #1
+      above), the WAF's nginx is now pointing at a dead IP. Restart it:
+      ```bash
+      docker restart transpeed-waf-backend-1 transpeed-waf-frontend-1
+      ```
+  - Notes:
+- [ ] Baseline — a normal request through the WAF reaches the real app
+      (same response as hitting the backend directly would give):
+      ```bash
+      curl -sk -o /dev/null -w "%{http_code}\n" https://localhost:9443/api/auth/2fa/status
+      ```
+      Expect `401` (not `502`/`403`) — that's the app itself correctly
+      rejecting an unauthenticated request, proving the request actually
+      got through the WAF.
+  - Notes:
+- [ ] SQL injection gets blocked:
+      ```bash
+      curl -sk -w "\n%{http_code}\n" "https://localhost:9443/api/trees/search?name=smith'%20OR%20'1'='1"
+      ```
+      Expect `403 Forbidden`.
+  - Notes:
+- [ ] XSS gets blocked:
+      ```bash
+      curl -sk -w "\n%{http_code}\n" "https://localhost:9443/api/trees/search?name=<script>alert(1)</script>"
+      ```
+      Expect `403 Forbidden`.
+  - Notes:
+- [ ] Confirm the WAF is actually what's blocking it — the exact same
+      payload reaches the app unfiltered when sent directly, bypassing
+      the WAF (this should currently succeed / not 403, since direct
+      access isn't locked down yet — see README):
+      ```bash
+      curl -sk -o /dev/null -w "%{http_code}\n" "https://localhost:4000/api/trees/search?name=smith'%20OR%20'1'='1"
+      ```
+  - Notes:
+- [ ] (Optional) See *why* it blocked something — ModSecurity logs the
+      matched rule and reasoning as JSON:
+      ```bash
+      docker logs transpeed-waf-backend-1 --tail 5
+      ```
+      Look for `"message":"SQL Injection Attack Detected via libinjection"`
+      or similar.
+  - Notes:
+- [ ] Frontend WAF works too (same idea, simpler check — just confirm it
+      loads):
+      ```bash
+      curl -sk -o /dev/null -w "%{http_code}\n" https://localhost:8443/
+      ```
+      Expect `200`.
+  - Notes:
+
+### Not built yet (this module)
+- [ ] HashiCorp Vault (secrets management) — not started, don't test

@@ -100,6 +100,42 @@ Restore your original `.env` values and you're back on the shared project
 
 ---
 
+## 🛡️ WAF (Cybersecurity module)
+
+ModSecurity + the OWASP Core Rule Set, fronting both `frontend` and
+`backend` — kept in a **separate** compose file
+(`docker-compose-security.yml`) so the rest of the team's `make up` /
+`docker compose up` doesn't need to pull that image or care about this
+module at all. See `diagram/architecture.html` for the full request-flow
+diagram (open it directly in a browser, no server needed).
+
+```bash
+make security          # brings up the WAF alongside the base stack
+make security-down     # tears it down
+```
+
+This puts the WAF on two new ports, **in addition to** the existing direct
+ones (not yet an exclusive path — see the diagram's callouts for why):
+- `https://localhost:8443` → frontend (`:3000`), inspected
+- `https://localhost:9443` → backend (`:4000`), inspected
+
+**Two gotchas, both already hit once:**
+1. Same as the local-Supabase section above — any `docker compose up`
+   touching `backend` (including just bringing the WAF up, via
+   `depends_on`) can silently reset `DATABASE_URL`/`SUPABASE_AUTH_URL`
+   back to `127.0.0.1`. Check `docker exec transpeed-backend-1 sh -c
+   'echo $DATABASE_URL'` after any compose command.
+2. **New one**: the WAF's nginx resolves `backend`'s IP once at its own
+   startup. If `backend` gets recreated afterward (a new container gets a
+   new IP), the WAF starts returning `502` even though everything looks
+   healthy — nginx is still pointing at the old, dead IP. Fix: `docker
+   restart transpeed-waf-backend-1 transpeed-waf-frontend-1` any time
+   `backend`/`frontend` get recreated while the WAF is up.
+
+Vault (the secrets-management half of this module) isn't implemented yet.
+
+---
+
 ## 📍 Summary
 
 We are building a **family tree & collaboration platform** using **Next.js (frontend)**, **NestJS (backend)**, **Prisma (ORM)**, **Supabase (auth)**, **PostgreSQL**, and **Tailwind CSS**.
@@ -145,10 +181,11 @@ We have chosen the following modules.
 | **Support for additional browsers** (Firefox, Safari, Edge) | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
 | **2FA (Two‑Factor Authentication)** | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
 | **User activity analytics dashboard** | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
+| **Cybersecurity** (WAF + secrets manager) | Major | 2 | 🔄 Partial | WAF done: ModSecurity + OWASP CRS fronting both frontend and backend (`docker-compose-security.yml`, `make security`), proven blocking real SQLi/XSS payloads with a `403`. HashiCorp Vault (secrets management half) not started yet |
 
 ### Total possible points
 Completed so far: 1+1+1+1+2+1 = **7 points**
-Remaining (if we implement everything) = 1+2+2+2+2+1+1+1+2+1+1 = **16 points**
+Remaining (if we implement everything) = 1+2+2+2+2+1+1+1+2+1+1+2 = **18 points**
 Minimum required: **14 points** – we have more than enough, so we can choose which to prioritise.
 
 ---

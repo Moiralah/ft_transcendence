@@ -40,3 +40,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - ./certs:/app/certs
+
+# WAF (ModSecurity + OWASP CRS, IV.5 Cybersecurity module) lives in
+# docker-compose-security.yml — kept separate so the base stack doesn't
+# need that image. Bring it up with `make security` or
+# `docker compose -f docker-compose.yml -f docker-compose-security.yml up -d`.

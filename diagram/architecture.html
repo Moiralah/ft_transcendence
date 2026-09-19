@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Service Architecture — My Simple Family Tree</title>
-<meta name="description" content="How the frontend, backend, Supabase, and Postgres talk to each other in My Simple Family Tree.">
+<meta name="description" content="How the frontend, backend, WAF, Supabase, and Postgres talk to each other in My Simple Family Tree.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,31 +12,37 @@
   :root{
     --bg:#F5F6FA; --panel:#FFFFFF; --ink:#1B2130; --sub:#5B6478; --line:#DEE2EC;
     --browser:#3B67E0; --browser-soft:#E9EEFD;
+    --waf:#C4364E; --waf-soft:#FBE7EA;
     --backend:#7C5CFA; --backend-soft:#EFEAFF;
     --supabase:#1FA971; --supabase-soft:#E4F6EE;
     --db:#DD8A2E; --db-soft:#FBEBD6;
     --ext:#8A93A6; --ext-soft:#EEF0F4;
     --warn-bg:#FFF6E5; --warn-line:#F0CE86; --warn-ink:#7A5715;
+    --ok-bg:#E9F8EF; --ok-line:#9FDBB8; --ok-ink:#1B6B3F;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
       --browser:#7C98FF; --browser-soft:#1C2440;
+      --waf:#FF7B90; --waf-soft:#301620;
       --backend:#B39CFF; --backend-soft:#241D3D;
       --supabase:#4FD69C; --supabase-soft:#12291F;
       --db:#F0AC5C; --db-soft:#332209;
       --ext:#9AA2B4; --ext-soft:#20242F;
       --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+      --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
     }
   }
   :root[data-theme="dark"]{
     --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
     --browser:#7C98FF; --browser-soft:#1C2440;
+    --waf:#FF7B90; --waf-soft:#301620;
     --backend:#B39CFF; --backend-soft:#241D3D;
     --supabase:#4FD69C; --supabase-soft:#12291F;
     --db:#F0AC5C; --db-soft:#332209;
     --ext:#9AA2B4; --ext-soft:#20242F;
     --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+    --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
   }
   *{box-sizing:border-box;}
   body{
@@ -44,20 +50,20 @@
     font-family:'IBM Plex Sans',system-ui,sans-serif;
     margin:0; padding-inline:20px; padding-block:28px 48px;
   }
-  .wrap{max-width:1040px; margin:0 auto;}
+  .wrap{max-width:1080px; margin:0 auto;}
   .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
   h1{font-size:clamp(22px,3.4vw,30px); font-weight:700; letter-spacing:-0.01em; margin:0 0 6px;}
   .kicker{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); margin:0 0 10px;}
-  .lede{color:var(--sub); font-size:15px; line-height:1.55; max-width:64ch; margin:0 0 28px;}
+  .lede{color:var(--sub); font-size:15px; line-height:1.55; max-width:66ch; margin:0 0 28px;}
 
   .diagram-card{
     background:var(--panel); border:1px solid var(--line); border-radius:16px;
     padding:8px; margin-bottom:22px; overflow-x:auto;
   }
-  svg{display:block; width:100%; height:auto; min-width:640px;}
+  svg{display:block; width:100%; height:auto; min-width:680px;}
   .box-label{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;}
   .box-sub{font-family:'IBM Plex Sans',sans-serif; font-size:11px;}
-  .step-num{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px;}
+  .step-num{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10.5px;}
   .group-title{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;}
 
   .legend{
@@ -80,9 +86,10 @@
   .step .n{
     width:26px; height:26px; border-radius:50%; background:var(--backend-soft); color:var(--backend);
     display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
-    font-weight:700; font-size:12px;
+    font-weight:700; font-size:11px;
   }
   .step .n.opt{background:var(--ext-soft); color:var(--ext);}
+  .step .n.waf{background:var(--waf-soft); color:var(--waf);}
   .step p{margin:0; font-size:13.5px; line-height:1.5;}
   .step code{
     font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--browser-soft); color:var(--browser);
@@ -96,11 +103,16 @@
   .callout{
     display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start;
     background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink);
-    border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.55;
+    border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.55; margin-bottom:14px;
   }
+  .callout.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-ink);}
   .callout .ic{font-size:16px; line-height:1;}
   .callout strong{font-weight:600;}
   .callout code{font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  .callout pre{
+    margin:8px 0 0; padding:10px 12px; border-radius:8px; overflow-x:auto;
+    background:rgba(0,0,0,.06); font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6;
+  }
 
   @media (max-width:520px){
     .step{grid-template-columns:26px 1fr; gap:10px; padding:11px 12px;}
@@ -113,122 +125,137 @@
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
-    then our own API — which is the part that trips people up. Everything else is one path:
-    browser → our backend → Postgres.
+    then our own API through a WAF — which is the part that trips people up. Everything else is
+    one path: browser → WAF → our backend → Postgres.
   </p>
 
   <div class="diagram-card">
-    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
+    <svg viewBox="0 0 1010 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
-      <desc id="dDesc">Browser talks to Supabase Auth and to the NestJS backend; the backend talks to Supabase Auth and to Postgres via Prisma; Supabase Auth optionally talks to Google or GitHub.</desc>
+      <desc id="dDesc">Browser talks directly to Supabase Auth for login, and to a ModSecurity WAF which forwards to the NestJS backend for everything else; the backend talks to Supabase Auth and to Postgres via Prisma; Supabase Auth optionally talks to Google or GitHub.</desc>
 
       <!-- ===== Group: Client ===== -->
       <text x="40" y="34" class="group-title" fill="var(--sub)">Client</text>
-      <rect x="30" y="46" width="230" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
+      <rect x="30" y="46" width="220" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
       <text x="52" y="80" class="box-label" fill="var(--browser)">Browser</text>
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
       <text x="52" y="116" class="box-sub" fill="var(--sub)">:3000 (HTTPS, self-signed)</text>
-      <rect x="52" y="134" width="186" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">localStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
 
+      <!-- ===== Group: Edge ===== -->
+      <text x="288" y="34" class="group-title" fill="var(--sub)">Edge</text>
+      <rect x="280" y="150" width="170" height="112" rx="14" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.5"/>
+      <text x="298" y="178" class="box-label" fill="var(--waf)">WAF</text>
+      <text x="298" y="196" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS</text>
+      <text x="298" y="214" class="box-sub mono" fill="var(--sub)">:9443 → backend</text>
+      <text x="298" y="230" class="box-sub mono" fill="var(--sub)">:8443 → frontend</text>
+      <text x="298" y="248" class="box-sub" fill="var(--waf)">403 on SQLi / XSS</text>
+
       <!-- ===== Group: Application services ===== -->
-      <text x="360" y="34" class="group-title" fill="var(--sub)">Application services</text>
+      <text x="488" y="34" class="group-title" fill="var(--sub)">Application services</text>
 
       <!-- Supabase Auth -->
-      <rect x="350" y="46" width="240" height="112" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.5"/>
-      <text x="372" y="76" class="box-label" fill="var(--supabase)">Supabase Auth</text>
-      <text x="372" y="94" class="box-sub" fill="var(--ink)">GoTrue — identity only</text>
-      <text x="372" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
-      <text x="372" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
+      <rect x="480" y="46" width="230" height="112" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.5"/>
+      <text x="502" y="76" class="box-label" fill="var(--supabase)">Supabase Auth</text>
+      <text x="502" y="94" class="box-sub" fill="var(--ink)">GoTrue — identity only</text>
+      <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
+      <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
 
       <!-- Backend -->
-      <rect x="350" y="176" width="240" height="180" rx="14" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.5"/>
-      <text x="372" y="206" class="box-label" fill="var(--backend)">Backend API</text>
-      <text x="372" y="224" class="box-sub" fill="var(--ink)">NestJS, in Docker</text>
-      <text x="372" y="242" class="box-sub mono" fill="var(--sub)">:4000 (HTTPS)</text>
+      <rect x="480" y="200" width="230" height="180" rx="14" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.5"/>
+      <text x="502" y="230" class="box-label" fill="var(--backend)">Backend API</text>
+      <text x="502" y="248" class="box-sub" fill="var(--ink)">NestJS, in Docker</text>
+      <text x="502" y="266" class="box-sub mono" fill="var(--sub)">:4000 (HTTPS, direct — bypasses WAF)</text>
       <g class="box-sub mono" fill="var(--backend)">
-        <text x="372" y="266">/auth</text>
-        <text x="372" y="284">/auth/2fa</text>
-        <text x="372" y="302">/users</text>
-        <text x="480" y="266">/profile</text>
-        <text x="480" y="284">/trees</text>
+        <text x="502" y="290">/auth</text>
+        <text x="502" y="308">/auth/2fa</text>
+        <text x="502" y="326">/users</text>
+        <text x="610" y="290">/profile</text>
+        <text x="610" y="308">/trees</text>
       </g>
-      <text x="372" y="330" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
+      <text x="502" y="354" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
 
       <!-- ===== Group: Data & external ===== -->
-      <text x="680" y="34" class="group-title" fill="var(--sub)">Data &amp; external</text>
+      <text x="748" y="34" class="group-title" fill="var(--sub)">Data &amp; external</text>
 
       <!-- Google/GitHub -->
-      <rect x="680" y="46" width="230" height="90" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5" stroke-dasharray="5 4"/>
-      <text x="702" y="76" class="box-label" fill="var(--ext)">Google / GitHub</text>
-      <text x="702" y="94" class="box-sub" fill="var(--sub)">OAuth 2.0 providers</text>
-      <text x="702" y="112" class="box-sub" fill="var(--sub)">only when signing in via OAuth</text>
+      <rect x="740" y="46" width="230" height="90" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="762" y="76" class="box-label" fill="var(--ext)">Google / GitHub</text>
+      <text x="762" y="94" class="box-sub" fill="var(--sub)">OAuth 2.0 providers</text>
+      <text x="762" y="112" class="box-sub" fill="var(--sub)">only when signing in via OAuth</text>
 
       <!-- Postgres -->
-      <rect x="680" y="176" width="230" height="112" rx="14" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.5"/>
-      <text x="702" y="206" class="box-label" fill="var(--db)">Postgres</text>
-      <text x="702" y="224" class="box-sub" fill="var(--ink)">accessed via Prisma</text>
-      <text x="702" y="242" class="box-sub mono" fill="var(--sub)">:54322 local · Supabase-hosted</text>
-      <text x="702" y="260" class="box-sub" fill="var(--sub)">User · Tree · Profile · RecoveryCode…</text>
+      <rect x="740" y="200" width="230" height="112" rx="14" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.5"/>
+      <text x="762" y="230" class="box-label" fill="var(--db)">Postgres</text>
+      <text x="762" y="248" class="box-sub" fill="var(--ink)">accessed via Prisma</text>
+      <text x="762" y="266" class="box-sub mono" fill="var(--sub)">:54322 local · Supabase-hosted</text>
+      <text x="762" y="284" class="box-sub" fill="var(--sub)">User · Tree · Profile · RecoveryCode…</text>
 
       <!-- ===== Arrows ===== -->
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--sub)"/>
         </marker>
+        <marker id="arrowWaf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/>
+        </marker>
       </defs>
 
-      <!-- 1: Browser -> Supabase Auth -->
-      <path d="M260,90 L350,90" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="300" cy="90" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="300" y="94" class="step-num" fill="var(--sub)" text-anchor="middle">1</text>
+      <!-- 1: Browser -> Supabase Auth (direct, bypasses WAF — passes above the WAF box) -->
+      <path d="M250,78 L480,72" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <circle cx="330" cy="75" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="330" y="79" class="step-num" fill="var(--sub)" text-anchor="middle">1</text>
+      <text x="380" y="60" class="box-sub" fill="var(--ext)" font-style="italic">direct — not behind our WAF</text>
 
       <!-- 1b: Supabase Auth <-> Google/GitHub -->
-      <path d="M590,80 L680,80" fill="none" stroke="var(--ext)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
-      <path d="M680,100 L590,100" fill="none" stroke="var(--ext)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+      <path d="M710,78 L740,78" fill="none" stroke="var(--ext)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+      <path d="M740,98 L710,98" fill="none" stroke="var(--ext)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
 
       <!-- 2: Supabase Auth -> Browser -->
-      <path d="M350,120 C300,140 260,120 260,110" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="305" cy="132" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="305" y="136" class="step-num" fill="var(--sub)" text-anchor="middle">2</text>
+      <path d="M480,118 C400,140 300,120 250,108" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <circle cx="365" cy="128" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="365" y="132" class="step-num" fill="var(--sub)" text-anchor="middle">2</text>
 
-      <!-- 3: Browser -> Backend -->
-      <path d="M245,196 C245,240 300,260 350,264" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="270" cy="245" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="270" y="249" class="step-num" fill="var(--sub)" text-anchor="middle">3</text>
+      <!-- 3 & 7: Browser -> WAF -> Backend (same physical path; login exchange + every later request) -->
+      <path d="M250,196 L480,238" fill="none" stroke="var(--waf)" stroke-width="2" marker-end="url(#arrowWaf)"/>
+      <circle cx="365" cy="217" r="13" fill="var(--panel)" stroke="var(--waf)" stroke-width="1.5"/>
+      <text x="365" y="221" class="step-num" fill="var(--waf)" text-anchor="middle">3·7</text>
 
       <!-- 4: Backend -> Supabase Auth (verify) -->
-      <path d="M470,176 C470,150 450,140 470,158" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="500" cy="167" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="500" y="171" class="step-num" fill="var(--sub)" text-anchor="middle">4</text>
+      <path d="M600,200 C600,178 590,168 600,160" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <circle cx="622" cy="182" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="622" y="186" class="step-num" fill="var(--sub)" text-anchor="middle">4</text>
 
       <!-- 5: Backend <-> Postgres -->
-      <path d="M590,232 L680,232" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <path d="M680,250 L590,250" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="635" cy="222" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="635" y="226" class="step-num" fill="var(--sub)" text-anchor="middle">5</text>
+      <path d="M710,254 L740,254" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <path d="M740,272 L710,272" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <circle cx="725" cy="240" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="725" y="244" class="step-num" fill="var(--sub)" text-anchor="middle">5</text>
 
-      <!-- 6: Backend -> Browser -->
-      <path d="M350,300 C300,330 260,300 245,220" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
-      <circle cx="278" cy="330" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="278" y="334" class="step-num" fill="var(--sub)" text-anchor="middle">6</text>
-
-      <!-- 7: Browser -> Backend, all later requests -->
-      <path d="M120,196 C60,260 60,340 120,380 C200,430 300,420 350,340" fill="none" stroke="var(--backend)" stroke-width="1.8" marker-end="url(#arrow)"/>
-      <circle cx="110" cy="330" r="11" fill="var(--panel)" stroke="var(--backend)"/>
-      <text x="110" y="334" class="step-num" fill="var(--backend)" text-anchor="middle">7</text>
+      <!-- 6: Backend -> Browser (response, flows back through the same WAF connection) -->
+      <path d="M480,340 C360,400 280,380 250,210" fill="none" stroke="var(--sub)" stroke-width="1.6" stroke-dasharray="1 5" stroke-linecap="round" marker-end="url(#arrow)"/>
+      <circle cx="330" cy="392" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="330" y="396" class="step-num" fill="var(--sub)" text-anchor="middle">6</text>
 
       <!-- Bottom labels row -->
-      <rect x="30" y="400" width="880" height="1" fill="var(--line)"/>
-      <text x="30" y="428" class="box-sub" fill="var(--sub)">
-        <tspan font-weight="600" fill="var(--ink)">Solid grey</tspan> = every login, once. <tspan font-weight="600" fill="var(--backend)">Solid violet</tspan> = every request after that (Bearer JWT only, no Supabase involved). <tspan font-weight="600" fill="var(--ext)">Dashed</tspan> = optional, OAuth sign-in only.
+      <rect x="30" y="418" width="940" height="1" fill="var(--line)"/>
+      <text x="30" y="444" class="box-sub" fill="var(--sub)">
+        <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional, OAuth sign-in only.
+      </text>
+      <text x="30" y="464" class="box-sub" fill="var(--sub)">
+        Backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are still directly reachable too (dev convenience) —
+      </text>
+      <text x="30" y="480" class="box-sub" fill="var(--sub)">
+        until that&apos;s closed off, the WAF is provably working but not yet the only way in. See callout below.
       </text>
     </svg>
   </div>
 
   <div class="legend">
     <span><i class="swatch" style="background:var(--browser)"></i>Browser</span>
+    <span><i class="swatch" style="background:var(--waf)"></i>WAF (ModSecurity)</span>
     <span><i class="swatch" style="background:var(--supabase)"></i>Supabase Auth</span>
     <span><i class="swatch" style="background:var(--backend)"></i>Backend (NestJS)</span>
     <span><i class="swatch" style="background:var(--db)"></i>Postgres</span>
@@ -238,7 +265,7 @@
   <div class="steps">
     <div class="step">
       <div class="n">1</div>
-      <p><strong>Browser → Supabase Auth</strong> — <code>signInWithPassword()</code> or <code>signInWithOAuth()</code>, called directly from the frontend. Our backend isn't involved yet.<span class="tag">login only</span></p>
+      <p><strong>Browser → Supabase Auth</strong> — <code>signInWithPassword()</code> or <code>signInWithOAuth()</code>, called directly from the frontend. Neither our backend nor our WAF are involved yet.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n opt">↳</div>
@@ -249,8 +276,8 @@
       <p><strong>Supabase Auth → Browser</strong> — returns a Supabase-issued access token/session. Not our app's session yet.<span class="tag">login only</span></p>
     </div>
     <div class="step">
-      <div class="n">3</div>
-      <p><strong>Browser → Backend</strong> — <code>POST /api/auth/login { accessToken }</code>, exchanging the Supabase token for our own session.<span class="tag">login only</span></p>
+      <div class="n waf">3</div>
+      <p><strong>Browser → WAF → Backend</strong> — <code>POST /api/auth/login { accessToken }</code> via the WAF on <code>:9443</code>, exchanging the Supabase token for our own session. ModSecurity inspects the request before it reaches NestJS.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n">4</div>
@@ -262,22 +289,45 @@
     </div>
     <div class="step">
       <div class="n">6</div>
-      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived 2FA challenge token if 2FA is on.<span class="tag">login only</span></p>
+      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived 2FA challenge token if 2FA is on. Flows back through the same WAF connection.<span class="tag">login only</span></p>
     </div>
     <div class="step">
-      <div class="n">7</div>
-      <p><strong>Browser → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> straight to the backend for trees, profiles, admin actions, 2FA settings. Supabase isn't in the loop at all anymore.<span class="tag">ongoing</span></p>
+      <div class="n waf">7</div>
+      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, admin actions, 2FA settings — same WAF-fronted path as step 3. Supabase isn't in the loop at all anymore.<span class="tag">ongoing</span></p>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ic">🛡️</div>
+    <div>
+      <strong>WAF proven working (IV.5 Cybersecurity module):</strong> the same payload gets blocked through the
+      WAF and reaches the app unfiltered when sent directly.
+      <pre>GET /api/trees/search?name=smith' OR '1'='1
+  via :9443 (WAF)     → 403 Forbidden, blocked
+  via :4000 (direct)  → reaches NestJS unfiltered</pre>
     </div>
   </div>
 
   <div class="callout">
     <div class="ic">⚠️</div>
     <div>
-      <strong>Local dev gotcha:</strong> when the backend runs in Docker and Supabase runs locally on the host,
-      <code>127.0.0.1</code> inside the container means the container itself, not your machine — steps 4 and 5
-      silently fail if <code>SUPABASE_AUTH_URL</code>/<code>DATABASE_URL</code> aren't set to
-      <code>host.docker.internal</code> instead. See <strong>README → Running Supabase Locally</strong> for the
-      full fix — this one bug alone caused most of the auth failures debugged this session.
+      <strong>Not locked down yet:</strong> <code>:3000</code>/<code>:4000</code> are still directly exposed
+      alongside the WAF ports, kept that way deliberately while proving the WAF works so nothing else in the
+      stack broke. A WAF with a bypass path isn't actually protecting anything — the remaining step is removing
+      <code>backend</code>/<code>frontend</code>'s direct <code>ports:</code> in <code>docker-compose.yml</code>
+      so the WAF is the only public entry point.
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ic">⚠️</div>
+    <div>
+      <strong>Local dev gotcha (bit us three times this project):</strong> when the backend runs in Docker and
+      Supabase runs locally on the host, <code>127.0.0.1</code> inside the container means the container itself,
+      not your machine — steps 4 and 5 silently fail if <code>SUPABASE_AUTH_URL</code>/<code>DATABASE_URL</code>
+      aren't set to <code>host.docker.internal</code> instead. Any <code>docker compose up</code> that touches
+      <code>backend</code> — including just bringing the WAF up, via <code>depends_on</code> — can silently reset
+      this. See <strong>README → Running Supabase Locally</strong> for the full fix.
     </div>
   </div>
 </div>

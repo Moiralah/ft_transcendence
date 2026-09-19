@@ -1,0 +1,53 @@
+# WAF (ModSecurity + OWASP CRS) — IV.5 Cybersecurity module.
+#
+# Kept in a separate compose file so the rest of the team's `make up` /
+# `docker compose up` doesn't need to pull the ModSecurity image or care
+# about this module at all. Bring it up alongside the base stack with:
+#
+#   docker compose -f docker-compose.yml -f docker-compose-security.yml up -d --build
+#
+# or `make security` (see Makefile). Requires backend/frontend to already
+# be defined by docker-compose.yml — this file only adds to that stack, it
+# doesn't stand alone.
+#
+# Two instances, one per upstream, since the browser calls the backend
+# directly (NEXT_PUBLIC_API_URL) as well as loading the frontend — a WAF
+# fronting only the frontend would inspect zero API traffic.
+#
+# Additive for now: :3000/:4000 stay open too so nothing else in the stack
+# breaks. Once this is proven working, remove backend/frontend's `ports:`
+# in docker-compose.yml so the WAF is the *only* public entry point — a WAF
+# with a bypass path isn't actually protecting anything.
+
+services:
+  waf-frontend:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      BACKEND: "https://frontend:3000"
+      PROXY_SSL_VERIFY: "off" # frontend uses our own self-signed dev cert
+      PORT: "8080"
+      SSL_PORT: "8443"
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
+      - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+    depends_on:
+      - frontend
+
+  waf-backend:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      BACKEND: "https://backend:4000"
+      PROXY_SSL_VERIFY: "off" # backend uses our own self-signed dev cert
+      PORT: "8080"
+      SSL_PORT: "8443"
+    ports:
+      - "9443:8443"
+    volumes:
+      - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
+      - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+    depends_on:
+      - backend
