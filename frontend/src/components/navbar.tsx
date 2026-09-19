@@ -61,10 +61,10 @@ export function Navbar({
             </Button>
           )}          
           {btnText2 && (
-            <Button 
+            <Button
               href={btnHref2}
               onClick={btnOnClick2}
-              variant="primary"
+              variant="secondary"
             >
               {btnText2}
             </Button>

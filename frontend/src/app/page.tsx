@@ -19,11 +19,11 @@ export default function main() {
         >
             <SkipLink />
             <header id="navbar" tabIndex={-1} className="focus:outline-none">
-                <Navbar 
-                    btnText1="Get Started" 
+                <Navbar
+                    btnText1="Get Started"
                     btnHref1 = "/signup"
-                    // btnText2 ="Get Started" 
-                    // btnHref2 = "/signup"
+                    btnText2 = "Login"
+                    btnHref2 = "/login"
                 />
             </header>
             <main id="main-content" tabIndex={-1} className="focus:outline-none">
