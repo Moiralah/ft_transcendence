@@ -16,7 +16,7 @@ interface Profile {
   id?: number;
   firstName: string;
   lastName?: string;
-  gender?: "male" | "female" | null | "";
+  gender?: "male" | "female" | null;
   birthDate?: string;
   deathDate?: string;
   bio?: string;

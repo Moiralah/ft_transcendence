@@ -3,51 +3,133 @@ import { useEffect, useState } from 'react';
 
 export interface Member {
   id: number;
-  profileId: number;
-  treeId: number;
-  role: string;
-  joinedAt?: string | Date | null;
+  profileId?: number;
+  treeId?: number;
+  role?: string;
+  joinedAt?: string | Date;
   firstName: string;
-  lastName: string;
+  lastName?: string | null;
+  gender?: 'male' | 'female' | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
+  bio?: string | null;
   photoUrl?: string | null;
-  gender?: 'male' | 'female' | string | null;
-  birthDate?: string | Date | null;
-  deathDate?: string | Date | null;
+  motherId?: number | null;
+  fatherId?: number | null;
+  spouseId?: number | null;
+  childrenIds?: number[];
 }
 
 interface nodeProfileModalProp {
+    allMembers: Member[];
     member: Member;
     onClose: () => void;
+    onSave: (updatedMember : Member) => void;
+    onAddChild: ()=> void;
 }
 
 export function NodeProfileModal ({
+    allMembers,
     member,
     onClose,
-    // onSave? (updatedProfile: Member) => void;
+    onSave,
+    onAddChild,
 } : nodeProfileModalProp ) {
 
   const [formMember, setFormMember] = useState<Member | null>(member);
 
   const [editName, setEditName] = useState(false);
-  const [firstName, setFirstName] = useState(formMember?.firstName || '');
-  const [lastName, setLastName] = useState(formMember?.lastName || '');
-  const [gender, setGender] = useState(formMember?.gender || '');
   const [alive, setAlive] = useState(formMember?.deathDate? false : true);
+  const [claim, setClaim] = useState(false);
 
-useEffect(() => {
-  if (member) {
-    // Sync the base object
-    setFormMember(member);
-
-    // Sync individual input fields to match the incoming member prop
-    setFirstName(member.firstName || '');
-    setLastName(member.lastName || '');
-    setGender(member.gender || '');
-    
-    // Set alive to true if deathDate is null/undefined, otherwise false
-    setAlive(!member.deathDate);
+  const getMemberNameById = (targetId: number | null) => {
+    if (!targetId) return null;
+    const foundMember = allMembers.find(
+      (m) => m.id === targetId || m.profileId === targetId
+    );
+    if (!foundMember) return null;
+    return `${foundMember?.firstName} ${foundMember?.lastName} || '-'`;
   }
-}, [member]); // Re-run whenever the member prop changes
+
+  const childNames = allMembers
+  .filter(m => member.childrenIds?.includes(m.id))
+  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
+  .filter(Boolean)
+  .join(', ');
+
+  const parentNames = allMembers.filter(
+  m => m.id === member.fatherId || m.id === member.motherId)
+  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
+  .filter(Boolean)
+  .join(', ');
+
+  useEffect(() => {
+    if (member) {
+      setFormMember(member);
+    }
+  }, [member]); // Re-run whenever the member prop changes
+
+  const handleAddChild = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      if (onAddChild)
+        onAddChild();
+      if (onClose) {
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
+const handleAddSpouse = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      if (onAddSpouse)
+        onAddSpouse();
+      if (onClose) {
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -72,10 +154,18 @@ useEffect(() => {
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      const updatedProfile: Member = await res.json();
-      // if (onSave) {
-      //   onSave(updatedProfile);
-      // }
+
+    const rawResponseBody = await res.json();
+    const serverData = rawResponseBody.data || rawResponseBody;
+
+    const updatedMember: Member = {
+      ...formMember,   // Guarantees all original fields (id, treeId, role, etc.) stay intact
+      ...serverData,   // Overwrites fields updated by the backend
+    };
+
+      if (onSave) {
+        onSave(updatedMember);
+      }
       if (onClose) {
         onClose();
       }
@@ -106,8 +196,10 @@ useEffect(() => {
     setEditName(false);
   }
 
+
+
   return (
-          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3">
+          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
             <div className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-4">
               { /* form fill */}
               <div className="flex flex-col">
@@ -117,11 +209,10 @@ useEffect(() => {
                     <input
                       type="text"
                       name="firstName"
-                      value={formMember.firstName}
+                      value={formMember?.firstName}
                       onChange={handleChange}
                       onKeyDown={handleNameKeyDown}
-                      onBlur={handleNameBlur}
-                      aira-label="Edit First Name"
+                      aria-label="Edit First Name"
                       className="min-w-48 flex flex-row"
                     />
                     <input
@@ -137,7 +228,7 @@ useEffect(() => {
                     </div>
                     ) : (
                       <div className="flex flex-row font-black font-bold">
-                      <div className="flex min-w-96">{firstName + '  ' + lastName}</div>
+                      <div className="flex min-w-96">{formMember.firstName + '  ' + formMember.lastName}</div>
                       <div 
                         className="flex w-10 h-10 border border-black text-transparent hover:text-red-200 cursor-pointer"
                         onClick={() => setEditName(true)}
@@ -190,6 +281,39 @@ useEffect(() => {
                   <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>API Change date</div>
                 </div>
               </div>
+              { /* button section */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={(e) =>{
+                    e.stopPropagation();
+                    onClose();}
+                  }
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) =>{
+                    e.stopPropagation();
+                    onClose();}
+                  }
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                {  claim ? 'this is me' : 'this is not me'}  
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                >
+                  Save API problem
+                </button>
+              </div>
               { /* family */}
               <div className="flex flex-col">
                 <div className="font-black font-bold text-2xl">Immediate Family</div>
@@ -197,53 +321,42 @@ useEffect(() => {
                     <div className="flex w-40">
                       spouse
                     </div>
-                    <div>API spouse</div>
+                    <div>{getMemberNameById(member.spouseId) || 'None'}</div>
                   </div>
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
-                      parents
+                      Parent
                     </div>
-                    <div>API parents</div>
+                    <div>{parentNames || 'None'}</div>
                   </div>                  
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
                       children
                     </div>
-                  <div>API children</div>
+                  <div>{childNames || 'None'}</div>
                 </div>
               </div>
               {/* Add button section*/}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddChild();
+                  }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                  API add children
+                  Add children
                 </button>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddSpouse();
+                  }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   API add spouse
-                </button>
-              </div>
-              { /* button section */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
-                >
-                  Save API problem
                 </button>
               </div>
             </div>
