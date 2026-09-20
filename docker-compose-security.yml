@@ -44,11 +44,16 @@ services:
       PROXY_SSL_VERIFY: "off" # backend uses our own self-signed dev cert
       PORT: "8080"
       SSL_PORT: "8443"
+      # CRS only allows GET HEAD POST OPTIONS by default (rule 911100); the
+      # REST API also uses PUT/PATCH/DELETE. Not set on waf-frontend, which
+      # only serves pages.
+      ALLOWED_METHODS: "GET HEAD POST OPTIONS PUT PATCH DELETE"
     ports:
       - "9443:8443"
     volumes:
       - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
       - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+      - ./waf/backend-exclusions.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
     depends_on:
       - backend
 
@@ -83,3 +88,18 @@ services:
       VAULT_ADDR: ${VAULT_ADDR:-}
       VAULT_ROLE_ID: ${VAULT_ROLE_ID:-}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID:-}
+      # The browser now loads the app from the WAF (:8443), so that's the
+      # origin CORS has to allow. Overrides .env's :3000 for this stack only.
+      CORS_ORIGIN: "https://localhost:8443"
+    # Uncomment (with frontend's below) once login/OAuth are verified through
+    # the WAF, so it becomes the only way in. `make up` is unaffected.
+    # ports: !reset []
+
+  frontend:
+    environment:
+      # Browser-side API calls go through waf-backend (:9443) instead of
+      # straight to :4000, otherwise the API traffic skips the WAF entirely.
+      # Next runs in dev mode here, so this is read at container start — no
+      # image rebuild needed.
+      NEXT_PUBLIC_API_URL: "https://localhost:9443/api"
+    # ports: !reset []
