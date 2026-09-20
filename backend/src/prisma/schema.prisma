@@ -19,9 +19,6 @@ model User {
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
 
-  // Audit logs
-  auditLogs AuditLog[]
-
   // Invitations sent
   sentInvitations Invitation[] @relation("Inviter")
 }
@@ -172,8 +169,6 @@ model AuditLog {
   id        Int      @id @default(autoincrement())
   treeId    Int
   tree      Tree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
   profileId Int
   profile   Profile  @relation(fields: [profileId], references: [id])
   action    String
