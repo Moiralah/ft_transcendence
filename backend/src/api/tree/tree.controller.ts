@@ -19,13 +19,13 @@ export class TreeController {
 	@Post('create')
 	@UseGuards(JwtAuthGuard)
 	async createTree(@Req() req, @Body() body: { name: string; description?: string }) {
-		return this.treeService.createTree(req.user.profileId, req.user.id, body.name, body.description);
+		return this.treeService.createTree(req.user.profileId, body.name, body.description);
 	}
 
 	@Post('join')
 	@UseGuards(JwtAuthGuard)
 	async joinTree(@Req() req, @Body() body: { name: string; code: string }) {
-		return this.treeService.joinTree(req.user.profileId, req.user.id, body.name, body.code);
+		return this.treeService.joinTree(req.user.profileId, body.name, body.code);
 	}
 
 	@Get('search')
@@ -102,7 +102,11 @@ export class TreeController {
 		@Param('treeId') treeId: string,
 		@Param('memberId') memberId: string,
 	) {
-		return this.treeService.deleteProfileNode(Number(treeId), req.user.profileId, Number(memberId));
+		return this.treeService.deleteProfileNode(
+			Number(treeId),
+			req.user.profileId,
+			Number(memberId),
+		);
 	}
 
 	@Post(':treeId/claims/:holderMemberId')

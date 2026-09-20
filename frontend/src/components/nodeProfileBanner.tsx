@@ -26,6 +26,7 @@ interface nodeProfileModalProp {
     onClose: () => void;
     onSave: (updatedMember : Member) => void;
     onAddChild: ()=> void;
+    onAddSpouse: ()=> void;
 }
 
 export function NodeProfileModal ({
@@ -34,6 +35,7 @@ export function NodeProfileModal ({
     onClose,
     onSave,
     onAddChild,
+    onAddSpouse,
 } : nodeProfileModalProp ) {
 
   const [formMember, setFormMember] = useState<Member | null>(member);
@@ -45,7 +47,7 @@ export function NodeProfileModal ({
   const getMemberNameById = (targetId: number | null) => {
     if (!targetId) return null;
     const foundMember = allMembers.find(
-      (m) => m.id === targetId || m.profileId === targetId
+      (m) => m.profileId === targetId
     );
     if (!foundMember) return null;
     return `${foundMember?.firstName} ${foundMember?.lastName} || '-'`;

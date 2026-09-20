@@ -46,4 +46,4 @@ seed:
 clean: down
 	docker compose rm -f
 
-.PHONY: up down build logs ps backend-shell frontend-shell db-shell seed clean
+.PHONY: up down build certs logs ps backend-shell frontend-shell db-shell seed clean

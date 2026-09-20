@@ -27,15 +27,15 @@ export class TreeService {
 	// Anyone who leave the tree will unlink their profile from Tree Member. made-up profile will re-surface on that node
 	// Tree starting point will be root profile
 
-	// userId (User.id) is passed in separately wherever AuditLog needs it,
-	// since AuditLog.userId and AuditLog.profileId are two distinct
-	// required fields.
+	// AuditLog.profileId is enough on its own — User.profileId is one-to-one,
+	// so it always resolves back to the acting user without a separate
+	// userId column.
 
 	private generateTreeCode(): string {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
 	}
 
-	async createTree(profileId: number, userId: string, name: string, description?: string) {
+	async createTree(profileId: number, name: string, description?: string) {
 		let code: string;
 		do {
 			code = this.generateTreeCode();
@@ -78,7 +78,6 @@ export class TreeService {
 			await tx.auditLog.create({
 				data: {
 					treeId: tree.id,
-					userId,
 					profileId,
 					action: 'CREATE_TREE',
 					details: `Created tree "${name}" with code ${code}`,
@@ -96,7 +95,7 @@ export class TreeService {
 		});
 	}
 
-	async joinTree(profileId: number, userId: string, name: string, code: string) {
+	async joinTree(profileId: number, name: string, code: string) {
 		const tree = await this.prisma.tree.findFirst({ where: { name, code } });
 		if (!tree) {
 			throw new NotFoundException('Tree not found. Check name and code.');
@@ -117,7 +116,6 @@ export class TreeService {
 		await this.prisma.auditLog.create({
 			data: {
 				treeId: tree.id,
-				userId,
 				profileId,
 				action: 'JOIN_TREE',
 				details: `Joined tree "${tree.name}" as JOINER`,
@@ -419,6 +417,16 @@ export class TreeService {
 					link: { include: { profile: { select: this.memberProfileSelect } } },
 				},
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'ADD_CHILD',
+					details: `Added a child under profile ${parentProfileId}`,
+				},
+			});
+
 			return rows.map((r) => this.mapMemberRow(r));
 		});
 	}
@@ -481,6 +489,16 @@ export class TreeService {
 					link: {include: {profile: {select: this.memberProfileSelect}}},
 				},
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'ADD_SPOUSE',
+					details: `Added a spouse for profile ${partnerProfileId}`,
+				},
+			});
+
 			return rows.map((r) => this.mapMemberRow(r));
 		});
 	}
@@ -528,9 +546,22 @@ export class TreeService {
 			throw new ForbiddenException("Cannot change the owner's role.");
 		}
 
-		return this.prisma.treeMember.update({
-			where: { profileId_treeId: { profileId: targetProfileId, treeId } },
-			data: { role: newRole as AssignableRole },
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { profileId_treeId: { profileId: targetProfileId, treeId } },
+				data: { role: newRole as AssignableRole },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId,
+					action: 'UPDATE_ROLE',
+					details: `Changed role of profile ${targetProfileId} to ${newRole}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -584,10 +615,21 @@ export class TreeService {
 			throw new ForbiddenException('This profile still has children linked to it — reassign them first.');
 		}
 
-		await this.prisma.treeMember.delete({ where: { id: targetMemberId } });
-		await this.prisma.profile.delete({ where: { id: target.profileId! } });
+		return this.prisma.$transaction(async (tx) => {
+			await tx.treeMember.delete({ where: { id: targetMemberId } });
+			await tx.profile.delete({ where: { id: target.profileId! } });
 
-		return { message: 'Profile node deleted.' };
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'DELETE_PROFILE',
+					details: `Deleted profile ${target.profileId}`,
+				},
+			});
+
+			return { message: 'Profile node deleted.' };
+		});
 	}
 
 	// --- Claiming a placeholder node ---
@@ -612,10 +654,23 @@ export class TreeService {
 			throw new ForbiddenException('This profile already has a pending or accepted claim.');
 		}
 
-		return this.prisma.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: requesterMember.id, claim: 'PENDING' },
-			include: { profile: true, link: { include: { profile: true } } },
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: requesterMember.id, claim: 'PENDING' },
+				include: { profile: true, link: { include: { profile: true } } },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'REQUEST_CLAIM',
+					details: `Requested to claim profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -636,11 +691,22 @@ export class TreeService {
 				data: { role: 'MEMBER' },
 			});
 
-			return tx.treeMember.update({
+			const updated = await tx.treeMember.update({
 				where: { id: holderMemberId },
 				data: { claim: 'ACCEPTED' },
 				include: { profile: true, link: { include: { profile: true } } },
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'APPROVE_CLAIM',
+					details: `Approved claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -658,9 +724,22 @@ export class TreeService {
 		// Free the node back up rather than locking it permanently — a fresh
 		// request flips it back to PENDING, so this doesn't block a retry
 		// (by this or another claimant).
-		return this.prisma.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: null, claim: 'REJECTED' },
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: null, claim: 'REJECTED' },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'REJECT_CLAIM',
+					details: `Rejected claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -669,7 +748,7 @@ export class TreeService {
 		if (!tree) {
 			throw new NotFoundException('Tree not found.');
 		}
-		// Bug fix: was comparing tree.ownerId (a Profile id) against userId.
+		// Bug fix: was comparing tree.ownerId (a Profile id) against a user id.
 		if (tree.ownerId === profileId) {
 			throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
 		}
@@ -693,6 +772,15 @@ export class TreeService {
 			}
 
 			await tx.treeMember.delete({ where: { id: member.id } });
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId,
+					action: 'LEAVE_TREE',
+					details: `Left the tree`,
+				},
+			});
 
 			return { message: 'Successfully left the tree.' };
 		});
