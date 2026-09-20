@@ -43,9 +43,47 @@ export function TreeNode({
 
 
   if (!nodeMember) return null;
+
   const AddChildNode = () => {
 
   }
+
+  const AddSpouseNode = () => {
+
+  }
+
+
+  const handleDeleteNode = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.profileId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      // if (onAddChild)
+      //   onAddChild();
+      // if (onClose) {
+      //   onClose();
+      // }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
 
   return (
     <div 
@@ -59,9 +97,15 @@ export function TreeNode({
         nodeMember.gender === 'female' ? 
           'bg-red-200 border-red-600' : 
         'bg-amber-100 border-amber-600'} 
-          border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 w-40`}
+          border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[120px]`}
       >
-        <button className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black">
+        <button 
+          className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteNode();
+          }}
+        >
           X
         </button>
         {(nodeMember.firstName || nodeMember.lastName) ? (
@@ -99,6 +143,10 @@ export function TreeNode({
         }}
         onAddChild={() => {
           AddChildNode();
+          setNodeProfileModal(false);      
+        }}
+        onAddSpouse={() => {
+          AddSpouseNode();
           setNodeProfileModal(false);      
         }}
       />

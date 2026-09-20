@@ -100,6 +100,37 @@ export function NodeProfileModal ({
     }
   };
 
+const handleAddSpouse = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      if (onAddSpouse)
+        onAddSpouse();
+      if (onClose) {
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("ft_token");
@@ -319,7 +350,10 @@ export function NodeProfileModal ({
                 </button>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddSpouse();
+                  }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   API add spouse
