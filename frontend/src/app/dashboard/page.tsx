@@ -11,6 +11,8 @@ import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal } from '../../components/profileModal';
+import { supabase } from '@/lib/supabaseClient';
+import { clearSession } from '@/lib/auth';
 
 interface Profile {
   id?: number;
@@ -192,6 +194,17 @@ export default function TreePage() {
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
+  const handleLogout = async () => {
+    clearSession();
+    // OAuth logins also leave a Supabase session in the browser; drop it too.
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // already logged out of the app above — don't block the redirect
+    }
+    router.push('/login');
+  };
+
   if (error) {
     return (
       <div role="alert" className="p-8 text-red-700 font-semibold">
@@ -262,6 +275,9 @@ export default function TreePage() {
                     Admin Panel
                   </Button>
                 )}
+                <Button onClick={handleLogout} variant="secondary">
+                  Logout
+                </Button>
               </div>
             </div>
           </div>
