@@ -4,14 +4,22 @@ import React, { useEffect, useState } from "react";
 import { Button } from './button';
 
 export interface Profile {
-  id?: number | string;
-  firstName?: string;
-  lastName?: string;
-  gender?: "male" | "female" | null | "";
-  birthDate?: string;
-  deathDate?: string;
-  bio?: string;
-  photoUrl?: string;
+  id: number;
+  profileId?: number;
+  treeId?: number;
+  role?: string;
+  joinedAt?: string | Date;
+  firstName: string;
+  lastName?: string | null;
+  gender?: 'male' | 'female' | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
+  bio?: string | null;
+  photoUrl?: string | null;
+  motherId?: number | null;
+  fatherId?: number | null;
+  spouseId?: number | null;
+  childrenIds?: number[];
 }
 
 interface ProfileModalProps {
@@ -137,7 +145,6 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
                     autoFocus
                     className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white"
                   >
-                  <option value="">Not Specified (null)</option>
                   <option value="male">male</option>
                   <option value="female">female</option>
                 </select>

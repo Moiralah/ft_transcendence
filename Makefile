@@ -78,4 +78,4 @@ seed:
 clean: down
 	docker compose -f docker-compose.yml -f docker-compose-security.yml rm -f
 
-.PHONY: up security security-down down build logs ps backend frontend backend-shell frontend-shell seed clean
+.PHONY: up security security-down certs down build logs ps backend frontend backend-shell frontend-shell seed clean

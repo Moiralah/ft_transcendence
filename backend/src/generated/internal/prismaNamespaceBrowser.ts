@@ -183,7 +183,6 @@ export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof Ev
 export const AuditLogScalarFieldEnum = {
   id: 'id',
   treeId: 'treeId',
-  userId: 'userId',
   profileId: 'profileId',
   action: 'action',
   details: 'details',

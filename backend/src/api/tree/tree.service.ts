@@ -27,15 +27,15 @@ export class TreeService {
 	// Anyone who leave the tree will unlink their profile from Tree Member. made-up profile will re-surface on that node
 	// Tree starting point will be root profile
 
-	// userId (User.id) is passed in separately wherever AuditLog needs it,
-	// since AuditLog.userId and AuditLog.profileId are two distinct
-	// required fields.
+	// AuditLog.profileId is enough on its own — User.profileId is one-to-one,
+	// so it always resolves back to the acting user without a separate
+	// userId column.
 
 	private generateTreeCode(): string {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
 	}
 
-	async createTree(profileId: number, userId: string, name: string, description?: string) {
+	async createTree(profileId: number, name: string, description?: string) {
 		let code: string;
 		do {
 			code = this.generateTreeCode();
@@ -78,7 +78,6 @@ export class TreeService {
 			await tx.auditLog.create({
 				data: {
 					treeId: tree.id,
-					userId,
 					profileId,
 					action: 'CREATE_TREE',
 					details: `Created tree "${name}" with code ${code}`,
@@ -96,7 +95,7 @@ export class TreeService {
 		});
 	}
 
-	async joinTree(profileId: number, userId: string, name: string, code: string) {
+	async joinTree(profileId: number, name: string, code: string) {
 		const tree = await this.prisma.tree.findFirst({ where: { name, code } });
 		if (!tree) {
 			throw new NotFoundException('Tree not found. Check name and code.');
@@ -117,7 +116,6 @@ export class TreeService {
 		await this.prisma.auditLog.create({
 			data: {
 				treeId: tree.id,
-				userId,
 				profileId,
 				action: 'JOIN_TREE',
 				details: `Joined tree "${tree.name}" as JOINER`,
@@ -184,34 +182,13 @@ export class TreeService {
 		const memberships = await this.prisma.treeMember.findMany({
 			where: { treeId },
 			include: {
-				profile: {
-					select: {
-						id: true,
-						firstName: true,
-						lastName: true,
-						photoUrl: true,
-						gender: true,
-						birthDate: true,
-						deathDate: true,
-					},
-				},
+				profile: { select: this.memberProfileSelect },
+				link: {include: {profile: {select: this.memberProfileSelect}}}
 			},
 			orderBy: { joinedAt: 'asc' },
 		});
 
-		return memberships.map((m) => ({
-			id: m.id,
-			profileId: m.profileId,
-			treeId: m.treeId,
-			role: m.role,
-			joinedAt: m.joinedAt,
-			firstName: m.profile?.firstName ?? '',
-			lastName: m.profile?.lastName ?? '',
-			photoUrl: m.profile?.photoUrl ?? null,
-			gender: m.profile?.gender ?? null,
-			birthDate: m.profile?.birthDate ?? null,
-			deathDate: m.profile?.deathDate ?? null,
-		}));
+		return memberships.map((m) => this.mapMemberRow(m));
 	}
 
 	// Tree detail page. Only ever reached once the frontend already has a
@@ -246,89 +223,6 @@ export class TreeService {
 			throw new NotFoundException('Tree not found.');
 		}
 		return { ...tree, userRole: member.role };
-	}
-
-	// Role management — profileId/targetProfileId are already what the
-	// frontend has on hand from the tree's member list, no extra lookups.
-	async updateMemberRole(
-		treeId: number,
-		profileId: number,
-		targetProfileId: number,
-		newRole: string,
-	) {
-		if (profileId === targetProfileId) {
-			throw new ForbiddenException('You cannot change your own role.');
-		}
-
-		if (!ASSIGNABLE_ROLES.includes(newRole as AssignableRole)) {
-			throw new BadRequestException(`Role must be one of: ${ASSIGNABLE_ROLES.join(', ')}`);
-		}
-
-		const currentMember = await this.prisma.treeMember.findUnique({
-			where: { profileId_treeId: { profileId, treeId } },
-		});
-
-		// Bug fix: `role !== 'ADMIN' || role !== 'MODERATOR'` is always true for
-		// any single role value (it can't equal both at once), so the old check
-		// let anyone through. This is what it should have been.
-		if (!currentMember || !['ADMIN', 'MODERATOR'].includes(currentMember.role)) {
-			throw new ForbiddenException('Only admins or moderators can change roles.');
-		}
-
-		// A MODERATOR shouldn't be able to hand out ADMIN (their own ceiling or
-		// above) — only an existing ADMIN can do that.
-		if (newRole === 'ADMIN' && currentMember.role !== 'ADMIN') {
-			throw new ForbiddenException('Only an admin can grant admin.');
-		}
-
-		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
-		if (!tree) {
-			throw new NotFoundException('Tree not found.');
-		}
-
-		// Bug fix: was comparing against an undefined `targetUserId`.
-		if (tree.ownerId === targetProfileId) {
-			throw new ForbiddenException("Cannot change the owner's role.");
-		}
-
-		return this.prisma.treeMember.update({
-			where: { profileId_treeId: { profileId: targetProfileId, treeId } },
-			data: { role: newRole as AssignableRole },
-		});
-	}
-
-	async leaveTree(profileId: number, treeId: number) {
-		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
-		if (!tree) {
-			throw new NotFoundException('Tree not found.');
-		}
-		// Bug fix: was comparing tree.ownerId (a Profile id) against userId.
-		if (tree.ownerId === profileId) {
-			throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
-		}
-
-		const member = await this.prisma.treeMember.findUnique({
-			where: { profileId_treeId: { profileId, treeId } },
-		});
-		if (!member) {
-			throw new NotFoundException('You are not a member of this tree.');
-		}
-
-		return this.prisma.$transaction(async (tx) => {
-			// If this member had claimed a placeholder node, unlink it so the
-			// made-up profile re-surfaces on that node.
-			const claimedHolder = await tx.treeMember.findUnique({ where: { linkId: member.id } });
-			if (claimedHolder) {
-				await tx.treeMember.update({
-					where: { id: claimedHolder.id },
-					data: { linkId: null, claim: 'EMPTY' },
-				});
-			}
-
-			await tx.treeMember.delete({ where: { id: member.id } });
-
-			return { message: 'Successfully left the tree.' };
-		});
 	}
 
 	// Add a made-up (placeholder) profile node.
@@ -398,27 +292,52 @@ export class TreeService {
 		});
 	}
 
-	// Add a child to an existing node.
-	// This is now the ONLY way new placeholder nodes get created (besides the
-	// mother/father auto-created alongside the root at tree creation time).
-	// There's no separate "add mother"/"add father" action any more — a
-	// parent's spouse is created automatically the first time they get a
-	// child, so every non-root node's mother AND father are set in one shot,
-	// right here, rather than being assembled node-by-node.
-	//
-	// ADMIN/MODERATOR can add a child under any existing node.
-	// MEMBER can only add a child under the node they themselves claimed —
-	// not under an arbitrary node, even one representing a relative.
+	private readonly memberProfileSelect = {
+		id: true,
+		firstName: true,
+		lastName: true,
+		photoUrl: true,
+		gender: true,
+		birthDate: true,
+		deathDate: true,
+		spouseId: true,
+		fatherId: true,
+		motherId: true,
+		childrenAsMother: { select: { id: true } },
+		childrenAsFather: { select: { id: true } },
+	} as const;
+
+	private mapMemberRow(m: any) {
+		const display = m.claim === 'ACCEPTED' && m.link?.profile ? m.link.profile : m.profile;
+		return {
+			id: m.id,
+			profileId: m.profileId,
+			treeId: m.treeId,
+			role: m.role,
+			claim: m.claim,
+			joinedAt: m.joinedAt,
+			firstName: display?.firstName ?? '',
+			lastName: display?.lastName ?? '',
+			photoUrl: display?.photoUrl ?? null,
+			gender: display?.gender ?? null,
+			birthDate: display?.birthDate ?? null,
+			deathDate: display?.deathDate ?? null,
+			spouseId: m.profile?.spouseId ?? null,
+			motherId: m.profile?.motherId ?? null,
+			fatherId: m.profile?.fatherId ?? null,
+			childrenIds: [
+				...new Set([
+					...(m.profile?.childrenAsMother ?? []).map((c) => c.id),
+					...(m.profile?.childrenAsFather ?? []).map((c) => c.id),
+				]),
+			],
+		};
+	}
+
 	async addChildNode(
 		treeId: number,
 		requesterProfileId: number,
 		parentProfileId: number,
-		childData: {
-			firstName: string;
-			lastName?: string;
-			gender?: string;
-			birthDate?: Date;
-		},
 	) {
 		const requesterMembership = await this.prisma.treeMember.findUnique({
 			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
@@ -454,9 +373,10 @@ export class TreeService {
 			}
 
 			let spouseId = parent.spouseId;
+			let spouseCreated = false
 			if (!spouseId) {
 				const spouse = await tx.profile.create({
-					data: { firstName: 'Unknown', spouseId: parentProfileId },
+					data: { firstName: 'New Spouse', spouseId: parentProfileId },
 				});
 				await tx.profile.update({
 					where: { id: parentProfileId },
@@ -466,6 +386,7 @@ export class TreeService {
 					data: { role: 'HOLDER', profileId: spouse.id, treeId },
 				});
 				spouseId = spouse.id;
+				spouseCreated = true;
 			}
 
 			// Gender-slot assignment: if the parent's gender tells us which slot
@@ -476,13 +397,37 @@ export class TreeService {
 			const fatherId = parentIsMother ? spouseId : parentProfileId;
 
 			const child = await tx.profile.create({
-				data: { ...childData, motherId, fatherId },
+				data: { firstName: 'New Child', motherId, fatherId },
 			});
 
-			return tx.treeMember.create({
+			await tx.treeMember.create({
 				data: { profileId: child.id, treeId, role: 'HOLDER' },
-				include: { profile: true },
 			});
+
+			const touchedProfileIds = [
+				parentProfileId,
+				child.id,
+				...(spouseCreated ? [spouseId] : []),
+			];
+
+			const rows = await tx.treeMember.findMany({
+				where: { treeId, profileId: { in: touchedProfileIds } },
+				include: {
+					profile: { select: this.memberProfileSelect },
+					link: { include: { profile: { select: this.memberProfileSelect } } },
+				},
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'ADD_CHILD',
+					details: `Added a child under profile ${parentProfileId}`,
+				},
+			});
+
+			return rows.map((r) => this.mapMemberRow(r));
 		});
 	}
 
@@ -490,12 +435,6 @@ export class TreeService {
 		treeId: number,
 		requesterProfileId: number,
 		partnerProfileId: number,
-		spouseData: {
-			firstName: string;
-			lastName?: string;
-			gender?: string;
-			birthDate?: Date;
-		},
 	) {
 		const requesterMembership = await this.prisma.treeMember.findUnique({
 			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
@@ -528,32 +467,101 @@ export class TreeService {
 			if (!partner) {
 				throw new NotFoundException('Partner profile not found.');
 			}
-
-			let spouseId = partner.spouseId;
-			if (!spouseId) {
-				const spouse = await tx.profile.create({
-					data: { firstName: 'Unknown', spouseId: partnerProfileId },
-				});
-				await tx.profile.update({
-					where: { id: partnerProfileId },
-					data: { spouseId: spouse.id },
-				});
-				await tx.treeMember.create({
-					data: { role: 'HOLDER', profileId: spouse.id, treeId },
-				});
-				spouseId = spouse.id;
-			}
-			else
+			if (partner.spouseId) {
 				throw new BadRequestException('Spouse already exist. Only 1 spouse allowed per person');
+			}
 
 			const spouse = await tx.profile.create({
-				data: { ...spouseData},
+				data: { firstName: 'New Spouse', spouseId: partnerProfileId },
+			});
+			await tx.profile.update({
+				where: { id: partnerProfileId },
+				data: { spouseId: spouse.id },
+			});
+			await tx.treeMember.create({
+				data: { role: 'HOLDER', profileId: spouse.id, treeId },
 			});
 
-			return tx.treeMember.create({
-				data: { profileId: spouse.id, treeId, role: 'HOLDER' },
-				include: { profile: true },
+			const rows = await tx.treeMember.findMany({
+				where: {treeId, profileId: {in: [partnerProfileId, spouse.id]}},
+				include: {
+					profile: {select: this.memberProfileSelect},
+					link: {include: {profile: {select: this.memberProfileSelect}}},
+				},
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'ADD_SPOUSE',
+					details: `Added a spouse for profile ${partnerProfileId}`,
+				},
+			});
+
+			return rows.map((r) => this.mapMemberRow(r));
+		});
+	}
+
+	// Role management — profileId/targetProfileId are already what the
+	// frontend has on hand from the tree's member list, no extra lookups.
+	async updateMemberRole(
+		treeId: number,
+		profileId: number,
+		targetProfileId: number,
+		newRole: string,
+	) {
+		if (profileId === targetProfileId) {
+			throw new ForbiddenException('You cannot change your own role.');
+		}
+
+		if (!ASSIGNABLE_ROLES.includes(newRole as AssignableRole)) {
+			throw new BadRequestException(`Role must be one of: ${ASSIGNABLE_ROLES.join(', ')}`);
+		}
+
+		const currentMember = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId } },
+		});
+
+		// Bug fix: `role !== 'ADMIN' || role !== 'MODERATOR'` is always true for
+		// any single role value (it can't equal both at once), so the old check
+		// let anyone through. This is what it should have been.
+		if (!currentMember || !['ADMIN', 'MODERATOR'].includes(currentMember.role)) {
+			throw new ForbiddenException('Only admins or moderators can change roles.');
+		}
+
+		// A MODERATOR shouldn't be able to hand out ADMIN (their own ceiling or
+		// above) — only an existing ADMIN can do that.
+		if (newRole === 'ADMIN' && currentMember.role !== 'ADMIN') {
+			throw new ForbiddenException('Only an admin can grant admin.');
+		}
+
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
+		if (!tree) {
+			throw new NotFoundException('Tree not found.');
+		}
+
+		// Bug fix: was comparing against an undefined `targetUserId`.
+		if (tree.ownerId === targetProfileId) {
+			throw new ForbiddenException("Cannot change the owner's role.");
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { profileId_treeId: { profileId: targetProfileId, treeId } },
+				data: { role: newRole as AssignableRole },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId,
+					action: 'UPDATE_ROLE',
+					details: `Changed role of profile ${targetProfileId} to ${newRole}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -565,6 +573,15 @@ export class TreeService {
 			where: { treeId, linkId: requesterMemberId, claim: 'ACCEPTED' },
 		});
 		return claimedHolder?.profileId ?? null;
+	}
+
+	private async assertModeratorOrAdmin(treeId: number, profileId: number) {
+		const membership = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId } },
+		});
+		if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
+			throw new ForbiddenException('Only admins or moderators can do this.');
+		}
 	}
 
 	// Moderator/Admin only — remove a placeholder node that isn't claimed,
@@ -598,10 +615,21 @@ export class TreeService {
 			throw new ForbiddenException('This profile still has children linked to it — reassign them first.');
 		}
 
-		await this.prisma.treeMember.delete({ where: { id: targetMemberId } });
-		await this.prisma.profile.delete({ where: { id: target.profileId! } });
+		return this.prisma.$transaction(async (tx) => {
+			await tx.treeMember.delete({ where: { id: targetMemberId } });
+			await tx.profile.delete({ where: { id: target.profileId! } });
 
-		return { message: 'Profile node deleted.' };
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'DELETE_PROFILE',
+					details: `Deleted profile ${target.profileId}`,
+				},
+			});
+
+			return { message: 'Profile node deleted.' };
+		});
 	}
 
 	// --- Claiming a placeholder node ---
@@ -626,10 +654,23 @@ export class TreeService {
 			throw new ForbiddenException('This profile already has a pending or accepted claim.');
 		}
 
-		return this.prisma.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: requesterMember.id, claim: 'PENDING' },
-			include: { profile: true, link: { include: { profile: true } } },
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: requesterMember.id, claim: 'PENDING' },
+				include: { profile: true, link: { include: { profile: true } } },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'REQUEST_CLAIM',
+					details: `Requested to claim profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -650,11 +691,22 @@ export class TreeService {
 				data: { role: 'MEMBER' },
 			});
 
-			return tx.treeMember.update({
+			const updated = await tx.treeMember.update({
 				where: { id: holderMemberId },
 				data: { claim: 'ACCEPTED' },
 				include: { profile: true, link: { include: { profile: true } } },
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'APPROVE_CLAIM',
+					details: `Approved claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
@@ -672,18 +724,95 @@ export class TreeService {
 		// Free the node back up rather than locking it permanently — a fresh
 		// request flips it back to PENDING, so this doesn't block a retry
 		// (by this or another claimant).
-		return this.prisma.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: null, claim: 'REJECTED' },
+		return this.prisma.$transaction(async (tx) => {
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: null, claim: 'REJECTED' },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'REJECT_CLAIM',
+					details: `Rejected claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
 	}
 
-	private async assertModeratorOrAdmin(treeId: number, profileId: number) {
-		const membership = await this.prisma.treeMember.findUnique({
+	async leaveTree(profileId: number, treeId: number) {
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
+		if (!tree) {
+			throw new NotFoundException('Tree not found.');
+		}
+		// Bug fix: was comparing tree.ownerId (a Profile id) against a user id.
+		if (tree.ownerId === profileId) {
+			throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
+		}
+
+		const member = await this.prisma.treeMember.findUnique({
 			where: { profileId_treeId: { profileId, treeId } },
 		});
-		if (!membership || !['ADMIN', 'MODERATOR'].includes(membership.role)) {
-			throw new ForbiddenException('Only admins or moderators can do this.');
+		if (!member) {
+			throw new NotFoundException('You are not a member of this tree.');
 		}
+
+		return this.prisma.$transaction(async (tx) => {
+			// If this member had claimed a placeholder node, unlink it so the
+			// made-up profile re-surfaces on that node.
+			const claimedHolder = await tx.treeMember.findUnique({ where: { linkId: member.id } });
+			if (claimedHolder) {
+				await tx.treeMember.update({
+					where: { id: claimedHolder.id },
+					data: { linkId: null, claim: 'EMPTY' },
+				});
+			}
+
+			await tx.treeMember.delete({ where: { id: member.id } });
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId,
+					action: 'LEAVE_TREE',
+					details: `Left the tree`,
+				},
+			});
+
+			return { message: 'Successfully left the tree.' };
+		});
 	}
+
+	// Powers a "pending claims" notification panel for admins/moderators.
+	async getPendingClaims(treeId: number, requesterProfileId: number) {
+		await this.assertModeratorOrAdmin(treeId, requesterProfileId);
+
+		return this.prisma.treeMember.findMany({
+			where: { treeId, role: 'HOLDER', claim: 'PENDING' },
+			include: {
+				profile: {
+					select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					photoUrl: true,
+					gender: true,
+					birthDate: true,
+					deathDate: true,}
+				}, // the placeholder being claimed, e.g. "John Chan"
+				link: { include: { profile: { select:{
+					id: true,
+					firstName: true,
+					lastName: true,
+					photoUrl: true,
+					gender: true,
+					birthDate: true,
+					deathDate: true,}} } }, // the real claimant, e.g. "John"
+			},
+		});
+	}
+
 }
