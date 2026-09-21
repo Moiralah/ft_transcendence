@@ -268,7 +268,7 @@ export default function TreePage() {
                   Edit Profile
                 </Button>
                 <Button href="/settings/2fa" variant="secondary">
-                  Security (2FA)
+                  Security &amp; Password
                 </Button>
                 {role === 'ADMIN' && (
                   <Button href="/admin/users" variant="secondary">

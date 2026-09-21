@@ -292,7 +292,7 @@ Task breakdown by person. Each task includes a rough effort estimate.
 - `/app/tree` – list of user’s trees, create/join/search modals ⚠️ stale
   dead code, not the live landing page (see `/app/dashboard`)
 - `/app/dashboard` – the actual "my trees" landing page: members, profiles,
-  role management, links to Security (2FA) and (role-gated) Admin Panel
+  role management, links to Security & Password and (role-gated) Admin Panel
 - `/app/consent` – OAuth callback handler, also handles the 2FA challenge
   for OAuth logins
 - `/app/settings/2fa` – enable/disable 2FA, QR enrollment, recovery codes
