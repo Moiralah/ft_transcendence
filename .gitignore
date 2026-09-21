@@ -26,6 +26,8 @@ build/
 .env.test.local
 .env.production.local
 *.env.*
+# ...but keep the example files, which contain no real values
+!.env.example
 *.pem
 *.key
 

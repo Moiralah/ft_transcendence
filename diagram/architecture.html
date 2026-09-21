@@ -144,7 +144,7 @@
       <rect x="30" y="46" width="220" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
       <text x="52" y="80" class="box-label" fill="var(--browser)">Browser</text>
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
-      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (:3000 direct)</text>
+      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make security)</text>
       <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">localStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
@@ -172,7 +172,7 @@
       <rect x="480" y="200" width="230" height="180" rx="14" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.5"/>
       <text x="502" y="230" class="box-label" fill="var(--backend)">Backend API</text>
       <text x="502" y="248" class="box-sub" fill="var(--ink)">NestJS, in Docker</text>
-      <text x="502" y="266" class="box-sub mono" fill="var(--sub)">:4000 (HTTPS, direct — bypasses WAF)</text>
+      <text x="502" y="266" class="box-sub mono" fill="var(--sub)">:4000 (HTTPS, via WAF only)</text>
       <g class="box-sub mono" fill="var(--backend)">
         <text x="502" y="290">/auth</text>
         <text x="502" y="308">/auth/2fa</text>
@@ -265,10 +265,10 @@
         <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional, OAuth sign-in only. <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
       <text x="30" y="588" class="box-sub" fill="var(--sub)">
-        Backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are still directly reachable too (dev convenience) —
+        In the <tspan class="mono" fill="var(--sub)">make security</tspan> stack, backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
       </text>
       <text x="30" y="604" class="box-sub" fill="var(--sub)">
-        until that&apos;s closed off, the WAF is provably working but not yet the only way in. See callouts below.
+        Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
       </text>
     </svg>
   </div>
@@ -325,11 +325,12 @@
   <div class="callout ok">
     <div class="ic">🛡️</div>
     <div>
-      <strong>WAF proven working (IV.5 Cybersecurity module):</strong> the same payload gets blocked through the
-      WAF and reaches the app unfiltered when sent directly.
+      <strong>WAF proven working (IV.5 Cybersecurity module):</strong> the same payload is blocked through the
+      WAF, and the direct route that used to let it through is now closed.
       <pre>GET /api/trees/search?name=smith' OR '1'='1
   via :9443 (WAF)     → 403 Forbidden, blocked
-  via :4000 (direct)  → reaches NestJS unfiltered</pre>
+  via :4000 (direct)  → connection refused (port not published; it returned
+                        200, i.e. reached NestJS unfiltered, before it was closed)</pre>
       Two false positives on normal use were tuned out on the backend WAF only:
       <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> are allowed (rule 911100 only permits GET/HEAD/POST/OPTIONS by default),
       and the JSON field <code>profileId</code> no longer trips rule 930120 (<code>waf/backend-exclusions.conf</code>).
@@ -371,15 +372,14 @@
     </div>
   </div>
 
-  <div class="callout">
-    <div class="ic">⚠️</div>
+  <div class="callout ok">
+    <div class="ic">🔒</div>
     <div>
-      <strong>Not locked down yet:</strong> <code>:3000</code>/<code>:4000</code> are still directly exposed
-      alongside the WAF ports, kept that way deliberately while proving the WAF works so nothing else in the
-      stack broke. A WAF with a bypass path isn't actually protecting anything — the remaining step is closing
-      them for the security stack only: two commented-out <code>ports: !reset []</code> lines in
-      <code>docker-compose-security.yml</code> (so plain <code>make up</code> keeps working). They stay commented
-      until every flow has been tested through the WAF.
+      <strong>WAF is the only way in (security stack):</strong> <code>:3000</code>/<code>:4000</code> are no longer
+      published — <code>ports: !reset []</code> on <code>backend</code>/<code>frontend</code> in
+      <code>docker-compose-security.yml</code>, so a WAF with a bypass path is no longer the situation. The WAFs still
+      reach them over the Docker network. Plain <code>make up</code> has no WAF and keeps publishing them. The
+      <code>!reset</code> tag needs Docker Compose 2.24 or newer.
     </div>
   </div>
 

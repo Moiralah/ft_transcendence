@@ -270,8 +270,10 @@ browser clicks — copy-paste these and check the output matches. See
   - Notes: `403` confirmed.
 - [x] Confirm the WAF is actually what's blocking it — the exact same
   payload reaches the app unfiltered when sent directly, bypassing
-  the WAF (this should currently succeed / not 403, since direct
-  access isn't locked down yet — see README):
+  the WAF. **Update 2026-09-21:** `:4000` is no longer published in the
+  security stack, so this now returns `000` (connection refused) — that is
+  the desired result. To see the unfiltered behaviour, run the plain
+  `make up` stack. Original check:
   ``bash curl -sk -o /dev/null -w "%{http_code}\n" "https://localhost:4000/api/trees/search?name=smith'%20OR%20'1'='1" ``
   - Notes: confirmed — reaches the app (currently `500`, see the
     `/api/trees/search` bug noted in section 4/progress_log, unrelated to

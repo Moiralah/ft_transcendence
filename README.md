@@ -2,9 +2,15 @@
 
 ## 🚀 How to run
 
-1. **Clone the repository** and run `make` to start the environment.
+1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
+   comments in that file say where each value comes from), then run `make` to
+   start the environment.
 2. **Approve backend cert** open new tab 'https://localhost:4000
 3. **Approve frontend cert** open new tab 'https://localhost:3000
+
+Running the security stack (`make security`, see below) instead? Ports `3000`
+and `4000` are not published there. Approve `https://localhost:9443` (API) and
+`https://localhost:8443` (the app) instead, and open the app on `:8443`.
 
 
 ## 🧪 Running Supabase Locally
@@ -34,10 +40,13 @@ everything else the same):
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 DIRECT_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 SUPABASE_AUTH_URL=http://127.0.0.1:54321
-SUPABASE_SERVICE_ROLE_KEY=<PUBLISHABLE_KEY from `supabase status`>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY from `supabase status -o env`>
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<PUBLISHABLE_KEY from `supabase status`>
 ```
+(`SUPABASE_SERVICE_ROLE_KEY` must be the service-role/secret key, not the
+publishable one: the publishable key is enough to sign people in, but not for
+admin actions such as removing a deleted user's Supabase login.)
 
 ### 3. Push the schema
 ```bash
@@ -114,10 +123,16 @@ make security          # brings up the WAF alongside the base stack
 make security-down     # tears it down
 ```
 
-This puts the WAF on two new ports, **in addition to** the existing direct
-ones (not yet an exclusive path — see the diagram's callouts for why):
-- `https://localhost:8443` → frontend (`:3000`), inspected
-- `https://localhost:9443` → backend (`:4000`), inspected
+In this stack the WAF is the **only** way in: `:3000` and `:4000` are not
+published to your machine (`ports: !reset []` in
+`docker-compose-security.yml`, which needs Docker Compose 2.24 or newer). The
+WAFs still reach the frontend and backend over the Docker network. The plain
+`make up` stack, which has no WAF, still publishes them.
+- `https://localhost:8443` → frontend, inspected — **open the app here**
+- `https://localhost:9443` → backend API, inspected (the app's browser calls go here)
+
+To see a request that the WAF blocks reach the app unfiltered, run the plain
+`make up` stack and send it to `:4000`.
 
 **Two gotchas, both already hit once:**
 1. Same as the local-Supabase section above — any `docker compose up`
