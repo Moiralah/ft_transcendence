@@ -7,6 +7,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/button';
+import { ChangePasswordForm } from '@/components/changePasswordForm';
 
 export default function TwoFactorSettingsPage() {
 	const router = useRouter();
@@ -118,6 +119,11 @@ export default function TwoFactorSettingsPage() {
 			</header>
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
+				<div>
+					<Button href="/dashboard" variant="secondary">
+						&larr; Back to dashboard
+					</Button>
+				</div>
 				<h1 className="text-2xl font-bold text-slate-900">Two-Factor Authentication</h1>
 
 				{loading ? (
@@ -212,6 +218,8 @@ export default function TwoFactorSettingsPage() {
 						{error && <div className="error" role="alert">{error}</div>}
 					</section>
 				)}
+
+				{!loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">

@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { exchangeSupabaseToken, isTwoFactorRequired, storeSession } from '@/lib/auth';
@@ -15,6 +16,14 @@ export default function LoginPage() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [challengeToken, setChallengeToken] = useState<string | null>(null);
+	const [notice, setNotice] = useState<string | null>(null);
+
+	// The reset-password page sends people back here with ?reset=1.
+	useEffect(() => {
+		if (new URLSearchParams(window.location.search).get('reset')) {
+			setNotice('Password updated. Please sign in with your new password.');
+		}
+	}, []);
 
 	const handleOAuthLogin = async (provider: 'google' | 'github') => {
 		const { error } = await supabase.auth.signInWithOAuth({
@@ -79,7 +88,11 @@ export default function LoginPage() {
 								<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
 								<button type="submit">Sign in with email</button>
 							</form>
+							{notice && <div className="success" role="status">{notice}</div>}
 							{error && <div className="error">{error}</div>}
+							<p className="text-sm mb-3">
+								<Link href="/forgot-password" className="underline">Forgot password?</Link>
+							</p>
 							<div  className="flex flex-col gap-3 ">
 								<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
 								<button onClick={() => handleOAuthLogin('github')}>Sign in with GitHub</button>

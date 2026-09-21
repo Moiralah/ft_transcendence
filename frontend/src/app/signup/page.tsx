@@ -8,7 +8,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession } from '@/lib/auth';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -28,8 +28,8 @@ export default function SignupPage() {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
       return;
     }
 
@@ -114,7 +114,7 @@ export default function SignupPage() {
         />
         <input
           type="password"
-          placeholder="Password (min. 6 characters)"
+          placeholder={`Password (min. ${MIN_PASSWORD_LENGTH} characters)`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
