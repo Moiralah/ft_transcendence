@@ -3,7 +3,8 @@ import * as bcrypt from 'bcryptjs';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
 import {
-	Injectable, BadRequestException, UnauthorizedException, ForbiddenException,
+	Injectable, Logger, HttpException, HttpStatus,
+	BadRequestException, UnauthorizedException, ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -11,8 +12,21 @@ import { AuthService } from '../auth.service';
 
 const RECOVERY_CODE_COUNT = 8;
 
+// A 6-digit TOTP only has 1,000,000 values, so unlimited guesses during the
+// challenge token's 5-minute life would be brute-forceable. After this many
+// wrong codes the account's 2FA login is refused for LOCKOUT_MS.
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MS = 3 * 60 * 1000;
+
 @Injectable()
 export class TwoFactorService {
+	private readonly logger = new Logger(TwoFactorService.name);
+	// Keyed by user id, not challenge token: an attacker who has the password
+	// can just log in again for a fresh challenge token. In-memory, so it resets
+	// on backend restart and isn't shared between instances — fine for one
+	// container here; a multi-instance deployment would need Redis or the DB.
+	private readonly failedAttempts = new Map<string, { count: number; last: number; lockedUntil: number }>();
+
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly jwt: JwtService,
@@ -90,20 +104,58 @@ export class TwoFactorService {
 			throw new UnauthorizedException('Invalid challenge token.');
 		}
 
+		// Checked before the code, and even a correct code is refused while
+		// locked — otherwise the guessing could just continue until it hits.
+		this.assertNotLocked(payload.sub);
+
 		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: payload.sub } });
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
 			throw new ForbiddenException('2FA is not enabled for this account.');
 		}
 
 		if (authenticator.verify({ token: code, secret: user.twoFactorSecret })) {
+			this.failedAttempts.delete(user.id);
 			return this.auth.issueSession(user);
 		}
 
 		if (await this.tryConsumeRecoveryCode(user.id, code)) {
+			this.failedAttempts.delete(user.id);
 			return this.auth.issueSession(user);
 		}
 
+		this.recordFailure(user.id);
 		throw new UnauthorizedException('Invalid 2FA code.');
+	}
+
+	private assertNotLocked(userId: string) {
+		const entry = this.failedAttempts.get(userId);
+		if (entry && entry.lockedUntil > Date.now()) {
+			const minutes = Math.ceil((entry.lockedUntil - Date.now()) / 60000);
+			throw new HttpException(
+				`Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+				HttpStatus.TOO_MANY_REQUESTS,
+			);
+		}
+	}
+
+	// Logs the user id and counts only — never the submitted code.
+	private recordFailure(userId: string) {
+		const now = Date.now();
+		let entry = this.failedAttempts.get(userId);
+		// Old failures (or a finished lockout) don't count against a fresh try.
+		if (!entry || now - entry.last > LOCKOUT_MS) {
+			entry = { count: 0, last: now, lockedUntil: 0 };
+		}
+		entry.count++;
+		entry.last = now;
+		if (entry.count >= MAX_FAILED_ATTEMPTS) {
+			entry.lockedUntil = now + LOCKOUT_MS;
+			entry.count = 0;
+			this.logger.warn(`2FA login locked for user ${userId}: ${MAX_FAILED_ATTEMPTS} failed attempts, ${LOCKOUT_MS / 60000} min lockout`);
+		} else {
+			this.logger.warn(`2FA login failed for user ${userId} (${entry.count}/${MAX_FAILED_ATTEMPTS})`);
+		}
+		this.failedAttempts.set(userId, entry);
 	}
 
 	private async tryConsumeRecoveryCode(userId: string, code: string): Promise<boolean> {
