@@ -62,6 +62,8 @@ export function TwoFactorPrompt({ challengeToken, onVerified }: TwoFactorPromptP
 				<Button
 					type="button"
 					variant="ghost"
+					// The ghost variant is a fixed w-24 (fine for "Search"), too narrow for this label.
+					className="!w-full"
 					onClick={() => {
 						setUseRecoveryCode((v) => !v);
 						setCode('');
