@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
 				<Typography as="h1" variant="h2" className="mb-2">
 					Privacy Policy
 				</Typography>
-				<p className="text-sm text-slate-500 mb-10">Last updated: 2026-09-19</p>
+				<p className="text-sm text-slate-500 mb-10">Last updated: 2026-09-21</p>
 
 				<p className="text-slate-600 text-base leading-relaxed mb-10 border-l-4 border-slate-200 pl-4">
 					My Simple Family Tree is a student project built for the ft_transcendence
@@ -102,10 +102,16 @@ export default function PrivacyPolicyPage() {
 				</Section>
 
 				<Section title="7. Your Rights and Choices">
-					<p>You can view and edit your own profile at any time. You can delete profiles or
-					leave a tree you belong to. Site administrators can delete accounts (including
-					yours) if needed — this is logged. If you want your account and associated data
-					fully removed, contact a project admin.</p>
+					<p>You can view and edit your own profile at any time, and you can leave a tree
+					you belong to. Tree admins and moderators can delete placeholder (made-up)
+					profiles that nobody has claimed. Site administrators can delete accounts
+					(including yours) if needed.</p>
+					<p>Deleting an account removes your login and your account details — your email
+					address, username, and any two-factor settings and recovery codes — but it does
+					not automatically delete the family tree records tied to you. Your profile (for
+					example your name and dates) stays in the trees it belongs to as an unclaimed
+					entry, because other relatives may be linked to it. If you want that information
+					fully removed as well, contact a project admin.</p>
 				</Section>
 
 				<Section title="8. Changes to This Policy">
