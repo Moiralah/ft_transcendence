@@ -130,7 +130,7 @@
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. Everything else is
-    one path: browser → WAF → our backend → Postgres. Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (when run with <code>make security</code>, at <code>https://localhost:8443</code>; plain <code>make up</code> has no WAF). Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -144,7 +144,7 @@
       <rect x="30" y="46" width="220" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
       <text x="52" y="80" class="box-label" fill="var(--browser)">Browser</text>
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
-      <text x="52" y="116" class="box-sub" fill="var(--sub)">:3000 (HTTPS, self-signed)</text>
+      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (:3000 direct)</text>
       <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">localStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
@@ -330,6 +330,22 @@
       <pre>GET /api/trees/search?name=smith' OR '1'='1
   via :9443 (WAF)     → 403 Forbidden, blocked
   via :4000 (direct)  → reaches NestJS unfiltered</pre>
+      Two false positives on normal use were tuned out on the backend WAF only:
+      <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> are allowed (rule 911100 only permits GET/HEAD/POST/OPTIONS by default),
+      and the JSON field <code>profileId</code> no longer trips rule 930120 (<code>waf/backend-exclusions.conf</code>).
+      Values are still inspected and every other rule still applies.
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ic">🔀</div>
+    <div>
+      <strong>How the app actually reaches the WAF:</strong> the browser calls the API directly (not through the
+      frontend), so putting a WAF in front of the frontend alone would inspect none of it. In the security stack
+      <code>docker-compose-security.yml</code> therefore sets <code>NEXT_PUBLIC_API_URL=https://localhost:9443/api</code>
+      on the frontend and <code>CORS_ORIGIN=https://localhost:8443</code> on the backend, and Supabase's redirect
+      allowlist includes <code>https://localhost:8443</code> for OAuth. Open the app on <code>:8443</code>; on
+      <code>:3000</code> its API calls fail CORS. <code>make up</code> and <code>.env</code> are unchanged.
     </div>
   </div>
 
@@ -350,7 +366,7 @@
       <strong>Vault is dev mode — resets on every restart:</strong> in-memory only, no storage backend, unsealed
       automatically with a hardcoded root token. That's why <code>make security</code> runs
       <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
-      all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch. A real
+      all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch — seeded from <code>.env</code>, which is still required. A real
       deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead.
     </div>
   </div>
@@ -360,9 +376,10 @@
     <div>
       <strong>Not locked down yet:</strong> <code>:3000</code>/<code>:4000</code> are still directly exposed
       alongside the WAF ports, kept that way deliberately while proving the WAF works so nothing else in the
-      stack broke. A WAF with a bypass path isn't actually protecting anything — the remaining step is removing
-      <code>backend</code>/<code>frontend</code>'s direct <code>ports:</code> in <code>docker-compose.yml</code>
-      so the WAF is the only public entry point.
+      stack broke. A WAF with a bypass path isn't actually protecting anything — the remaining step is closing
+      them for the security stack only: two commented-out <code>ports: !reset []</code> lines in
+      <code>docker-compose-security.yml</code> (so plain <code>make up</code> keeps working). They stay commented
+      until every flow has been tested through the WAF.
     </div>
   </div>
 
