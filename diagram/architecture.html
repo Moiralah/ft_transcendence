@@ -394,6 +394,27 @@
       this. See <strong>README → Running Supabase Locally</strong> for the full fix.
     </div>
   </div>
+
+  <div class="callout">
+    <div class="ic">🚧</div>
+    <div>
+      <strong>Going to production (in progress, not live yet):</strong> everything above describes
+      the proven <em>local</em> system — nothing here is deployed yet, so don't read this box as a
+      claim about what's running. Plan: reuse the user's existing free-tier GCP <code>e2-micro</code>
+      (already serving their personal site) via a new subdomain, <code>ft.natscho.my</code>, rather
+      than a path on the existing site or a new domain — keeps Next.js/Nest assuming they own the
+      root path, and keeps this WAF's one-port-per-service model unchanged. Done so far: Docker
+      installed on the VM; freed RAM headroom (disabled <code>netdata</code>, a monitoring
+      dashboard — left <code>crowdsec</code>/<code>fail2ban</code>, the VM's actual defenses,
+      untouched) and added 2GB swap, since the box was already using over half its 1GB RAM before
+      this project touches it. Still open: production-mode Dockerfiles (the local ones run dev
+      servers on purpose, fine for hot-reload, wrong for production), a real Let's Encrypt cert
+      once the subdomain resolves, opening the WAF's ports through the VM's firewall, and bringing
+      production's Supabase schema up to date — deliberately gated on a fresh backup and an
+      explicit go right before, not bundled into general instructions. Full detail in
+      <code>tching/progress_log.md</code> (gitignored, not in this diagram's own repo history).
+    </div>
+  </div>
 </div>
 </body>
 </html>

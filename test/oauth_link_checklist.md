@@ -75,8 +75,16 @@ settings before relying on it — hasn't been tried here).
       `127.0.0.1:54324`) does not exist in production. Without a custom SMTP provider
       configured, the hosted project's built-in email sending has a **very low rate limit**
       (a handful of emails per hour) — nowhere near enough for real signup confirmations or
-      password resets. Configure a real SMTP provider (Resend, SendGrid, Postmark, etc.) before
-      relying on `/forgot-password` or email confirmations in production.
+      password resets.
+      **Decision: use a personal Gmail account.** `smtp.gmail.com`, port `587`, username =
+      the Gmail address, password = a Google Account **App Password** (Security → App
+      Passwords — needs 2-Step Verification on first), sender email = the same address (Gmail
+      rejects/rewrites a From that doesn't match the authenticated account or a verified
+      alias). Fine at this project's volume (Gmail's personal cap is ~500/day); the only real
+      risk is Google occasionally flagging automated-looking sending on a personal account —
+      low probability, worst case is a temporary SMTP block, not data loss. After enabling it,
+      also raise Supabase's own auth email rate limit — it stays at the conservative built-in-
+      mailer default until you change it, even once custom SMTP is configured.
 - [ ] Re-check `RecoveryCode` and the 2FA columns exist in production's `User` table — the
       schema drift found during the 2026-09-22 production backup means these are **not there
       yet**; `prisma db push` (or migrations) need to run against production before 2FA/recovery
