@@ -60,6 +60,13 @@ ROLE_ID=$(curl -s -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/
 SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id" \
   | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id'])")
 
+# Overridable so a production deploy can add docker-compose.prod.yml — without this,
+# this restart would recreate `backend` using only the base + security files, silently
+# reverting it from the `prod` build target back to `dev` (found while testing the
+# production compose locally: the container's CMD was still `node dist/main.js` only
+# because this script errored out *before* reaching this line that run).
+COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.yml -f docker-compose-security.yml}"
+
 echo "[vault-init] starting backend with AppRole credentials..."
 DATABASE_URL="$DATABASE_URL_DOCKER" \
 DIRECT_URL="$DIRECT_URL_DOCKER" \
@@ -67,6 +74,6 @@ SUPABASE_AUTH_URL="$SUPABASE_AUTH_URL_DOCKER" \
 VAULT_ADDR="http://vault:8200" \
 VAULT_ROLE_ID="$ROLE_ID" \
 VAULT_SECRET_ID="$SECRET_ID" \
-  docker compose -f docker-compose.yml -f docker-compose-security.yml up -d backend
+  docker compose $COMPOSE_FILES up -d backend
 
 echo "[vault-init] done."

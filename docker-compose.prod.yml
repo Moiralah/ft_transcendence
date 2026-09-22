@@ -1,0 +1,64 @@
+# Production override. Additive on top of docker-compose.yml + docker-compose-security.yml,
+# same pattern as docker-compose-security.yml itself — never edit docker-compose.yml's dev
+# behaviour to make this work. Run on the VM with:
+#
+#   docker compose -f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml up -d --build
+#
+# Needs its own .env on the VM (not this repo's local one) — same variable names as
+# .env.example, with production values: the real Supabase project's keys, and
+# NEXT_PUBLIC_API_URL / CORS_ORIGIN pointed at the real domain (below).
+#
+# What this changes vs. the local security stack:
+# - `target: prod` on backend/frontend (production builds, not dev servers — see each
+#   Dockerfile's prod stage) and no bind-mounted source, so the built image is what
+#   actually runs, not whatever happens to be on disk.
+# - Frontend serves plain HTTP internally (`next start` can't do HTTPS at all — see
+#   frontend/Dockerfile's prod stage comment), so waf-frontend's upstream target changes
+#   from https:// to http://. waf-backend is unchanged: the backend still serves its own
+#   HTTPS internally regardless of dev/prod, so there was nothing to fix there.
+# - CORS_ORIGIN / NEXT_PUBLIC_API_URL point at the real domain instead of localhost.
+# - Vault's :8200 is not published. Locally that's moot (nothing external reaches your own
+#   machine's :8200 anyway); on a VM with a real public IP it's a real difference — Vault
+#   here runs in dev mode with a hardcoded, publicly-known root token
+#   (`dev-only-root-token`, visible in docker-compose-security.yml), so leaving that port
+#   open on the internet would hand out full read/write access to anyone who found it.
+#
+# Known gap, not fixed by this file: the WAF still serves a self-signed certificate to the
+# public internet (same certs/ as local dev). A real cert (Let's Encrypt, now that the
+# subdomain resolves) is a follow-up step, not yet wired in here.
+
+services:
+  backend:
+    build:
+      target: prod
+    environment:
+      NODE_ENV: production
+      CORS_ORIGIN: "https://ft.natscho.my:8443"
+    # !override, not !reset: main.ts unconditionally reads certs from /app/certs
+    # regardless of dev/prod (it's not gated behind NODE_ENV) — dropping this mount
+    # entirely would crash the backend on boot. Only the source/node_modules dev
+    # mounts are actually meant to go away here.
+    volumes: !override
+      - ./certs:/app/certs
+
+  frontend:
+    build:
+      target: prod
+      # Build-time, not just runtime — see frontend/Dockerfile's prod stage comment.
+      # NEXT_PUBLIC_SUPABASE_URL/ANON_KEY come from the VM's .env (same names as
+      # .env.example); NEXT_PUBLIC_API_URL is fixed to the real domain here, same
+      # as docker-compose-security.yml does for the local security stack.
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_API_URL: "https://ft.natscho.my:9443/api"
+    environment:
+      NEXT_PUBLIC_API_URL: "https://ft.natscho.my:9443/api"
+    volumes: !reset []
+
+  waf-frontend:
+    environment:
+      BACKEND: "http://frontend:3000"
+
+  vault:
+    ports: !reset []

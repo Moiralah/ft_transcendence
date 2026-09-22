@@ -4,6 +4,10 @@ services:
   backend:
     build:
       context: ./backend
+      # Pinned explicitly (not relying on "last stage in the Dockerfile" being the
+      # default) so adding docker-compose.prod.yml's `prod` stage can never silently
+      # change what local `make up`/`make security` build.
+      target: dev
       args:
         DATABASE_URL: ${DATABASE_URL}
     restart: unless-stopped
@@ -26,7 +30,9 @@ services:
       - ./certs:/app/certs
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: dev
     restart: unless-stopped
     depends_on:
       - backend
