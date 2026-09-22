@@ -69,3 +69,5 @@ generated/
 
 # Personal Files
 tching/
+# local/production DB backups — never commit real data
+db-backups/
