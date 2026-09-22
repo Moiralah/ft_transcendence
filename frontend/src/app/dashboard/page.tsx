@@ -10,20 +10,9 @@ import { Footer } from '../../components/footer';
 import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
-import { ProfileModal } from '../../components/profileModal';
+import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession } from '@/lib/auth';
-
-interface Profile {
-  id?: number;
-  firstName: string;
-  lastName?: string;
-  gender?: "male" | "female" | null;
-  birthDate?: string;
-  deathDate?: string;
-  bio?: string;
-  photoUrl?: string;
-}
 
 export default function TreePage() {
   const router = useRouter();

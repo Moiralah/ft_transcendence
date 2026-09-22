@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, router } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 
@@ -15,11 +15,12 @@ import { TreeBranch } from '@/components/treeBranch';
 export default function Content() {
 
   const params = useParams();
-  const treeId = params.id as number;
+  const router = useRouter();
+  const treeId = params.id as string;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState();
-  const [tree, setTree] = useState('');
+  const [tree, setTree] = useState<any>(null);
   const [treesMember, setTreesMember] = useState([]);
   const [searchMember, setSearchMember] = useState('');
   

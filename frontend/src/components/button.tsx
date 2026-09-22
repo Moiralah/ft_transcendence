@@ -9,6 +9,8 @@ interface ButtonProps {
   className?: string;
   onClick?: () => void;
   type?: 'button' | 'submit';
+  disabled?: boolean;
+  'aria-label'?: string;
 }
 
 export function Button
@@ -16,8 +18,10 @@ export function Button
   children, href, 
   variant = 'primary', 
   className = '', 
-  onClick, 
+  onClick,
   type = 'button',
+  disabled,
+  'aria-label': ariaLabel,
 }: ButtonProps) {
   const baseStyles = "inline-flex items-center justify-center font-semibold rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2 whitespace-nowrap";
   const variants = {
@@ -37,10 +41,12 @@ export function Button
   }
   {/* other than href type button */}
   return (
-    <button 
-      type={type}          
-      onClick={onClick} 
+    <button
+      type={type}
+      onClick={onClick}
       className={combinedClasses}
+      disabled={disabled}
+      aria-label={ariaLabel}
     >
       {children}
     </button>
