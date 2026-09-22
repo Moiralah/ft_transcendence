@@ -38,7 +38,7 @@ export function TreeBranch({
   const getMember = (targetId?: number | null): Member | undefined => {
     if (!targetId) return undefined;
     return allMembers.find(
-      (m) => m.profileId === targetId || m.id === targetId
+      (m) => m.profileId === targetId
     );
   };
 

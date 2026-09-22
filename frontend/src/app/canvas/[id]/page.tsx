@@ -150,7 +150,6 @@ export default function Content() {
     setRootMember(member);
     setTreeMemberModal(false);
   }
-
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
       <SkipLink />

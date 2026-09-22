@@ -122,7 +122,7 @@ export function TreeNode({
           </div>
         </div>
         <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">
-          {nodeMember.id || ' '}
+          {nodeMember.profileId || ' '}
         </div>
       </div>
 
