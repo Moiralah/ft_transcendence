@@ -29,12 +29,25 @@ echo "[vault-init] reading secret values from .env..."
 # bitten this project before). Strip it explicitly.
 JWT_SECRET=$(grep -E '^JWT_SECRET=' .env | cut -d= -f2- | tr -d '\r')
 SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SUPABASE_SERVICE_ROLE_KEY=' .env | cut -d= -f2- | tr -d '\r')
-# Container-side values, not the host-side ones in .env — the backend
-# reads these from inside Docker, where 127.0.0.1 means the container
-# itself, not the host. See README "Running Supabase Locally".
-DATABASE_URL_DOCKER="postgresql://postgres:postgres@host.docker.internal:54322/postgres"
-DIRECT_URL_DOCKER="postgresql://postgres:postgres@host.docker.internal:54322/postgres"
-SUPABASE_AUTH_URL_DOCKER="http://host.docker.internal:54321"
+DATABASE_URL_RAW=$(grep -E '^DATABASE_URL=' .env | cut -d= -f2- | tr -d '\r')
+DIRECT_URL_RAW=$(grep -E '^DIRECT_URL=' .env | cut -d= -f2- | tr -d '\r')
+SUPABASE_AUTH_URL_RAW=$(grep -E '^SUPABASE_AUTH_URL=' .env | cut -d= -f2- | tr -d '\r')
+# In LOCAL dev, Supabase/Postgres run on the HOST (127.0.0.1/localhost),
+# which inside the backend's Docker container means the container itself,
+# not the host — rewrite to host.docker.internal. See README "Running
+# Supabase Locally". In PRODUCTION, .env already points at a real,
+# internet-reachable Supabase project, so this must NOT rewrite it — doing
+# so previously sent the deployed backend to host.docker.internal, which
+# doesn't even resolve in that container, silently breaking every DB call
+# and every token verification (found 2026-09-23, see progress_log.md).
+# Only touch values that actually are a loopback address; pass anything
+# else through unchanged.
+rewrite_loopback() {
+  echo "$1" | sed -E 's#://(127\.0\.0\.1|localhost)([:/])#://host.docker.internal\2#'
+}
+DATABASE_URL_DOCKER=$(rewrite_loopback "$DATABASE_URL_RAW")
+DIRECT_URL_DOCKER=$(rewrite_loopback "$DIRECT_URL_RAW")
+SUPABASE_AUTH_URL_DOCKER=$(rewrite_loopback "$SUPABASE_AUTH_URL_RAW")
 
 echo "[vault-init] writing secret/data/family-tree/backend..."
 curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
