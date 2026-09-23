@@ -1,4 +1,4 @@
-import React from 'react';
+import React ,{ useState, useEffect}from 'react';
 import { TreeNode } from './treeNode';
 
 export interface Member {
@@ -29,20 +29,25 @@ export function TreeBranch({
   allMembers,
   currentMember,
 }: TreeBranchProp) {
+
   interface FamilyMembers {
     children: Member[];
     spouse?: Member | null;
   }
 
-  // 1. Dual ID lookup helper (returns undefined on fail)
+  const [localMembers, setLocalMember] = useState<Member[]>(allMembers);
+  
+  useEffect(() => {
+    setLocalMember(allMembers);
+  }, [allMembers]);
+
   const getMember = (targetId?: number | null): Member | undefined => {
     if (!targetId) return undefined;
-    return allMembers.find(
+    return localMembers.find(
       (m) => m.profileId === targetId
     );
   };
 
-  // 2. Safe family extractor
   const getFamilyMembers = (parent?: Member): FamilyMembers => {
     if (!parent) return { children: [], spouse: undefined };
 
@@ -55,22 +60,60 @@ export function TreeBranch({
     return { children, spouse };
   };
 
-  // 3. Early return guard if currentMember is missing
   if (!currentMember) return null;
 
-  // 4. Destructure family members for rendering
   const { spouse, children } = getFamilyMembers(currentMember);
+
+  // const handleAddMember = (BranchAddMember: Member) => {
+  //   currentMember.childrenIds = [...(currentMember.childrenIds ?? []), BranchAddMember.profileId]
+  //   setLocalMember((prev) => [...prev, BranchAddMember])
+  // }
+
+const handleAddMember = (BranchAddMember: Member) => {
+  // 1. Safely resolve the ID regardless of whether the backend returned 'profileId' or 'id'
+  const childId = BranchAddMember.profileId ?? BranchAddMember.id;
+  const parentId = currentMember.profileId ?? currentMember.id;
+
+  if (!childId) return;
+
+  // 2. Mutate in-place so currentMember reference in scope sees the change
+  currentMember.childrenIds = [...(currentMember.childrenIds ?? []), childId];
+
+  // 3. Immutably update state so React detects the change and triggers the UI re-render
+  setLocalMember((prev) => {
+    const updatedList = prev.map((m) => {
+      const isCurrentParent = (m.profileId ?? m.id) === parentId;
+      if (isCurrentParent) {
+        return {
+          ...m,
+          childrenIds: [...(m.childrenIds ?? []), childId],
+        };
+      }
+      return m;
+    });
+
+    return [...updatedList, BranchAddMember];
+  });
+};
 
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Primary Node & Spouse Unit */}
       <div className="flex flex-row items-center gap-4">
-        <TreeNode members={allMembers} currentMember={currentMember} />
+        <TreeNode 
+          members={localMembers} 
+          currentMember={currentMember} 
+          NodeAddMember={handleAddMember}
+        />
 
         {spouse && (
           <div className="flex items-center gap-2">
             <span className="text-gray-400 text-xl font-bold">=</span>
-            <TreeNode members={allMembers} currentMember={spouse} />
+            <TreeNode 
+              members={localMembers} 
+              currentMember={spouse}
+              NodeAddMember={handleAddMember}
+            />
           </div>
         )}
       </div>
@@ -81,7 +124,7 @@ export function TreeBranch({
           {children.map((child) => (
             <TreeBranch
               key={child.profileId ?? child.id}
-              allMembers={allMembers}
+              allMembers={localMembers}
               currentMember={child}
             />
           ))}

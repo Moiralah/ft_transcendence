@@ -25,11 +25,13 @@ const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
 interface TreeNodeProp {
   members: Member[];
   currentMember?: Member;
+  NodeAddMember: (addMember: Member) => void;
 }
 
 export function TreeNode({
   members,
   currentMember,
+  NodeAddMember,
 }: TreeNodeProp) {
 
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
@@ -40,18 +42,7 @@ export function TreeNode({
     setNodeMember(currentMember);
   }, [currentMember]);
 
-
-
   if (!nodeMember) return null;
-
-  const AddChildNode = () => {
-
-  }
-
-  const AddSpouseNode = () => {
-
-  }
-
 
   const handleDeleteNode = async() => {
     try {
@@ -61,7 +52,7 @@ export function TreeNode({
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch (`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.profileId}`, {
-        method: "POST",
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -141,12 +132,12 @@ export function TreeNode({
           setNodeMember(updatedMember);
           setNodeProfileModal(false);
         }}
-        onAddChild={() => {
-          AddChildNode();
+        onAddChild={(newChildMember: Member) => {
+          NodeAddMember(newChildMember);
           setNodeProfileModal(false);      
         }}
-        onAddSpouse={() => {
-          AddSpouseNode();
+        onAddSpouse={(newSpouseMember: Member) => {
+          NodeAddMember(newSpouseMember);
           setNodeProfileModal(false);      
         }}
       />

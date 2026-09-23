@@ -25,8 +25,8 @@ interface nodeProfileModalProp {
     member: Member;
     onClose: () => void;
     onSave: (updatedMember : Member) => void;
-    onAddChild: ()=> void;
-    onAddSpouse: ()=> void;
+    onAddChild: (newChildMember: Member)=> void;
+    onAddSpouse: (newSpouseMember: Member)=> void;
 }
 
 export function NodeProfileModal ({
@@ -69,7 +69,7 @@ export function NodeProfileModal ({
     if (member) {
       setFormMember(member);
     }
-  }, [member]); // Re-run whenever the member prop changes
+  }, [member]);
 
   const handleAddChild = async() => {
     try {
@@ -92,11 +92,22 @@ export function NodeProfileModal ({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      if (onAddChild)
-        onAddChild();
-      if (onClose) {
-        onClose();
-      }
+
+      const rawResponseBody = await res.json();
+      const serverData = rawResponseBody.data || rawResponseBody;
+
+console.log("=== API RETURNED ===", serverData);
+console.log("Keys in returned object:", Object.keys(serverData));
+console.log("ID check:", { id: serverData.id, profileId: serverData.profileId, childrenIds: serverData.childrenIds });
+
+      const newChildMember: Member = {
+        ...serverData,
+      } ;
+        if (onAddChild)
+          onAddChild(newChildMember);
+        if (onClose) {
+          onClose();
+        }
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
@@ -123,11 +134,18 @@ const handleAddSpouse = async() => {
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      if (onAddSpouse)
-        onAddSpouse();
-      if (onClose) {
-        onClose();
-      }
+
+      const rawResponseBody = await res.json();
+      const serverData = rawResponseBody.data || rawResponseBody;
+
+      const newSpouseMember: Member = {
+        ...serverData,
+      } ;
+        if (onAddSpouse)
+          onAddSpouse(newSpouseMember);
+        if (onClose) {
+          onClose();
+        }
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
@@ -224,7 +242,7 @@ const handleAddSpouse = async() => {
                       onChange={handleChange}
                       onKeyDown={handleNameKeyDown}
                       onBlur={handleNameBlur}
-                      aira-label="Edit Last Name"
+                      aria-label="Edit Last Name"
                       className="min-w-48 flex flex-row"
                     />
                     </div>
