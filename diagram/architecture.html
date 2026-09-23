@@ -395,23 +395,39 @@
     </div>
   </div>
 
+  <div class="callout ok">
+    <div class="ic">🌐</div>
+    <div>
+      <strong>Live in production:</strong> this same architecture — unchanged, not a different
+      design — is now genuinely running on the user's existing free-tier GCP <code>e2-micro</code>
+      VM (already serving their personal site), reached via a new subdomain,
+      <code>ft.natscho.my</code>, instead of a path on the existing site or a new domain. Verified
+      from <em>outside</em> the VM, over the real public internet, not just over SSH:
+      <pre>https://ft.natscho.my:8443/login                    → 200
+https://ft.natscho.my:9443/api/trees/my-trees      → 401 (reaches the real app, unauth'd)
+https://ft.natscho.my:4000/ and :3000/             → connection refused (no bypass path)
+SQLi payload via :9443                             → 403 (WAF blocking it for real, not just locally)
+backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
+      Production build (the real <code>prisma generate && nest build</code> / <code>next
+      build</code>, not the dev servers pictured above), correct <code>linux/amd64</code> images,
+      Vault bound to <code>127.0.0.1:8200</code> (loopback only — its dev-mode root token is
+      hardcoded and visible in this public repo, so it can't be left open on a box with a real
+      public IP). Repo and live deployment are in sync (<code>branchsaurus</code>,
+      <code>481b48f</code>).
+    </div>
+  </div>
+
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Going to production (in progress, not live yet):</strong> everything above describes
-      the proven <em>local</em> system — nothing here is deployed yet, so don't read this box as a
-      claim about what's running. Plan: reuse the user's existing free-tier GCP <code>e2-micro</code>
-      (already serving their personal site) via a new subdomain, <code>ft.natscho.my</code>, rather
-      than a path on the existing site or a new domain — keeps Next.js/Nest assuming they own the
-      root path, and keeps this WAF's one-port-per-service model unchanged. Done so far: Docker
-      installed on the VM; freed RAM headroom (disabled <code>netdata</code>, a monitoring
-      dashboard — left <code>crowdsec</code>/<code>fail2ban</code>, the VM's actual defenses,
-      untouched) and added 2GB swap, since the box was already using over half its 1GB RAM before
-      this project touches it. Still open: production-mode Dockerfiles (the local ones run dev
-      servers on purpose, fine for hot-reload, wrong for production), a real Let's Encrypt cert
-      once the subdomain resolves, opening the WAF's ports through the VM's firewall, and bringing
-      production's Supabase schema up to date — deliberately gated on a fresh backup and an
-      explicit go right before, not bundled into general instructions. Full detail in
+      <strong>Still open on the live deployment:</strong> the TLS cert is still self-signed —
+      a real Let's Encrypt cert is next now that the subdomain resolves. The production Supabase
+      schema is still behind the app's current <code>schema.prisma</code> (missing
+      <code>RecoveryCode</code>, the 2FA columns) — a fresh backup is taken and the exact migration SQL previewed as
+      additive-only (confirmed safe against a full local clone of prod, not just in the abstract),
+      but applying it for real is deliberately gated on an explicit go right before it happens, not
+      bundled into general instructions. GCP/GitHub/Supabase OAuth dashboard config (redirect URIs
+      for the real domain) hasn't been done yet either. Full detail in
       <code>tching/progress_log.md</code> (gitignored, not in this diagram's own repo history).
     </div>
   </div>
