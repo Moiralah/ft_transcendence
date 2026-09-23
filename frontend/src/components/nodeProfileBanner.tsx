@@ -92,6 +92,18 @@ export function NodeProfileModal ({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
+
+    const data = await res.json();
+
+    console.log("ADD CHILD RESPONSE", data);
+    console.log("isArray?", Array.isArray(data));
+
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        console.log(`item ${index}`, item);
+      });
+    }
+
       if (onAddChild)
         onAddChild();
       if (onClose) {
