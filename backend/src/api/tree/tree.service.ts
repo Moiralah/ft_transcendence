@@ -225,6 +225,51 @@ export class TreeService {
 		return { ...tree, userRole: member.role };
 	}
 
+	async update(
+	treeId: number,
+	requesterProfileId: number,
+	data: {
+		name?: string;
+		description?: string;
+		isPublic?: boolean;
+	},
+	) {
+		const tree = await this.prisma.tree.findUnique({
+			where: { id: treeId },
+		});
+
+		if (!tree) {
+			throw new NotFoundException('Tree not found.');
+		}
+
+		// Only owner can update tree settings
+		if (tree.ownerId !== requesterProfileId) {
+			throw new ForbiddenException(
+				'Only the tree owner can update tree details.',
+			);
+		}
+
+		const updatedTree = await this.prisma.tree.update({
+			where: { id: treeId },
+			data: {
+				name: data.name,
+				description: data.description,
+				isPublic: data.isPublic,
+			},
+		});
+
+		await this.prisma.auditLog.create({
+			data: {
+				treeId,
+				profileId: requesterProfileId,
+				action: 'UPDATE_TREE',
+				details: `Updated tree "${updatedTree.name}"`,
+			},
+		});
+		
+		return updatedTree;
+	}
+
 	// Add a made-up (placeholder) profile node.
 	// ADMIN/MODERATOR can attach it anywhere in the tree.
 	// A plain MEMBER can only attach it as their own mother, father, or child.

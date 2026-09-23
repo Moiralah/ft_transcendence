@@ -1,5 +1,5 @@
 import {
-	Body, Controller, Delete, Get, Param, Post, Put, UseGuards, BadRequestException,
+	Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards, BadRequestException,
 	Req, Query,
 } from '@nestjs/common';
 import { TreeService } from './tree.service';
@@ -49,6 +49,16 @@ export class TreeController {
 	@UseGuards(JwtAuthGuard)
 	async getTree(@Req() req, @Param('treeId') id: string) {
 		return this.treeService.getTreeById(Number(id), req.user.profileId);
+	}
+
+	@Patch(':treeId')
+	@UseGuards(JwtAuthGuard)
+	async update(@Req() req, @Param('treeId') treeId: string, @Body() body: any) {
+		return this.treeService.update(
+			Number(treeId), 
+			req.user.profileId,
+			body
+		);
 	}
 
 	@Put(':treeId/role/:targetProfileId')
@@ -163,6 +173,4 @@ export class TreeController {
 	async getPendingClaims(@Req() req, @Param('treeId') treeId: string) {
 		return this.treeService.getPendingClaims(Number(treeId), req.user.profileId);
 	}
-
-
 }
