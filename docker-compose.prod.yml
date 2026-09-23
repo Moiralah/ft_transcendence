@@ -17,11 +17,15 @@
 #   from https:// to http://. waf-backend is unchanged: the backend still serves its own
 #   HTTPS internally regardless of dev/prod, so there was nothing to fix there.
 # - CORS_ORIGIN / NEXT_PUBLIC_API_URL point at the real domain instead of localhost.
-# - Vault's :8200 is not published. Locally that's moot (nothing external reaches your own
-#   machine's :8200 anyway); on a VM with a real public IP it's a real difference — Vault
-#   here runs in dev mode with a hardcoded, publicly-known root token
-#   (`dev-only-root-token`, visible in docker-compose-security.yml), so leaving that port
-#   open on the internet would hand out full read/write access to anyone who found it.
+# - Vault's :8200 is bound to the VM's own loopback only (127.0.0.1:8200:8200), not
+#   0.0.0.0. Locally that distinction is moot (nothing external reaches your own
+#   machine's :8200 anyway); on a VM with a real public IP it matters — Vault here runs
+#   in dev mode with a hardcoded, publicly-known root token (`dev-only-root-token`,
+#   visible in docker-compose-security.yml), so leaving it open to 0.0.0.0 would hand
+#   out full read/write access to anyone who found it. Binding to loopback keeps it
+#   reachable from the VM itself (which is all vault-init.sh, run over SSH, needs) while
+#   still unreachable from the public internet — no need to route its bootstrap through
+#   the Docker network instead, which is what "not published at all" would have required.
 #
 # Known gap, not fixed by this file: the WAF still serves a self-signed certificate to the
 # public internet (same certs/ as local dev). A real cert (Let's Encrypt, now that the
@@ -61,4 +65,5 @@ services:
       BACKEND: "http://frontend:3000"
 
   vault:
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:8200:8200"
