@@ -217,7 +217,7 @@ We have chosen the following modules.
 | Use a backend framework (NestJS) | Minor | 1 | ✅ Done | NestJS 10 |
 | Use an ORM (Prisma) | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
 | Custom design system with ≥10 reusable components | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
-| **Remote authentication with OAuth 2.0 (Google, GitHub)** | Minor | 1 | 🔄 Partial | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route) and verified Google login end-to-end against a local Supabase instance; still needs Google/GitHub enabled in the shared Supabase project's dashboard |
+| **Remote authentication with OAuth 2.0 (Google, GitHub)** | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local |
 | **Standard user management and authentication** | Major | 2 | 🔄 Partial | Login/signup working, but still need: avatar upload, friends system, online status, profile page |
 | **Advanced permissions system** (global roles) | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users` |
 | **Organization system** (trees as orgs) | Major | 2 | 🔄 Partial | Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system |
@@ -230,12 +230,12 @@ We have chosen the following modules.
 | **Support for additional browsers** (Firefox, Safari, Edge) | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
 | **2FA (Two‑Factor Authentication)** | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
 | **User activity analytics dashboard** | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
-| **Cybersecurity** (WAF + secrets manager) | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access not yet locked down — see README section |
+| **Cybersecurity** (WAF + secrets manager) | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is locked down in this stack (`ports: !reset []` on both) — the WAF is the only way in |
 
 ### Total possible points
-Completed so far: 1+1+1+1+2+1+2 = **9 points**
-Remaining (if we implement everything) = 1+2+2+2+2+1+1+1+2+1+1 = **16 points**
-Minimum required: **14 points** – we have more than enough, so we can choose which to prioritise.
+Completed so far: 1+1+1+1+1+2+1+2 = **10 points**
+Remaining (if we implement everything) = 2+2+2+2+1+1+1+2+1+1 = **15 points**
+Minimum required: **14 points** – currently 4 points short of the minimum; need at least 2 more Major (or equivalent) modules from the remaining list to qualify.
 
 ---
 

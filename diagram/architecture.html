@@ -135,7 +135,7 @@
   </p>
 
   <div class="diagram-card">
-    <svg viewBox="0 0 1010 624" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
+    <svg viewBox="0 0 1010 646" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
       <desc id="dDesc">Browser talks directly to Supabase Auth for login, and to a ModSecurity WAF which forwards to the NestJS backend for everything else; the backend talks to Supabase Auth, to Postgres via Prisma, and once at boot to HashiCorp Vault to fetch its own secrets; Supabase Auth optionally talks to Google or GitHub.</desc>
 
@@ -151,12 +151,13 @@
 
       <!-- ===== Group: Edge ===== -->
       <text x="288" y="34" class="group-title" fill="var(--sub)">Edge</text>
-      <rect x="280" y="150" width="170" height="112" rx="14" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.5"/>
+      <rect x="280" y="150" width="170" height="128" rx="14" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.5"/>
       <text x="298" y="178" class="box-label" fill="var(--waf)">WAF</text>
       <text x="298" y="196" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS</text>
       <text x="298" y="214" class="box-sub mono" fill="var(--sub)">:9443 → backend</text>
       <text x="298" y="230" class="box-sub mono" fill="var(--sub)">:8443 → frontend</text>
       <text x="298" y="248" class="box-sub" fill="var(--waf)">403 on SQLi / XSS</text>
+      <text x="298" y="270" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
 
       <!-- ===== Group: Application services ===== -->
       <text x="488" y="34" class="group-title" fill="var(--sub)">Application services</text>
@@ -167,6 +168,7 @@
       <text x="502" y="94" class="box-sub" fill="var(--ink)">GoTrue — identity only</text>
       <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
       <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
+      <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
 
       <!-- Backend -->
       <rect x="480" y="200" width="230" height="180" rx="14" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.5"/>
@@ -181,15 +183,17 @@
         <text x="610" y="308">/trees</text>
       </g>
       <text x="502" y="354" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
+      <text x="502" y="372" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
 
       <!-- ===== Group: Data & external ===== -->
       <text x="748" y="34" class="group-title" fill="var(--sub)">Data &amp; external</text>
 
       <!-- Google/GitHub -->
-      <rect x="740" y="46" width="230" height="90" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <rect x="740" y="46" width="230" height="104" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5" stroke-dasharray="5 4"/>
       <text x="762" y="76" class="box-label" fill="var(--ext)">Google / GitHub</text>
       <text x="762" y="94" class="box-sub" fill="var(--sub)">OAuth 2.0 providers</text>
       <text x="762" y="112" class="box-sub" fill="var(--sub)">only when signing in via OAuth</text>
+      <text x="762" y="128" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
 
       <!-- Postgres -->
       <rect x="740" y="200" width="230" height="112" rx="14" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.5"/>
@@ -197,6 +201,7 @@
       <text x="762" y="248" class="box-sub" fill="var(--ink)">accessed via Prisma</text>
       <text x="762" y="266" class="box-sub mono" fill="var(--sub)">:54322 local · Supabase-hosted</text>
       <text x="762" y="284" class="box-sub" fill="var(--sub)">User · Tree · Profile · RecoveryCode…</text>
+      <text x="762" y="302" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
 
       <!-- Vault -->
       <rect x="480" y="410" width="230" height="112" rx="14" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.5"/>
@@ -204,6 +209,7 @@
       <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, dev mode</text>
       <text x="502" y="476" class="box-sub mono" fill="var(--sub)">:8200 · AppRole auth</text>
       <text x="502" y="494" class="box-sub" fill="var(--vault)">boot-time only, not per-request</text>
+      <text x="502" y="512" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
 
       <!-- ===== Arrows ===== -->
       <defs>
@@ -269,6 +275,9 @@
       </text>
       <text x="30" y="604" class="box-sub" fill="var(--sub)">
         Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
+      </text>
+      <text x="30" y="628" class="box-sub" fill="var(--sub)">
+        <tspan font-style="italic" fill="var(--ext)">Italic grey tag on a box</tspan> = where it actually runs: on the production GCP VM (WAF, backend, Vault) vs. an external service we don&apos;t host (Supabase Auth, Postgres, Google/GitHub).
       </text>
     </svg>
   </div>
