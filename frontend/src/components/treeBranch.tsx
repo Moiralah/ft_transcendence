@@ -81,20 +81,37 @@ export function TreeBranch({
             spouseId: BranchAddMember.profileId,
           };
         }
-      return m;
+        const isMother = m.profileId === activeCurrentMember.profileId;
+        const isFather = m.profileId === activeCurrentMember.profileId;
+        if (isFather || isMother) {
+          return {
+              ...m,
+            motherId: isFather && !m.motherId ? BranchAddMember.profileId : m.motherId,
+            fatherId: isMother && !m.fatherId ? BranchAddMember.profileId : m.fatherId,
+          };
+        }
+
+        return m;
       });
       return [...updatedList, BranchAddMember];
     });
   };
 
-const handleAddChild = (BranchAddMember: Member) => {
+  const handleAddChild = (BranchAddMember: Member) => {
     const newChildId = BranchAddMember.profileId;
     setLocalMember((prev) => {
-      const parentId = activeCurrentMember.profileId ?? activeCurrentMember.id;
+      const parentId = activeCurrentMember.profileId;
 
       const updatedList = prev.map((m) => {
         const isCurrent = (m.profileId ?? m.id) === parentId;
         if (isCurrent) {
+          return {
+            ...m,
+            childrenIds: [...(m.childrenIds ?? []), newChildId],
+          };
+        }
+        const isSpouse = m.profileId === activeCurrentMember.spouseId;
+        if (isSpouse) {
           return {
             ...m,
             childrenIds: [...(m.childrenIds ?? []), newChildId],
