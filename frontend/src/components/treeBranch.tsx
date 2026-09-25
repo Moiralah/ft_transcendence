@@ -53,27 +53,10 @@ export function TreeBranch({
 
   const getFamilyMembers = (parent?: Member): FamilyMembers => {
     if (!parent) return { children: [], spouse: undefined };
-
-// 🔍 Check what parent object is actually passed in
-    console.log("🚨 [getFamilyMembers RUNNING]", {
-      parentName: parent.firstName,
-      parentId: parent.id,
-      parentProfileId: parent.profileId,
-      childrenIds: parent.childrenIds,
-      childrenIdsType: typeof parent.childrenIds,
-      isArray: Array.isArray(parent.childrenIds),
-    });
     
     const spouse = getMember(parent.spouseId);
-    const childIds = parent.childrenIds ?? [];
-    const children = childIds
-      .map((childId) => {
-        // 🔍 Log raw childId before getMember evaluates it
-        console.log("👉 Mapping childId:", childId, "type:", typeof childId);
-        return getMember(childId);
-      })
-    // const children = (parent.childrenIds ?? [])
-    //   .map((childId) => getMember(childId))
+    const children = (parent.childrenIds ?? [])
+      .map((childId) => getMember(childId))
       .filter((child): child is Member => child !== undefined);
 
     return { children, spouse };
@@ -105,7 +88,6 @@ export function TreeBranch({
   };
 
 const handleAddChild = (BranchAddMember: Member) => {
-console.log("📥 [handleAddChild] Complete Raw Object:", BranchAddMember);
     const newChildId = BranchAddMember.profileId;
     setLocalMember((prev) => {
       const parentId = activeCurrentMember.profileId ?? activeCurrentMember.id;
