@@ -120,21 +120,56 @@ export default function Content() {
   const [levelName, setLevelName] = useState("newbie");
   const percentage = Math.min(100, Math.max(0, (Math.round(points / fullPoints* 100))));
 
-  const [editTreeName, setEditTreeName] = useState(false);
-
   const [treeMemberModal, setTreeMemberModal] = useState(false); 
 
   const [name, setName] = useState("my tree");
+  const [editTreeName, setEditTreeName] = useState(false);
+  
+const handleSaveTreeName = async () => {
+  const currentName = name.trim() || "my tree";
+  setEditTreeName(false);
+  
+  try {
+    const token = localStorage.getItem("ft_token");
+    if (!token) {
+      throw new Error("No token found. Please log in.");
+    }
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetch(`${API_URL}/trees/${treeId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ name: currentName }),
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error("Session expired. Please log in again.");
+      }
+      throw new Error(`Failed to update profile: ${res.statusText}`);
+    }
+    const updatedTree = await res.json();
+    setName(updatedTree.name);
+    } catch (err: any) {
+    console.error("Save error:", err.message);    
+    }
+  }
 
   const handleNameChange = (e) => {
     setName(e.target.value);
   };
 
-  const handleNameKeyDown = (e) => {
-    if (e.key == "Enter" || e.key == "Escape") {
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.currentTarget.blur(); // Blur triggers handleNameBlur -> handleSaveTreeName safely
+    } else if (e.key === "Escape") {
       setEditTreeName(false);
+      setName(tree?.name || "my tree"); // Revert back on cancel
     }
-  }
+  };
 
   const handleNameStaticKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -144,7 +179,7 @@ export default function Content() {
   }
 
     const handleNameBlur = () => {
-      setEditTreeName(false);
+      handleSaveTreeName();
     }
 
   const handleRootMember = (member: any) => {

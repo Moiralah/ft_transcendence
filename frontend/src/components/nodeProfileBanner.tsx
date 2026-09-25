@@ -14,6 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
+  claim?: number| null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -25,8 +26,8 @@ interface nodeProfileModalProp {
     member: Member;
     onClose: () => void;
     onSave: (updatedMember : Member) => void;
-    onAddChild: ()=> void;
-    onAddSpouse: ()=> void;
+    onAddChild: (newChildMember: Member)=> void;
+    onAddSpouse: (newSpouseMember: Member)=> void;
 }
 
 export function NodeProfileModal ({
@@ -50,17 +51,19 @@ export function NodeProfileModal ({
       (m) => m.profileId === targetId
     );
     if (!foundMember) return null;
-    return `${foundMember?.firstName} ${foundMember?.lastName} || '-'`;
+    return (foundMember?.firstName && foundMember?.lastName) 
+    ? `${foundMember.firstName} ${foundMember.lastName}`
+    : '-';
   }
 
   const childNames = allMembers
-  .filter(m => member.childrenIds?.includes(m.id))
+  .filter(m => member.childrenIds?.includes(m.profileId))
   .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
   .filter(Boolean)
   .join(', ');
 
   const parentNames = allMembers.filter(
-  m => m.id === member.fatherId || m.id === member.motherId)
+  m => m.profileId === member.fatherId || m.profileId === member.motherId)
   .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
   .filter(Boolean)
   .join(', ');
@@ -69,7 +72,7 @@ export function NodeProfileModal ({
     if (member) {
       setFormMember(member);
     }
-  }, [member]); // Re-run whenever the member prop changes
+  }, [member]);
 
   const handleAddChild = async() => {
     try {
@@ -92,11 +95,18 @@ export function NodeProfileModal ({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      if (onAddChild)
-        onAddChild();
+
+      const rawResponseBody = await res.json();
+      const serverData = rawResponseBody.data || rawResponseBody;
+
+      const newChildMember: Member = serverData[1];
+
+       if (onAddChild)
+        onAddChild(newChildMember);
       if (onClose) {
         onClose();
       }
+
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
@@ -123,8 +133,14 @@ const handleAddSpouse = async() => {
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
+
+      const rawResponseBody = await res.json();
+      const serverData = rawResponseBody.data || rawResponseBody;
+
+      const newSpouseMember: Member = serverData[1];
+
       if (onAddSpouse)
-        onAddSpouse();
+        onAddSpouse(newSpouseMember);
       if (onClose) {
         onClose();
       }
@@ -224,7 +240,7 @@ const handleAddSpouse = async() => {
                       onChange={handleChange}
                       onKeyDown={handleNameKeyDown}
                       onBlur={handleNameBlur}
-                      aira-label="Edit Last Name"
+                      aria-label="Edit Last Name"
                       className="min-w-48 flex flex-row"
                     />
                     </div>

@@ -14,6 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
+  claim?: number| null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -25,33 +26,25 @@ const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
 interface TreeNodeProp {
   members: Member[];
   currentMember?: Member;
+  NodeAddSpouse: (addMember: Member) => void;
+  NodeAddChild: (addMember: Member) => void;
 }
 
 export function TreeNode({
   members,
   currentMember,
+  NodeAddChild,
+  NodeAddSpouse,
 }: TreeNodeProp) {
 
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
 
-  // Sync internal state whenever currentMember prop changes from parent
   useEffect(() => {
     setNodeMember(currentMember);
   }, [currentMember]);
 
-
-
   if (!nodeMember) return null;
-
-  const AddChildNode = () => {
-
-  }
-
-  const AddSpouseNode = () => {
-
-  }
-
 
   const handleDeleteNode = async() => {
     try {
@@ -61,7 +54,7 @@ export function TreeNode({
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch (`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.profileId}`, {
-        method: "POST",
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -84,22 +77,21 @@ export function TreeNode({
     }
   };
 
-
   return (
-    <div
+    <div 
       className="flex flex-col items-center relative z-10"
       onClick={() => setNodeProfileModal(true)}
 
     >
       <div className={`
-        ${nodeMember.gender === 'male' ?
-          'bg-blue-200 border-blue-600' :
-        nodeMember.gender === 'female' ?
-          'bg-red-200 border-red-600' :
-        'bg-amber-100 border-amber-600'}
+        ${nodeMember.gender === 'male' ? 
+          'bg-blue-200 border-blue-600' : 
+        nodeMember.gender === 'female' ? 
+          'bg-red-200 border-red-600' : 
+        'bg-amber-100 border-amber-600'} 
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[120px]`}
       >
-        <button
+        <button 
           className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
           onClick={(e) => {
             e.stopPropagation();
@@ -121,7 +113,7 @@ export function TreeNode({
             <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
           </div>
         </div>
-        <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">
+        <div className=" rounded-lg hover:text-white hover:bg-blue-600">
           {nodeMember.profileId || ' '}
         </div>
       </div>
@@ -141,13 +133,13 @@ export function TreeNode({
           setNodeMember(updatedMember);
           setNodeProfileModal(false);
         }}
-        onAddChild={() => {
-          AddChildNode();
-          setNodeProfileModal(false);
+        onAddChild={(newChildMember: Member) => {
+          NodeAddChild(newChildMember);
+          setNodeProfileModal(false);      
         }}
-        onAddSpouse={() => {
-          AddSpouseNode();
-          setNodeProfileModal(false);
+        onAddSpouse={(newSpouseMember: Member) => {
+          NodeAddSpouse(newSpouseMember);
+          setNodeProfileModal(false);      
         }}
       />
     )}
