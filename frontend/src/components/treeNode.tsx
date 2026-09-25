@@ -14,6 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
+  claim?: number| null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -25,19 +26,20 @@ const formatDate = (date: string | Date) => new Date(date).toLocaleDateString();
 interface TreeNodeProp {
   members: Member[];
   currentMember?: Member;
-  NodeAddMember: (addMember: Member) => void;
+  NodeAddSpouse: (addMember: Member) => void;
+  NodeAddChild: (addMember: Member) => void;
 }
 
 export function TreeNode({
   members,
   currentMember,
-  NodeAddMember,
+  NodeAddChild,
+  NodeAddSpouse,
 }: TreeNodeProp) {
 
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
 
-  // Sync internal state whenever currentMember prop changes from parent
   useEffect(() => {
     setNodeMember(currentMember);
   }, [currentMember]);
@@ -75,7 +77,6 @@ export function TreeNode({
     }
   };
 
-
   return (
     <div 
       className="flex flex-col items-center relative z-10"
@@ -112,7 +113,7 @@ export function TreeNode({
             <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
           </div>
         </div>
-        <div className="text-transparent rounded-lg hover:text-white hover:bg-blue-600">
+        <div className=" rounded-lg hover:text-white hover:bg-blue-600">
           {nodeMember.profileId || ' '}
         </div>
       </div>
@@ -133,11 +134,11 @@ export function TreeNode({
           setNodeProfileModal(false);
         }}
         onAddChild={(newChildMember: Member) => {
-          NodeAddMember(newChildMember);
+          NodeAddChild(newChildMember);
           setNodeProfileModal(false);      
         }}
         onAddSpouse={(newSpouseMember: Member) => {
-          NodeAddMember(newSpouseMember);
+          NodeAddSpouse(newSpouseMember);
           setNodeProfileModal(false);      
         }}
       />

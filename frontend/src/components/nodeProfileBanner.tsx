@@ -14,6 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
+  claim?: number| null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -50,17 +51,19 @@ export function NodeProfileModal ({
       (m) => m.profileId === targetId
     );
     if (!foundMember) return null;
-    return `${foundMember?.firstName} ${foundMember?.lastName} || '-'`;
+    return (foundMember?.firstName && foundMember?.lastName) 
+    ? `${foundMember.firstName} ${foundMember.lastName}`
+    : '-';
   }
 
   const childNames = allMembers
-  .filter(m => member.childrenIds?.includes(m.id))
+  .filter(m => member.childrenIds?.includes(m.profileId))
   .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
   .filter(Boolean)
   .join(', ');
 
   const parentNames = allMembers.filter(
-  m => m.id === member.fatherId || m.id === member.motherId)
+  m => m.profileId === member.fatherId || m.profileId === member.motherId)
   .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
   .filter(Boolean)
   .join(', ');
@@ -96,18 +99,14 @@ export function NodeProfileModal ({
       const rawResponseBody = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
-console.log("=== API RETURNED ===", serverData);
-console.log("Keys in returned object:", Object.keys(serverData));
-console.log("ID check:", { id: serverData.id, profileId: serverData.profileId, childrenIds: serverData.childrenIds });
+      const newChildMember: Member = serverData[1];
 
-      const newChildMember: Member = {
-        ...serverData,
-      } ;
-        if (onAddChild)
-          onAddChild(newChildMember);
-        if (onClose) {
-          onClose();
-        }
+       if (onAddChild)
+        onAddChild(newChildMember);
+      if (onClose) {
+        onClose();
+      }
+
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
@@ -138,14 +137,13 @@ const handleAddSpouse = async() => {
       const rawResponseBody = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
-      const newSpouseMember: Member = {
-        ...serverData,
-      } ;
-        if (onAddSpouse)
-          onAddSpouse(newSpouseMember);
-        if (onClose) {
-          onClose();
-        }
+      const newSpouseMember: Member = serverData[1];
+
+      if (onAddSpouse)
+        onAddSpouse(newSpouseMember);
+      if (onClose) {
+        onClose();
+      }
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
