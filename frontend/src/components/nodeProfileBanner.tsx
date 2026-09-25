@@ -99,7 +99,7 @@ export function NodeProfileModal ({
       const rawResponseBody = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
-      const newChildMember: Member = serverData[1];
+      const newChildMember: Member = serverData[serverData.length - 1];
 
        if (onAddChild)
         onAddChild(newChildMember);
@@ -177,8 +177,8 @@ const handleAddSpouse = async() => {
     const serverData = rawResponseBody.data || rawResponseBody;
 
     const updatedMember: Member = {
-      ...formMember,   // Guarantees all original fields (id, treeId, role, etc.) stay intact
-      ...serverData,   // Overwrites fields updated by the backend
+      ...formMember,
+      ...serverData,
     };
 
       if (onSave) {
@@ -319,7 +319,17 @@ const handleAddSpouse = async() => {
                   }
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                {  claim ? 'this is me' : 'this is not me'}  
+
+                {!claim ? (
+                  <div onClick={(e) => {e.stopPropagation();setClaim(true);}} >
+                    this is me
+                  </div>
+                ) : (
+                  <div onClick={(e) => {e.stopPropagation();setClaim(false);}} >
+                    this is not me
+                  </div>
+                )}
+ 
                 </button>
                 <button
                   type="button"
