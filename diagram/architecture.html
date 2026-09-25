@@ -412,22 +412,40 @@ backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
       build</code>, not the dev servers pictured above), correct <code>linux/amd64</code> images,
       Vault bound to <code>127.0.0.1:8200</code> (loopback only — its dev-mode root token is
       hardcoded and visible in this public repo, so it can't be left open on a box with a real
-      public IP). Repo and live deployment are in sync (<code>branchsaurus</code>,
-      <code>481b48f</code>).
+      public IP). A real Let's Encrypt cert now backs all three ports (<code>ft.natscho.my</code>
+      bare domain, <code>:8443</code>, <code>:9443</code>) — no more browser self-signed warning —
+      with a certbot deploy-hook that re-copies it into the WAF containers and force-recreates them
+      on renewal, verified to actually run rather than assumed.
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ic">🩹</div>
+    <div>
+      <strong>Production outage found and fixed (2026-09-25):</strong> every login — Google OAuth
+      and email/password alike — had been failing in production since 2026-09-23, root-caused
+      straight from the backend's own logs: <code>PrismaClientKnownRequestError: The column
+      User.role does not exist in the current database</code>. The deployed backend code (and its
+      generated Prisma Client) already expected the <code>role</code>/2FA/<code>RecoveryCode</code>
+      schema from this project's permissions work, but the real production database had never
+      received the migration. Fixed by running <code>prisma db push</code> against production —
+      purely additive, new nullable/defaulted columns and one new empty table, nothing existing
+      touched — verified afterward via the same logs (errors gone) and a real Google OAuth login
+      succeeding end-to-end.
     </div>
   </div>
 
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Still open on the live deployment:</strong> the TLS cert is still self-signed —
-      a real Let's Encrypt cert is next now that the subdomain resolves. The production Supabase
-      schema is still behind the app's current <code>schema.prisma</code> (missing
-      <code>RecoveryCode</code>, the 2FA columns) — a fresh backup is taken and the exact migration SQL previewed as
-      additive-only (confirmed safe against a full local clone of prod, not just in the abstract),
-      but applying it for real is deliberately gated on an explicit go right before it happens, not
-      bundled into general instructions. GCP/GitHub/Supabase OAuth dashboard config (redirect URIs
-      for the real domain) hasn't been done yet either. Full detail in
+      <strong>Still open:</strong> no fresh production backup exists after the schema push above
+      — the last one, <code>20260923_115001</code>, predates it (Docker wasn't running locally
+      when a new one was needed). A pre-existing bug, <code>/api/trees/search</code> returning a
+      raw <code>500</code> on an unauthenticated request, is still unfixed. A separate
+      <code>spouse_id</code> unique-constraint crash in the add-spouse flow surfaced the same day
+      as the outage above — a fix for it may already be in <code>branchsaurus</code> (merged from
+      <code>jon2</code>, commit <code>87e96a1</code>), but isn't confirmed live until the VM's
+      redeploy — in progress as of this write-up — completes and is checked. Full detail in
       <code>tching/progress_log.md</code> (gitignored, not in this diagram's own repo history).
     </div>
   </div>
