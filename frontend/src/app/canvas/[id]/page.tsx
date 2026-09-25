@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, router } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 
@@ -15,6 +15,7 @@ import { TreeBranch } from '@/components/treeBranch';
 export default function Content() {
 
   const params = useParams();
+  const router = useRouter();
   const treeId = params.id as number;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
@@ -22,7 +23,7 @@ export default function Content() {
   const [tree, setTree] = useState('');
   const [treesMember, setTreesMember] = useState([]);
   const [searchMember, setSearchMember] = useState('');
-  
+
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
@@ -119,15 +120,15 @@ export default function Content() {
   const [levelName, setLevelName] = useState("newbie");
   const percentage = Math.min(100, Math.max(0, (Math.round(points / fullPoints* 100))));
 
-  const [treeMemberModal, setTreeMemberModal] = useState(false); 
+  const [treeMemberModal, setTreeMemberModal] = useState(false);
 
   const [name, setName] = useState("my tree");
   const [editTreeName, setEditTreeName] = useState(false);
-  
+
 const handleSaveTreeName = async () => {
   const currentName = name.trim() || "my tree";
   setEditTreeName(false);
-  
+
   try {
     const token = localStorage.getItem("ft_token");
     if (!token) {
@@ -152,7 +153,7 @@ const handleSaveTreeName = async () => {
     const updatedTree = await res.json();
     setName(updatedTree.name);
     } catch (err: any) {
-    console.error("Save error:", err.message);    
+    console.error("Save error:", err.message);
     }
   }
 
@@ -226,7 +227,7 @@ const handleSaveTreeName = async () => {
               </div>
               )}
             </div>
-            <button 
+            <button
               type="button"
               tabIndex={0}
               onClick={() => {
@@ -243,7 +244,7 @@ const handleSaveTreeName = async () => {
           </div>
             {/* Bottom Row: Centered People Counter */}
             <div className="flex h-12 shrink-0 items-center justify-center">
-              <button 
+              <button
                 onClick={() => setTreeMemberModal(true)}
                 className="flex h-12 items-center justify-center rounded-lg text-lg font-medium text-gray-600 px-3 bg-transparent hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
               >
@@ -259,7 +260,7 @@ const handleSaveTreeName = async () => {
         </div>
 
       {/* Interactive Workspace */}
-      <div 
+      <div
         className="flex-1 relative cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -267,7 +268,7 @@ const handleSaveTreeName = async () => {
         onWheel={handleWheel} // <-- 4. Attached onWheel listener here
       >
         {/* Transform Layer */}
-        <div 
+        <div
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`
           }}
@@ -283,7 +284,7 @@ const handleSaveTreeName = async () => {
       <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
         <Footer/>
       </footer>
-        
+
 
         {/* tree member modal */}
         {treeMemberModal && (
@@ -310,7 +311,7 @@ const handleSaveTreeName = async () => {
                 {treesMember
                 .filter((member: any) => member.role !== 'HOLDER')
                 .map((member: any) => (
-                <div 
+                <div
                   key={member.id}
                   onClick={() => {
                     setRootMember(member);
@@ -324,7 +325,7 @@ const handleSaveTreeName = async () => {
                     <div className="flex flex-col">
                       <span className="font-medium">{member.firstName + ' ' + member.lastName}</span>
                       <span className="font-light">{formatDate(member.birthDate) + ' - ' + formatDate(member.deathDate)}</span>
-                    </div>                   
+                    </div>
                   </div>
                 </div>
                 )) }
@@ -343,7 +344,7 @@ const handleSaveTreeName = async () => {
             </div>
           </div>
         )}
-        
+
 
     </div>
   );
