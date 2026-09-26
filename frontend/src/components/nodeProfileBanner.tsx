@@ -51,7 +51,7 @@ export function NodeProfileModal ({
       (m) => m.profileId === targetId
     );
     if (!foundMember) return null;
-    return (foundMember?.firstName && foundMember?.lastName) 
+    return (foundMember?.firstName && foundMember?.lastName)
     ? `${foundMember.firstName} ${foundMember.lastName}`
     : '-';
   }
@@ -96,7 +96,18 @@ export function NodeProfileModal ({
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
-      const rawResponseBody = await res.json();
+	      const rawResponseBody  = await res.json();
+
+    console.log("ADD CHILD RESPONSE", rawResponseBody );
+    console.log("isArray?", Array.isArray(rawResponseBody ));
+
+    if (Array.isArray(rawResponseBody )) {
+      rawResponseBody .forEach((item, index) => {
+        console.log(`item ${index}`, item);
+      });
+    }
+
+      //const rawResponseBody = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
       const newChildMember: Member = serverData[1];
@@ -203,7 +214,7 @@ const handleAddSpouse = async() => {
     if (e.key == "Enter" || e.key == "Escape") {
       setEditName(false);
     }
-  }  
+  }
   const handleNameStaticKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -222,7 +233,7 @@ const handleAddSpouse = async() => {
               { /* form fill */}
               <div className="flex flex-col">
                 <div className="flex text-2xl">
-                  { editName ? ( 
+                  { editName ? (
                     <div className="flex flex-row gap-2">
                     <input
                       type="text"
@@ -247,7 +258,7 @@ const handleAddSpouse = async() => {
                     ) : (
                       <div className="flex flex-row font-black font-bold">
                       <div className="flex min-w-96">{formMember.firstName + '  ' + formMember.lastName}</div>
-                      <div 
+                      <div
                         className="flex w-10 h-10 border border-black text-transparent hover:text-red-200 cursor-pointer"
                         onClick={() => setEditName(true)}
                       >
@@ -276,23 +287,23 @@ const handleAddSpouse = async() => {
                       <option value="female">Female</option>
                     </select>
                   </div>
-                </div> 
+                </div>
                 <div className="flex flex-row text-xl font-normal">
                   <div className="flex w-40">status</div>
                   <div className="flex border bg-gray-200 rounded-xl p-2 ">
-                    <div 
+                    <div
                       className={`p-1 sm:p-2 ${alive ? 'bg-white': ''}`}
                       onClick={() => setAlive(true)}
                     >
                       Alive
-                    </div> 
-                    <div 
+                    </div>
+                    <div
                       className={`p-1 sm:p-2 ${alive ? '': 'bg-white'}`}
                       onClick={() => setAlive(false)}
                     >
                       Deceased
                     </div>
-                  </div>  
+                  </div>
                 </div>
                 <div className="flex flex-row text-xl font-normal">
                   <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>Died</div>
@@ -319,7 +330,7 @@ const handleAddSpouse = async() => {
                   }
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                {  claim ? 'this is me' : 'this is not me'}  
+                {  claim ? 'this is me' : 'this is not me'}
                 </button>
                 <button
                   type="button"
@@ -346,7 +357,7 @@ const handleAddSpouse = async() => {
                       Parent
                     </div>
                     <div>{parentNames || 'None'}</div>
-                  </div>                  
+                  </div>
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
                       children

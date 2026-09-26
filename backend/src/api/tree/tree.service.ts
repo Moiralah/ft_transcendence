@@ -183,7 +183,7 @@ export class TreeService {
 			where: { treeId },
 			include: {
 				profile: { select: this.memberProfileSelect },
-				link: {include: {profile: {select: this.memberProfileSelect}}}
+				link: { include: { profile: { select: this.memberProfileSelect } } }
 			},
 			orderBy: { joinedAt: 'asc' },
 		});
@@ -226,13 +226,13 @@ export class TreeService {
 	}
 
 	async update(
-	treeId: number,
-	requesterProfileId: number,
-	data: {
-		name?: string;
-		description?: string;
-		isPublic?: boolean;
-	},
+		treeId: number,
+		requesterProfileId: number,
+		data: {
+			name?: string;
+			description?: string;
+			isPublic?: boolean;
+		},
 	) {
 		const tree = await this.prisma.tree.findUnique({
 			where: { id: treeId },
@@ -266,7 +266,7 @@ export class TreeService {
 				details: `Updated tree "${updatedTree.name}"`,
 			},
 		});
-		
+
 		return updatedTree;
 	}
 
@@ -528,10 +528,10 @@ export class TreeService {
 			});
 
 			const rows = await tx.treeMember.findMany({
-				where: {treeId, profileId: {in: [partnerProfileId, spouse.id]}},
+				where: { treeId, profileId: { in: [partnerProfileId, spouse.id] } },
 				include: {
-					profile: {select: this.memberProfileSelect},
-					link: {include: {profile: {select: this.memberProfileSelect}}},
+					profile: { select: this.memberProfileSelect },
+					link: { include: { profile: { select: this.memberProfileSelect } } },
 				},
 			});
 
@@ -649,9 +649,6 @@ export class TreeService {
 		if (target.id === tree.rootId) {
 			throw new ForbiddenException("Cannot delete the tree's root profile.");
 		}
-		if (target.claim === 'PENDING' || target.claim === 'ACCEPTED') {
-			throw new ForbiddenException('Reject or unlink the claim on this profile before deleting it.');
-		}
 
 		const childCount = await this.prisma.profile.count({
 			where: { OR: [{ motherId: target.profileId! }, { fatherId: target.profileId! }] },
@@ -661,6 +658,20 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
+			if (target.linkId) {
+				const linkedMember = await tx.treeMember.findUnique({ where: { id: target.linkId } });
+				if (linkedMember && linkedMember.role === 'MEMBER') {
+					await tx.treeMember.update({
+						where: { id: linkedMember.id },
+						data: { role: 'JOINER' },
+					});
+				}
+				// Clear the link on the placeholder before deleting the row
+				await tx.treeMember.update({
+					where: { id: targetMemberId },
+					data: { linkId: null, claim: 'EMPTY' },
+				});
+			}
 			await tx.treeMember.delete({ where: { id: targetMemberId } });
 			await tx.profile.delete({ where: { id: target.profileId! } });
 
@@ -731,10 +742,19 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
-			await tx.treeMember.update({
-				where: { id: holder.linkId! },
-				data: { role: 'MEMBER' },
-			});
+			const linkedMember = await tx.treeMember.findUnique({ where: { id: holder.linkId! } });
+			if (!linkedMember) {
+				throw new NotFoundException('Linked member not found.');
+			}
+
+			// Only promote JOINER -> MEMBER.
+			// ADMIN / MODERATOR keep their role.
+			if (linkedMember.role === 'JOINER') {
+				await tx.treeMember.update({
+					where: { id: linkedMember.id },
+					data: { role: 'MEMBER' },
+				});
+			}
 
 			const updated = await tx.treeMember.update({
 				where: { id: holderMemberId },
@@ -772,7 +792,7 @@ export class TreeService {
 		return this.prisma.$transaction(async (tx) => {
 			const updated = await tx.treeMember.update({
 				where: { id: holderMemberId },
-				data: { linkId: null, claim: 'REJECTED' },
+				data: { linkId: null, claim: 'EMPTY' },
 			});
 
 			await tx.auditLog.create({
@@ -781,6 +801,82 @@ export class TreeService {
 					profileId: approverProfileId,
 					action: 'REJECT_CLAIM',
 					details: `Rejected claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
+		});
+	}
+
+	async unclaim(treeId: number, requesterProfileId: number, holderMemberId: number) {
+		// 1. Look up the requester's own membership row in this tree.
+		const requesterMember = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+		});
+		if (!requesterMember) {
+			throw new ForbiddenException('You are not a member of this tree.');
+		}
+
+		// 2. Load the placeholder being unclaimed.
+		const holder = await this.prisma.treeMember.findUnique({
+			where: { id: holderMemberId },
+		});
+		if (!holder || holder.treeId !== treeId) {
+			throw new NotFoundException('Placeholder profile not found in this tree.');
+		}
+
+		const isPending = holder.claim === 'PENDING';
+		const isAccepted = holder.claim === 'ACCEPTED';
+
+		if ((!isPending && !isAccepted) || !holder.linkId) {
+			throw new ForbiddenException('Profile has no pending or accepted claim to remove.');
+		}
+
+		// 3. Authorization:
+		//    - The claimant can unclaim their own slot.
+		//    - ADMIN / MODERATOR can unclaim any slot.
+		const isClaimant = holder.linkId === requesterMember.id;
+		const isModeratorOrAdmin = ['ADMIN', 'MODERATOR'].includes(requesterMember.role);
+
+		if (!isClaimant && !isModeratorOrAdmin) {
+			throw new ForbiddenException('You can only unclaim a slot you claimed yourself.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			// 4. If the claim was accepted, the claimant may have been promoted
+			//    from JOINER to MEMBER. Revert that.
+			//    ADMIN / MODERATOR keep their role.
+			if (isAccepted) {
+				const linkedMember = await tx.treeMember.findUnique({
+					where: { id: holder.linkId! },
+				});
+				if (!linkedMember) {
+					throw new NotFoundException('Linked member not found.');
+				}
+				if (linkedMember.role === 'MEMBER') {
+					await tx.treeMember.update({
+						where: { id: linkedMember.id },
+						data: { role: 'JOINER' },
+					});
+				}
+			}
+
+			// 5. Clear the link on the placeholder.
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: null, claim: 'EMPTY' },
+				include: { profile: true, link: { include: { profile: true } } },
+			});
+
+			// 6. Audit log.
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: isAccepted ? 'UNCLAIM' : 'REJECT_CLAIM',
+					details: isAccepted
+						? `Unclaimed profile ${holder.profileId}`
+						: `Withdrew pending claim on profile ${holder.profileId}`,
 				},
 			});
 
@@ -840,22 +936,24 @@ export class TreeService {
 			include: {
 				profile: {
 					select: {
-					id: true,
-					firstName: true,
-					lastName: true,
-					photoUrl: true,
-					gender: true,
-					birthDate: true,
-					deathDate: true,}
+						id: true,
+						firstName: true,
+						lastName: true,
+						photoUrl: true,
+					}
 				}, // the placeholder being claimed, e.g. "John Chan"
-				link: { include: { profile: { select:{
-					id: true,
-					firstName: true,
-					lastName: true,
-					photoUrl: true,
-					gender: true,
-					birthDate: true,
-					deathDate: true,}} } }, // the real claimant, e.g. "John"
+				link: {
+					include: {
+						profile: {
+							select: {
+								id: true,
+								firstName: true,
+								lastName: true,
+								photoUrl: true,
+							}
+						}
+					}
+				}, // the real claimant, e.g. "John"
 			},
 		});
 	}
