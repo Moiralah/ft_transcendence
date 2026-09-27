@@ -16,7 +16,7 @@ export default function Content() {
 
   const params = useParams();
   const router = useRouter();
-  const treeId = params.id as number;
+  const treeId = params.id as string;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState();
