@@ -14,7 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;

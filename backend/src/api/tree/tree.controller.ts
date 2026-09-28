@@ -55,7 +55,7 @@ export class TreeController {
 	@UseGuards(JwtAuthGuard)
 	async update(@Req() req, @Param('treeId') treeId: string, @Body() body: any) {
 		return this.treeService.update(
-			Number(treeId), 
+			Number(treeId),
 			req.user.profileId,
 			body
 		);
@@ -155,6 +155,20 @@ export class TreeController {
 		@Param('holderMemberId') holderMemberId: string,
 	) {
 		return this.treeService.rejectClaim(
+			Number(treeId),
+			req.user.profileId,
+			Number(holderMemberId),
+		);
+	}
+
+	@Put(':treeId/claims/:holderMemberId/unclaim')
+	@UseGuards(JwtAuthGuard)
+	async unclaim(
+		@Req() req,
+		@Param('treeId') treeId: string,
+		@Param('holderMemberId') holderMemberId: string,
+	) {
+		return this.treeService.unclaim(
 			Number(treeId),
 			req.user.profileId,
 			Number(holderMemberId),
