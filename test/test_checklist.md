@@ -23,7 +23,7 @@ why in the Notes line.
 - [ ] Session persists on page refresh (localStorage `ft_token`)
   - Notes:
 
-## 2. OAuth (Google / GitHub)
+## 2. OAuth (Google)
 
 - [X] Google OAuth login → lands back on the app logged in
   - Notes: confirmed live end-to-end (Session 6) — required setting up a
@@ -35,22 +35,17 @@ why in the Notes line.
     backend side. User confirmed landing on `/dashboard` after a real
     Google sign-in. `tiarabyte@gmail.com` confirmed in the local DB with
     `providers: ["google"]`.
-- [X] GitHub OAuth login → lands back on the app logged in
-  - Notes: confirmed live end-to-end. User created their own GitHub
-    OAuth App, same Supabase callback URL as Google
-    (`http://127.0.0.1:54321/auth/v1/callback`). Verified server-side,
-    not just "it worked": `auth.users.last_sign_in_at` for
-    `natsching@gmail.com` matched within ~90 seconds of the login,
-    `providers: ["github"]`, and confirmed our own backend correctly
-    created the local `User` row (`role: USER` default) at the same
-    timestamp — not just a Supabase-level success.
 - [X] OAuth login for a user that **already has 2FA enabled** → prompts for
   a code on the `/consent` page instead of skipping straight in
-  - Notes: confirmed live. Enabled 2FA on the GitHub-linked account
-    (`natsching@gmail.com`, confirmed `twoFactorEnabled: true` in the DB),
-    signed out, signed back in via GitHub — user confirmed it prompted
-    for a code instead of skipping straight to the dashboard. Backend
-    mechanics of code entry/verification already covered in §3.
+  - Notes: confirmed live (originally tested via a GitHub-linked account
+    before GitHub OAuth was removed from the app — mechanics are
+    provider-agnostic, re-verify with Google if this area changes).
+    Backend mechanics of code entry/verification already covered in §3.
+
+**GitHub OAuth removed** (was fully built and confirmed working
+end-to-end, including with 2FA) — dropped as a deliberate product
+decision, didn't fit the app's theme. See git history for the prior
+working implementation if it's ever needed again.
 
 ## 3. Two-Factor Authentication (2FA)
 

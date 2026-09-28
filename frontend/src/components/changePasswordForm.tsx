@@ -26,7 +26,7 @@ export function ChangePasswordForm() {
 			if (!user?.email) {
 				setAccount({ kind: 'no-session' });
 			} else if (!user.identities?.some((i) => i.provider === 'email')) {
-				// Signed up through Google/GitHub only: there is no password to change.
+				// Signed up through Google only: there is no password to change.
 				setAccount({ kind: 'no-password' });
 			} else {
 				setAccount({ kind: 'ready', email: user.email });
@@ -99,7 +99,7 @@ export function ChangePasswordForm() {
 
 			{account.kind === 'no-password' && (
 				<p className="text-sm text-slate-700">
-					You signed in with Google or GitHub, so this account has no password to change.
+					You signed in with Google, so this account has no password to change.
 				</p>
 			)}
 

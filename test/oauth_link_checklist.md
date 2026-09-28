@@ -1,23 +1,27 @@
 # OAuth / redirect link checklist — going from local to production
 
-Companion to README's "Google/GitHub OAuth locally" section, which covers the same three
-places (GCP, GitHub, Supabase) for **local** dev. This is the same checklist for **production**
-— do it once when you have a real frontend domain, and again any time that domain changes.
+Companion to README's "Google OAuth locally" section, which covers the same two places (GCP,
+Supabase) for **local** dev. This is the same checklist for **production** — do it once when
+you have a real frontend domain, and again any time that domain changes.
+
+(GitHub OAuth was also built and tested at one point, but was deliberately removed — didn't fit
+the app's theme. This checklist covers Google only now; see git history if GitHub is ever
+revisited.)
 
 **Known now** (doesn't depend on the frontend domain):
 - Production Supabase project ref: **not written here on purpose — this repo is public on
   GitHub.** Get it from `.env.remote-backup` (gitignored, `SUPABASE_AUTH_URL`) or
   `supabase projects list` (needs `supabase login`). Call it `<PROJECT_REF>` below.
-- Its fixed auth callback (this is what Google/GitHub need to know about, not your frontend):
+- Its fixed auth callback (this is what Google needs to know about, not your frontend):
   `https://<PROJECT_REF>.supabase.co/auth/v1/callback`
 
 **Not known yet** — fill in once decided (see `vision.md` Phase 3, hosting not chosen):
 - Production frontend URL: `https://____________________`
 
-The browser never talks to Google/GitHub directly — `signInWithOAuth()` sends it to
+The browser never talks to Google directly — `signInWithOAuth()` sends it to
 Supabase, which redirects to the provider, which redirects back to **Supabase's own fixed
 callback** above, which then redirects to your app's `redirectTo` (`/consent`,
-`/reset-password`). So Google/GitHub only ever need Supabase's callback URL, not your
+`/reset-password`). So Google only ever needs Supabase's callback URL, not your
 frontend's. Only Supabase needs your frontend's actual URL.
 
 ## 1. Google Cloud Console (GCP)
@@ -36,22 +40,7 @@ frontend's. Only Supabase needs your frontend's actual URL.
       but confirm in the console before assuming.
 - [ ] Note the redirect URI change takes effect immediately; no redeploy needed on Google's side.
 
-## 2. GitHub (OAuth App)
-
-- [ ] Settings → Developer settings → OAuth Apps → the existing app used for local dev (reuse it,
-      same reasoning as above).
-- [ ] **Authorization callback URL**: this field only takes **one** URL in a classic GitHub OAuth
-      App (unlike Google, which allows a list) — check whether the current value is still the
-      local one. If GitHub only allows one, you'll need to either:
-      - switch it to the production callback once you stop needing local GitHub-login testing, or
-      - register a **second** OAuth App for production and give Supabase's production project
-        that app's client ID/secret instead of reusing the local one.
-      Confirm which GitHub actually allows before assuming — this may have changed.
-- [ ] Update **Homepage URL** to the production frontend URL (cosmetic, but do it).
-- [ ] No review/verification step for GitHub OAuth Apps used for login — unlike Google, there's
-      nothing else to "publish".
-
-## 3. Supabase (production project — the **Dashboard**, not `supabase/config.toml`)
+## 2. Supabase (production project — the **Dashboard**, not `supabase/config.toml`)
 
 `supabase/config.toml` only configures the **local** `supabase start` stack. None of it applies
 to the hosted production project automatically — these all need setting again in the Supabase
@@ -61,8 +50,6 @@ settings before relying on it — hasn't been tried here).
 
 - [ ] **Authentication → Providers → Google**: enable, paste the *production* client ID/secret
       (same OAuth app as above, since it now has both callback URLs registered).
-- [ ] **Authentication → Providers → GitHub**: same, using whichever OAuth App you decided on
-      in step 2.
 - [ ] **Authentication → URL Configuration**:
   - Site URL → the production frontend URL.
   - Redirect URLs → add the production equivalents of what's in `additional_redirect_urls`
@@ -90,7 +77,7 @@ settings before relying on it — hasn't been tried here).
       yet**; `prisma db push` (or migrations) need to run against production before 2FA/recovery
       will work there at all. Separate task from this checklist, but blocks it in practice.
 
-## 4. The app's own config (not GCP/GitHub/Supabase, but part of the same "going live" step)
+## 3. The app's own config (not GCP/Supabase, but part of the same "going live" step)
 
 - [ ] `.env` (wherever the production backend/frontend actually run): `SUPABASE_AUTH_URL` /
       `NEXT_PUBLIC_SUPABASE_URL` → `https://<PROJECT_REF>.supabase.co`;
@@ -108,6 +95,6 @@ settings before relying on it — hasn't been tried here).
 
 ## Do this again whenever the frontend domain changes
 
-Every URL in sections 1, 2 and 3 (except Supabase's own fixed callback) is tied to the
+Every URL in sections 1 and 2 (except Supabase's own fixed callback) is tied to the
 frontend's domain. A domain change (custom domain, hosting provider change, etc.) means
 repeating this whole checklist, not just updating the frontend.

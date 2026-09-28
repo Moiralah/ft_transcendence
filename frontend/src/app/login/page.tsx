@@ -25,7 +25,7 @@ export default function LoginPage() {
 		}
 	}, []);
 
-	const handleOAuthLogin = async (provider: 'google' | 'github') => {
+	const handleOAuthLogin = async (provider: 'google') => {
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider,
 			options: {
@@ -95,7 +95,6 @@ export default function LoginPage() {
 							</p>
 							<div  className="flex flex-col gap-3 ">
 								<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
-								<button onClick={() => handleOAuthLogin('github')}>Sign in with GitHub</button>
 							</div>
 						</>
 					)}

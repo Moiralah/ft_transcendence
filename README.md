@@ -79,7 +79,7 @@ Docker, check `docker exec transpeed-backend-1 sh -c 'echo $DATABASE_URL
 $SUPABASE_AUTH_URL'` before anything else — both need
 `host.docker.internal`, not `127.0.0.1`.
 
-### 5. Google/GitHub OAuth locally (optional)
+### 5. Google OAuth locally (optional)
 Local Supabase has no OAuth providers configured out of the box. To test
 Google sign-in locally without touching the shared project:
 1. In Google Cloud Console, add a **second** Authorized redirect URI to
@@ -193,7 +193,7 @@ Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
 
 The current codebase already provides:
 
-- User authentication with **Supabase** (email/password + Google/GitHub OAuth)
+- User authentication with **Supabase** (email/password + Google OAuth)
 - JWT token handling
 - Basic **tree** and **profile** management
 - Role‑based permissions within trees (ADMIN, MODERATOR, MEMBER, VIEWER)
@@ -217,7 +217,7 @@ We have chosen the following modules.
 | Use a backend framework (NestJS) | Minor | 1 | ✅ Done | NestJS 10 |
 | Use an ORM (Prisma) | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
 | Custom design system with ≥10 reusable components | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
-| **Remote authentication with OAuth 2.0 (Google, GitHub)** | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local |
+| **Remote authentication with OAuth 2.0 (Google)** | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
 | **Standard user management and authentication** | Major | 2 | 🔄 Partial | Login/signup working, but still need: avatar upload, friends system, online status, profile page |
 | **Advanced permissions system** (global roles) | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users` |
 | **Organization system** (trees as orgs) | Major | 2 | 🔄 Partial | Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system |

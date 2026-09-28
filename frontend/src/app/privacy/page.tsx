@@ -44,7 +44,7 @@ export default function PrivacyPolicyPage() {
 					<p><strong>Account information.</strong> When you sign up, we collect your email
 					address and, depending on how you sign in, either a password (handled entirely by
 					Supabase Auth — we never see or store your raw password) or your name, email, and
-					profile picture from Google/GitHub if you use OAuth sign-in.</p>
+					profile picture from Google if you use OAuth sign-in.</p>
 					<p><strong>Family tree data.</strong> Information you add to a tree — first and
 					last name, gender, birth and death dates, a short bio, and a profile photo — for
 					yourself and for anyone else you add as a family member.</p>
@@ -75,12 +75,12 @@ export default function PrivacyPolicyPage() {
 
 				<Section title="4. Third-Party Services">
 					<p><strong>Supabase</strong> hosts our database and handles authentication
-					(including Google/GitHub sign-in). Your account credentials and session are
+					(including Google sign-in). Your account credentials and session are
 					managed by Supabase&apos;s infrastructure, governed by
 					{' '}<a href="https://supabase.com/privacy" className="underline" target="_blank" rel="noreferrer">Supabase&apos;s own privacy policy</a>.</p>
-					<p><strong>Google / GitHub.</strong> If you choose to sign in with Google or
-					GitHub, that provider shares your name, email, and profile picture with us —
-					nothing else, and only after you approve it on their consent screen.</p>
+					<p><strong>Google.</strong> If you choose to sign in with Google, it shares
+					your name, email, and profile picture with us — nothing else, and only after
+					you approve it on their consent screen.</p>
 				</Section>
 
 				<Section title="5. Data Security">
