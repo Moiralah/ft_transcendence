@@ -14,7 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -28,6 +28,8 @@ interface TreeNodeProp {
   currentMember?: Member;
   NodeAddSpouse: (addMember: Member) => void;
   NodeAddChild: (addMember: Member) => void;
+  NodeRemoveChild;
+  NodeRemoveSpouse,
 }
 
 export function TreeNode({
@@ -35,6 +37,8 @@ export function TreeNode({
   currentMember,
   NodeAddChild,
   NodeAddSpouse,
+  NodeRemoveChild,
+  NodeRemoveSpouse,
 }: TreeNodeProp) {
 
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
@@ -53,7 +57,7 @@ export function TreeNode({
         throw new Error("No token found. please log in");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch (`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.profileId}`, {
+      const res = await fetch (`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -67,11 +71,12 @@ export function TreeNode({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      // if (onAddChild)
-      //   onAddChild();
-      // if (onClose) {
-      //   onClose();
-      // }
+      if (NodeRemoveChild) {
+        NodeRemoveChild();
+      }
+      if (NodeRemoveSpouse) {
+        NodeRemoveSpouse();     
+      }
     } catch (err: any) {
       console.error("Save error:", err.message);
     }
@@ -81,7 +86,6 @@ export function TreeNode({
     <div 
       className="flex flex-col items-center relative z-10"
       onClick={() => setNodeProfileModal(true)}
-
     >
       <div className={`
         ${nodeMember.gender === 'male' ? 
@@ -92,9 +96,11 @@ export function TreeNode({
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[120px]`}
       >
         <button 
+          type="button"
           className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             handleDeleteNode();
           }}
         >

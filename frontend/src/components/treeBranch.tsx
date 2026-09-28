@@ -1,4 +1,4 @@
-import React ,{ useState, useEffect}from 'react';
+import React, { useState, useEffect } from 'react';
 import { TreeNode } from './treeNode';
 
 export interface Member {
@@ -14,7 +14,7 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -22,13 +22,15 @@ export interface Member {
 }
 
 interface TreeBranchProp {
-  allMembers: Member[];
+  allMembers?: Member[];
   currentMember?: Member;
+  onMembersChange?: (updatedMembers: Member[]) => void;
 }
 
 export function TreeBranch({
-  allMembers,
+  allMembers = [],
   currentMember,
+  onMembersChange,
 }: TreeBranchProp) {
 
   interface FamilyMembers {
@@ -36,24 +38,32 @@ export function TreeBranch({
     spouse?: Member | null;
   }
 
-  const [localMembers, setLocalMember] = useState<Member[]>(allMembers);
-  
-  useEffect(() => {
-    setLocalMember(allMembers);
-  }, [allMembers]);
-  
+  // Ensure state defaults to an array fallback
+  const [localMembers, setLocalMembers] = useState<Member[]>(allMembers ?? []);
 
+  // Sync state whenever allMembers prop updates
+  useEffect(() => {
+    setLocalMembers(allMembers ?? []);
+  }, [allMembers]);
+
+  // Safe helper to notify parent without triggering nested state updates
+  const updateMembers = (newMembers: Member[]) => {
+    setLocalMembers(newMembers);
+    if (onMembersChange) {
+      onMembersChange(newMembers);
+    }
+  };
 
   const getMember = (targetId?: number | null): Member | undefined => {
     if (!targetId) return undefined;
-    return localMembers.find(
+    return (localMembers ?? []).find(
       (m) => m.profileId === targetId
     );
   };
 
   const getFamilyMembers = (parent?: Member): FamilyMembers => {
     if (!parent) return { children: [], spouse: undefined };
-    
+
     const spouse = getMember(parent.spouseId);
     const children = (parent.childrenIds ?? [])
       .map((childId) => getMember(childId))
@@ -64,66 +74,107 @@ export function TreeBranch({
 
   if (!currentMember) return null;
 
-  const activeCurrentMember = localMembers.find(
+  // Added safeguard (localMembers ?? []) to prevent runtime crashes
+  const activeCurrentMember = (localMembers ?? []).find(
     (m) => m.profileId === currentMember.profileId
   ) ?? currentMember;
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
 
-  const handleAddSpouse = (BranchAddMember: Member) => {
-    activeCurrentMember.spouseId = BranchAddMember.profileId;
-    setLocalMember((prev) => {
-      const updatedList = prev.map((m) => {
-        const isCurrent = m.profileId === activeCurrentMember.profileId;
-        if (isCurrent) {
-          return {
-            ...m,
-            spouseId: BranchAddMember.profileId,
-          };
-        }
-        const isMother = m.profileId === activeCurrentMember.profileId;
-        const isFather = m.profileId === activeCurrentMember.profileId;
-        if (isFather || isMother) {
-          return {
-              ...m,
-            motherId: isFather && !m.motherId ? BranchAddMember.profileId : m.motherId,
-            fatherId: isMother && !m.fatherId ? BranchAddMember.profileId : m.fatherId,
-          };
-        }
+  const renderAddSpouse = (BranchAddMember: Member) => {
+    if (!activeCurrentMember.profileId) return;
 
-        return m;
-      });
-      return [...updatedList, BranchAddMember];
+    const updatedList = localMembers.map((m) => {
+      const isCurrent = m.profileId === activeCurrentMember.profileId;
+      if (isCurrent) {
+        return {
+          ...m,
+          spouseId: BranchAddMember.profileId,
+        };
+      }
+      const isMother = m.profileId === activeCurrentMember.profileId;
+      const isFather = m.profileId === activeCurrentMember.profileId;
+      if (isFather || isMother) {
+        return {
+          ...m,
+          motherId: isFather && !m.motherId ? BranchAddMember.profileId : m.motherId,
+          fatherId: isMother && !m.fatherId ? BranchAddMember.profileId : m.fatherId,
+        };
+      }
+
+      return m;
     });
+
+    const nextState = [...updatedList, BranchAddMember];
+    updateMembers(nextState);
   };
 
-  const handleAddChild = (BranchAddMember: Member) => {
+  const renderAddChild = (BranchAddMember: Member) => {
     const newChildId = BranchAddMember.profileId;
-    setLocalMember((prev) => {
-      const parentId = activeCurrentMember.profileId;
+    const parentId = activeCurrentMember.profileId;
 
-      const updatedList = prev.map((m) => {
-        const isCurrent = (m.profileId ?? m.id) === parentId;
-        if (isCurrent) {
-          return {
-            ...m,
-            childrenIds: [...(m.childrenIds ?? []), newChildId],
-          };
-        }
-        const isSpouse = m.profileId === activeCurrentMember.spouseId;
-        if (isSpouse) {
-          return {
-            ...m,
-            childrenIds: [...(m.childrenIds ?? []), newChildId],
-          };
-        }
-        return m;
-      });
-
-      const exists = updatedList.some((m) => (m.profileId ?? m.id) === newChildId);
-      const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
-      return nextState;
+    const updatedList = localMembers.map((m) => {
+      const isCurrent = (m.profileId ?? m.id) === parentId;
+      if (isCurrent) {
+        return {
+          ...m,
+          childrenIds: [...(m.childrenIds ?? []), newChildId!],
+        };
+      }
+      const isSpouse = m.profileId === activeCurrentMember.spouseId;
+      if (isSpouse) {
+        return {
+          ...m,
+          childrenIds: [...(m.childrenIds ?? []), newChildId!],
+        };
+      }
+      return m;
     });
+
+    const exists = updatedList.some((m) => (m.profileId ?? m.id) === newChildId);
+    const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
+    updateMembers(nextState);
+  };
+  
+  const renderRemoveChild = () => {
+    if (!activeCurrentMember) return;
+
+    const targetId = activeCurrentMember.profileId;
+    
+    const updatedList = localMembers.map((m) => {
+      const isFather = m.profileId && m.profileId === activeCurrentMember.fatherId;
+      const isMother = m.profileId && m.profileId === activeCurrentMember.motherId;
+
+      if (isFather || isMother) {
+        return {
+          ...m,
+          childrenIds: (m.childrenIds ?? []).filter((id) => id !== targetId),
+        };
+      }
+      return m;
+    })
+    .filter((m) => (m.profileId ?? m.id) !== targetId);
+    updateMembers(updatedList);
+  };
+
+  const renderRemoveSpouse = () => {
+    if (!activeCurrentMember) return;
+
+    const targetId = activeCurrentMember.profileId;
+    
+    const updatedList = localMembers.map((m) => {
+      const isSpouse = m.profileId && m.profileId === activeCurrentMember.spouseId;
+
+      if (isSpouse) {
+        return {
+          ...m,
+          spouseId: null,
+        };
+      }
+      return m;
+    })
+    .filter((m) => (m.profileId ?? m.id) !== targetId);
+    updateMembers(updatedList);
   };
 
   return (
@@ -133,8 +184,10 @@ export function TreeBranch({
         <TreeNode 
           members={localMembers} 
           currentMember={activeCurrentMember} 
-          NodeAddChild={handleAddChild}
-          NodeAddSpouse={handleAddSpouse}          
+          NodeAddChild={renderAddChild}
+          NodeAddSpouse={renderAddSpouse}          
+          NodeRemoveChild={renderRemoveChild}         
+          NodeRemoveSpouse={renderRemoveSpouse}         
         />
 
         {spouse && (
@@ -143,8 +196,10 @@ export function TreeBranch({
             <TreeNode 
               members={localMembers} 
               currentMember={spouse}
-              NodeAddChild={handleAddChild}
-              NodeAddSpouse={handleAddSpouse}            
+              NodeAddChild={renderAddChild}
+              NodeAddSpouse={renderAddSpouse}  
+              NodeRemoveChild={renderRemoveChild} 
+              NodeRemoveSpouse={renderRemoveSpouse}         
             />
           </div>
         )}
@@ -158,6 +213,7 @@ export function TreeBranch({
               key={child.profileId ?? child.id}
               allMembers={localMembers}
               currentMember={child}
+              onMembersChange={updateMembers}
             />
           ))}
         </div>

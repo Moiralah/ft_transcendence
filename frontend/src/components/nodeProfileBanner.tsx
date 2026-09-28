@@ -14,7 +14,8 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  linkId?: number | null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -51,7 +52,7 @@ export function NodeProfileModal ({
       (m) => m.profileId === targetId
     );
     if (!foundMember) return null;
-    return (foundMember?.firstName && foundMember?.lastName) 
+    return (foundMember?.firstName && foundMember?.lastName)
     ? `${foundMember.firstName} ${foundMember.lastName}`
     : '-';
   }
@@ -96,12 +97,12 @@ export function NodeProfileModal ({
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
-      const rawResponseBody = await res.json();
+	    const rawResponseBody  = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
-      const newChildMember: Member = serverData[1];
+      const newChildMember: Member = serverData[serverData.length - 1];
 
-       if (onAddChild)
+      if (onAddChild)
         onAddChild(newChildMember);
       if (onClose) {
         onClose();
@@ -177,8 +178,8 @@ const handleAddSpouse = async() => {
     const serverData = rawResponseBody.data || rawResponseBody;
 
     const updatedMember: Member = {
-      ...formMember,   // Guarantees all original fields (id, treeId, role, etc.) stay intact
-      ...serverData,   // Overwrites fields updated by the backend
+      ...formMember,
+      ...serverData,
     };
 
       if (onSave) {
@@ -203,7 +204,7 @@ const handleAddSpouse = async() => {
     if (e.key == "Enter" || e.key == "Escape") {
       setEditName(false);
     }
-  }  
+  }
   const handleNameStaticKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -214,15 +215,13 @@ const handleAddSpouse = async() => {
     setEditName(false);
   }
 
-
-
   return (
           <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
             <div className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-4">
               { /* form fill */}
               <div className="flex flex-col">
                 <div className="flex text-2xl">
-                  { editName ? ( 
+                  { editName ? (
                     <div className="flex flex-row gap-2">
                     <input
                       type="text"
@@ -247,7 +246,7 @@ const handleAddSpouse = async() => {
                     ) : (
                       <div className="flex flex-row font-black font-bold">
                       <div className="flex min-w-96">{formMember.firstName + '  ' + formMember.lastName}</div>
-                      <div 
+                      <div
                         className="flex w-10 h-10 border border-black text-transparent hover:text-red-200 cursor-pointer"
                         onClick={() => setEditName(true)}
                       >
@@ -276,23 +275,23 @@ const handleAddSpouse = async() => {
                       <option value="female">Female</option>
                     </select>
                   </div>
-                </div> 
+                </div>
                 <div className="flex flex-row text-xl font-normal">
                   <div className="flex w-40">status</div>
                   <div className="flex border bg-gray-200 rounded-xl p-2 ">
-                    <div 
+                    <div
                       className={`p-1 sm:p-2 ${alive ? 'bg-white': ''}`}
                       onClick={() => setAlive(true)}
                     >
                       Alive
-                    </div> 
-                    <div 
+                    </div>
+                    <div
                       className={`p-1 sm:p-2 ${alive ? '': 'bg-white'}`}
                       onClick={() => setAlive(false)}
                     >
                       Deceased
                     </div>
-                  </div>  
+                  </div>
                 </div>
                 <div className="flex flex-row text-xl font-normal">
                   <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>Died</div>
@@ -319,7 +318,31 @@ const handleAddSpouse = async() => {
                   }
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                {  claim ? 'this is me' : 'this is not me'}  
+
+                <div>
+                  {member.claim === 'EMPTY' &&  (
+                    <div>
+                      want to claim
+                    </div>
+                  )}
+                  {member.claim === 'PENDING' && (
+
+                    <div>
+                      Pending
+                    </div>
+                  )}
+                  {member.claim === 'ACCEPTED' && member.profileId === member.linkId &&  (
+                    <div>
+                      unclaimed from me
+                    </div>
+                  )}
+                  {member.claim === 'ACCEPTED' && member.profileId !== member.linkId &&(
+                    <div>
+                      claimed by others
+                    </div>
+                  )}
+                </div>
+              
                 </button>
                 <button
                   type="button"
@@ -346,7 +369,7 @@ const handleAddSpouse = async() => {
                       Parent
                     </div>
                     <div>{parentNames || 'None'}</div>
-                  </div>                  
+                  </div>
                   <div className="flex flex-row text-xl font-normal">
                     <div className="flex w-40">
                       children
