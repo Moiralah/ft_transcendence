@@ -81,7 +81,7 @@ export function TreeBranch({
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
 
-  const handleAddSpouse = (BranchAddMember: Member) => {
+  const renderAddSpouse = (BranchAddMember: Member) => {
     if (!activeCurrentMember.profileId) return;
 
     const updatedList = localMembers.map((m) => {
@@ -109,7 +109,7 @@ export function TreeBranch({
     updateMembers(nextState);
   };
 
-  const handleAddChild = (BranchAddMember: Member) => {
+  const renderAddChild = (BranchAddMember: Member) => {
     const newChildId = BranchAddMember.profileId;
     const parentId = activeCurrentMember.profileId;
 
@@ -135,6 +135,47 @@ export function TreeBranch({
     const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
     updateMembers(nextState);
   };
+  
+  const renderRemoveChild = () => {
+    if (!activeCurrentMember) return;
+
+    const targetId = activeCurrentMember.profileId;
+    
+    const updatedList = localMembers.map((m) => {
+      const isFather = m.profileId && m.profileId === activeCurrentMember.fatherId;
+      const isMother = m.profileId && m.profileId === activeCurrentMember.motherId;
+
+      if (isFather || isMother) {
+        return {
+          ...m,
+          childrenIds: (m.childrenIds ?? []).filter((id) => id !== targetId),
+        };
+      }
+      return m;
+    })
+    .filter((m) => (m.profileId ?? m.id) !== targetId);
+    updateMembers(updatedList);
+  };
+
+  const renderRemoveSpouse = () => {
+    if (!activeCurrentMember) return;
+
+    const targetId = activeCurrentMember.profileId;
+    
+    const updatedList = localMembers.map((m) => {
+      const isSpouse = m.profileId && m.profileId === activeCurrentMember.spouseId;
+
+      if (isSpouse) {
+        return {
+          ...m,
+          spouseId: null,
+        };
+      }
+      return m;
+    })
+    .filter((m) => (m.profileId ?? m.id) !== targetId);
+    updateMembers(updatedList);
+  };
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -143,8 +184,10 @@ export function TreeBranch({
         <TreeNode 
           members={localMembers} 
           currentMember={activeCurrentMember} 
-          NodeAddChild={handleAddChild}
-          NodeAddSpouse={handleAddSpouse}          
+          NodeAddChild={renderAddChild}
+          NodeAddSpouse={renderAddSpouse}          
+          NodeRemoveChild={renderRemoveChild}         
+          NodeRemoveSpouse={renderRemoveSpouse}         
         />
 
         {spouse && (
@@ -153,8 +196,10 @@ export function TreeBranch({
             <TreeNode 
               members={localMembers} 
               currentMember={spouse}
-              NodeAddChild={handleAddChild}
-              NodeAddSpouse={handleAddSpouse}            
+              NodeAddChild={renderAddChild}
+              NodeAddSpouse={renderAddSpouse}  
+              NodeRemoveChild={renderRemoveChild} 
+              NodeRemoveSpouse={renderRemoveSpouse}         
             />
           </div>
         )}

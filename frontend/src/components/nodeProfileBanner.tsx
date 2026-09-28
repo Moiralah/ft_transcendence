@@ -14,7 +14,8 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  linkId?: number | null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -96,23 +97,12 @@ export function NodeProfileModal ({
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
-	      const rawResponseBody  = await res.json();
-
-    console.log("ADD CHILD RESPONSE", rawResponseBody );
-    console.log("isArray?", Array.isArray(rawResponseBody ));
-
-    if (Array.isArray(rawResponseBody )) {
-      rawResponseBody .forEach((item, index) => {
-        console.log(`item ${index}`, item);
-      });
-    }
-
-      //const rawResponseBody = await res.json();
+	    const rawResponseBody  = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
       const newChildMember: Member = serverData[serverData.length - 1];
 
-       if (onAddChild)
+      if (onAddChild)
         onAddChild(newChildMember);
       if (onClose) {
         onClose();
@@ -225,8 +215,6 @@ const handleAddSpouse = async() => {
     setEditName(false);
   }
 
-
-
   return (
           <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
             <div className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-4">
@@ -332,24 +320,29 @@ const handleAddSpouse = async() => {
                 >
 
                 <div>
-                  {member.claim === 'EMPTY' && (
+                  {member.claim === 'EMPTY' &&  (
                     <div>
-                      {member.claim}
+                      want to claim
                     </div>
                   )}
                   {member.claim === 'PENDING' && (
+
                     <div>
-                      {member.claim}
+                      Pending
                     </div>
                   )}
-                  {member.claim === 'ACCEPTED' && (
+                  {member.claim === 'ACCEPTED' && member.profileId === member.linkId &&  (
                     <div>
-                      {member.claim}
+                      unclaimed from me
+                    </div>
+                  )}
+                  {member.claim === 'ACCEPTED' && member.profileId !== member.linkId &&(
+                    <div>
+                      claimed by others
                     </div>
                   )}
                 </div>
-                
- 
+              
                 </button>
                 <button
                   type="button"
