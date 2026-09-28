@@ -367,6 +367,7 @@ export class TreeService {
 			gender: display?.gender ?? null,
 			birthDate: display?.birthDate ?? null,
 			deathDate: display?.deathDate ?? null,
+			linkId: m.linkId,
 			spouseId: m.profile?.spouseId ?? null,
 			motherId: m.profile?.motherId ?? null,
 			fatherId: m.profile?.fatherId ?? null,

@@ -15,6 +15,7 @@ export interface Member {
   bio?: string | null;
   photoUrl?: string | null;
   claim?: number| null;
+  linkId?: number;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
