@@ -14,7 +14,8 @@ export interface Member {
   deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
-  claim?: number| null;
+  claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  linkId?: number | null;
   motherId?: number | null;
   fatherId?: number | null;
   spouseId?: number | null;
@@ -96,23 +97,12 @@ export function NodeProfileModal ({
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
-	      const rawResponseBody  = await res.json();
-
-    console.log("ADD CHILD RESPONSE", rawResponseBody );
-    console.log("isArray?", Array.isArray(rawResponseBody ));
-
-    if (Array.isArray(rawResponseBody )) {
-      rawResponseBody .forEach((item, index) => {
-        console.log(`item ${index}`, item);
-      });
-    }
-
-      //const rawResponseBody = await res.json();
+	    const rawResponseBody  = await res.json();
       const serverData = rawResponseBody.data || rawResponseBody;
 
-      const newChildMember: Member = serverData[1];
+      const newChildMember: Member = serverData[serverData.length - 1];
 
-       if (onAddChild)
+      if (onAddChild)
         onAddChild(newChildMember);
       if (onClose) {
         onClose();
@@ -188,8 +178,8 @@ const handleAddSpouse = async() => {
     const serverData = rawResponseBody.data || rawResponseBody;
 
     const updatedMember: Member = {
-      ...formMember,   // Guarantees all original fields (id, treeId, role, etc.) stay intact
-      ...serverData,   // Overwrites fields updated by the backend
+      ...formMember,
+      ...serverData,
     };
 
       if (onSave) {
@@ -224,8 +214,6 @@ const handleAddSpouse = async() => {
   const handleNameBlur = () => {
     setEditName(false);
   }
-
-
 
   return (
           <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
@@ -330,7 +318,31 @@ const handleAddSpouse = async() => {
                   }
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                {  claim ? 'this is me' : 'this is not me'}
+
+                <div>
+                  {member.claim === 'EMPTY' &&  (
+                    <div>
+                      want to claim
+                    </div>
+                  )}
+                  {member.claim === 'PENDING' && (
+
+                    <div>
+                      Pending
+                    </div>
+                  )}
+                  {member.claim === 'ACCEPTED' && member.profileId === member.linkId &&  (
+                    <div>
+                      unclaimed from me
+                    </div>
+                  )}
+                  {member.claim === 'ACCEPTED' && member.profileId !== member.linkId &&(
+                    <div>
+                      claimed by others
+                    </div>
+                  )}
+                </div>
+              
                 </button>
                 <button
                   type="button"
