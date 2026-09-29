@@ -28,8 +28,8 @@ interface TreeNodeProp {
   currentMember?: Member;
   NodeAddSpouse: (addMember: Member) => void;
   NodeAddChild: (addMember: Member) => void;
-  NodeRemoveChild;
-  NodeRemoveSpouse,
+  NodeRemove?: (id: number) => void;
+  showDeleteButton?: boolean;
 }
 
 export function TreeNode({
@@ -37,8 +37,8 @@ export function TreeNode({
   currentMember,
   NodeAddChild,
   NodeAddSpouse,
-  NodeRemoveChild,
-  NodeRemoveSpouse,
+  NodeRemove,
+  showDeleteButton = true,
 }: TreeNodeProp) {
 
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
@@ -71,11 +71,8 @@ export function TreeNode({
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      if (NodeRemoveChild) {
-        NodeRemoveChild();
-      }
-      if (NodeRemoveSpouse) {
-        NodeRemoveSpouse();     
+      if (NodeRemove) {
+        NodeRemove(nodeMember.profileId);
       }
     } catch (err: any) {
       console.error("Save error:", err.message);
@@ -95,17 +92,22 @@ export function TreeNode({
         'bg-amber-100 border-amber-600'} 
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[120px]`}
       >
-        <button 
-          type="button"
-          className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            handleDeleteNode();
-          }}
-        >
-          X
-        </button>
+        {showDeleteButton ? (
+          <button 
+            type="button"
+            className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleDeleteNode();
+            }}
+          >
+            X
+          </button> 
+        ) : (
+          <div className="h-4" />
+        )}
+
         {(nodeMember.firstName || nodeMember.lastName) ? (
           <span>{nodeMember.firstName + ' ' + nodeMember.lastName}</span>
         ) : (
