@@ -137,17 +137,23 @@ export function TreeNode({
         allMembers={members}
         member={nodeMember}
         onClose={() => setNodeProfileModal(false)}
+        onClaim={(updatedMember: Member) => {
+          setNodeMember(updatedMember);
+          setNodeProfileModal(false);
+        }}
+        onUnclaim={(updatedMember: Member) => {
+          setNodeMember(updatedMember);
+          setNodeProfileModal(false);
+        }}
         onSave={(updatedMember: Member) => {
           setNodeMember(updatedMember);
           setNodeProfileModal(false);
         }}
         onAddChild={(newChildMember: Member) => {
-          NodeAddChild(newChildMember);
-          setNodeProfileModal(false);      
+          NodeAddChild(newChildMember);  
         }}
         onAddSpouse={(newSpouseMember: Member) => {
           NodeAddSpouse(newSpouseMember);
-          setNodeProfileModal(false);      
         }}
       />
     )}

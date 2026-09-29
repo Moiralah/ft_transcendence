@@ -26,6 +26,8 @@ interface nodeProfileModalProp {
     allMembers: Member[];
     member: Member;
     onClose: () => void;
+    onClaim: (updatedMember : Member) => void;
+    onUnclaim: (updatedMember : Member) => void;
     onSave: (updatedMember : Member) => void;
     onAddChild: (newChildMember: Member)=> void;
     onAddSpouse: (newSpouseMember: Member)=> void;
@@ -35,6 +37,8 @@ export function NodeProfileModal ({
     allMembers,
     member,
     onClose,
+    onClaim,
+    onUnclaim,
     onSave,
     onAddChild,
     onAddSpouse,
@@ -44,7 +48,6 @@ export function NodeProfileModal ({
 
   const [editName, setEditName] = useState(false);
   const [alive, setAlive] = useState(formMember?.deathDate? false : true);
-  const [claim, setClaim] = useState(false);
 
   const getMemberNameById = (targetId: number | null) => {
     if (!targetId) return null;
@@ -75,45 +78,52 @@ export function NodeProfileModal ({
     }
   }, [member]);
 
-  const handleAddChild = async() => {
-    try {
-      const token = localStorage.getItem("ft_token");
-        if (!token) {
-        throw new Error("No token found. please log in");
-      }
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch (`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+  const handleAddChild = async () => {
+  try {
+    const token = localStorage.getItem("ft_token");
+    if (!token) throw new Error("No token found. Please log in.");
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      );
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
-        throw new Error(`Failed to update profile: ${res.statusText}`);
-      }
+    });
 
-	    const rawResponseBody  = await res.json();
-      const serverData = rawResponseBody.data || rawResponseBody;
-
-      const newChildMember: Member = serverData[serverData.length - 1];
-
-      if (onAddChild)
-        onAddChild(newChildMember);
-      if (onClose) {
-        onClose();
-      }
-
-    } catch (err: any) {
-      console.error("Save error:", err.message);
+    if (!res.ok) {
+      if (res.status === 401) throw new Error("Session expired. Please log in again.");
+      throw new Error(`Failed to add child: ${res.statusText}`);
     }
-  };
 
-const handleAddSpouse = async() => {
+    const rawResponseBody = await res.json();
+    const serverData: Member[] = rawResponseBody.data || rawResponseBody;
+
+    if (Array.isArray(serverData) && serverData.length > 0) {
+      const newChildMember = serverData[serverData.length - 1];
+
+      const newSpouseMember = serverData.find(
+        (m) => 
+          (m.profileId ?? m.id) !== (newChildMember.profileId ?? newChildMember.id) &&
+          (m.profileId ?? m.id) !== (member.profileId ?? member.id)
+      );
+      if (newSpouseMember && onAddSpouse) {
+        onAddSpouse(newSpouseMember);
+      }
+      if (onAddChild) {
+        onAddChild(newChildMember);
+      }
+    }
+    if (onClose) {
+      onClose();
+    }
+  } catch (err: any) {
+    console.error("Save error:", err.message);
+  }
+};
+
+  const handleAddSpouse = async() => {
     try {
       const token = localStorage.getItem("ft_token");
         if (!token) {
@@ -144,6 +154,78 @@ const handleAddSpouse = async() => {
         onAddSpouse(newSpouseMember);
       if (onClose) {
         onClose();
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
+  const handleClaim = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+
+      const updatedMember: Member = {
+        ...member,
+        linkId: member.profileId,
+        claim: 'PENDING',
+      };
+
+      if (onClaim) {
+        onClaim(updatedMember);
+      }
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+  
+  const handleUnclaim = async() => {
+    try {
+      const token = localStorage.getItem("ft_token");
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch (`${API_URL}/trees/${member.treeId}/claims/${member.id}/unclaim`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+
+      const updatedMember: Member = {
+        ...member,
+        linkId: null,
+        claim: 'EMPTY',
+      };
+
+      if (onUnclaim) {
+        onUnclaim(updatedMember);
       }
     } catch (err: any) {
       console.error("Save error:", err.message);
@@ -312,37 +394,35 @@ const handleAddSpouse = async() => {
                 </button>
                 <button
                   type="button"
-                  onClick={(e) =>{
+                  onClick={(e) => {
                     e.stopPropagation();
-                    onClose();}
+                    if (member.claim === 'EMPTY') {
+                      handleClaim();
+                    } else if (member.claim === 'ACCEPTED' && member.profileId === member.linkId) {
+                      handleUnclaim();
+                    }
+                    onClose();
+                  }}
+                  disabled={
+                    member.claim !== 'EMPTY' &&
+                    !(member.claim === 'ACCEPTED' && member.profileId === member.linkId)
                   }
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                 >
-
-                <div>
-                  {member.claim === 'EMPTY' &&  (
-                    <div>
-                      want to claim
-                    </div>
-                  )}
-                  {member.claim === 'PENDING' && (
-
-                    <div>
-                      Pending
-                    </div>
-                  )}
-                  {member.claim === 'ACCEPTED' && member.profileId === member.linkId &&  (
-                    <div>
-                      unclaimed from me
-                    </div>
-                  )}
-                  {member.claim === 'ACCEPTED' && member.profileId !== member.linkId &&(
-                    <div>
-                      claimed by others
-                    </div>
-                  )}
-                </div>
-              
+                  <div>
+                    {member.claim === 'EMPTY' && (
+                    <div>want to claim</div>
+                    )}
+                    {member.claim === 'PENDING' && (
+                      <div>Pending</div>
+                    )}
+                    {member.claim === 'ACCEPTED' && member.profileId === member.linkId && (
+                      <div>unclaim from me</div>
+                    )}
+                    {member.claim === 'ACCEPTED' && member.profileId !== member.linkId && (
+                      <div>claimed by others</div>
+                    )}
+                  </div>
                 </button>
                 <button
                   type="button"
