@@ -685,7 +685,12 @@ export class TreeService {
 				},
 			});
 
-			return { message: 'Profile node deleted.' };
+			return {
+				message: 'Profile node deleted.',
+				deletedMemberId: targetMemberId,
+				deletedProfileId: target.profileId,
+				treeId,
+			 };
 		});
 	}
 
@@ -932,7 +937,7 @@ export class TreeService {
 	async getPendingClaims(treeId: number, requesterProfileId: number) {
 		await this.assertModeratorOrAdmin(treeId, requesterProfileId);
 
-		return this.prisma.treeMember.findMany({
+		const result = await this.prisma.treeMember.findMany({
 			where: { treeId, role: 'HOLDER', claim: 'PENDING' },
 			include: {
 				profile: {
@@ -957,6 +962,41 @@ export class TreeService {
 				}, // the real claimant, e.g. "John"
 			},
 		});
+		console.log('[getPendingClaims] service result:', JSON.stringify(result, null, 2));
+		return result;
 	}
+
+			// 	return from get pending claims[
+			//   {
+			//     "id": 12,
+			//     "profileId": 55,
+			//     "treeId": 3,
+			//     "role": "HOLDER",
+			//     "joinedAt": "2026-09-20T10:00:00.000Z",
+			//     "claim": "PENDING",
+			//     "linkId": 47,
+			//     "profile": {
+			//       "id": 55,
+			//       "firstName": "John",
+			//       "lastName": "Chan",
+			//       "photoUrl": null
+			//     },
+			//     "link": {
+			//       "id": 47,
+			//       "profileId": 88,
+			//       "treeId": 3,
+			//       "role": "JOINER",
+			//       "joinedAt": "2026-09-22T08:15:00.000Z",
+			//       "claim": "PENDING",
+			//       "linkId": null,
+			//       "profile": {
+			//         "id": 88,
+			//         "firstName": "Real",
+			//         "lastName": "User",
+			//         "photoUrl": "https://..."
+			//       }
+			//     }
+			//   }
+			// ]
 
 }
