@@ -19,6 +19,13 @@ For testing/schema changes without touching the shared dev Supabase
 project. All of this is optional — the shared `.env` values still work
 fine if you don't need this.
 
+**Shortcut:** `make local` (plain stack) or `make local-security` (WAF+Vault
+stack) run `supabase start` if it isn't already, read its keys automatically,
+and bring the stack up pointed at it — handles the `host.docker.internal`
+override and key copy-pasting below for you. The steps below are what that
+script is actually doing, useful if something goes wrong or you want to do
+it by hand.
+
 ### 1. Start it
 Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) and
 Docker running. The `supabase/` folder (config + migrations) is already

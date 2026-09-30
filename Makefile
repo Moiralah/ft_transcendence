@@ -21,6 +21,14 @@ security: certs
 security-down:
 	docker compose -f docker-compose.yml -f docker-compose-security.yml down
 
+# Same as `up`/`security`, but against local Supabase (`supabase start`)
+# instead of the shared dev DB — see scripts/local-up.sh for what it sets.
+local: certs
+	./scripts/local-up.sh up
+
+local-security: certs
+	./scripts/local-up.sh security
+
 certs:
 	@if [ ! -f certs/localhost.pem ] || [ ! -f certs/localhost-key.pem ]; then \
 		mkdir -p certs; \
@@ -78,4 +86,4 @@ seed:
 clean: down
 	docker compose -f docker-compose.yml -f docker-compose-security.yml rm -f
 
-.PHONY: up security security-down certs down build logs ps backend frontend backend-shell frontend-shell seed clean
+.PHONY: up security security-down local local-security certs down build logs ps backend frontend backend-shell frontend-shell seed clean
