@@ -7,6 +7,7 @@ import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
 import { TreeBranch } from '@/components/treeBranch';
+import { useTreeNotifications } from '@/hooks/notification';
 
 export default function Content() {
   const params = useParams();
@@ -53,6 +54,9 @@ export default function Content() {
   const updateMembers = (updatedMembers: any[]) => {
     setTreesMember(updatedMembers);
   };
+
+	// Pops a toast whenever an AuditLog row is inserted for this tree.
+  useTreeNotifications(Number(treeId), treesMember);
 
   const fetchTree = async (authToken: string) => {
     try {

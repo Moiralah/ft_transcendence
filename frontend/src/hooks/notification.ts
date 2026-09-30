@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 type AuditLog = {
 	id: number;
 	treeId: number;
-	profileId: string;
+	profileId: number;
 	action: string;
 	details: string | null;
 	createdAt: string;
@@ -35,19 +35,20 @@ export function useTreeNotifications(treeId: number | null, members: MemberLike[
 					event: 'INSERT',
 					schema: 'public',
 					table: 'AuditLog',
-					filter: `treeId=eq.${treeId}`,
 				},
 				(payload) => {
 					const log = payload.new as AuditLog;
+					if (Number(log.treeId) !== Number(treeId)) return;
 					// Show a toast notification
 					const message = formatNotification(log, membersRef.current);
 					toast.success(message, {
-						duration: 4000,
+						duration: 7000,
 						position: 'bottom-right',
 					});
 				}
 			)
-			.subscribe();
+			.subscribe((status, err) => {
+				console.log('[useTreeNotifications]', status, err ?? '');});
 
 		return () => {
 			supabase.removeChannel(channel);
