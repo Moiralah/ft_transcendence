@@ -25,10 +25,12 @@ export function useTreeNotifications(treeId: number | null, members: MemberLike[
 	}, [members]);
 
 	useEffect(() => {
-		if (!treeId) return;
+		if (!treeId || !Number.isFinite(treeId)) return;
+
+		const channelName = `auditlog:tree:${treeId}:${crypto.randomUUID()}`;
 
 		const channel = supabase
-			.channel(`auditlog:tree:${treeId}`)
+			.channel(channelName)
 			.on(
 				'postgres_changes',
 				{
