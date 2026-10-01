@@ -13,7 +13,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const treeId = params.id as unknown as number;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState<any>();
   const [tree, setTree] = useState<any>('');
@@ -67,7 +67,7 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
+          sessionStorage.removeItem('ft_token');
           router.push('/login');
         }
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
@@ -88,7 +88,7 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
+          sessionStorage.removeItem('ft_token');
           router.push('/login');
         }
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
@@ -148,7 +148,7 @@ export default function Content() {
     setEditTreeName(false);
 
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
       if (!token) {
         throw new Error("No token found. Please log in.");
       }

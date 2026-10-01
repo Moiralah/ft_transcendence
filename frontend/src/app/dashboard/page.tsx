@@ -16,8 +16,8 @@ import { clearSession } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
-  const role = typeof window !== 'undefined' ? localStorage.getItem('ft_role') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
+  const role = typeof window !== 'undefined' ? sessionStorage.getItem('ft_role') : null;
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -74,7 +74,7 @@ export default function TreePage() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
+          sessionStorage.removeItem('ft_token');
           router.push('/login');
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
@@ -95,7 +95,7 @@ export default function TreePage() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
+          sessionStorage.removeItem('ft_token');
           router.push('/login');
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);

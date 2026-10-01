@@ -21,13 +21,13 @@ export function isTwoFactorRequired(result: LoginResult): result is TwoFactorReq
 export const MIN_PASSWORD_LENGTH = 8;
 
 export function storeSession(result: LoginSuccess) {
-	localStorage.setItem('ft_token', result.accessToken);
-	localStorage.setItem('ft_role', result.user.role);
+	sessionStorage.setItem('ft_token', result.accessToken);
+	sessionStorage.setItem('ft_role', result.user.role);
 }
 
 export function clearSession() {
-	localStorage.removeItem('ft_token');
-	localStorage.removeItem('ft_role');
+	sessionStorage.removeItem('ft_token');
+	sessionStorage.removeItem('ft_role');
 }
 
 export async function exchangeSupabaseToken(accessToken: string): Promise<LoginResult> {

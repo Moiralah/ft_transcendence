@@ -84,7 +84,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
       if (!token) {
         throw new Error("No token found. please log in");
       }

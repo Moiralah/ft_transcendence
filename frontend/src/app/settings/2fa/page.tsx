@@ -11,7 +11,7 @@ import { ChangePasswordForm } from '@/components/changePasswordForm';
 
 export default function TwoFactorSettingsPage() {
 	const router = useRouter();
-	const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+	const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
 
 	const [loading, setLoading] = useState(true);
 	const [enabled, setEnabled] = useState(false);

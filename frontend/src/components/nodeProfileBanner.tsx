@@ -80,7 +80,7 @@ export function NodeProfileModal ({
 
   const handleAddChild = async () => {
   try {
-    const token = localStorage.getItem("ft_token");
+    const token = sessionStorage.getItem("ft_token");
     if (!token) throw new Error("No token found. Please log in.");
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -125,7 +125,7 @@ export function NodeProfileModal ({
 
   const handleAddSpouse = async() => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
         if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -162,7 +162,7 @@ export function NodeProfileModal ({
 
   const handleClaim = async() => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
         if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -198,7 +198,7 @@ export function NodeProfileModal ({
   
   const handleUnclaim = async() => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
         if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -234,7 +234,7 @@ export function NodeProfileModal ({
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = sessionStorage.getItem("ft_token");
       if (!token) {
         throw new Error("No token found. please log in");
       }

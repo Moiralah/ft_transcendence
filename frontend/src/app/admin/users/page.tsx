@@ -22,8 +22,8 @@ const ROLES: AdminUser['role'][] = ['ADMIN', 'MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
 	const router = useRouter();
-	const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
-	const role = typeof window !== 'undefined' ? localStorage.getItem('ft_role') : null;
+	const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
+	const role = typeof window !== 'undefined' ? sessionStorage.getItem('ft_role') : null;
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
 	const [loading, setLoading] = useState(true);
