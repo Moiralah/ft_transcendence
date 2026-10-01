@@ -8,6 +8,8 @@ import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
 import { TreeBranch } from '@/components/treeBranch';
 import { useTreeNotifications } from '@/hooks/notification';
+import { useTreePresence } from '@/hooks/useTreePresence';
+import { PresenceFacepile } from '@/components/PresenceFacepile';
 
 export default function Content() {
   const params = useParams();
@@ -19,6 +21,7 @@ export default function Content() {
   const [tree, setTree] = useState<any>('');
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
+  const [myProfile, setMyProfile] = useState<any>(null)
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
@@ -26,6 +29,7 @@ export default function Content() {
     if (token) {
       fetchTree(token);
       fetchTreeMember(token);
+	  fetchMyProfile(token);
     }
   }, [treeId, token]);
 
@@ -97,6 +101,21 @@ export default function Content() {
       setTreesMember(data);
     } catch (err: any) {
       console.error('Error fetching tree members:', err);
+    }
+  };
+
+    const fetchMyProfile = async (authToken: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setMyProfile(data);
+    } catch (err: any) {
+      console.error('Error fetching my profile:', err);
     }
   };
 
@@ -212,6 +231,18 @@ export default function Content() {
       return fullName.includes(searchMember.toLowerCase());
     });
 
+	const {onlineProfiles} = useTreePresence(
+	Number(treeId),
+    myProfile? {
+          profileId: myProfile.id,
+          firstName: myProfile.firstName,
+          lastName: myProfile.lastName,
+          photoUrl: myProfile.photoUrl,
+		  onlineAt: myProfile.onlineAt,
+        }
+      : null,
+  );
+
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
       <SkipLink />
@@ -219,6 +250,7 @@ export default function Content() {
         <Navbar />
       </header>
 
+	  <PresenceFacepile users={onlineProfiles}/>
       <main
         id="main-content"
         tabIndex={-1}
