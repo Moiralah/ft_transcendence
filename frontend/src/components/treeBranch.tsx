@@ -24,12 +24,14 @@ export interface Member {
 interface TreeBranchProp {
   allMembers?: Member[];
   currentMember?: Member;
+  publicTree: boolean;
   onMembersChange?: (updatedMembers: Member[]) => void;
 }
 
 export function TreeBranch({
   allMembers = [],
   currentMember,
+  publicTree,
   onMembersChange,
 }: TreeBranchProp) {
 
@@ -191,46 +193,72 @@ const renderAddChild = (BranchAddMember: Member) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Primary Node & Spouse Unit */}
-      <div className="flex flex-row items-center gap-4">
-        <TreeNode 
-          members={localMembers} 
-          currentMember={activeCurrentMember} 
-          NodeAddChild={renderAddChild}
-          NodeAddSpouse={renderAddSpouse}          
-          NodeRemove={(deletedId) => renderRemove(deletedId)}       
-          showDeleteButton={children.length === 0 && !spouse} 
-        />
+   <div className="flex flex-col items-center">
+    {/* Primary Node & Spouse Unit */}
+    <div 
+      className={`relative flex flex-row items-center ${spouse ? 'border border-black rounded-lg border-2' : ''} p-2`}
+    >
+      <TreeNode 
+        members={localMembers} 
+        currentMember={activeCurrentMember} 
+        NodeAddChild={renderAddChild}
+        NodeAddSpouse={renderAddSpouse}          
+        NodeRemove={(deletedId) => renderRemove(deletedId)} 
+        showProfileModal={publicTree}      
+        showDeleteButton={children.length === 0 && !spouse} 
+      />
 
-        {spouse && (
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 text-xl font-bold">=</span>
-            <TreeNode 
-              members={localMembers} 
-              currentMember={spouse}
-              NodeAddChild={renderAddChild}
-              NodeAddSpouse={renderAddSpouse}  
-              NodeRemove={(deletedId) => renderRemove(deletedId)}
-              showDeleteButton={children.length === 0}    
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Recursive Children Branches */}
-      {children.length > 0 && (
-        <div className="flex flex-row gap-8">
-          {children.map((child) => (
-            <TreeBranch
-              key={child.profileId ?? child.id}
-              allMembers={localMembers}
-              currentMember={child}
-              onMembersChange={updateMembers}
-            />
-          ))}
+      {spouse && (
+        <div className="flex items-center">
+          <span className="h-0.5 w-6 bg-black"></span>
+          <TreeNode 
+            members={localMembers} 
+            currentMember={spouse}
+            NodeAddChild={renderAddChild}
+            NodeAddSpouse={renderAddSpouse}  
+            NodeRemove={(deletedId) => renderRemove(deletedId)}
+            showProfileModal={publicTree}      
+            showDeleteButton={children.length === 0}    
+          />
         </div>
       )}
     </div>
-  );
+
+      {children.length > 0 && (
+      <>
+        {/* Stem dropping straight down from parent center */}
+        <div className="h-6 w-0.5 bg-black"></div>
+
+        {/* Children Row Container */}
+        <div className="flex flex-row">
+          {children.map((child, index) => {
+            const isFirst = index === 0;
+            const isLast = index === children.length - 1;
+            const isOnly = children.length === 1;
+
+            return (
+              <div key={child.profileId ?? child.id} className="relative flex flex-col items-center px-4">
+                {/* Horizontal & Vertical Connector Lines */}
+                {!isOnly && (
+                  <div className="absolute top-0 left-0 right-0 h-6 flex">
+                    <div className={`w-1/2 border-t-2 border-black ${isFirst ? 'invisible' : ''}`} />
+                    <div className={`w-1/2 border-t-2 border-black ${isLast ? 'invisible' : ''}`} />
+                  </div>
+                )}
+                {/* Drop line going directly into the child */}
+                <div className="h-6 w-0.5 bg-black z-10" />
+                <TreeBranch
+                  allMembers={localMembers}
+                  publicTree={publicTree}
+                  currentMember={child}
+                  onMembersChange={updateMembers}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </>
+    )}
+  </div>
+);
 }

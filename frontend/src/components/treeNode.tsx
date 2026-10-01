@@ -29,6 +29,7 @@ interface TreeNodeProp {
   NodeAddSpouse: (addMember: Member) => void;
   NodeAddChild: (addMember: Member) => void;
   NodeRemove?: (id: number) => void;
+  showProfileModal: boolean;
   showDeleteButton?: boolean;
 }
 
@@ -38,6 +39,7 @@ export function TreeNode({
   NodeAddChild,
   NodeAddSpouse,
   NodeRemove,
+  showProfileModal,
   showDeleteButton = true,
 }: TreeNodeProp) {
 
@@ -82,7 +84,11 @@ export function TreeNode({
   return (
     <div 
       className="flex flex-col items-center relative z-10"
-      onClick={() => setNodeProfileModal(true)}
+      onClick={() => {
+        if (!showProfileModal) {
+          setNodeProfileModal(true);
+        }
+      }}
     >
       <div className={`
         ${nodeMember.gender === 'male' ? 
@@ -92,7 +98,7 @@ export function TreeNode({
         'bg-amber-100 border-amber-600'} 
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[120px]`}
       >
-        {showDeleteButton ? (
+        {(showDeleteButton && !showProfileModal)? (
           <button 
             type="button"
             className="flex items-center justify-center w-full h-4 text-xs bg-transparent text-transparent rounded-lg hover:bg-transparent hover:text-black"
@@ -125,8 +131,6 @@ export function TreeNode({
           {nodeMember.profileId || ' '}
         </div>
       </div>
-
-      <div className="w-0.5 h-6 bg-black"></div>
 
       <div className="flex gap-8 relative pt-6">
         <div className="absolute top-0 left-12 right-12 h-0.5 bg-amber-600"></div>

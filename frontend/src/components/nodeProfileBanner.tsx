@@ -1,5 +1,5 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 
 export interface Member {
   id: number;
@@ -22,61 +22,63 @@ export interface Member {
   childrenIds?: number[];
 }
 
-interface nodeProfileModalProp {
-    allMembers: Member[];
-    member: Member;
-    onClose: () => void;
-    onClaim: (updatedMember : Member) => void;
-    onUnclaim: (updatedMember : Member) => void;
-    onSave: (updatedMember : Member) => void;
-    onAddChild: (newChildMember: Member)=> void;
-    onAddSpouse: (newSpouseMember: Member)=> void;
+interface NodeProfileModalProps {
+  allMembers: Member[];
+  member: Member;
+  onClose: () => void;
+  onClaim: (updatedMember: Member) => void;
+  onUnclaim: (updatedMember: Member) => void;
+  onSave: (updatedMember: Member) => void;
+  onAddChild: (newChildMember: Member) => void;
+  onAddSpouse: (newSpouseMember: Member) => void;
 }
 
-export function NodeProfileModal ({
-    allMembers,
-    member,
-    onClose,
-    onClaim,
-    onUnclaim,
-    onSave,
-    onAddChild,
-    onAddSpouse,
-} : nodeProfileModalProp ) {
-
+export function NodeProfileModal({
+  allMembers,
+  member,
+  onClose,
+  onClaim,
+  onUnclaim,
+  onSave,
+  onAddChild,
+  onAddSpouse,
+}: NodeProfileModalProps) {
   const [formMember, setFormMember] = useState<Member | null>(member);
-
   const [editName, setEditName] = useState(false);
-  const [alive, setAlive] = useState(formMember?.deathDate? false : true);
+  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  // Hydration state to prevent Next.js / SSR errors when using document.body
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (member) {
+      setFormMember(member);
+      setAlive(!member.deathDate);
+    }
+  }, [member]);
 
   const getMemberNameById = (targetId: number | null) => {
     if (!targetId) return null;
-    const foundMember = allMembers.find(
-      (m) => m.profileId === targetId
-    );
+    const foundMember = allMembers.find((m) => m.profileId === targetId);
     if (!foundMember) return null;
-    return (foundMember?.firstName && foundMember?.lastName)
-    ? `${foundMember.firstName} ${foundMember.lastName}`
-    : '-';
-  }
+    return foundMember?.firstName && foundMember?.lastName
+      ? `${foundMember.firstName} ${foundMember.lastName}`
+      : '-';
+  };
 
   const childNames = allMembers
-  .filter(m => member.childrenIds?.includes(m.profileId))
-  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
-  .filter(Boolean)
-  .join(', ');
+    .filter((m) => member.childrenIds?.includes(m.profileId ?? -1))
+    .map((m) => `${m.firstName} ${m.lastName ?? ''}`.trim())
+    .filter(Boolean)
+    .join(', ');
 
-  const parentNames = allMembers.filter(
-  m => m.profileId === member.fatherId || m.profileId === member.motherId)
-  .map(m => `${m.firstName} ${m.lastName ?? ''}`.trim())
-  .filter(Boolean)
-  .join(', ');
-
-  useEffect(() => {
-    if (member) {
-      setFormMember(member);
-    }
-  }, [member]);
+  const parentNames = allMembers
+    .filter((m) => m.profileId === member.fatherId || m.profileId === member.motherId)
+    .map((m) => `${m.firstName} ${m.lastName ?? ''}`.trim())
+    .filter(Boolean)
+    .join(', ');
 
   const handleAddChild = async () => {
   try {
@@ -104,7 +106,7 @@ export function NodeProfileModal ({
       const newChildMember = serverData[serverData.length - 1];
 
       const newSpouseMember = serverData.find(
-        (m) => 
+        (m) =>
           (m.profileId ?? m.id) !== (newChildMember.profileId ?? newChildMember.id) &&
           (m.profileId ?? m.id) !== (member.profileId ?? member.id)
       );
@@ -123,25 +125,21 @@ export function NodeProfileModal ({
   }
 };
 
-  const handleAddSpouse = async() => {
+  const handleAddSpouse = async () => {
     try {
-      const token = sessionStorage.getItem("ft_token");
-        if (!token) {
-        throw new Error("No token found. please log in");
-      }
+      const token = sessionStorage.getItem('ft_token');
+      if (!token) throw new Error('No token found. Please log in.');
+
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch (`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
-        method: "POST",
+      const res = await fetch(`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-      },
-      );
+      });
       if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
+        if (res.status === 401) throw new Error('Session expired. Please log in again.');
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
@@ -150,35 +148,29 @@ export function NodeProfileModal ({
 
       const newSpouseMember: Member = serverData[1];
 
-      if (onAddSpouse)
-        onAddSpouse(newSpouseMember);
-      if (onClose) {
-        onClose();
-      }
+      if (onAddSpouse) onAddSpouse(newSpouseMember);
+      if (onClose) onClose();
     } catch (err: any) {
-      console.error("Save error:", err.message);
+      console.error('Save error:', err.message);
     }
   };
 
-  const handleClaim = async() => {
+  const handleClaim = async () => {
     try {
       const token = sessionStorage.getItem("ft_token");
         if (!token) {
         throw new Error("No token found. please log in");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch (`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
-        method: "POST",
+      const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-      },
-      );
+      });
       if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
+        if (res.status === 401) throw new Error('Session expired. Please log in again.');
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
@@ -188,33 +180,28 @@ export function NodeProfileModal ({
         claim: 'PENDING',
       };
 
-      if (onClaim) {
-        onClaim(updatedMember);
-      }
+      if (onClaim) onClaim(updatedMember);
     } catch (err: any) {
-      console.error("Save error:", err.message);
+      console.error('Save error:', err.message);
     }
   };
-  
-  const handleUnclaim = async() => {
+
+  const handleUnclaim = async () => {
     try {
       const token = sessionStorage.getItem("ft_token");
         if (!token) {
         throw new Error("No token found. please log in");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch (`${API_URL}/trees/${member.treeId}/claims/${member.id}/unclaim`, {
-        method: "PUT",
+      const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}/unclaim`, {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-      },
-      );
+      });
       if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
+        if (res.status === 401) throw new Error('Session expired. Please log in again.');
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
@@ -224,16 +211,16 @@ export function NodeProfileModal ({
         claim: 'EMPTY',
       };
 
-      if (onUnclaim) {
-        onUnclaim(updatedMember);
-      }
+      if (onUnclaim) onUnclaim(updatedMember);
     } catch (err: any) {
-      console.error("Save error:", err.message);
+      console.error('Save error:', err.message);
     }
   };
 
   const handleSave = async () => {
     try {
+      if (!formMember?.profileId) return;
+
       const token = sessionStorage.getItem("ft_token");
       if (!token) {
         throw new Error("No token found. please log in");
@@ -241,249 +228,296 @@ export function NodeProfileModal ({
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
       const res = await fetch(`${API_URL}/profile/${formMember.profileId}`, {
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formMember),
-        },
-      );
+      });
       if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        }
+        if (res.status === 401) throw new Error('Session expired. Please log in again.');
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
 
-    const rawResponseBody = await res.json();
-    const serverData = rawResponseBody.data || rawResponseBody;
+      const rawResponseBody = await res.json();
+      const serverData = rawResponseBody.data || rawResponseBody;
 
-    const updatedMember: Member = {
-      ...formMember,
-      ...serverData,
-    };
+      const updatedMember: Member = {
+        ...formMember,
+        ...serverData,
+      };
 
-      if (onSave) {
-        onSave(updatedMember);
-      }
-      if (onClose) {
-        onClose();
-      }
+      if (onSave) onSave(updatedMember);
+      if (onClose) onClose();
     } catch (err: any) {
-    console.error("Save error:", err.message);
+      console.error('Save error:', err.message);
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormMember((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
-  const handleNameKeyDown = (e) => {
-    if (e.key == "Enter" || e.key == "Escape") {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      setEditingField(null);
       setEditName(false);
     }
-  }
-  const handleNameStaticKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setEditName(true);
-    }
-  }
+  };
+
   const handleNameBlur = () => {
     setEditName(false);
-  }
+  };
 
-  return (
-          <div className="fixed inset-0 flex z-20 items-center justify-center bg-black/50 p-3 mt-20">
-            <div className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-4">
-              { /* form fill */}
-              <div className="flex flex-col">
+  if (!mounted) return null;
+
+  return ReactDOM.createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+    >
+      <div
+        className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Form Section */}
+        <div className="flex flex-col gap-4">
+          <div className="flex text-2xl">
+            {editName ? (
+              <div className="flex flex-row gap-2">
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formMember?.firstName || ''}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  aria-label="Edit First Name"
+                  className="min-w-48 flex flex-row border rounded px-2 py-1 text-base outline-none border-blue-500"
+                />
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formMember?.lastName || ''}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleNameBlur}
+                  aria-label="Edit Last Name"
+                  className="min-w-48 flex flex-row border rounded px-2 py-1 text-base outline-none border-blue-500"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-row font-bold justify-between items-center w-full">
                 <div className="flex text-2xl">
-                  { editName ? (
-                    <div className="flex flex-row gap-2">
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formMember?.firstName}
-                      onChange={handleChange}
-                      onKeyDown={handleNameKeyDown}
-                      aria-label="Edit First Name"
-                      className="min-w-48 flex flex-row"
-                    />
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formMember.lastName}
-                      onChange={handleChange}
-                      onKeyDown={handleNameKeyDown}
-                      onBlur={handleNameBlur}
-                      aria-label="Edit Last Name"
-                      className="min-w-48 flex flex-row"
-                    />
-                    </div>
-                    ) : (
-                      <div className="flex flex-row font-black font-bold">
-                      <div className="flex min-w-96">{formMember.firstName + '  ' + formMember.lastName}</div>
-                      <div
-                        className="flex w-10 h-10 border border-black text-transparent hover:text-red-200 cursor-pointer"
-                        onClick={() => setEditName(true)}
-                      >
-                          X
-                      </div>
-                    </div>
-                    )
-                  }
-                  <div className=""></div>
+                  {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
                 </div>
-                <div className="flex flex-row text-xl font-normal">
-                  <div className="flex w-40">Born</div>
-                  <div>API change date</div>
-                </div>
-                <div className="flex flex-row text-xl font-normal">
-                  <div className="flex w-40">
-                    Gender
-                  </div>
-                  <div>
-                    <select
-                      name="gender"
-                      value={formMember.gender}
-                      onChange={handleChange}
-                    >
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex flex-row text-xl font-normal">
-                  <div className="flex w-40">status</div>
-                  <div className="flex border bg-gray-200 rounded-xl p-2 ">
-                    <div
-                      className={`p-1 sm:p-2 ${alive ? 'bg-white': ''}`}
-                      onClick={() => setAlive(true)}
-                    >
-                      Alive
-                    </div>
-                    <div
-                      className={`p-1 sm:p-2 ${alive ? '': 'bg-white'}`}
-                      onClick={() => setAlive(false)}
-                    >
-                      Deceased
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-row text-xl font-normal">
-                  <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>Died</div>
-                  <div className={`flex w-40 ${alive ? 'text-transparent' : 'text-black'}`}>API Change date</div>
+                <div
+                  className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
+                  onClick={() => setEditName(true)}
+                >
+                  Edit Name
                 </div>
               </div>
-              { /* button section */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={(e) =>{
-                    e.stopPropagation();
-                    onClose();}
-                  }
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            )}
+          </div>
+
+          {/* Birth Date */}
+          <div className="flex flex-row text-xl font-normal items-center">
+            <div className="flex w-40 text-gray-500">Born</div>
+            <div className="flex-1">
+              {editingField === 'birthDate' ? (
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={formMember?.birthDate || ''}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  onBlur={() => setEditingField(null)}
+                  autoFocus
+                  className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
+                />
+              ) : (
+                <span
+                  onClick={() => setEditingField('birthDate')}
+                  className="cursor-pointer hover:bg-gray-100 rounded text-xl px-2 py-1"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (member.claim === 'EMPTY') {
-                      handleClaim();
-                    } else if (member.claim === 'ACCEPTED' && member.profileId === member.linkId) {
-                      handleUnclaim();
-                    }
-                    onClose();
-                  }}
-                  disabled={
-                    member.claim !== 'EMPTY' &&
-                    !(member.claim === 'ACCEPTED' && member.profileId === member.linkId)
-                  }
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                >
-                  <div>
-                    {member.claim === 'EMPTY' && (
-                    <div>want to claim</div>
-                    )}
-                    {member.claim === 'PENDING' && (
-                      <div>Pending</div>
-                    )}
-                    {member.claim === 'ACCEPTED' && member.profileId === member.linkId && (
-                      <div>unclaim from me</div>
-                    )}
-                    {member.claim === 'ACCEPTED' && member.profileId !== member.linkId && (
-                      <div>claimed by others</div>
-                    )}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSave();
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
-                >
-                  Save API problem
-                </button>
-              </div>
-              { /* family */}
-              <div className="flex flex-col">
-                <div className="font-black font-bold text-2xl">Immediate Family</div>
-                  <div className="flex flex-row text-xl font-normal">
-                    <div className="flex w-40">
-                      spouse
-                    </div>
-                    <div>{getMemberNameById(member.spouseId) || 'None'}</div>
-                  </div>
-                  <div className="flex flex-row text-xl font-normal">
-                    <div className="flex w-40">
-                      Parent
-                    </div>
-                    <div>{parentNames || 'None'}</div>
-                  </div>
-                  <div className="flex flex-row text-xl font-normal">
-                    <div className="flex w-40">
-                      children
-                    </div>
-                  <div>{childNames || 'None'}</div>
-                </div>
-              </div>
-              {/* Add button section*/}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddChild();
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Add children
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddSpouse();
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  API add spouse
-                </button>
-              </div>
+                  {formMember?.birthDate || 'Click to add birth date'}
+                </span>
+              )}
             </div>
           </div>
-    );
+
+          {/* Gender */}
+          <div className="flex flex-row text-xl font-normal">
+            <div className="flex w-40 text-gray-500">Gender</div>
+            <div>
+              <select
+                name="gender"
+                value={formMember?.gender || 'male'}
+                onChange={handleChange}
+                className="border border-gray-300 rounded px-2 py-1 outline-none"
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex flex-row text-xl font-normal items-center">
+            <div className="flex w-40 text-gray-500">Status</div>
+            <div className="flex border bg-gray-200 rounded-xl p-1">
+              <button
+                type="button"
+                className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  alive ? 'bg-white shadow-sm' : ''
+                }`}
+                onClick={() => setAlive(true)}
+              >
+                Alive
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  !alive ? 'bg-white shadow-sm' : ''
+                }`}
+                onClick={() => setAlive(false)}
+              >
+                Deceased
+              </button>
+            </div>
+          </div>
+
+          {!alive ? (
+            <div className="flex flex-row text-xl font-normal">
+              <div className="flex w-40 text-gray-500">Died</div>
+              <div>{formMember?.deathDate || 'Not specified'}</div>
+            </div>
+          ) : (
+            <div className="h-8"></div>
+          )
+          }
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (member.claim === 'EMPTY') {
+                handleClaim();
+              } else if (member.claim === 'ACCEPTED' && member.profileId === member.linkId) {
+                handleUnclaim();
+              }
+              onClose();
+            }}
+            disabled={
+              member.claim !== 'EMPTY' &&
+              !(member.claim === 'ACCEPTED' && member.profileId === member.linkId)
+            }
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+          >
+            {member.claim === 'EMPTY' && 'Want to claim'}
+            {member.claim === 'PENDING' && 'Pending'}
+            {member.claim === 'ACCEPTED' && member.profileId === member.linkId && 'Unclaim from me'}
+            {member.claim === 'ACCEPTED' && member.profileId !== member.linkId && 'Claimed by others'}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
+                handleSave();
+            }}
+            disabled={
+              member.role === 'JOINER' ||
+              member.role === 'HOLDER' ||
+              (member.role === 'MEMBER' && member.linkId !== member.profileId )
+            }
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shadow-sm"
+          >
+            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Save Changes'}
+            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Save Changes'}
+            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot save'}
+            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot save'}
+          </button>
+        </div>
+
+        {/* Family Section */}
+        <div className="flex flex-col gap-2 border-t pt-4">
+          <div className="font-bold text-2xl">Immediate Family</div>
+          <div className="flex flex-row text-xl font-normal">
+            <div className="flex w-40 text-gray-500">Spouse</div>
+            <div>{getMemberNameById(member.spouseId) || 'None'}</div>
+          </div>
+          <div className="flex flex-row text-xl font-normal">
+            <div className="flex w-40 text-gray-500">Parents</div>
+            <div>{parentNames || 'None'}</div>
+          </div>
+          <div className="flex flex-row text-xl font-normal">
+            <div className="flex w-40 text-gray-500">Children</div>
+            <div>{childNames || 'None'}</div>
+          </div>
+        </div>
+
+        {/* Add Family Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
+                handleAddChild();
+            }}
+            disabled={
+              member.role === 'JOINER' ||
+              member.role === 'HOLDER' ||
+              (member.role === 'MEMBER' && member.linkId !== member.profileId )
+            }
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Add child'}
+            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Add child'}
+            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot add'}
+            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot add'}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
+                handleAddSpouse();
+            }}
+            disabled={
+              member.role === 'JOINER' ||
+              member.role === 'HOLDER' ||
+              (member.role === 'MEMBER' && member.linkId !== member.profileId )
+            }
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Add spouse'}
+            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Add spouse'}
+            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot add'}
+            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot add'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
-
-
-

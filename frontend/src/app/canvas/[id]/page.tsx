@@ -22,6 +22,7 @@ export default function Content() {
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
+  const [publicTree, setPublicTree] = useState<boolean>(true);
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
@@ -152,11 +153,11 @@ export default function Content() {
   };
 
   // Achievement / Tree metadata state
-  const [points, setPoints] = useState(10);
-  const [fullPoints, setFullPoints] = useState(150);
-  const [levels, setLevels] = useState(1);
-  const [levelName, setLevelName] = useState("newbie");
-  const percentage = Math.min(100, Math.max(0, Math.round((points / fullPoints) * 100)));
+  // const [points, setPoints] = useState(10);
+  // const [fullPoints, setFullPoints] = useState(150);
+  // const [levels, setLevels] = useState(1);
+  // const [levelName, setLevelName] = useState("newbie");
+  // const percentage = Math.min(100, Math.max(0, Math.round((points / fullPoints) * 100)));
 
   const [treeMemberModal, setTreeMemberModal] = useState(false);
   const [name, setName] = useState("my tree");
@@ -257,7 +258,7 @@ export default function Content() {
         className="focus:outline-none max-w-6xl w-full mx-auto px-4 flex-1 pt-20"
       >
         {/* Tree member card */}
-        <div className="w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
+        <div className="sticky top-20 z-20 w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-3">
             <div className="h-12 flex flex-1 items-center">
@@ -289,6 +290,7 @@ export default function Content() {
               type="button"
               tabIndex={0}
               onClick={() => {
+                setPublicTree(false);
                 if (initialMember) {
                   setRootMember(initialMember);
                 }
@@ -313,15 +315,6 @@ export default function Content() {
           </div>
         </div>
 
-        <div>
-          {/* Fallback to empty array so TreeBranch always gets valid arrays */}
-          <TreeBranch
-            allMembers={treesMember ?? []}
-            currentMember={rootMember}
-            onMembersChange={updateMembers}
-          />
-        </div>
-
         {/* Interactive Workspace */}
         <div
           className="flex-1 relative cursor-grab active:cursor-grabbing"
@@ -336,8 +329,13 @@ export default function Content() {
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
             }}
           >
-            <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">
-              I am fixed at Canvas Position (160px, 160px)
+            <div>
+              <TreeBranch
+                allMembers={treesMember ?? []}
+                currentMember={rootMember}
+                publicTree={publicTree}
+                onMembersChange={updateMembers}
+              />
             </div>
           </div>
         </div>
@@ -370,7 +368,10 @@ export default function Content() {
               {filteredMembers.map((member: any) => (
                 <div
                   key={member.id}
-                  onClick={() => handleRootMember(member)}
+                  onClick={() => {
+                    setPublicTree(true);
+                    handleRootMember(member);
+                  }}
                   className="cursor-pointer"
                 >
                   <div className="flex flex-row w-full border-t border-b border-gray-200 p-4 gap-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-600">
