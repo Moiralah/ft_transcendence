@@ -33,7 +33,8 @@ export const Status = {
   EMPTY: 'EMPTY',
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
-  REJECTED: 'REJECTED'
+  DECLINED: 'DECLINED',
+  BLOCKED: 'BLOCKED'
 } as const
 
 export type Status = (typeof Status)[keyof typeof Status]
