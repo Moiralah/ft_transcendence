@@ -31,15 +31,23 @@ echo "          startup — anything above that recreated backend/frontend just"
 echo "          gave them new IPs the WAF doesn't know about yet)..."
 docker restart ft_transcendence-waf-backend-1 ft_transcendence-waf-frontend-1
 
-echo "[prod-up] verifying..."
-sleep 3
-FRONTEND_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/login || echo "000")
-BACKEND_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:9443/api/trees/my-trees || echo "000")
+echo "[prod-up] verifying (NestJS takes ~10s to fully boot after a restart, so"
+echo "          retry for up to 30s instead of checking once)..."
+i=0
+while [ $i -lt 10 ]; do
+  FRONTEND_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/login || echo "000")
+  BACKEND_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:9443/api/trees/my-trees || echo "000")
+  if [ "$FRONTEND_CODE" = "200" ] && [ "$BACKEND_CODE" = "401" ]; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 3
+done
 echo "[prod-up] frontend :8443/login -> $FRONTEND_CODE (want 200)"
 echo "[prod-up] backend  :9443/api/trees/my-trees -> $BACKEND_CODE (want 401 — reaches the app, just unauth'd)"
 
 if [ "$FRONTEND_CODE" != "200" ] || [ "$BACKEND_CODE" != "401" ]; then
-  echo "[prod-up] WARNING: one or both checks didn't come back healthy. Check:"
+  echo "[prod-up] WARNING: still not healthy after 30s of retries. Check:"
   echo "  docker ps"
   echo "  docker logs ft_transcendence-backend-1"
   echo "  docker logs ft_transcendence-waf-backend-1"
