@@ -55,6 +55,7 @@ export const ModelName = {
   RecoveryCode: 'RecoveryCode',
   Tree: 'Tree',
   TreeMember: 'TreeMember',
+  Friendship: 'Friendship',
   Invitation: 'Invitation',
   Profile: 'Profile',
   Event: 'Event',
@@ -129,6 +130,18 @@ export const TreeMemberScalarFieldEnum = {
 } as const
 
 export type TreeMemberScalarFieldEnum = (typeof TreeMemberScalarFieldEnum)[keyof typeof TreeMemberScalarFieldEnum]
+
+
+export const FriendshipScalarFieldEnum = {
+  id: 'id',
+  requesterId: 'requesterId',
+  addresseeId: 'addresseeId',
+  status: 'status',
+  createdAt: 'createdAt',
+  respondedAt: 'respondedAt'
+} as const
+
+export type FriendshipScalarFieldEnum = (typeof FriendshipScalarFieldEnum)[keyof typeof FriendshipScalarFieldEnum]
 
 
 export const InvitationScalarFieldEnum = {

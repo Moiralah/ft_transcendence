@@ -27,6 +27,10 @@ model User {
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
 
+  //Add friend
+  sentFriendRequests     Friendship[] @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
+
   // Invitations sent
   sentInvitations Invitation[] @relation("Inviter")
 }
@@ -106,8 +110,24 @@ enum Status {
   EMPTY
   PENDING
   ACCEPTED
-  REJECTED
+  DECLINED
+  BLOCKED
 }
+
+model Friendship {
+  id          Int      @id @default(autoincrement())
+  requesterId String
+  requester   User     @relation("SentFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User     @relation("ReceivedFriendRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      Status   @default(EMPTY)
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
 
 // ------------------- Invitations -------------------
 model Invitation {
