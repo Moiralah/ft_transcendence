@@ -25,6 +25,13 @@ export default function LoginPage() {
 		}
 	}, []);
 
+	// Already signed in — no reason to show the login form again.
+	useEffect(() => {
+		if (sessionStorage.getItem('ft_token')) {
+			router.push('/dashboard');
+		}
+	}, [router]);
+
 	const handleOAuthLogin = async (provider: 'google') => {
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider,

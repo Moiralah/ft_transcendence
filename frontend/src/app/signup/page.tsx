@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -18,6 +18,13 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Already signed in — no reason to show the signup form again.
+  useEffect(() => {
+    if (sessionStorage.getItem('ft_token')) {
+      router.push('/dashboard');
+    }
+  }, [router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

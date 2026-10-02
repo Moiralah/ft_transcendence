@@ -27,11 +27,13 @@ export default function Content() {
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
-    if (token) {
-      fetchTree(token);
-      fetchTreeMember(token);
-	  fetchMyProfile(token);
+    if (!token) {
+      router.push('/login');
+      return;
     }
+    fetchTree(token);
+    fetchTreeMember(token);
+    fetchMyProfile(token);
   }, [treeId, token]);
 
   useEffect(() => {
