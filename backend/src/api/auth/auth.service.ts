@@ -31,9 +31,14 @@ export class AuthService {
 
 		const supabaseUser = data.user;
 
-		// 2. Find or create user in local database (using Prisma)
+		// 2. Find or create user in local database (using Prisma).
+		// Looked up by Supabase's own stable UUID, not email — email can
+		// change (e.g. via a "change email" flow), but the UUID never does.
+		// Looking up by email would fail to find the existing user after an
+		// email change and then crash trying to create a duplicate with the
+		// same id (unique constraint violation on the primary key).
 		let user = await this.prisma.user.findUnique({
-			where: { email: supabaseUser.email },
+			where: { id: supabaseUser.id },
 		});
 
 		if (!user) {
@@ -50,6 +55,13 @@ export class AuthService {
 						}
 					}
 				},
+			});
+		} else if (user.email !== supabaseUser.email) {
+			// Keep our local copy in sync if it ever drifts — e.g. after a
+			// confirmed email change in Supabase.
+			user = await this.prisma.user.update({
+				where: { id: user.id },
+				data: { email: supabaseUser.email },
 			});
 		}
 
