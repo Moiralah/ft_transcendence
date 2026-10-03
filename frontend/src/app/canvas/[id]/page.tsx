@@ -94,7 +94,12 @@ export default function Content() {
         if (res.status === 401) {
           localStorage.removeItem('ft_token');
           router.push('/login');
-        }
+			return;
+		}
+		if (res.status === 403) {
+			router.push('/dashboard?error=no-access');
+			return;
+		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();

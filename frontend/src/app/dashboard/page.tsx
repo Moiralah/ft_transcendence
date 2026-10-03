@@ -249,7 +249,7 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span> {myProfile?.lastName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>              
+              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
 
               <div className="mt-2 flex flex-wrap gap-2">
