@@ -25,9 +25,18 @@ const connectSrc = ["'self'", apiOrigin, supabaseOrigin].filter(Boolean).join(' 
 // /settings/2fa (renders a data: URI QR code image) and any page making API
 // calls, and loosen/tighten specific directives based on what's actually
 // reported, not assumed.
+// 'unsafe-eval' is dev-only: `next dev`'s webpack Fast Refresh/HMR runtime
+// evaluates hot-reloaded code via eval(), and this CSP without it makes the
+// entire client bundle throw on load (EvalError) — not a minor glitch, the
+// whole app goes dead since no JS executes at all. `next start` (prod, local
+// prod-mode testing) doesn't use eval and never needs this loosened.
+const scriptSrc = process.env.NODE_ENV === 'development'
+	? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+	: "script-src 'self' 'unsafe-inline'";
+
 const csp = [
 	"default-src 'self'",
-	"script-src 'self' 'unsafe-inline'",
+	scriptSrc,
 	"style-src 'self' 'unsafe-inline'",
 	"img-src 'self' data:",
 	"font-src 'self'",

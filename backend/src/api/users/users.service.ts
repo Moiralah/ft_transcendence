@@ -28,6 +28,7 @@ export class UsersService {
 				username: true,
 				email: true,
 				role: true,
+				suspended: true,
 				twoFactorEnabled: true,
 				createdAt: true,
 				profile: { select: { firstName: true, lastName: true } },
@@ -50,6 +51,26 @@ export class UsersService {
 			where: { id },
 			data: { role },
 			select: { id: true, username: true, email: true, role: true },
+		});
+	}
+
+	async setSuspended(id: string, suspended: boolean, requesterId: string, requesterRole: string) {
+		if (id === requesterId) {
+			throw new ForbiddenException('You cannot suspend your own account.');
+		}
+
+		const user = await this.prisma.user.findUnique({ where: { id } });
+		if (!user) {
+			throw new NotFoundException('User not found.');
+		}
+		if (user.role === 'ADMIN' && requesterRole !== 'ADMIN') {
+			throw new ForbiddenException('Moderators cannot suspend an admin.');
+		}
+
+		return this.prisma.user.update({
+			where: { id },
+			data: { suspended },
+			select: { id: true, username: true, email: true, suspended: true },
 		});
 	}
 

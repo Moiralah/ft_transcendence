@@ -259,9 +259,9 @@ export default function TreePage() {
                 <Button href="/settings/2fa" variant="secondary">
                   Security &amp; Password
                 </Button>
-                {role === 'ADMIN' && (
+                {(role === 'ADMIN' || role === 'MODERATOR') && (
                   <Button href="/admin/users" variant="secondary">
-                    Admin Panel
+                    {role === 'ADMIN' ? 'Admin Panel' : 'Moderation'}
                   </Button>
                 )}
                 <Button onClick={handleLogout} variant="secondary">

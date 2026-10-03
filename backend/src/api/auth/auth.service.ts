@@ -1,5 +1,5 @@
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -63,6 +63,10 @@ export class AuthService {
 				where: { id: user.id },
 				data: { email: supabaseUser.email },
 			});
+		}
+
+		if (user.suspended) {
+			throw new ForbiddenException('Your account has been suspended.');
 		}
 
 		// 3. If this user has 2FA enabled, don't issue the real JWT yet — hand

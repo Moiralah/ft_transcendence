@@ -112,6 +112,9 @@ export class TwoFactorService {
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
 			throw new ForbiddenException('2FA is not enabled for this account.');
 		}
+		if (user.suspended) {
+			throw new ForbiddenException('Your account has been suspended.');
+		}
 
 		if (authenticator.verify({ token: code, secret: user.twoFactorSecret })) {
 			this.failedAttempts.delete(user.id);

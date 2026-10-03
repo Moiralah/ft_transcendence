@@ -18,6 +18,9 @@ model User {
   // Global role (admin panel / permissions) — separate from per-tree roles (see `Role`)
   role UserRole @default(USER)
 
+  // Moderator action: blocks login without deleting the account (admin-only action)
+  suspended Boolean @default(false)
+
   // 2FA (TOTP)
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?

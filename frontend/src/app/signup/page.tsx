@@ -112,12 +112,16 @@ export default function SignupPage() {
     <div className="card">
       <h1>Create an Account</h1>
       <form onSubmit={handleSignup}>
+        {/* suppressHydrationWarning: browser extensions (password managers,
+            Grammarly, etc.) inject class/style onto these after load, which
+            otherwise trips React's hydration diff on a false positive. */}
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <input
           type="password"
@@ -125,6 +129,7 @@ export default function SignupPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <input
           type="password"
@@ -132,6 +137,7 @@ export default function SignupPage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <button type="submit" disabled={loading}>
           {loading ? 'Creating account...' : 'Sign Up'}

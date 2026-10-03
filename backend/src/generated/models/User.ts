@@ -41,6 +41,7 @@ export type UserMinAggregateOutputType = {
   createdAt: Date | null
   updatedAt: Date | null
   role: $Enums.UserRole | null
+  suspended: boolean | null
   twoFactorEnabled: boolean | null
   twoFactorSecret: string | null
   profileId: number | null
@@ -53,6 +54,7 @@ export type UserMaxAggregateOutputType = {
   createdAt: Date | null
   updatedAt: Date | null
   role: $Enums.UserRole | null
+  suspended: boolean | null
   twoFactorEnabled: boolean | null
   twoFactorSecret: string | null
   profileId: number | null
@@ -65,6 +67,7 @@ export type UserCountAggregateOutputType = {
   createdAt: number
   updatedAt: number
   role: number
+  suspended: number
   twoFactorEnabled: number
   twoFactorSecret: number
   profileId: number
@@ -87,6 +90,7 @@ export type UserMinAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   role?: true
+  suspended?: true
   twoFactorEnabled?: true
   twoFactorSecret?: true
   profileId?: true
@@ -99,6 +103,7 @@ export type UserMaxAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   role?: true
+  suspended?: true
   twoFactorEnabled?: true
   twoFactorSecret?: true
   profileId?: true
@@ -111,6 +116,7 @@ export type UserCountAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   role?: true
+  suspended?: true
   twoFactorEnabled?: true
   twoFactorSecret?: true
   profileId?: true
@@ -210,6 +216,7 @@ export type UserGroupByOutputType = {
   createdAt: Date
   updatedAt: Date
   role: $Enums.UserRole
+  suspended: boolean
   twoFactorEnabled: boolean
   twoFactorSecret: string | null
   profileId: number | null
@@ -245,6 +252,7 @@ export type UserWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  suspended?: Prisma.BoolFilter<"User"> | boolean
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
   twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null
   profileId?: Prisma.IntNullableFilter<"User"> | number | null
@@ -262,6 +270,7 @@ export type UserOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  suspended?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
   twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   profileId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -283,6 +292,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  suspended?: Prisma.BoolFilter<"User"> | boolean
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
   twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null
   recoveryCodes?: Prisma.RecoveryCodeListRelationFilter
@@ -299,6 +309,7 @@ export type UserOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  suspended?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
   twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   profileId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -319,6 +330,7 @@ export type UserScalarWhereWithAggregatesInput = {
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
+  suspended?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   twoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   twoFactorSecret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   profileId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
@@ -331,6 +343,7 @@ export type UserCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
@@ -347,6 +360,7 @@ export type UserUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -363,6 +377,7 @@ export type UserUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
@@ -379,6 +394,7 @@ export type UserUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -395,6 +411,7 @@ export type UserCreateManyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -407,6 +424,7 @@ export type UserUpdateManyMutationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -418,6 +436,7 @@ export type UserUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -430,6 +449,7 @@ export type UserCountOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  suspended?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
   twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
@@ -446,6 +466,7 @@ export type UserMaxOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  suspended?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
   twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
@@ -458,6 +479,7 @@ export type UserMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  suspended?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
   twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
@@ -600,6 +622,7 @@ export type UserCreateWithoutRecoveryCodesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
@@ -615,6 +638,7 @@ export type UserUncheckedCreateWithoutRecoveryCodesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -646,6 +670,7 @@ export type UserUpdateWithoutRecoveryCodesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
@@ -661,6 +686,7 @@ export type UserUncheckedUpdateWithoutRecoveryCodesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -676,6 +702,7 @@ export type UserCreateWithoutSentFriendRequestsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
@@ -691,6 +718,7 @@ export type UserUncheckedCreateWithoutSentFriendRequestsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -711,6 +739,7 @@ export type UserCreateWithoutReceivedFriendRequestsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
@@ -726,6 +755,7 @@ export type UserUncheckedCreateWithoutReceivedFriendRequestsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -757,6 +787,7 @@ export type UserUpdateWithoutSentFriendRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
@@ -772,6 +803,7 @@ export type UserUncheckedUpdateWithoutSentFriendRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -798,6 +830,7 @@ export type UserUpdateWithoutReceivedFriendRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
@@ -813,6 +846,7 @@ export type UserUncheckedUpdateWithoutReceivedFriendRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -828,6 +862,7 @@ export type UserCreateWithoutSentInvitationsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
@@ -843,6 +878,7 @@ export type UserUncheckedCreateWithoutSentInvitationsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   profileId?: number | null
@@ -874,6 +910,7 @@ export type UserUpdateWithoutSentInvitationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
@@ -889,6 +926,7 @@ export type UserUncheckedUpdateWithoutSentInvitationsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -904,6 +942,7 @@ export type UserCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
@@ -919,6 +958,7 @@ export type UserUncheckedCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: $Enums.UserRole
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: string | null
   recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
@@ -950,6 +990,7 @@ export type UserUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
@@ -965,6 +1006,7 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  suspended?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
@@ -1038,6 +1080,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   updatedAt?: boolean
   role?: boolean
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: boolean
   profileId?: boolean
@@ -1056,6 +1099,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   role?: boolean
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: boolean
   profileId?: boolean
@@ -1069,6 +1113,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   role?: boolean
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: boolean
   profileId?: boolean
@@ -1082,12 +1127,13 @@ export type UserSelectScalar = {
   createdAt?: boolean
   updatedAt?: boolean
   role?: boolean
+  suspended?: boolean
   twoFactorEnabled?: boolean
   twoFactorSecret?: boolean
   profileId?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt" | "role" | "twoFactorEnabled" | "twoFactorSecret" | "profileId", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt" | "role" | "suspended" | "twoFactorEnabled" | "twoFactorSecret" | "profileId", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   recoveryCodes?: boolean | Prisma.User$recoveryCodesArgs<ExtArgs>
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
@@ -1119,6 +1165,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     createdAt: Date
     updatedAt: Date
     role: $Enums.UserRole
+    suspended: boolean
     twoFactorEnabled: boolean
     twoFactorSecret: string | null
     profileId: number | null
@@ -1556,6 +1603,7 @@ export interface UserFieldRefs {
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly role: Prisma.FieldRef<"User", 'UserRole'>
+  readonly suspended: Prisma.FieldRef<"User", 'Boolean'>
   readonly twoFactorEnabled: Prisma.FieldRef<"User", 'Boolean'>
   readonly twoFactorSecret: Prisma.FieldRef<"User", 'String'>
   readonly profileId: Prisma.FieldRef<"User", 'Int'>
