@@ -2,6 +2,7 @@ import {
 	Injectable, NotFoundException, ForbiddenException,
 	BadRequestException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const ASSIGNABLE_ROLES = ['ADMIN', 'MODERATOR', 'MEMBER', 'JOINER'] as const;
@@ -35,12 +36,27 @@ export class TreeService {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
 	}
 
+	private generateSlug(name: string): string {
+		// "My Family Tree" → "my-family-tree-a4f9c2"
+		const base = name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '')
+			.slice(0, 32) || 'tree';
+		const suffix = randomBytes(3).toString('hex');  // 6 hex chars
+		return `${base}-${suffix}`;
+	}
+
 	async createTree(profileId: number, name: string, description?: string) {
 		let code: string;
 		do {
 			code = this.generateTreeCode();
 		} while (await this.prisma.tree.findUnique({ where: { code } }));
 
+		let slug: string;
+		do {
+			slug = this.generateSlug(name);
+		} while (await this.prisma.tree.findUnique({ where: { slug } }));
 		// Tree.rootId -> TreeMember.id and TreeMember.treeId -> Tree.id form a
 		// cycle, so we can't nest-create both sides in a single Tree.create().
 		// Do it in three steps instead: blank profile -> root TreeMember
@@ -58,6 +74,7 @@ export class TreeService {
 			const tree = await tx.tree.create({
 				data: {
 					name,
+					slug,
 					code,
 					description,
 					ownerId: profileId,
@@ -178,7 +195,15 @@ export class TreeService {
 			}));
 	}
 
-	async getTreeMember(treeId: number) {
+	async getTreeMember(treeId: number, profileId: number) {
+		const member = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId } },
+		});
+
+		if (!member) {
+			throw new ForbiddenException('You do not have access to this tree.');
+		}
+
 		const memberships = await this.prisma.treeMember.findMany({
 			where: { treeId },
 			include: {
@@ -223,6 +248,44 @@ export class TreeService {
 			throw new NotFoundException('Tree not found.');
 		}
 		return { ...tree, userRole: member.role };
+	}
+
+	async getTreeBySlug(slug: string, profileId: number) {
+		const tree = await this.prisma.tree.findUnique({
+			where: { slug },
+			select: {id: true},
+		});
+		if(!tree) {
+			throw new NotFoundException('Tree not found');
+		}
+		const member = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId: tree.id } },
+		});
+
+		if (!member) {
+			throw new ForbiddenException('You do not have access to this tree.');
+		}
+
+		const fulltree = await this.prisma.tree.findUnique({
+			where: { id: tree.id },
+			include: {
+				owner: true,
+				root: { include: { profile: true, link: { include: { profile: true } } } },
+				members: {
+					include: {
+						profile: true,
+						// The claimed real profile, if this member row is a HOLDER
+						// with a pending or accepted claim on it.
+						link: { include: { profile: true } },
+					},
+				},
+			},
+		});
+
+		if (!fulltree) {
+			throw new NotFoundException('Tree not found.');
+		}
+		return { ...fulltree, userRole: member.role };
 	}
 
 	async update(

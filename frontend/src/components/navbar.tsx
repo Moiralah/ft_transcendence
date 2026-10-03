@@ -5,8 +5,8 @@ import { componentTokens } from './colorPalette';
 
 interface NavbarProps {
   brandName?: string;
-  btnText1?: string;
-  btnHref1?: React.ReactNode;
+  btnText1?: React.ReactNode;
+  btnHref1?: string;
   btnOnClick1?: () => void;
   btnText2?: React.ReactNode;
   btnHref2?: string;
@@ -61,10 +61,10 @@ export function Navbar({
             </Button>
           )}          
           {btnText2 && (
-            <Button 
+            <Button
               href={btnHref2}
               onClick={btnOnClick2}
-              variant="primary"
+              variant="secondary"
             >
               {btnText2}
             </Button>

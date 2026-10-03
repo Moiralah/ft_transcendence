@@ -10,22 +10,14 @@ import { Footer } from '../../components/footer';
 import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
-import { ProfileModal } from '../../components/profileModal';
-
-interface Profile {
-  id?: number;
-  firstName: string;
-  lastName?: string;
-  gender?: "male" | "female" | null;
-  birthDate?: string;
-  deathDate?: string;
-  bio?: string;
-  photoUrl?: string;
-}
+import { ProfileModal, Profile } from '../../components/profileModal';
+import { supabase } from '@/lib/supabaseClient';
+import { clearSession } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const role = typeof window !== 'undefined' ? localStorage.getItem('ft_role') : null;
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -191,6 +183,17 @@ export default function TreePage() {
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
+  const handleLogout = async () => {
+    clearSession();
+    // OAuth logins also leave a Supabase session in the browser; drop it too.
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // already logged out of the app above — don't block the redirect
+    }
+    router.push('/login');
+  };
+
   if (error) {
     return (
       <div role="alert" className="p-8 text-red-700 font-semibold">
@@ -246,12 +249,23 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span> {myProfile?.lastName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>              
+              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
 
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <Button onClick={() => setShowProfileModal(true)} variant="primary">
                   Edit Profile
+                </Button>
+                <Button href="/settings/2fa" variant="secondary">
+                  Security &amp; Password
+                </Button>
+                {role === 'ADMIN' && (
+                  <Button href="/admin/users" variant="secondary">
+                    Admin Panel
+                  </Button>
+                )}
+                <Button onClick={handleLogout} variant="secondary">
+                  Logout
                 </Button>
               </div>
             </div>
@@ -306,7 +320,7 @@ export default function TreePage() {
               {myTrees.map((tree: any) => (
                 <Link
                   key={tree.id}
-                  href={`/canvas/${tree.id}`}
+                  href={`/canvas/${tree.slug}`}
                   className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   aria-label={`View ${tree.name} family tree`}
                 >
@@ -398,7 +412,7 @@ export default function TreePage() {
                   {searchResults.map((tree: any) => (
                     <Link
                       key={tree.id}
-                      href={`/canvas/${tree.id}`}
+                      href={`/canvas/${tree.slug}`}
                       onClick={() => setShowSearch(false)}
                       className="block bg-white p-4 rounded-lg border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/30 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
                     >

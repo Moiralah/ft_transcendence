@@ -8,6 +8,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { supabase } from '@/lib/supabaseClient';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function SignupPage() {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
       return;
     }
 
@@ -64,17 +65,19 @@ export default function SignupPage() {
         // 3. Send token to backend to get our JWT
         const token = loginData.session?.access_token;
         if (token) {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accessToken: token }),
-          });
+          const result = await exchangeSupabaseToken(token);
+          // A brand-new account never has 2FA enabled yet, so this is always
+          // a normal session — but guard anyway in case of a race with an
+          // existing account.
+          if (isTwoFactorRequired(result)) {
+            setSuccess(true);
+            setError('Account created! Please log in.');
+            setTimeout(() => router.push('/login'), 2000);
+            return;
+          }
 
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.message || 'Login failed');
+          storeSession(result);
 
-          localStorage.setItem('ft_token', result.accessToken);
-          
           router.push('/dashboard');
         } else {
           throw new Error('No access token received');
@@ -111,7 +114,7 @@ export default function SignupPage() {
         />
         <input
           type="password"
-          placeholder="Password (min. 6 characters)"
+          placeholder={`Password (min. ${MIN_PASSWORD_LENGTH} characters)`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

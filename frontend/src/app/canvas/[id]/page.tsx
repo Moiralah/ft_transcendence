@@ -7,17 +7,22 @@ import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
 import { TreeBranch } from '@/components/treeBranch';
+import { useTreeNotifications } from '@/hooks/notification';
+import { useTreePresence } from '@/hooks/useTreePresence';
+import { PresenceFacepile } from '@/components/PresenceFacepile';
 
 export default function Content() {
   const params = useParams();
   const router = useRouter();
-  const treeId = params.id as unknown as number;
+  const slug = params.id as unknown as string;
   const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState<any>();
+  const [treeId, setTreeId] = useState<number | null>(null);
   const [tree, setTree] = useState<any>('');
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
+  const [myProfile, setMyProfile] = useState<any>(null)
   const [publicTree, setPublicTree] = useState<boolean>(true);
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -25,9 +30,9 @@ export default function Content() {
   useEffect(() => {
     if (token) {
       fetchTree(token);
-      fetchTreeMember(token);
+	  fetchMyProfile(token);
     }
-  }, [treeId, token]);
+  }, [slug, token]);
 
   useEffect(() => {
     if (tree?.name) {
@@ -55,9 +60,12 @@ export default function Content() {
     setTreesMember(updatedMembers);
   };
 
+	// Pops a toast whenever an AuditLog row is inserted for this tree.
+  useTreeNotifications(Number(treeId), treesMember);
+
   const fetchTree = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -66,17 +74,28 @@ export default function Content() {
         if (res.status === 401) {
           localStorage.removeItem('ft_token');
           router.push('/login');
-        }
+			return;
+		}
+		if (res.status === 403) {
+			router.push('/dashboard?error=no-access');
+			return;
+		}
+		if (res.status === 404) {
+			router.push('/dashboard?error=not-found');
+			return;
+		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();
       setTree(data);
+	  setTreeId(data.id);
+	  fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
   };
 
-  const fetchTreeMember = async (authToken: string) => {
+  const fetchTreeMember = async (authToken: string, treeId: number) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
         headers: {
@@ -87,13 +106,37 @@ export default function Content() {
         if (res.status === 401) {
           localStorage.removeItem('ft_token');
           router.push('/login');
-        }
+			return;
+		}
+		if (res.status === 403) {
+			router.push('/dashboard?error=no-access');
+			return;
+		}
+		if (res.status === 404) {
+			router.push('/dashboard?error=not-found');
+			return;
+		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();
       setTreesMember(data);
     } catch (err: any) {
       console.error('Error fetching tree members:', err);
+    }
+  };
+
+    const fetchMyProfile = async (authToken: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setMyProfile(data);
+    } catch (err: any) {
+      console.error('Error fetching my profile:', err);
     }
   };
 
@@ -209,6 +252,18 @@ export default function Content() {
       return fullName.includes(searchMember.toLowerCase());
     });
 
+	const {onlineProfiles} = useTreePresence(
+	Number(treeId),
+    myProfile? {
+          profileId: myProfile.id,
+          firstName: myProfile.firstName,
+          lastName: myProfile.lastName,
+          photoUrl: myProfile.photoUrl,
+		  onlineAt: myProfile.onlineAt,
+        }
+      : null,
+  );
+
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
       <SkipLink />
@@ -216,6 +271,7 @@ export default function Content() {
         <Navbar />
       </header>
 
+	  <PresenceFacepile users={onlineProfiles}/>
       <main
         id="main-content"
         tabIndex={-1}

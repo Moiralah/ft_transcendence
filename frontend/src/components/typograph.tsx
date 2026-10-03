@@ -35,7 +35,7 @@ export function Typography({
     <Component 
       id={id} 
       className={`${styles[variant]} ${className}`}
-      styles={{ color: token[variant]}}
+      style={{ color: token[variant]}}
     >
       {children}
     </Component>

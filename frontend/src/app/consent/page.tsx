@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession } from '@/lib/auth';
+import { TwoFactorPrompt } from '@/components/twoFactorPrompt';
 
 export default function AuthCallback() {
 	const router = useRouter();
+	const [challengeToken, setChallengeToken] = useState<string | null>(null);
 
 	useEffect(() => {
 		const handleCallback = async () => {
@@ -16,23 +19,35 @@ export default function AuthCallback() {
 				return;
 			}
 			if (data.session) {
-				// Send token to backend
-				const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ accessToken: data.session.access_token }),
-				});
-				const result = await res.json();
-				if (res.ok) {
-					localStorage.setItem('ft_token', result.accessToken);
+				try {
+					const result = await exchangeSupabaseToken(data.session.access_token);
+					if (isTwoFactorRequired(result)) {
+						setChallengeToken(result.challengeToken);
+						return;
+					}
+					storeSession(result);
 					router.push('/dashboard');
-				} else {
+				} catch {
 					router.push('/login?error=BackendError');
 				}
 			}
 		};
 		handleCallback();
 	}, [router]);
+
+	if (challengeToken) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen p-6">
+				<div className="card">
+					<h1>Verify it's you</h1>
+					<TwoFactorPrompt
+						challengeToken={challengeToken}
+						onVerified={() => router.push('/dashboard')}
+					/>
+				</div>
+			</div>
+		);
+	}
 
 	return <div>Processing login...</div>;
 }

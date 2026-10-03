@@ -15,17 +15,48 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Global role (admin panel / permissions) — separate from per-tree roles (see `Role`)
+  role UserRole @default(USER)
+
+  // 2FA (TOTP)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  recoveryCodes    RecoveryCode[]
+
   // Profile (assigned to user when sign up)
   profileId Int? @unique
   profile Profile? @relation(fields: [profileId], references: [id])
+
+  //Add friend
+  sentFriendRequests     Friendship[] @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
 
   // Invitations sent
   sentInvitations Invitation[] @relation("Inviter")
 }
 
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+// ------------------- 2FA Recovery Codes -------------------
+model RecoveryCode {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
 // ------------------- Family Trees -------------------
 model Tree {
   id          Int      @id @default(autoincrement())
+  slug        String   @unique
   name        String   @unique
   code        String?  @unique// 6-8 character alphanumeric join code
   description String?
@@ -80,8 +111,24 @@ enum Status {
   EMPTY
   PENDING
   ACCEPTED
-  REJECTED
+  DECLINED
+  BLOCKED
 }
+
+model Friendship {
+  id          Int      @id @default(autoincrement())
+  requesterId String
+  requester   User     @relation("SentFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User     @relation("ReceivedFriendRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      Status   @default(EMPTY)
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
 
 // ------------------- Invitations -------------------
 model Invitation {

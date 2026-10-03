@@ -398,8 +398,10 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  RecoveryCode: 'RecoveryCode',
   Tree: 'Tree',
   TreeMember: 'TreeMember',
+  Friendship: 'Friendship',
   Invitation: 'Invitation',
   Profile: 'Profile',
   Event: 'Event',
@@ -419,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "tree" | "treeMember" | "invitation" | "profile" | "event" | "auditLog"
+    modelProps: "user" | "recoveryCode" | "tree" | "treeMember" | "friendship" | "invitation" | "profile" | "event" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -494,6 +496,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    RecoveryCode: {
+      payload: Prisma.$RecoveryCodePayload<ExtArgs>
+      fields: Prisma.RecoveryCodeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RecoveryCodeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RecoveryCodeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        findFirst: {
+          args: Prisma.RecoveryCodeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RecoveryCodeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        findMany: {
+          args: Prisma.RecoveryCodeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>[]
+        }
+        create: {
+          args: Prisma.RecoveryCodeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        createMany: {
+          args: Prisma.RecoveryCodeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RecoveryCodeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>[]
+        }
+        delete: {
+          args: Prisma.RecoveryCodeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        update: {
+          args: Prisma.RecoveryCodeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        deleteMany: {
+          args: Prisma.RecoveryCodeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RecoveryCodeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RecoveryCodeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>[]
+        }
+        upsert: {
+          args: Prisma.RecoveryCodeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecoveryCodePayload>
+        }
+        aggregate: {
+          args: Prisma.RecoveryCodeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRecoveryCode>
+        }
+        groupBy: {
+          args: Prisma.RecoveryCodeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RecoveryCodeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RecoveryCodeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RecoveryCodeCountAggregateOutputType> | number
         }
       }
     }
@@ -642,6 +718,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TreeMemberCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TreeMemberCountAggregateOutputType> | number
+        }
+      }
+    }
+    Friendship: {
+      payload: Prisma.$FriendshipPayload<ExtArgs>
+      fields: Prisma.FriendshipFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FriendshipFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FriendshipFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        findFirst: {
+          args: Prisma.FriendshipFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FriendshipFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        findMany: {
+          args: Prisma.FriendshipFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>[]
+        }
+        create: {
+          args: Prisma.FriendshipCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        createMany: {
+          args: Prisma.FriendshipCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FriendshipCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>[]
+        }
+        delete: {
+          args: Prisma.FriendshipDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        update: {
+          args: Prisma.FriendshipUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        deleteMany: {
+          args: Prisma.FriendshipDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FriendshipUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FriendshipUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>[]
+        }
+        upsert: {
+          args: Prisma.FriendshipUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FriendshipPayload>
+        }
+        aggregate: {
+          args: Prisma.FriendshipAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFriendship>
+        }
+        groupBy: {
+          args: Prisma.FriendshipGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FriendshipGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FriendshipCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FriendshipCountAggregateOutputType> | number
         }
       }
     }
@@ -986,14 +1136,29 @@ export const UserScalarFieldEnum = {
   email: 'email',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  role: 'role',
+  twoFactorEnabled: 'twoFactorEnabled',
+  twoFactorSecret: 'twoFactorSecret',
   profileId: 'profileId'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const RecoveryCodeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  codeHash: 'codeHash',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RecoveryCodeScalarFieldEnum = (typeof RecoveryCodeScalarFieldEnum)[keyof typeof RecoveryCodeScalarFieldEnum]
+
+
 export const TreeScalarFieldEnum = {
   id: 'id',
+  slug: 'slug',
   name: 'name',
   code: 'code',
   description: 'description',
@@ -1018,6 +1183,18 @@ export const TreeMemberScalarFieldEnum = {
 } as const
 
 export type TreeMemberScalarFieldEnum = (typeof TreeMemberScalarFieldEnum)[keyof typeof TreeMemberScalarFieldEnum]
+
+
+export const FriendshipScalarFieldEnum = {
+  id: 'id',
+  requesterId: 'requesterId',
+  addresseeId: 'addresseeId',
+  status: 'status',
+  createdAt: 'createdAt',
+  respondedAt: 'respondedAt'
+} as const
+
+export type FriendshipScalarFieldEnum = (typeof FriendshipScalarFieldEnum)[keyof typeof FriendshipScalarFieldEnum]
 
 
 export const InvitationScalarFieldEnum = {
@@ -1140,6 +1317,27 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'UserRole'
+ */
+export type EnumUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserRole'>
+    
+
+
+/**
+ * Reference to a field of type 'UserRole[]'
+ */
+export type ListEnumUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserRole[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1150,13 +1348,6 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1353,8 +1544,10 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  recoveryCode?: Prisma.RecoveryCodeOmit
   tree?: Prisma.TreeOmit
   treeMember?: Prisma.TreeMemberOmit
+  friendship?: Prisma.FriendshipOmit
   invitation?: Prisma.InvitationOmit
   profile?: Prisma.ProfileOmit
   event?: Prisma.EventOmit

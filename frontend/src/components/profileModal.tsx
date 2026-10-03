@@ -31,17 +31,17 @@ interface ProfileModalProps {
 export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalProps) {
 
   const [formData, setFormData] = useState<Profile>({
-    id: "",
+    id: 0,
     firstName: "",
     lastName: "",
-    gender: "",
+    gender: null,
     birthDate: "",
     deathDate: "",
     bio: "",
     photoUrl: "",
   });
 
-  const fields: { key: keyof typeof formData; label: string; type: string }[] = [
+  const fields: { key: 'firstName' | 'lastName' | 'gender' | 'birthDate' | 'deathDate' | 'bio'; label: string; type: string }[] = [
     { key: "firstName", label: "first name", type: "text" },
     { key: "lastName", label: "last name", type: "text" },
     { key: "gender", label: "gender", type: "select" },
@@ -55,10 +55,10 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
   useEffect(() => {
     if (existingProfile) {
       setFormData({
-        id: existingProfile.id ?? "",
+        id: existingProfile.id ?? 0,
         firstName: existingProfile.firstName ?? "",
         lastName: existingProfile.lastName ?? "",
-        gender: existingProfile.gender ?? "",
+        gender: existingProfile.gender ?? null,
         birthDate: existingProfile.birthDate
           ? existingProfile.birthDate.split("T")[0]
           : "",
@@ -71,7 +71,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
     }
   }, [existingProfile]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };

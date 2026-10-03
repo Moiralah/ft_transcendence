@@ -6,6 +6,7 @@ import { ProfileModule } from './api/profile/profile.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TreeModule } from './api/tree/tree.module';
+import { UsersModule } from './api/users/users.module';
 
 @Module({
 	imports: [
@@ -18,6 +19,7 @@ import { TreeModule } from './api/tree/tree.module';
 		AuthModule,
 		ProfileModule,
 		TreeModule,
+		UsersModule,
 	],
 	providers:[PrismaService],
 })

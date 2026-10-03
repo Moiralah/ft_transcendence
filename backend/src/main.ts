@@ -4,10 +4,12 @@ import * as express from 'express';
 import { AppModule } from './app.module';
 import { config } from 'dotenv';
 import * as fs from 'fs';
+import { loadSecretsFromVault } from './vault/load-secrets';
 
 async function bootstrap() {
 
-	config();
+	await loadSecretsFromVault();
+	config(); // fills in anything Vault didn't provide (PORT, CORS_ORIGIN, etc.) — never overwrites what Vault already set
 
 	const httpsOptions = {
 		key: fs.readFileSync('/app/certs/localhost-key.pem'),

@@ -40,6 +40,9 @@ export type UserMinAggregateOutputType = {
   email: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  role: $Enums.UserRole | null
+  twoFactorEnabled: boolean | null
+  twoFactorSecret: string | null
   profileId: number | null
 }
 
@@ -49,6 +52,9 @@ export type UserMaxAggregateOutputType = {
   email: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  role: $Enums.UserRole | null
+  twoFactorEnabled: boolean | null
+  twoFactorSecret: string | null
   profileId: number | null
 }
 
@@ -58,6 +64,9 @@ export type UserCountAggregateOutputType = {
   email: number
   createdAt: number
   updatedAt: number
+  role: number
+  twoFactorEnabled: number
+  twoFactorSecret: number
   profileId: number
   _all: number
 }
@@ -77,6 +86,9 @@ export type UserMinAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  role?: true
+  twoFactorEnabled?: true
+  twoFactorSecret?: true
   profileId?: true
 }
 
@@ -86,6 +98,9 @@ export type UserMaxAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  role?: true
+  twoFactorEnabled?: true
+  twoFactorSecret?: true
   profileId?: true
 }
 
@@ -95,6 +110,9 @@ export type UserCountAggregateInputType = {
   email?: true
   createdAt?: true
   updatedAt?: true
+  role?: true
+  twoFactorEnabled?: true
+  twoFactorSecret?: true
   profileId?: true
   _all?: true
 }
@@ -191,6 +209,9 @@ export type UserGroupByOutputType = {
   email: string
   createdAt: Date
   updatedAt: Date
+  role: $Enums.UserRole
+  twoFactorEnabled: boolean
+  twoFactorSecret: string | null
   profileId: number | null
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
@@ -223,8 +244,14 @@ export type UserWhereInput = {
   email?: Prisma.StringFilter<"User"> | string
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
+  twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null
   profileId?: Prisma.IntNullableFilter<"User"> | number | null
+  recoveryCodes?: Prisma.RecoveryCodeListRelationFilter
   profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
+  sentFriendRequests?: Prisma.FriendshipListRelationFilter
+  receivedFriendRequests?: Prisma.FriendshipListRelationFilter
   sentInvitations?: Prisma.InvitationListRelationFilter
 }
 
@@ -234,8 +261,14 @@ export type UserOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  twoFactorEnabled?: Prisma.SortOrder
+  twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   profileId?: Prisma.SortOrderInput | Prisma.SortOrder
+  recoveryCodes?: Prisma.RecoveryCodeOrderByRelationAggregateInput
   profile?: Prisma.ProfileOrderByWithRelationInput
+  sentFriendRequests?: Prisma.FriendshipOrderByRelationAggregateInput
+  receivedFriendRequests?: Prisma.FriendshipOrderByRelationAggregateInput
   sentInvitations?: Prisma.InvitationOrderByRelationAggregateInput
 }
 
@@ -249,7 +282,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
+  twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null
+  recoveryCodes?: Prisma.RecoveryCodeListRelationFilter
   profile?: Prisma.XOR<Prisma.ProfileNullableScalarRelationFilter, Prisma.ProfileWhereInput> | null
+  sentFriendRequests?: Prisma.FriendshipListRelationFilter
+  receivedFriendRequests?: Prisma.FriendshipListRelationFilter
   sentInvitations?: Prisma.InvitationListRelationFilter
 }, "id" | "username" | "email" | "profileId">
 
@@ -259,6 +298,9 @@ export type UserOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  twoFactorEnabled?: Prisma.SortOrder
+  twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder
   profileId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
@@ -276,6 +318,9 @@ export type UserScalarWhereWithAggregatesInput = {
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
+  role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  twoFactorSecret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   profileId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
 }
 
@@ -285,7 +330,13 @@ export type UserCreateInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
   profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutAddresseeInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
 
@@ -295,7 +346,13 @@ export type UserUncheckedCreateInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
   profileId?: number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutAddresseeInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
 
@@ -305,7 +362,13 @@ export type UserUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
   profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUpdateManyWithoutAddresseeNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
 
@@ -315,7 +378,13 @@ export type UserUncheckedUpdateInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutAddresseeNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
 
@@ -325,6 +394,9 @@ export type UserCreateManyInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
   profileId?: number | null
 }
 
@@ -334,6 +406,9 @@ export type UserUpdateManyMutationInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -342,6 +417,9 @@ export type UserUncheckedUpdateManyInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
@@ -351,6 +429,9 @@ export type UserCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  twoFactorEnabled?: Prisma.SortOrder
+  twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
 }
 
@@ -364,6 +445,9 @@ export type UserMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  twoFactorEnabled?: Prisma.SortOrder
+  twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
 }
 
@@ -373,6 +457,9 @@ export type UserMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  role?: Prisma.SortOrder
+  twoFactorEnabled?: Prisma.SortOrder
+  twoFactorSecret?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
 }
 
@@ -398,12 +485,66 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type EnumUserRoleFieldUpdateOperationsInput = {
+  set?: $Enums.UserRole
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type UserCreateNestedOneWithoutRecoveryCodesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecoveryCodesInput, Prisma.UserUncheckedCreateWithoutRecoveryCodesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecoveryCodesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRecoveryCodesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecoveryCodesInput, Prisma.UserUncheckedCreateWithoutRecoveryCodesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecoveryCodesInput
+  upsert?: Prisma.UserUpsertWithoutRecoveryCodesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRecoveryCodesInput, Prisma.UserUpdateWithoutRecoveryCodesInput>, Prisma.UserUncheckedUpdateWithoutRecoveryCodesInput>
+}
+
+export type UserCreateNestedOneWithoutSentFriendRequestsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentFriendRequestsInput, Prisma.UserUncheckedCreateWithoutSentFriendRequestsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentFriendRequestsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutReceivedFriendRequestsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedCreateWithoutReceivedFriendRequestsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedFriendRequestsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSentFriendRequestsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentFriendRequestsInput, Prisma.UserUncheckedCreateWithoutSentFriendRequestsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentFriendRequestsInput
+  upsert?: Prisma.UserUpsertWithoutSentFriendRequestsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSentFriendRequestsInput, Prisma.UserUpdateWithoutSentFriendRequestsInput>, Prisma.UserUncheckedUpdateWithoutSentFriendRequestsInput>
+}
+
+export type UserUpdateOneRequiredWithoutReceivedFriendRequestsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedCreateWithoutReceivedFriendRequestsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedFriendRequestsInput
+  upsert?: Prisma.UserUpsertWithoutReceivedFriendRequestsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReceivedFriendRequestsInput, Prisma.UserUpdateWithoutReceivedFriendRequestsInput>, Prisma.UserUncheckedUpdateWithoutReceivedFriendRequestsInput>
 }
 
 export type UserCreateNestedOneWithoutSentInvitationsInput = {
@@ -452,13 +593,247 @@ export type UserUncheckedUpdateOneWithoutProfileNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutProfileInput, Prisma.UserUpdateWithoutProfileInput>, Prisma.UserUncheckedUpdateWithoutProfileInput>
 }
 
+export type UserCreateWithoutRecoveryCodesInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutAddresseeInput
+  sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+}
+
+export type UserUncheckedCreateWithoutRecoveryCodesInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  profileId?: number | null
+  sentFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutAddresseeInput
+  sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+}
+
+export type UserCreateOrConnectWithoutRecoveryCodesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecoveryCodesInput, Prisma.UserUncheckedCreateWithoutRecoveryCodesInput>
+}
+
+export type UserUpsertWithoutRecoveryCodesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRecoveryCodesInput, Prisma.UserUncheckedUpdateWithoutRecoveryCodesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecoveryCodesInput, Prisma.UserUncheckedCreateWithoutRecoveryCodesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRecoveryCodesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRecoveryCodesInput, Prisma.UserUncheckedUpdateWithoutRecoveryCodesInput>
+}
+
+export type UserUpdateWithoutRecoveryCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUpdateManyWithoutAddresseeNestedInput
+  sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRecoveryCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sentFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutAddresseeNestedInput
+  sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+}
+
+export type UserCreateWithoutSentFriendRequestsInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
+  receivedFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutAddresseeInput
+  sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+}
+
+export type UserUncheckedCreateWithoutSentFriendRequestsInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  profileId?: number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutAddresseeInput
+  sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+}
+
+export type UserCreateOrConnectWithoutSentFriendRequestsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentFriendRequestsInput, Prisma.UserUncheckedCreateWithoutSentFriendRequestsInput>
+}
+
+export type UserCreateWithoutReceivedFriendRequestsInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
+  profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutRequesterInput
+  sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
+}
+
+export type UserUncheckedCreateWithoutReceivedFriendRequestsInput = {
+  id: string
+  username: string
+  email: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  profileId?: number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutRequesterInput
+  sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
+}
+
+export type UserCreateOrConnectWithoutReceivedFriendRequestsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedCreateWithoutReceivedFriendRequestsInput>
+}
+
+export type UserUpsertWithoutSentFriendRequestsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSentFriendRequestsInput, Prisma.UserUncheckedUpdateWithoutSentFriendRequestsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentFriendRequestsInput, Prisma.UserUncheckedCreateWithoutSentFriendRequestsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSentFriendRequestsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSentFriendRequestsInput, Prisma.UserUncheckedUpdateWithoutSentFriendRequestsInput>
+}
+
+export type UserUpdateWithoutSentFriendRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUpdateManyWithoutAddresseeNestedInput
+  sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSentFriendRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutAddresseeNestedInput
+  sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+}
+
+export type UserUpsertWithoutReceivedFriendRequestsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedUpdateWithoutReceivedFriendRequestsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedCreateWithoutReceivedFriendRequestsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReceivedFriendRequestsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReceivedFriendRequestsInput, Prisma.UserUncheckedUpdateWithoutReceivedFriendRequestsInput>
+}
+
+export type UserUpdateWithoutReceivedFriendRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
+  profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUpdateManyWithoutRequesterNestedInput
+  sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutReceivedFriendRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutRequesterNestedInput
+  sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
+}
+
 export type UserCreateWithoutSentInvitationsInput = {
   id: string
   username: string
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
   profile?: Prisma.ProfileCreateNestedOneWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutAddresseeInput
 }
 
 export type UserUncheckedCreateWithoutSentInvitationsInput = {
@@ -467,7 +842,13 @@ export type UserUncheckedCreateWithoutSentInvitationsInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
   profileId?: number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutAddresseeInput
 }
 
 export type UserCreateOrConnectWithoutSentInvitationsInput = {
@@ -492,7 +873,13 @@ export type UserUpdateWithoutSentInvitationsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
   profile?: Prisma.ProfileUpdateOneWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUpdateManyWithoutAddresseeNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSentInvitationsInput = {
@@ -501,7 +888,13 @@ export type UserUncheckedUpdateWithoutSentInvitationsInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profileId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutAddresseeNestedInput
 }
 
 export type UserCreateWithoutProfileInput = {
@@ -510,6 +903,12 @@ export type UserCreateWithoutProfileInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeCreateNestedManyWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipCreateNestedManyWithoutAddresseeInput
   sentInvitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
 }
 
@@ -519,6 +918,12 @@ export type UserUncheckedCreateWithoutProfileInput = {
   email: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  role?: $Enums.UserRole
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: string | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedCreateNestedManyWithoutUserInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutRequesterInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedCreateNestedManyWithoutAddresseeInput
   sentInvitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
 }
 
@@ -544,6 +949,12 @@ export type UserUpdateWithoutProfileInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUpdateManyWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUpdateManyWithoutAddresseeNestedInput
   sentInvitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
 }
 
@@ -553,6 +964,12 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recoveryCodes?: Prisma.RecoveryCodeUncheckedUpdateManyWithoutUserNestedInput
+  sentFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutRequesterNestedInput
+  receivedFriendRequests?: Prisma.FriendshipUncheckedUpdateManyWithoutAddresseeNestedInput
   sentInvitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
 }
 
@@ -562,10 +979,16 @@ export type UserUncheckedUpdateWithoutProfileInput = {
  */
 
 export type UserCountOutputType = {
+  recoveryCodes: number
+  sentFriendRequests: number
+  receivedFriendRequests: number
   sentInvitations: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  recoveryCodes?: boolean | UserCountOutputTypeCountRecoveryCodesArgs
+  sentFriendRequests?: boolean | UserCountOutputTypeCountSentFriendRequestsArgs
+  receivedFriendRequests?: boolean | UserCountOutputTypeCountReceivedFriendRequestsArgs
   sentInvitations?: boolean | UserCountOutputTypeCountSentInvitationsArgs
 }
 
@@ -582,6 +1005,27 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountRecoveryCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RecoveryCodeWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSentFriendRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FriendshipWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReceivedFriendRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FriendshipWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountSentInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.InvitationWhereInput
 }
@@ -593,8 +1037,14 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  role?: boolean
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: boolean
   profileId?: boolean
+  recoveryCodes?: boolean | Prisma.User$recoveryCodesArgs<ExtArgs>
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+  sentFriendRequests?: boolean | Prisma.User$sentFriendRequestsArgs<ExtArgs>
+  receivedFriendRequests?: boolean | Prisma.User$receivedFriendRequestsArgs<ExtArgs>
   sentInvitations?: boolean | Prisma.User$sentInvitationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
@@ -605,6 +1055,9 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  role?: boolean
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: boolean
   profileId?: boolean
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
@@ -615,6 +1068,9 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  role?: boolean
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: boolean
   profileId?: boolean
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
@@ -625,12 +1081,18 @@ export type UserSelectScalar = {
   email?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  role?: boolean
+  twoFactorEnabled?: boolean
+  twoFactorSecret?: boolean
   profileId?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt" | "profileId", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "email" | "createdAt" | "updatedAt" | "role" | "twoFactorEnabled" | "twoFactorSecret" | "profileId", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  recoveryCodes?: boolean | Prisma.User$recoveryCodesArgs<ExtArgs>
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+  sentFriendRequests?: boolean | Prisma.User$sentFriendRequestsArgs<ExtArgs>
+  receivedFriendRequests?: boolean | Prisma.User$receivedFriendRequestsArgs<ExtArgs>
   sentInvitations?: boolean | Prisma.User$sentInvitationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -644,7 +1106,10 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
+    recoveryCodes: Prisma.$RecoveryCodePayload<ExtArgs>[]
     profile: Prisma.$ProfilePayload<ExtArgs> | null
+    sentFriendRequests: Prisma.$FriendshipPayload<ExtArgs>[]
+    receivedFriendRequests: Prisma.$FriendshipPayload<ExtArgs>[]
     sentInvitations: Prisma.$InvitationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -653,6 +1118,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     email: string
     createdAt: Date
     updatedAt: Date
+    role: $Enums.UserRole
+    twoFactorEnabled: boolean
+    twoFactorSecret: string | null
     profileId: number | null
   }, ExtArgs["result"]["user"]>
   composites: {}
@@ -1048,7 +1516,10 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  recoveryCodes<T extends Prisma.User$recoveryCodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$recoveryCodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecoveryCodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   profile<T extends Prisma.User$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profileArgs<ExtArgs>>): Prisma.Prisma__ProfileClient<runtime.Types.Result.GetResult<Prisma.$ProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  sentFriendRequests<T extends Prisma.User$sentFriendRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentFriendRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  receivedFriendRequests<T extends Prisma.User$receivedFriendRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$receivedFriendRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sentInvitations<T extends Prisma.User$sentInvitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentInvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1084,6 +1555,9 @@ export interface UserFieldRefs {
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly role: Prisma.FieldRef<"User", 'UserRole'>
+  readonly twoFactorEnabled: Prisma.FieldRef<"User", 'Boolean'>
+  readonly twoFactorSecret: Prisma.FieldRef<"User", 'String'>
   readonly profileId: Prisma.FieldRef<"User", 'Int'>
 }
     
@@ -1486,6 +1960,30 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
+ * User.recoveryCodes
+ */
+export type User$recoveryCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RecoveryCode
+   */
+  select?: Prisma.RecoveryCodeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RecoveryCode
+   */
+  omit?: Prisma.RecoveryCodeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RecoveryCodeInclude<ExtArgs> | null
+  where?: Prisma.RecoveryCodeWhereInput
+  orderBy?: Prisma.RecoveryCodeOrderByWithRelationInput | Prisma.RecoveryCodeOrderByWithRelationInput[]
+  cursor?: Prisma.RecoveryCodeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RecoveryCodeScalarFieldEnum | Prisma.RecoveryCodeScalarFieldEnum[]
+}
+
+/**
  * User.profile
  */
 export type User$profileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1502,6 +2000,54 @@ export type User$profileArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    */
   include?: Prisma.ProfileInclude<ExtArgs> | null
   where?: Prisma.ProfileWhereInput
+}
+
+/**
+ * User.sentFriendRequests
+ */
+export type User$sentFriendRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Friendship
+   */
+  select?: Prisma.FriendshipSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Friendship
+   */
+  omit?: Prisma.FriendshipOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FriendshipInclude<ExtArgs> | null
+  where?: Prisma.FriendshipWhereInput
+  orderBy?: Prisma.FriendshipOrderByWithRelationInput | Prisma.FriendshipOrderByWithRelationInput[]
+  cursor?: Prisma.FriendshipWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FriendshipScalarFieldEnum | Prisma.FriendshipScalarFieldEnum[]
+}
+
+/**
+ * User.receivedFriendRequests
+ */
+export type User$receivedFriendRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Friendship
+   */
+  select?: Prisma.FriendshipSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Friendship
+   */
+  omit?: Prisma.FriendshipOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FriendshipInclude<ExtArgs> | null
+  where?: Prisma.FriendshipWhereInput
+  orderBy?: Prisma.FriendshipOrderByWithRelationInput | Prisma.FriendshipOrderByWithRelationInput[]
+  cursor?: Prisma.FriendshipWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FriendshipScalarFieldEnum | Prisma.FriendshipScalarFieldEnum[]
 }
 
 /**

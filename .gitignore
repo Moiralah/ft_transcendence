@@ -26,6 +26,8 @@ build/
 .env.test.local
 .env.production.local
 *.env.*
+# ...but keep the example files, which contain no real values
+!.env.example
 *.pem
 *.key
 
@@ -57,8 +59,15 @@ logs/
 
 /backend/prisma
 /backend/src/generated
+generated/
 
 #Supabase AI
 .agents/
 .claude/
 .windsurf/
+
+
+# Personal Files
+tching/
+# local/production DB backups — never commit real data
+db-backups/
