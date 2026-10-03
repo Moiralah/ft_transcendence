@@ -206,4 +206,15 @@ export class ProfileService {
       if (!hasCriteria) {
           throw new BadRequestException('need at least one criteria');
       }
+
+      const where: any = {};
+
+      where.user = {
+          is: {
+              id: {
+                  not: userId,
+              },
+          },
+      };
+	}
 }
