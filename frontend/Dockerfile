@@ -1,7 +1,7 @@
 FROM node:22-alpine AS dev
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN npm install --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
@@ -18,7 +18,7 @@ CMD ["npm", "run", "dev"]
 FROM node:22-alpine AS prod
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN npm install --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 COPY . .
 # NEXT_PUBLIC_* values are baked into the client bundle at build time (Next.js
 # substitutes them in `next build`, not read at container start) — lib/supabaseClient.js
