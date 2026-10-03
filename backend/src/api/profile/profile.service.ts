@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -293,5 +293,28 @@ export class ProfileService {
               where,
           }),
       ]);
+
+      return {
+          data: profiles.map((profile) => ({
+              id: profile.id,
+			  userId: profile.user?.id ?? null,
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              gender: profile.gender,
+              birthDate: profile.birthDate
+                  ? profile.birthDate.toISOString().split('T')[0]
+                  : null,
+              deathDate: profile.deathDate
+                  ? profile.deathDate.toISOString().split('T')[0]
+                  : null,
+          })),
+
+          pagination: {
+              page: pg,
+              limit: lim,
+              total,
+              totalPages: Math.ceil(total / lim),
+          },
+      };
 	}
 }
