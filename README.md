@@ -203,7 +203,7 @@ The current codebase already provides:
 - User authentication with **Supabase** (email/password + Google OAuth)
 - JWT token handling
 - Basic **tree** and **profile** management
-- Role‑based permissions within trees (ADMIN, MODERATOR, MEMBER, VIEWER)
+- Role‑based permissions within trees (ADMIN, MODERATOR, MEMBER, JOINER, HOLDER)
 - Global user roles (ADMIN/MODERATOR/USER) with an admin panel to manage them
 - Two‑factor authentication (TOTP + recovery codes)
 - A custom design system with a colour palette, typography, and reusable components (10+ components)
@@ -226,7 +226,7 @@ We have chosen the following modules.
 | Custom design system with ≥10 reusable components | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
 | **Remote authentication with OAuth 2.0 (Google)** | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
 | **Standard user management and authentication** | Major | 2 | 🔄 Partial | Login/signup working, but still need: avatar upload, friends system, online status, profile page |
-| **Advanced permissions system** (global roles) | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users` |
+| **Advanced permissions system** (global roles) | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users`; moderators can suspend/unsuspend users (suspension blocks login and ends active sessions immediately) |
 | **Organization system** (trees as orgs) | Major | 2 | 🔄 Partial | Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system |
 | **Real‑time features** (Supabase Realtime) | Major | 2 | ❌ Not started | Chat, real‑time updates, notifications |
 | **Public API** with secured API key, rate limiting, docs, ≥5 endpoints | Major | 2 | ❌ Not started | Need to expose a public API for e.g. public trees or profiles |
@@ -250,7 +250,7 @@ Minimum required: **14 points** – currently 4 points short of the minimum; nee
 
 Task breakdown by person. Each task includes a rough effort estimate.
 
-### 👤 Maira – Real‑time & Notifications
+### 👤 Moira – Real‑time & Notifications
 - **Real‑time features (Supabase Realtime)** – 2 pts
   - Set up  gateway in NestJS
   - Implement chat between users (direct and tree‑based)
@@ -262,45 +262,50 @@ Task breakdown by person. Each task includes a rough effort estimate.
 - **Real‑time collaborative features** – 1 pt
 
 
-### 👤 John – User Management
+### 👤 Jon – User Management
 - **Complete user management** – 2 pts
   - Profile page (view/edit)
   - Avatar upload (file upload)
-  - Friends system (add/remove, list)
   - Online status (using Supabase Realtime presence)
 - **Organization system (trees as orgs)** – 2 pts
   - Edit/delete tree (admin only)
   - Add/remove members via UI (admin only)
   - Invitation system (already has model, need frontend)
-- **Accessibility (WCAG 2.1 AA)** – 2 pts
-  - Audit with Lighthouse/axe
-  - Fix keyboard navigation, ARIA labels, semantic HTML
-  - Ensure screen reader compatibility
 - **Additional browsers** – 1 pt
   - Test on Firefox, Safari (macOS), Edge
   - Fix layout/CSS issues
   - Document differences
 
 
-### 👤 Person C – Public API & Search
-- **Public API** – 2 pts
-  - Design public endpoints (e.g., `/api/public/trees`, `/api/public/profiles`)
-  - Secure with API key (header)
-  - Add rate limiting (e.g., using `@nestjs/throttler`)
-  - Document using OpenAPI/Swagger
+### 👤 Yiwei – Friends, Accessibility & Search *(assignment to be confirmed)*
+- **Friends system** – 1 pt
+  - Add/remove friends, list friends (`Friendship` model already in the schema)
+  - Friend requests and responses in the frontend
+- **Accessibility (WCAG 2.1 AA)** – 2 pts
+  - Audit with Lighthouse/axe
+  - Fix keyboard navigation, ARIA labels, semantic HTML
+  - Ensure screen reader compatibility
 - **Advanced search** – 1 pt
   - Implement search endpoint with filters (name, date, tree)
   - Add sorting and pagination (Prisma `skip`/`take`)
   - Frontend search UI
 
 
-### 👤 Person D – Accessibility, Permissions & Browsers
+### 👤 Tiara – Accessibility, Permissions & Browsers
 - **Advanced permissions (global roles)** – 2 pts ✅ Done
-  - Add `role` field to `User` (admin, user, moderator)
-  - Implement user management UI (list, edit, delete, change roles)
-  - Restrict admin panel to admins
+  - Global `role` on `User` (admin, moderator, user), enforced by `RolesGuard`
+  - User management UI: list, change roles, delete (admin only)
+  - Moderators can view users and suspend/unsuspend them, but not delete or change roles
+  - Admin panel restricted to admins and moderators (moderators get a reduced view)
 - **2FA** – 1 pt ✅ Done
   - TOTP setup, verification, recovery codes
+
+### 👤 Unassigned – Public API
+- **Public API** – 2 pts
+  - Design public endpoints (e.g., `/api/public/trees`, `/api/public/profiles`)
+  - Secure with API key (header)
+  - Add rate limiting (e.g., using `@nestjs/throttler`)
+  - Document using OpenAPI/Swagger
 
 ---
 
@@ -324,7 +329,7 @@ Task breakdown by person. Each task includes a rough effort estimate.
 ### Backend (NestJS)
 - `src/api/auth` – Supabase OAuth + JWT, global `RolesGuard`
 - `src/api/auth/two-factor` – TOTP setup/enable/disable/login-verify
-- `src/api/users` – admin-only user list/role-change/delete
+- `src/api/users` – user list (admin and moderator), role change and delete (admin only), suspend/unsuspend (admin and moderator)
 - `src/api/profile` – CRUD for persons (renamed `Profile`)
 - `src/api/tree` – tree creation, joining, search, members, roles
 - `src/prisma` – Prisma client with `PrismaPg` driver adapter
