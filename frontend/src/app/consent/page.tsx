@@ -49,5 +49,15 @@ export default function AuthCallback() {
 		);
 	}
 
-	return <div>Processing login...</div>;
+	return (
+		<div className="flex flex-col items-center justify-center min-h-screen p-6">
+			<div className="card flex flex-col items-center gap-4 text-center">
+				<div
+					className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"
+					aria-hidden="true"
+				/>
+				<p className="text-slate-600" aria-live="polite">Signing you in…</p>
+			</div>
+		</div>
+	);
 }

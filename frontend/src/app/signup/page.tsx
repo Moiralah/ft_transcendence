@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -18,6 +18,13 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Already signed in — no reason to show the signup form again.
+  useEffect(() => {
+    if (sessionStorage.getItem('ft_token')) {
+      router.push('/dashboard');
+    }
+  }, [router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,12 +112,16 @@ export default function SignupPage() {
     <div className="card">
       <h1>Create an Account</h1>
       <form onSubmit={handleSignup}>
+        {/* suppressHydrationWarning: browser extensions (password managers,
+            Grammarly, etc.) inject class/style onto these after load, which
+            otherwise trips React's hydration diff on a false positive. */}
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <input
           type="password"
@@ -118,6 +129,7 @@ export default function SignupPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <input
           type="password"
@@ -125,6 +137,7 @@ export default function SignupPage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
+          suppressHydrationWarning
         />
         <button type="submit" disabled={loading}>
           {loading ? 'Creating account...' : 'Sign Up'}

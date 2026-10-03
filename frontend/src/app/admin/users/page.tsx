@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -13,6 +14,7 @@ interface AdminUser {
 	username: string;
 	email: string;
 	role: 'ADMIN' | 'MODERATOR' | 'USER';
+	suspended: boolean;
 	twoFactorEnabled: boolean;
 	createdAt: string;
 	profile?: { firstName: string; lastName?: string | null } | null;
@@ -41,12 +43,15 @@ export default function AdminUsersPage() {
 			},
 		});
 
+	const isAdmin = role === 'ADMIN';
+	const isModerator = role === 'MODERATOR';
+
 	useEffect(() => {
 		if (!token) {
 			router.push('/login');
 			return;
 		}
-		if (role !== 'ADMIN') {
+		if (!isAdmin && !isModerator) {
 			router.push('/dashboard');
 			return;
 		}
@@ -69,7 +74,8 @@ export default function AdminUsersPage() {
 		}
 	};
 
-	const changeRole = async (id: string, newRole: AdminUser['role']) => {
+	const changeRole = async (id: string, username: string, newRole: AdminUser['role']) => {
+		if (!confirm(`Change ${username}'s role to ${newRole}?`)) return;
 		setError(null);
 		try {
 			const res = await authedFetch(`/users/${id}/role`, {
@@ -79,8 +85,28 @@ export default function AdminUsersPage() {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || 'Failed to change role');
 			setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+			toast.success(`${username} is now ${newRole}.`);
 		} catch (err: any) {
 			setError(err.message);
+			toast.error(err.message);
+		}
+	};
+
+	const toggleSuspended = async (id: string, username: string, suspended: boolean) => {
+		if (suspended && !confirm(`Suspend ${username}? They will be logged out immediately and unable to sign in until unsuspended.`)) return;
+		setError(null);
+		try {
+			const res = await authedFetch(`/users/${id}/suspend`, {
+				method: 'PATCH',
+				body: JSON.stringify({ suspended }),
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || 'Failed to update suspension');
+			setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, suspended } : u)));
+			toast.success(suspended ? `${username} suspended.` : `${username} unsuspended.`);
+		} catch (err: any) {
+			setError(err.message);
+			toast.error(err.message);
 		}
 	};
 
@@ -92,8 +118,10 @@ export default function AdminUsersPage() {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || 'Failed to delete user');
 			setUsers((prev) => prev.filter((u) => u.id !== id));
+			toast.success(`${username} deleted.`);
 		} catch (err: any) {
 			setError(err.message);
+			toast.error(err.message);
 		}
 	};
 
@@ -105,7 +133,12 @@ export default function AdminUsersPage() {
 			</header>
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-5xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
-				<h1 className="text-2xl font-bold text-slate-900">User Management</h1>
+				<div className="flex items-center justify-between">
+					<h1 className="text-2xl font-bold text-slate-900">User Management</h1>
+					<Button href="/dashboard" variant="secondary">
+						&larr; Back to Dashboard
+					</Button>
+				</div>
 
 				{error && <div role="alert" className="text-red-700 font-semibold">{error}</div>}
 
@@ -120,6 +153,7 @@ export default function AdminUsersPage() {
 									<th scope="col" className="px-4 py-3">Username</th>
 									<th scope="col" className="px-4 py-3">Email</th>
 									<th scope="col" className="px-4 py-3">Role</th>
+									<th scope="col" className="px-4 py-3">Status</th>
 									<th scope="col" className="px-4 py-3">2FA</th>
 									<th scope="col" className="px-4 py-3">Joined</th>
 									<th scope="col" className="px-4 py-3">
@@ -128,38 +162,65 @@ export default function AdminUsersPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{users.map((u) => (
-									<tr key={u.id} className="border-t border-slate-200">
-										<td className="px-4 py-3">{u.username}</td>
-										<td className="px-4 py-3">{u.email}</td>
-										<td className="px-4 py-3">
-											<label className="sr-only" htmlFor={`role-${u.id}`}>
-												Role for {u.username}
-											</label>
-											<select
-												id={`role-${u.id}`}
-												value={u.role}
-												onChange={(e) => changeRole(u.id, e.target.value as AdminUser['role'])}
-												className="border border-slate-300 rounded-md px-2 py-1"
-											>
-												{ROLES.map((r) => (
-													<option key={r} value={r}>{r}</option>
-												))}
-											</select>
-										</td>
-										<td className="px-4 py-3">{u.twoFactorEnabled ? 'Enabled' : '—'}</td>
-										<td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
-										<td className="px-4 py-3">
-											<Button
-												variant="ghost"
-												onClick={() => deleteUser(u.id, u.username)}
-												aria-label={`Delete user ${u.username}`}
-											>
-												Delete
-											</Button>
-										</td>
-									</tr>
-								))}
+								{users.map((u) => {
+									const canSuspend = !isModerator || u.role !== 'ADMIN';
+									return (
+										<tr key={u.id} className="border-t border-slate-200">
+											<td className="px-4 py-3">{u.username}</td>
+											<td className="px-4 py-3">{u.email}</td>
+											<td className="px-4 py-3">
+												{isAdmin ? (
+													<>
+														<label className="sr-only" htmlFor={`role-${u.id}`}>
+															Role for {u.username}
+														</label>
+														<select
+															id={`role-${u.id}`}
+															value={u.role}
+															onChange={(e) => changeRole(u.id, u.username, e.target.value as AdminUser['role'])}
+															className="border border-slate-300 rounded-md px-2 py-1"
+														>
+															{ROLES.map((r) => (
+																<option key={r} value={r}>{r}</option>
+															))}
+														</select>
+													</>
+												) : (
+													u.role
+												)}
+											</td>
+											<td className="px-4 py-3">
+												{u.suspended ? (
+													<span className="text-red-700 font-semibold">Suspended</span>
+												) : (
+													<span className="text-emerald-700">Active</span>
+												)}
+											</td>
+											<td className="px-4 py-3">{u.twoFactorEnabled ? 'Enabled' : '—'}</td>
+											<td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
+											<td className="px-4 py-3 flex gap-2">
+												{canSuspend && (
+													<Button
+														variant="ghost"
+														onClick={() => toggleSuspended(u.id, u.username, !u.suspended)}
+														aria-label={`${u.suspended ? 'Unsuspend' : 'Suspend'} user ${u.username}`}
+													>
+														{u.suspended ? 'Unsuspend' : 'Suspend'}
+													</Button>
+												)}
+												{isAdmin && (
+													<Button
+														variant="ghost"
+														onClick={() => deleteUser(u.id, u.username)}
+														aria-label={`Delete user ${u.username}`}
+													>
+														Delete
+													</Button>
+												)}
+											</td>
+										</tr>
+									);
+								})}
 							</tbody>
 						</table>
 					</div>

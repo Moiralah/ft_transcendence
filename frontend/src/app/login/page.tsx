@@ -25,6 +25,13 @@ export default function LoginPage() {
 		}
 	}, []);
 
+	// Already signed in — no reason to show the login form again.
+	useEffect(() => {
+		if (sessionStorage.getItem('ft_token')) {
+			router.push('/dashboard');
+		}
+	}, [router]);
+
 	const handleOAuthLogin = async (provider: 'google') => {
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider,
@@ -84,8 +91,11 @@ export default function LoginPage() {
 					) : (
 						<>
 							<form onSubmit={handleEmailLogin} className="mb-3">
-								<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-								<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+								{/* suppressHydrationWarning: browser extensions (password managers,
+								    Grammarly, etc.) inject class/style onto these after load, which
+								    otherwise trips React's hydration diff on a false positive. */}
+								<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" suppressHydrationWarning />
+								<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" suppressHydrationWarning />
 								<button type="submit">Sign in with email</button>
 							</form>
 							{notice && <div className="success" role="status">{notice}</div>}
