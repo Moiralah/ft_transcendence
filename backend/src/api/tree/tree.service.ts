@@ -178,7 +178,14 @@ export class TreeService {
 			}));
 	}
 
-	async getTreeMember(treeId: number) {
+	async getTreeMember(treeId: number, profileId: number) {
+		const requester = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId } },
+		});
+		if (!requester) {
+			throw new ForbiddenException('You do not have access to this tree.');
+		}
+
 		const memberships = await this.prisma.treeMember.findMany({
 			where: { treeId },
 			include: {
