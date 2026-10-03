@@ -250,6 +250,44 @@ export class TreeService {
 		return { ...tree, userRole: member.role };
 	}
 
+	async getTreeBySlug(slug: string, profileId: number) {
+		const tree = await this.prisma.tree.findUnique({
+			where: { slug },
+			select: {id: true},
+		});
+		if(!tree) {
+			throw new NotFoundException('Tree not found');
+		}
+		const member = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId: tree.id } },
+		});
+
+		if (!member) {
+			throw new ForbiddenException('You do not have access to this tree.');
+		}
+
+		const fulltree = await this.prisma.tree.findUnique({
+			where: { id: tree.id },
+			include: {
+				owner: true,
+				root: { include: { profile: true, link: { include: { profile: true } } } },
+				members: {
+					include: {
+						profile: true,
+						// The claimed real profile, if this member row is a HOLDER
+						// with a pending or accepted claim on it.
+						link: { include: { profile: true } },
+					},
+				},
+			},
+		});
+
+		if (!fulltree) {
+			throw new NotFoundException('Tree not found.');
+		}
+		return { ...fulltree, userRole: member.role };
+	}
+
 	async update(
 		treeId: number,
 		requesterProfileId: number,

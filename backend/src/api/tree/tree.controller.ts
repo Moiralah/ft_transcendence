@@ -40,8 +40,14 @@ export class TreeController {
 
 	@Get(':treeId')
 	@UseGuards(JwtAuthGuard)
-	async getTree(@Req() req, @Param('treeId') id: string) {
-		return this.treeService.getTreeById(Number(id), req.user.profileId);
+	async getTree(@Req() req, @Param('treeId') treeId: string) {
+		return this.treeService.getTreeById(Number(treeId), req.user.profileId);
+	}
+
+	@Get('slug/:slug')
+	@UseGuards(JwtAuthGuard)
+	async getTreebySlug(@Req() req, @Param('slug') slug: string) {
+		return this.treeService.getTreeBySlug(slug, req.user.profileId);
 	}
 
 	@Patch(':treeId')
