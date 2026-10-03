@@ -196,7 +196,7 @@ const renderAddChild = (BranchAddMember: Member) => {
    <div className="flex flex-col items-center">
     {/* Primary Node & Spouse Unit */}
     <div 
-      className={`relative flex flex-row items-center ${spouse ? 'border border-black rounded-lg border-2' : ''} p-2`}
+      className={`relative flex flex-row items-center`}
     >
       <TreeNode 
         members={localMembers} 
@@ -210,7 +210,7 @@ const renderAddChild = (BranchAddMember: Member) => {
 
       {spouse && (
         <div className="flex items-center">
-          <span className="h-0.5 w-6 bg-black"></span>
+          <span className="h-20 w-0.5 bg-black"></span>
           <TreeNode 
             members={localMembers} 
             currentMember={spouse}

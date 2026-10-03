@@ -39,7 +39,7 @@ export default function Content() {
     if (!treesMember || !treesMember.length) return undefined;
 
     if (tree?.rootId) {
-      const match = treesMember.find((m: any) => (m.profileId ?? m.id) === tree.rootId);
+      const match = treesMember.find((m: any) => m.id  === tree.rootId);
       if (match) return match;
     }
     return treesMember[0];
@@ -333,8 +333,10 @@ export default function Content() {
                 <div
                   key={member.id}
                   onClick={() => {
-                    setPublicTree(true);
-                    handleRootMember(member);
+                    if (member) {
+                      setPublicTree(true);
+                      handleRootMember(member);
+                    }
                   }}
                   className="cursor-pointer"
                 >
