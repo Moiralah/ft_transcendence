@@ -2,7 +2,7 @@
 
 This note covers what Yiwei can rely on from the modules I've build (permissions, 2FA, OAuth, and cybersecurity), which should leave alone, what to watch out for, and a suggested order of work.
 
-## 1. How authentication works today
+## How authentication works today
 
 - The API uses a JWT. The backend issues it after a Supabase login, and it's stored in the browser's `sessionStorage`.
 - There is **no global guard**. `backend/src/main.ts` only sets the `/api` prefix and a global `ValidationPipe` (`whitelist: true, transform: true`).
@@ -10,9 +10,9 @@ This note covers what Yiwei can rely on from the modules I've build (permissions
 
 A route without `@UseGuards` is public by default. Public routes can leave out `JwtAuthGuard` entirely, and you should add a separate API-key guard to them.
 
-## 3. What can use on existing modules
+## What can use on existing modules
 
-Build on these. Lemme know if need changes.
+Lemme know if you making changes on these.
 
 **JWT auth (`jwt-auth.guard.ts`, `jwt.strategy.ts`).** Friends and search use this. Use `@UseGuards(JwtAuthGuard)` and read `req.user.profileId`. A suspended user is rejected on every request automatically, so nothing extra is needed for that.
 
