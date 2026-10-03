@@ -16,6 +16,13 @@ cd "$(dirname "$0")/.."
 
 COMPOSE_FILES="-f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml"
 
+echo "[prod-up] building images (source may have changed since the last deploy —"
+echo "          without --build, 'up -d' silently reuses whatever image already"
+echo "          exists and only recreates containers, which looks identical to a"
+echo "          real deploy in the logs but ships no new code at all)..."
+# shellcheck disable=SC2086
+docker compose $COMPOSE_FILES build
+
 echo "[prod-up] bringing up all services..."
 # shellcheck disable=SC2086
 docker compose $COMPOSE_FILES up -d
