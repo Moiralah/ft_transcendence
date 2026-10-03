@@ -41,8 +41,8 @@ export class TreeController {
 
 	@Get(':treeId/member')
 	@UseGuards(JwtAuthGuard)
-	async getTreeMember(@Param('treeId') treeId: string) {
-		return this.treeService.getTreeMember(Number(treeId));
+	async getTreeMember(@Req() req, @Param('treeId') treeId: string) {
+		return this.treeService.getTreeMember(Number(treeId), req.user.profileId);
 	}
 
 	@Get(':treeId')
