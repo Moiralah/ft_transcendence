@@ -255,5 +255,17 @@ export class ProfileService {
       const pg = Number.isInteger(page) && page > 0 ? page : 1;
       const lim = Number.isInteger(limit)
         ? Math.min(100, Math.max(1, limit)) : 10;
+      
+	  const orderBy = sortBy === 'lastName'
+          ? [
+          { lastName: order },
+          { firstName: order },
+          { id: 'asc' as const },
+          ]
+          : [
+              { firstName: order },
+              { lastName: order },
+              { id: 'asc' as const },
+          ];
 	}
 }
