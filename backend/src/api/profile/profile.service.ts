@@ -216,5 +216,40 @@ export class ProfileService {
               },
           },
       };
+
+      if (firstName?.trim()) {
+          where.firstName = {
+              contains: firstName.trim(),
+              mode: 'insensitive',
+          };
+      }
+
+      if (lastName?.trim()) {
+          where.lastName = {
+              contains: lastName.trim(),
+              mode: 'insensitive',
+          };
+      }
+
+      if (gender?.trim()) {
+          where.gender = gender.trim();
+      }
+
+      if (birthDate?.trim()) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+              throw new BadRequestException('invalid birth date.');
+          }
+
+          const birthDateTmp = new Date(`${birthDate}T00:00:00.000Z`);
+
+          if (
+              Number.isNaN(birthDateTmp.getTime()) ||
+              birthDateTmp.toISOString().slice(0, 10) !== birthDate
+          ) {
+              throw new BadRequestException('invalid birth date.');
+          }
+
+          where.birthDate = birthDateTmp;
+      }
 	}
 }
