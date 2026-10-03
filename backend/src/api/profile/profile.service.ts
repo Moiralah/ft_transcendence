@@ -196,5 +196,14 @@ export class ProfileService {
       sortBy: 'firstName' | 'lastName' = 'firstName',
       order: 'asc' | 'desc' = 'asc',
       page: number = 1,
-      limit: number = 10,)
+      limit: number = 10,
+  ) {
+      const hasCriteria = Boolean(
+          firstName?.trim() || lastName?.trim() ||
+          birthDate?.trim() || gender?.trim()
+      );
+
+      if (!hasCriteria) {
+          throw new BadRequestException('need at least one criteria');
+      }
 }
