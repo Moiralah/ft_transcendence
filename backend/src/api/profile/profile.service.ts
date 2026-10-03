@@ -251,5 +251,9 @@ export class ProfileService {
 
           where.birthDate = birthDateTmp;
       }
+
+      const pg = Number.isInteger(page) && page > 0 ? page : 1;
+      const lim = Number.isInteger(limit)
+        ? Math.min(100, Math.max(1, limit)) : 10;
 	}
 }
