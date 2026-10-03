@@ -186,4 +186,15 @@ export class ProfileService {
 
 		return buildNode(rootId);
 	}
+
+  async search(
+	  userId: string,
+      firstName?: string,
+      lastName?: string,
+      birthDate?: string,
+      gender?: string,
+      sortBy: 'firstName' | 'lastName' = 'firstName',
+      order: 'asc' | 'desc' = 'asc',
+      page: number = 1,
+      limit: number = 10,)
 }
