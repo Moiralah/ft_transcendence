@@ -267,5 +267,31 @@ export class ProfileService {
               { lastName: order },
               { id: 'asc' as const },
           ];
+
+      const [profiles, total] = await Promise.all([
+          this.prisma.profile.findMany({
+              where,
+              orderBy,
+              skip: (pg - 1) * lim,
+              take: lim,
+              select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  gender: true,
+                  birthDate: true,
+                  deathDate: true,
+				  user: {
+					select: {
+						id: true,
+					},
+				  },
+              },
+          }),
+
+          this.prisma.profile.count({
+              where,
+          }),
+      ]);
 	}
 }
