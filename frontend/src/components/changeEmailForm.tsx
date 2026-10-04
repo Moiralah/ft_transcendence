@@ -57,10 +57,11 @@ export function ChangeEmailForm() {
 				setError('Current password is incorrect');
 				return;
 			}
-			// Nothing changes yet: Supabase emails a confirmation link to the new
-			// address (and, with secure email change on, the old one too). The
-			// switch happens once the links are clicked; the backend then picks
-			// up the new address on the next login (it matches users by id).
+			// Nothing changes yet: production has Supabase's secure email change
+			// on, so it emails a link to the new AND the current address, and the
+			// switch only happens once both are clicked (one alone leaves it
+			// pending). The backend picks up the new address on the next login
+			// (it matches users by id).
 			const { error: updateError } = await supabase.auth.updateUser(
 				{ email },
 				{ emailRedirectTo: `${window.location.origin}/login` },
@@ -105,7 +106,9 @@ export function ChangeEmailForm() {
 					</p>
 					{account.pendingEmail && !sentTo && (
 						<p className="text-sm text-slate-700" role="status">
-							A change to <strong>{account.pendingEmail}</strong> is waiting for confirmation.
+							A change to <strong>{account.pendingEmail}</strong> is waiting for confirmation. Click the
+							link in <strong>both</strong> inboxes ({account.pendingEmail} and {account.email}). Until
+							then, keep logging in with {account.email}.
 						</p>
 					)}
 					<label htmlFor="change-new-email" className="block text-sm font-medium text-slate-800">
@@ -136,9 +139,9 @@ export function ChangeEmailForm() {
 					{error && <div className="error" role="alert">{error}</div>}
 					{sentTo && (
 						<div className="success" role="status">
-							Check your inbox at <strong>{sentTo}</strong> and click the confirmation link. If you also
-							get one at your current address, click that too. Your email changes once confirmed; until
-							then, keep logging in with your current one.
+							We sent a confirmation link to <strong>both</strong> your new address ({sentTo}) and your
+							current one ({account.email}). Click <strong>both</strong> links: your email won&apos;t
+							change until both are confirmed. Until then, keep logging in with {account.email}.
 						</div>
 					)}
 				</form>
