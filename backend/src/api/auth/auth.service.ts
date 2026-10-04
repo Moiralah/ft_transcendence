@@ -1,5 +1,5 @@
 
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -95,5 +95,101 @@ export class AuthService {
 			accessToken: token,
 			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
+	}
+	// --- Account changes (email, password) -------------------------------
+	// The browser drops its Supabase session right after login (see the
+	// frontend's exchangeSupabaseToken), so these routes are the only way to
+	// change the email or password, and each one checks the current password
+	// here on the server. A stolen app token alone can't move the account to
+	// someone else's inbox.
+
+	private static readonly MIN_PASSWORD_LENGTH = 8; // matches minimum_password_length in supabase/config.toml
+
+	// A short-lived client for acting as one user. Never the shared
+	// this.supabase: signing in on that would leave a user's session on an
+	// instance every request shares.
+	private userScopedClient(): SupabaseClient {
+		return createClient(
+			this.config.get<string>('SUPABASE_AUTH_URL')!,
+			this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
+			{ auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+		);
+	}
+
+	async getAccount(userId: string) {
+		const { data, error } = await this.supabase.auth.admin.getUserById(userId);
+		if (error || !data.user) {
+			throw new NotFoundException('Account not found');
+		}
+		const user = data.user;
+		return {
+			email: user.email ?? null,
+			pendingEmail: user.new_email ?? null,
+			// Google-only accounts have no password, and Google owns their email.
+			hasPassword: !!user.identities?.some((i) => i.provider === 'email'),
+		};
+	}
+
+	private async signInAsUser(userId: string, currentPassword: string) {
+		if (!currentPassword) {
+			throw new BadRequestException('Current password is required');
+		}
+		const account = await this.getAccount(userId);
+		if (!account.hasPassword || !account.email) {
+			throw new BadRequestException('This account signs in with Google, so it has no password or email to change here.');
+		}
+		const client = this.userScopedClient();
+		const { error } = await client.auth.signInWithPassword({ email: account.email, password: currentPassword });
+		if (error) {
+			// 400, not 401: the frontend treats a 401 as "your app session
+			// expired" and logs the user out.
+			throw new BadRequestException('Current password is incorrect');
+		}
+		return { client, email: account.email };
+	}
+
+	async changeEmail(userId: string, currentPassword: string, newEmail: string) {
+		const email = (newEmail ?? '').trim().toLowerCase();
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			throw new BadRequestException('Enter a valid email address');
+		}
+		const { client, email: currentEmail } = await this.signInAsUser(userId, currentPassword);
+		try {
+			if (email === currentEmail.toLowerCase()) {
+				throw new BadRequestException('That is already your email address');
+			}
+			// Supabase emails a confirmation link to the new address; the switch
+			// happens once it's clicked ("Secure email change" is off in
+			// production, so the old address isn't asked). loginWithSupabaseToken
+			// picks up the new address on the next login.
+			const origin = this.config.get<string>('CORS_ORIGIN') ?? '';
+			const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: `${origin}/login` });
+			if (error) {
+				throw new BadRequestException(error.message);
+			}
+			return { sentTo: email };
+		} finally {
+			await client.auth.signOut({ scope: 'local' });
+		}
+	}
+
+	async changePassword(userId: string, currentPassword: string, newPassword: string) {
+		if (!newPassword || newPassword.length < AuthService.MIN_PASSWORD_LENGTH) {
+			throw new BadRequestException(`New password must be at least ${AuthService.MIN_PASSWORD_LENGTH} characters`);
+		}
+		if (newPassword === currentPassword) {
+			throw new BadRequestException('New password must be different from the current one');
+		}
+		const { client } = await this.signInAsUser(userId, currentPassword);
+		// current_password too: the production Supabase project requires it.
+		const { error } = await client.auth.updateUser({ password: newPassword, current_password: currentPassword });
+		if (error) {
+			await client.auth.signOut({ scope: 'local' });
+			throw new BadRequestException(error.message);
+		}
+		// Ends every Supabase session for this account, e.g. an unused
+		// password-reset session. App JWTs are stateless and run until expiry.
+		await client.auth.signOut({ scope: 'global' });
+		return { ok: true };
 	}
 }

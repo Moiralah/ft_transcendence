@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
+import { SessionExpiredError, changeEmail, getAccount } from '@/lib/auth';
 
 type Account =
 	| { kind: 'loading' }
@@ -19,18 +19,15 @@ export function ChangeEmailForm() {
 	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
-		supabase.auth.getUser().then(({ data }) => {
-			const user = data.user;
-			if (!user?.email) {
-				setAccount({ kind: 'no-session' });
-			} else if (!user.identities?.some((i) => i.provider === 'email')) {
+		getAccount()
+			.then((info) => {
+				if (!info.email) setAccount({ kind: 'no-session' });
 				// Google-only account: the email belongs to Google, and the next
 				// Google login would just overwrite a change made here.
-				setAccount({ kind: 'google-only' });
-			} else {
-				setAccount({ kind: 'ready', email: user.email, pendingEmail: user.new_email ?? undefined });
-			}
-		});
+				else if (!info.hasPassword) setAccount({ kind: 'google-only' });
+				else setAccount({ kind: 'ready', email: info.email, pendingEmail: info.pendingEmail ?? undefined });
+			})
+			.catch(() => setAccount({ kind: 'no-session' }));
 	}, []);
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -47,27 +44,15 @@ export function ChangeEmailForm() {
 
 		setSubmitting(true);
 		try {
-			// Same re-check as ChangePasswordForm: someone at an unlocked browser
-			// shouldn't be able to move the account to their own address.
-			const { error: authError } = await supabase.auth.signInWithPassword({
-				email: account.email,
-				password: currentPassword,
-			});
-			if (authError) {
-				setError('Current password is incorrect');
-				return;
-			}
-			// Nothing changes yet: Supabase emails a link to the new address and
-			// the switch happens once it's clicked. Production has "Secure email
-			// change" off (2026-10-04), so the old address isn't asked: the
-			// current password above plus the new inbox are the checks. The
-			// backend picks up the new address on the next login (matches by id).
-			const { error: updateError } = await supabase.auth.updateUser(
-				{ email },
-				{ emailRedirectTo: `${window.location.origin}/login` },
-			);
-			if (updateError) {
-				setError(updateError.message);
+			// The backend checks the current password server-side, then has
+			// Supabase email a link to the new address; the switch happens once
+			// it's clicked. Production has "Secure email change" off, so the old
+			// address isn't asked: the password plus the new inbox are the checks.
+			try {
+				await changeEmail(currentPassword, email);
+			} catch (err) {
+				if (err instanceof SessionExpiredError) setAccount({ kind: 'no-session' });
+				else setError((err as Error).message);
 				return;
 			}
 			setNewEmail('');
