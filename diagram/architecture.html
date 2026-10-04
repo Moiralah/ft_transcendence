@@ -453,8 +453,8 @@ backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
       had never actually received that column; the old GCP deploys hadn&apos;t noticed because they kept running
       an older image without the suspend code. Fixed with a targeted
       <code>ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "suspended" BOOLEAN NOT NULL DEFAULT false</code>.
-      A schema diff afterwards shows production matches <code>schema.prisma</code> except an extra
-      <code>Tree.slug</code> column, deliberately left in place.
+      A schema diff afterwards showed one extra production column, <code>Tree.slug</code>: Moiralah&apos;s
+      tree-slug feature, merged the same day, so production and <code>schema.prisma</code> now match exactly.
     </div>
   </div>
 
@@ -477,15 +477,15 @@ backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Still open:</strong> no fresh production backup exists after the schema push above
-      — the last one, <code>20260923_115001</code>, predates it (Docker wasn't running locally
-      when a new one was needed). A pre-existing bug, <code>/api/trees/search</code> returning a
-      raw <code>500</code> on an unauthenticated request, is still unfixed. A separate
-      <code>spouse_id</code> unique-constraint crash in the add-spouse flow surfaced the same day
-      as the outage above — a fix for it may already be in <code>branchsaurus</code> (merged from
-      <code>jon2</code>, commit <code>87e96a1</code>), but isn't confirmed live until the VM's
-      redeploy — in progress as of this write-up — completes and is checked. Full detail in
-      <code>tching/progress_log.md</code> (gitignored, not in this diagram's own repo history).
+      <strong>Still open (as of 2026-10-04):</strong> no usable production backup since
+      <code>20260923_115001</code>. The 2026-09-25 backup files are empty (0 bytes), and the production
+      schema has changed several times since (role/2FA, <code>suspended</code>, <code>slug</code>), so a new
+      backup is overdue. The <code>spouse_id</code> unique-constraint crash in the add-spouse flow
+      (2026-09-25) is believed fixed by later rendering/claim work but hasn&apos;t been re-tested on production.
+      Resolved since this list was first written: <code>/api/trees/search</code> no longer returns a raw
+      <code>500</code> (it now requires login and returns <code>401</code>), and production runs current code on
+      solsys. Full detail in <code>tching/progress_log.md</code> (gitignored, not in this diagram&apos;s own repo
+      history).
     </div>
   </div>
 </div>
