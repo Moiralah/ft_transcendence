@@ -1,5 +1,5 @@
 import {
-	Controller, Body, Delete, Get, Param, Req,
+	Controller, Body, Delete, Get, Param, Query, Req,
 	Patch, Post, UseGuards, BadRequestException
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
@@ -28,6 +28,32 @@ export class ProfileController {
 	@UseGuards(JwtAuthGuard)
 	findAll() {
 		return this.profile.findAll();
+	}
+
+	@Get('search')
+	@UseGuards(JwtAuthGuard)
+	search(
+			@Req() req: AuthenticatedRequest,
+			@Query('firstName') firstName?: string,
+			@Query('lastName') lastName?: string,
+			@Query('birthDate') birthDate?: string,
+			@Query('gender') gender?: string,
+			@Query('sortBy') sortBy?: 'firstName' | 'lastName',
+			@Query('order') order?: 'asc' | 'desc',
+			@Query('page') page?: string,
+			@Query('limit') limit?: string,
+	) {
+			return this.profile.search(
+					req.user.id,
+					firstName,
+					lastName,
+					birthDate,
+					gender,
+					sortBy === 'lastName' ? 'lastName' : 'firstName',
+					order === 'desc' ? 'desc' : 'asc',
+					page ? Number(page) : 1,
+					limit ? Number(limit) : 10,
+			);
 	}
 
 	@Get(':id')
