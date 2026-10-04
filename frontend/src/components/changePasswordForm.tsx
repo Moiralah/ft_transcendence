@@ -56,8 +56,9 @@ export function ChangePasswordForm() {
 		setSubmitting(true);
 		try {
 			// Re-check the current password, so someone at an unlocked browser
-			// can't change it without knowing it. (UI-level check: Supabase's own
-			// updateUser doesn't ask for it.)
+			// can't change it without knowing it. This gives a clear error here;
+			// it's also sent with updateUser below, because the production
+			// Supabase project requires it server-side.
 			const { error: authError } = await supabase.auth.signInWithPassword({
 				email: account.email,
 				password: currentPassword,
@@ -66,7 +67,10 @@ export function ChangePasswordForm() {
 				setError('Current password is incorrect');
 				return;
 			}
-			const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+			const { error: updateError } = await supabase.auth.updateUser({
+				password: newPassword,
+				current_password: currentPassword,
+			});
 			if (updateError) {
 				setError(updateError.message);
 				return;
