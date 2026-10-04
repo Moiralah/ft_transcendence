@@ -42,6 +42,19 @@ export default function TreePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profileBirthDate, setProfileBirthDate] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
+  const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
+  const [profileResults, setProfileResults] = useState<any[]>([]);
+  const [profilePage, setProfilePage] = useState(1);
+  const [profileTotalPages, setProfileTotalPages] = useState(0);
+  const [profileTotal, setProfileTotal] = useState(0);
+  const [isProfileSearching, setIsProfileSearching] = useState(false);
+  const [showProfileSearch, setShowProfileSearch] = useState(false);
+
   useEffect(() => {
     if (!token) {
       router.push('/login');
@@ -178,6 +191,80 @@ export default function TreePage() {
       alert(err.message);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const searchProfiles = async (page = 1) => {
+    const hasCriteria = profileFirstName.trim() ||
+      profileLastName.trim() || profileBirthDate || profileGender;
+
+    if (!hasCriteria) {
+      return;
+    }
+
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setIsProfileSearching(true);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (profileFirstName.trim()) {
+        params.set('firstName', profileFirstName.trim());
+      }
+
+      if (profileLastName.trim()) {
+        params.set('lastName', profileLastName.trim());
+      }
+
+      if (profileBirthDate) {
+        params.set('birthDate', profileBirthDate);
+      }
+
+      if (profileGender) {
+        params.set('gender', profileGender);
+      }
+
+      params.set('sortBy', profileSortBy);
+      params.set('order', profileOrder);
+      params.set('page', String(page));
+      params.set('limit', '10');
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/profile/search?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('ft_token');
+          router.push('/login');
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'advanced search failed');
+      }
+
+      const data = await res.json();
+
+      setProfileResults(data.data);
+      setProfilePage(data.pagination.page);
+      setProfileTotalPages(data.pagination.totalPages);
+      setProfileTotal(data.pagination.total);
+	  setShowProfileSearch(true);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProfileSearching(false);
     }
   };
 
