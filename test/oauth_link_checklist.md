@@ -15,8 +15,10 @@ revisited.)
 - Its fixed auth callback (this is what Google needs to know about, not your frontend):
   `https://<PROJECT_REF>.supabase.co/auth/v1/callback`
 
-**Not known yet** — fill in once decided (see `vision.md` Phase 3, hosting not chosen):
-- Production frontend URL: `https://____________________`
+**Production frontend URL:** `https://ft.natscho.my` (no port, since 2026-10-04; pages and API
+share it, API at `/api`). It was `https://ft.natscho.my:8443` before that, and those old URLs now
+redirect. Supabase's Redirect URLs need `https://ft.natscho.my`, `https://ft.natscho.my/consent`
+and `https://ft.natscho.my/**`; the old `:8443` entries can be removed once nothing uses them.
 
 The browser never talks to Google directly — `signInWithOAuth()` sends it to
 Supabase, which redirects to the provider, which redirects back to **Supabase's own fixed
