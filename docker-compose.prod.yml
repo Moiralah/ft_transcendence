@@ -16,7 +16,9 @@
 #   frontend/Dockerfile's prod stage comment), so waf-frontend's upstream target changes
 #   from https:// to http://. waf-backend is unchanged: the backend still serves its own
 #   HTTPS internally regardless of dev/prod, so there was nothing to fix there.
-# - CORS_ORIGIN / NEXT_PUBLIC_API_URL point at the real domain instead of localhost.
+# - CORS_ORIGIN / NEXT_PUBLIC_API_URL point at the real domain instead of localhost:
+#   https://ft.natscho.my (pages) and https://ft.natscho.my/api, no ports. The proxy in
+#   front (GCP nginx) routes /api to waf-backend and everything else to waf-frontend.
 # - Vault's :8200 is bound to the VM's own loopback only (127.0.0.1:8200:8200), not
 #   0.0.0.0. Locally that distinction is moot (nothing external reaches your own
 #   machine's :8200 anyway); on a VM with a real public IP it matters — Vault here runs
@@ -37,7 +39,9 @@ services:
       target: prod
     environment:
       NODE_ENV: production
-      CORS_ORIGIN: "https://ft.natscho.my:8443"
+      # One origin since 2026-10-04: the GCP nginx serves pages and /api on the
+      # same https://ft.natscho.my (no port), so this is the page origin.
+      CORS_ORIGIN: "https://ft.natscho.my"
     # !override, not !reset: main.ts unconditionally reads certs from /app/certs
     # regardless of dev/prod (it's not gated behind NODE_ENV) — dropping this mount
     # entirely would crash the backend on boot. Only the source/node_modules dev
@@ -55,9 +59,9 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_API_URL: "https://ft.natscho.my:9443/api"
+        NEXT_PUBLIC_API_URL: "https://ft.natscho.my/api"
     environment:
-      NEXT_PUBLIC_API_URL: "https://ft.natscho.my:9443/api"
+      NEXT_PUBLIC_API_URL: "https://ft.natscho.my/api"
     volumes: !reset []
 
   waf-frontend:
