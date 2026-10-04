@@ -130,7 +130,7 @@
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. Everything else is
-    one path: browser → WAF → our backend → Postgres (when run with <code>make security</code>, at <code>https://localhost:8443</code>; plain <code>make up</code> has no WAF). Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (when run with <code>make security</code>, at <code>https://localhost:8443</code>; plain <code>make up</code> has no WAF). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -149,6 +149,14 @@
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">localStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
 
+      <!-- GCP VM: public entry point in production, forwards over WireGuard -->
+      <rect x="30" y="222" width="220" height="104" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5"/>
+      <text x="52" y="250" class="box-label" fill="var(--ink)">GCP VM (prod only)</text>
+      <text x="52" y="268" class="box-sub" fill="var(--ink)">nginx · Let&apos;s Encrypt TLS</text>
+      <text x="52" y="286" class="box-sub mono" fill="var(--sub)">:8443 / :9443 → 10.8.0.1</text>
+      <text x="52" y="304" class="box-sub" fill="var(--sub)">WireGuard tunnel to solsys</text>
+      <text x="52" y="318" class="box-sub" fill="var(--ext)" font-style="italic">no Docker, proxy only</text>
+
       <!-- ===== Group: Edge ===== -->
       <text x="288" y="34" class="group-title" fill="var(--sub)">Edge</text>
       <rect x="280" y="150" width="170" height="128" rx="14" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.5"/>
@@ -157,7 +165,7 @@
       <text x="298" y="214" class="box-sub mono" fill="var(--sub)">:9443 → backend</text>
       <text x="298" y="230" class="box-sub mono" fill="var(--sub)">:8443 → frontend</text>
       <text x="298" y="248" class="box-sub" fill="var(--waf)">403 on SQLi / XSS</text>
-      <text x="298" y="270" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
+      <text x="298" y="270" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
       <!-- ===== Group: Application services ===== -->
       <text x="488" y="34" class="group-title" fill="var(--sub)">Application services</text>
@@ -168,7 +176,7 @@
       <text x="502" y="94" class="box-sub" fill="var(--ink)">GoTrue — identity only</text>
       <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
       <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
-      <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
+      <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
       <!-- Backend -->
       <rect x="480" y="200" width="230" height="180" rx="14" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.5"/>
@@ -183,7 +191,7 @@
         <text x="610" y="308">/trees</text>
       </g>
       <text x="502" y="354" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
-      <text x="502" y="372" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
+      <text x="502" y="372" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
       <!-- ===== Group: Data & external ===== -->
       <text x="748" y="34" class="group-title" fill="var(--sub)">Data &amp; external</text>
@@ -193,7 +201,7 @@
       <text x="762" y="76" class="box-label" fill="var(--ext)">Google / GitHub</text>
       <text x="762" y="94" class="box-sub" fill="var(--sub)">OAuth 2.0 providers</text>
       <text x="762" y="112" class="box-sub" fill="var(--sub)">only when signing in via OAuth</text>
-      <text x="762" y="128" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
+      <text x="762" y="128" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
       <!-- Postgres -->
       <rect x="740" y="200" width="230" height="112" rx="14" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.5"/>
@@ -201,7 +209,7 @@
       <text x="762" y="248" class="box-sub" fill="var(--ink)">accessed via Prisma</text>
       <text x="762" y="266" class="box-sub mono" fill="var(--sub)">:54322 local · Supabase-hosted</text>
       <text x="762" y="284" class="box-sub" fill="var(--sub)">User · Tree · Profile · RecoveryCode…</text>
-      <text x="762" y="302" class="box-sub" fill="var(--ext)" font-style="italic">external — not on the VM</text>
+      <text x="762" y="302" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
       <!-- Vault -->
       <rect x="480" y="410" width="230" height="112" rx="14" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.5"/>
@@ -209,7 +217,7 @@
       <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, dev mode</text>
       <text x="502" y="476" class="box-sub mono" fill="var(--sub)">:8200 · AppRole auth</text>
       <text x="502" y="494" class="box-sub" fill="var(--vault)">boot-time only, not per-request</text>
-      <text x="502" y="512" class="box-sub" fill="var(--ext)" font-style="italic">runs on the GCP VM</text>
+      <text x="502" y="512" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
       <!-- ===== Arrows ===== -->
       <defs>
@@ -239,10 +247,11 @@
       <circle cx="365" cy="128" r="10" fill="var(--panel)" stroke="var(--sub)"/>
       <text x="365" y="132" class="step-num" fill="var(--sub)" text-anchor="middle">2</text>
 
-      <!-- 3 & 7: Browser -> WAF -> Backend (same physical path; login exchange + every later request) -->
-      <path d="M250,196 L480,238" fill="none" stroke="var(--waf)" stroke-width="2" marker-end="url(#arrowWaf)"/>
-      <circle cx="365" cy="217" r="13" fill="var(--panel)" stroke="var(--waf)" stroke-width="1.5"/>
-      <text x="365" y="221" class="step-num" fill="var(--waf)" text-anchor="middle">3·7</text>
+      <!-- 3 & 7: Browser -> GCP proxy -> (WireGuard) -> WAF -> Backend (same physical path; login exchange + every later request) -->
+      <path d="M140,196 L140,222" fill="none" stroke="var(--waf)" stroke-width="2" marker-end="url(#arrowWaf)"/>
+      <path d="M250,255 L480,255" fill="none" stroke="var(--waf)" stroke-width="2" marker-end="url(#arrowWaf)"/>
+      <circle cx="265" cy="255" r="13" fill="var(--panel)" stroke="var(--waf)" stroke-width="1.5"/>
+      <text x="265" y="259" class="step-num" fill="var(--waf)" text-anchor="middle">3·7</text>
 
       <!-- 4: Backend -> Supabase Auth (verify) -->
       <path d="M600,200 C600,178 590,168 600,160" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
@@ -255,10 +264,10 @@
       <circle cx="725" cy="240" r="10" fill="var(--panel)" stroke="var(--sub)"/>
       <text x="725" y="244" class="step-num" fill="var(--sub)" text-anchor="middle">5</text>
 
-      <!-- 6: Backend -> Browser (response, flows back through the same WAF connection) -->
-      <path d="M480,340 C360,400 280,380 250,210" fill="none" stroke="var(--sub)" stroke-width="1.6" stroke-dasharray="1 5" stroke-linecap="round" marker-end="url(#arrow)"/>
-      <circle cx="330" cy="392" r="10" fill="var(--panel)" stroke="var(--sub)"/>
-      <text x="330" y="396" class="step-num" fill="var(--sub)" text-anchor="middle">6</text>
+      <!-- 6: Backend -> Browser (response, flows back through the same WAF + proxy connection) -->
+      <path d="M480,340 C400,380 300,360 252,318" fill="none" stroke="var(--sub)" stroke-width="1.6" stroke-dasharray="1 5" stroke-linecap="round" marker-end="url(#arrow)"/>
+      <circle cx="354" cy="358" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="354" y="362" class="step-num" fill="var(--sub)" text-anchor="middle">6</text>
 
       <!-- 0: Backend -> Vault (boot-time only, before any of the numbered flow) -->
       <path d="M595,380 L595,410" fill="none" stroke="var(--vault)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrowVault)"/>
@@ -277,7 +286,7 @@
         Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
       </text>
       <text x="30" y="628" class="box-sub" fill="var(--sub)">
-        <tspan font-style="italic" fill="var(--ext)">Italic grey tag on a box</tspan> = where it actually runs: on the production GCP VM (WAF, backend, Vault) vs. an external service we don&apos;t host (Supabase Auth, Postgres, Google/GitHub).
+        <tspan font-style="italic" fill="var(--ext)">Italic grey tag on a box</tspan> = where it runs in production: solsys (WAF, backend, Vault, reached via the GCP proxy) vs. external services (Supabase, Google/GitHub). Locally there&apos;s no GCP hop.
       </text>
     </svg>
   </div>
@@ -311,7 +320,7 @@
     </div>
     <div class="step">
       <div class="n waf">3</div>
-      <p><strong>Browser → WAF → Backend</strong> — <code>POST /api/auth/login { accessToken }</code> via the WAF on <code>:9443</code>, exchanging the Supabase token for our own session. ModSecurity inspects the request before it reaches NestJS.<span class="tag">login only</span></p>
+      <p><strong>Browser → WAF → Backend</strong> — <code>POST /api/auth/login { accessToken }</code> via the WAF on <code>:9443</code> (in production, through the GCP proxy and WireGuard tunnel first), exchanging the Supabase token for our own session. ModSecurity inspects the request before it reaches NestJS.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n">4</div>
@@ -407,24 +416,35 @@
   <div class="callout ok">
     <div class="ic">🌐</div>
     <div>
-      <strong>Live in production:</strong> this same architecture — unchanged, not a different
-      design — is now genuinely running on the user's existing free-tier GCP <code>e2-micro</code>
-      VM (already serving their personal site), reached via a new subdomain,
-      <code>ft.natscho.my</code>, instead of a path on the existing site or a new domain. Verified
-      from <em>outside</em> the VM, over the real public internet, not just over SSH:
+      <strong>Live in production (moved 2026-10-04):</strong> the same architecture now runs on a home
+      server, <code>solsys</code>, instead of the free-tier GCP <code>e2-micro</code>, which couldn&apos;t build
+      the images reliably. The GCP VM stays as the public entry point at the same URL,
+      <code>ft.natscho.my</code>: its nginx terminates HTTPS with the real Let&apos;s Encrypt cert on
+      <code>:8443</code>/<code>:9443</code> and proxies over a WireGuard tunnel (GCP <code>10.8.0.2</code> ⇄
+      solsys <code>10.8.0.1</code>) to the WAFs. GCP runs no Docker anymore; its cert-renewal hook just reloads
+      nginx. On solsys the WAFs are published on the tunnel address only, so not even the home LAN can bypass
+      the proxy. URLs, OAuth redirects and CORS are unchanged. Verified over the public internet:
       <pre>https://ft.natscho.my:8443/login                    → 200
 https://ft.natscho.my:9443/api/trees/my-trees      → 401 (reaches the real app, unauth'd)
-https://ft.natscho.my:4000/ and :3000/             → connection refused (no bypass path)
-SQLi payload via :9443                             → 403 (WAF blocking it for real, not just locally)
+SQLi payload via :9443                             → 403 (solsys WAF blocking it)
 backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
-      Production build (the real <code>prisma generate && nest build</code> / <code>next
-      build</code>, not the dev servers pictured above), correct <code>linux/amd64</code> images,
-      Vault bound to <code>127.0.0.1:8200</code> (loopback only — its dev-mode root token is
-      hardcoded and visible in this public repo, so it can't be left open on a box with a real
-      public IP). A real Let's Encrypt cert now backs all three ports (<code>ft.natscho.my</code>
-      bare domain, <code>:8443</code>, <code>:9443</code>) — no more browser self-signed warning —
-      with a certbot deploy-hook that re-copies it into the WAF containers and force-recreates them
-      on renewal, verified to actually run rather than assumed.
+      Vault is still bound to loopback only (<code>127.0.0.1:8200</code>): its dev-mode root token is
+      hardcoded in this public repo. On solsys, start the stack with the extra local
+      <code>docker-compose.home.yml</code>, not <code>make prod</code>, which would publish the WAFs on every
+      interface.
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ic">🩹</div>
+    <div>
+      <strong>Login outage on the first solsys deploy (2026-10-04):</strong> every login failed with
+      <code>The column User.suspended does not exist in the current database</code>. The production database
+      had never actually received that column; the old GCP deploys hadn&apos;t noticed because they kept running
+      an older image without the suspend code. Fixed with a targeted
+      <code>ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "suspended" BOOLEAN NOT NULL DEFAULT false</code>.
+      A schema diff afterwards shows production matches <code>schema.prisma</code> except an extra
+      <code>Tree.slug</code> column, deliberately left in place.
     </div>
   </div>
 
