@@ -336,7 +336,7 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span> {myProfile?.lastName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>              
+              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
 
               <div className="mt-2 flex flex-wrap gap-2">
@@ -542,7 +542,7 @@ export default function TreePage() {
               {myTrees.map((tree: any) => (
                 <Link
                   key={tree.id}
-                  href={`/canvas/${tree.id}`}
+                  href={`/canvas/${tree.slug}`}
                   className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   aria-label={`View ${tree.name} family tree`}
                 >
@@ -634,7 +634,7 @@ export default function TreePage() {
                   {searchResults.map((tree: any) => (
                     <Link
                       key={tree.id}
-                      href={`/canvas/${tree.id}`}
+                      href={`/canvas/${tree.slug}`}
                       onClick={() => setShowSearch(false)}
                       className="block bg-white p-4 rounded-lg border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/30 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
                     >
