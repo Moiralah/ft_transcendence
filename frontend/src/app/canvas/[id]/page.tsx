@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Navbar } from '@/components/navbar';
@@ -10,6 +10,38 @@ import { TreeBranch } from '@/components/treeBranch';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
+
+
+interface PendingClaim {
+  id: number;
+  profileId: number;
+  treeId: number;
+  role: string;
+  joinedAt: string;
+  claim: string;
+  linkId: number | null;
+  profile: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    photoUrl: string | null;
+  };
+  link?: {
+    id: number;
+    profileId: number;
+    treeId: number;
+    role: string;
+    joinedAt: string;
+    claim: string;
+    linkId: number | null;
+    profile: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      photoUrl: string | null;
+    };
+  } | null;
+}
 
 export default function Content() {
   const params = useParams();
@@ -23,14 +55,20 @@ export default function Content() {
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
-  const [publicTree, setPublicTree] = useState<boolean>(true);
+
+  type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
+
+  interface treeView {
+    viewType: TreeVisibility;
+    viewId: number | null;
+  }
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
     if (token) {
       fetchTree(token);
-	  fetchMyProfile(token);
+	    fetchMyProfile(token);
     }
   }, [slug, token]);
 
@@ -47,8 +85,32 @@ export default function Content() {
       const match = treesMember.find((m: any) => m.id  === tree.rootId);
       if (match) return match;
     }
-    return treesMember[0];
+    // return treesMember[0];
   }, [tree, treesMember]);
+
+  const initialTreeType = useMemo((): TreeVisibility => {
+    if (myProfile?.id && Array.isArray(treesMember)) {
+      const matchMember = treesMember.find((m: any) => m.profileId === myProfile.id);
+      
+      if (matchMember?.role) {
+      return matchMember.role as TreeVisibility;
+      }
+    }
+    return 'PUBLIC';
+  }, [myProfile, treesMember]);
+
+  useEffect(() => {
+    if (initialTreeType) {
+      setTreeType(initialTreeType);
+    }
+  }, [initialTreeType]);
+
+  const [treeType, setTreeType] = useState<TreeVisibility>(initialTreeType);
+
+  const treeView = useMemo(() => ({
+    viewType: treeType,
+    viewId: myProfile?.id ?? null,
+  }), [treeType, myProfile?.id]);
 
   useEffect(() => {
     if (!rootMember && initialMember) {
@@ -88,8 +150,8 @@ export default function Content() {
       }
       const data = await res.json();
       setTree(data);
-	  setTreeId(data.id);
-	  fetchTreeMember(token, data.id);
+	    setTreeId(data.id);
+	    fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
@@ -172,13 +234,6 @@ export default function Content() {
     });
   };
 
-  // Achievement / Tree metadata state
-  // const [points, setPoints] = useState(10);
-  // const [fullPoints, setFullPoints] = useState(150);
-  // const [levels, setLevels] = useState(1);
-  // const [levelName, setLevelName] = useState("newbie");
-  // const percentage = Math.min(100, Math.max(0, Math.round((points / fullPoints) * 100)));
-
   const [treeMemberModal, setTreeMemberModal] = useState(false);
   const [name, setName] = useState("my tree");
   const [editTreeName, setEditTreeName] = useState(false);
@@ -240,6 +295,99 @@ export default function Content() {
     handleSaveTreeName();
   };
 
+  useEffect(() => {
+    if (treeId && token) {
+      handlePending();
+    }
+  }, [treeId, token]);
+
+  const [pending, setPending] = useState<PendingClaim[] | null>(null);
+
+  const handlePending = async () => {
+    try {
+      const token = localStorage.getItem("ft_token");
+      if (!token) {
+        throw new Error("No token found. Please log in.");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/trees/${treeId}/claims/pending`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      // console.log(res);
+      const updatedPending = await res.json();
+      setPending(updatedPending);
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
+  const handleApproveClaim = async (holderMemberId: number) => {
+    try {
+      const token = localStorage.getItem("ft_token");
+      if (!token) {
+        throw new Error("No token found. Please log in.");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/approve`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      // const updatedClaim = await res.json();
+      // renderClaim(updatedClaim);
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
+  const handleApproveUnclaim = async (holderMemberId: number) => {
+    try {
+      const token = localStorage.getItem("ft_token");
+      if (!token) {
+        throw new Error("No token found. Please log in.");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/unclaim`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      // const updatedUnclaim = await res.json();
+      // renderUnclaim(updatedUnclaim);
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+  };
+
   const handleRootMember = (member: any) => {
     setRootMember(member);
     setTreeMemberModal(false);
@@ -250,16 +398,16 @@ export default function Content() {
     .filter((member: any) => {
       const fullName = `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase();
       return fullName.includes(searchMember.toLowerCase());
-    });
+  });
 
 	const {onlineProfiles} = useTreePresence(
-	Number(treeId),
+	  Number(treeId),
     myProfile? {
           profileId: myProfile.id,
           firstName: myProfile.firstName,
           lastName: myProfile.lastName,
           photoUrl: myProfile.photoUrl,
-		  onlineAt: myProfile.onlineAt,
+		      onlineAt: myProfile.onlineAt,
         }
       : null,
   );
@@ -278,9 +426,9 @@ export default function Content() {
         className="focus:outline-none max-w-6xl w-full mx-auto px-4 flex-1 pt-20"
       >
         {/* Tree member card */}
-        <div className="sticky top-20 z-20 w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-3">
+        <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
           {/* Top Row: Editable Title + Home Button */}
-          <div className="flex flex-row w-full items-center justify-between gap-3">
+          <div className="flex flex-row w-full items-center justify-between gap-2">
             <div className="h-12 flex flex-1 items-center">
               {editTreeName ? (
                 <input
@@ -300,7 +448,7 @@ export default function Content() {
                   aria-label={`${name || "my tree"}`}
                   onKeyDown={handleNameStaticKeyDown}
                   onClick={() => setEditTreeName(true)}
-                  className="flex w-full h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+                  className="flex h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
                 >
                   {name || "my tree"}
                 </div>
@@ -310,7 +458,6 @@ export default function Content() {
               type="button"
               tabIndex={0}
               onClick={() => {
-                setPublicTree(false);
                 if (initialMember) {
                   setRootMember(initialMember);
                 }
@@ -334,6 +481,22 @@ export default function Content() {
             </button>
           </div>
         </div>
+        
+        <div>
+          {pending?.map((m: any) => (
+            <div key={m.id}>
+            {m.linkId} claiming {m.id} 
+            <button
+              type="button"
+              onClick={() => {handleApproveClaim(m.id)}}
+            >approve</button>
+            <button
+              type="button"
+              onClick={() => {handleApproveUnclaim(m.id)}}
+            >reject</button>
+            </div>
+          ))}
+        </div>
 
         {/* Interactive Workspace */}
         <div
@@ -353,7 +516,7 @@ export default function Content() {
               <TreeBranch
                 allMembers={treesMember ?? []}
                 currentMember={rootMember}
-                publicTree={publicTree}
+                treeView={treeView}
                 onMembersChange={updateMembers}
               />
             </div>
@@ -390,7 +553,6 @@ export default function Content() {
                   key={member.id}
                   onClick={() => {
                     if (member) {
-                      setPublicTree(true);
                       handleRootMember(member);
                     }
                   }}
