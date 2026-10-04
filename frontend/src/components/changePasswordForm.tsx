@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
-import { MIN_PASSWORD_LENGTH } from '@/lib/auth';
+import { MIN_PASSWORD_LENGTH, SessionExpiredError, changePassword, getAccount } from '@/lib/auth';
 
 type Account =
 	| { kind: 'loading' }
@@ -21,17 +20,14 @@ export function ChangePasswordForm() {
 	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
-		supabase.auth.getUser().then(({ data }) => {
-			const user = data.user;
-			if (!user?.email) {
-				setAccount({ kind: 'no-session' });
-			} else if (!user.identities?.some((i) => i.provider === 'email')) {
+		getAccount()
+			.then((info) => {
+				if (!info.email) setAccount({ kind: 'no-session' });
 				// Signed up through Google only: there is no password to change.
-				setAccount({ kind: 'no-password' });
-			} else {
-				setAccount({ kind: 'ready', email: user.email });
-			}
-		});
+				else if (!info.hasPassword) setAccount({ kind: 'no-password' });
+				else setAccount({ kind: 'ready', email: info.email });
+			})
+			.catch(() => setAccount({ kind: 'no-session' }));
 	}, []);
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -55,28 +51,15 @@ export function ChangePasswordForm() {
 
 		setSubmitting(true);
 		try {
-			// Re-check the current password, so someone at an unlocked browser
-			// can't change it without knowing it. This gives a clear error here;
-			// it's also sent with updateUser below, because the production
-			// Supabase project requires it server-side.
-			const { error: authError } = await supabase.auth.signInWithPassword({
-				email: account.email,
-				password: currentPassword,
-			});
-			if (authError) {
-				setError('Current password is incorrect');
+			// The backend checks the current password itself before changing
+			// anything, then ends the account's other Supabase sessions.
+			try {
+				await changePassword(currentPassword, newPassword);
+			} catch (err) {
+				if (err instanceof SessionExpiredError) setAccount({ kind: 'no-session' });
+				else setError((err as Error).message);
 				return;
 			}
-			const { error: updateError } = await supabase.auth.updateUser({
-				password: newPassword,
-				current_password: currentPassword,
-			});
-			if (updateError) {
-				setError(updateError.message);
-				return;
-			}
-			// Sign out every other Supabase session for this account (best effort).
-			await supabase.auth.signOut({ scope: 'others' });
 			setCurrentPassword('');
 			setNewPassword('');
 			setConfirmPassword('');
