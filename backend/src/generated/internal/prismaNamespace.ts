@@ -1159,6 +1159,7 @@ export type RecoveryCodeScalarFieldEnum = (typeof RecoveryCodeScalarFieldEnum)[k
 
 export const TreeScalarFieldEnum = {
   id: 'id',
+  slug: 'slug',
   name: 'name',
   code: 'code',
   description: 'description',

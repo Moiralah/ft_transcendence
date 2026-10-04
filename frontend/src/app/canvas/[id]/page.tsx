@@ -14,10 +14,11 @@ import { PresenceFacepile } from '@/components/PresenceFacepile';
 export default function Content() {
   const params = useParams();
   const router = useRouter();
-  const treeId = params.id as unknown as number;
+  const slug = params.id as unknown as string;
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
 
   const [rootMember, setRootMember] = useState<any>();
+  const [treeId, setTreeId] = useState<number | null>(null);
   const [tree, setTree] = useState<any>('');
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
@@ -32,9 +33,8 @@ export default function Content() {
       return;
     }
     fetchTree(token);
-    fetchTreeMember(token);
     fetchMyProfile(token);
-  }, [treeId, token]);
+  }, [slug, token]);
 
   useEffect(() => {
     if (tree?.name) {
@@ -46,7 +46,7 @@ export default function Content() {
     if (!treesMember || !treesMember.length) return undefined;
 
     if (tree?.rootId) {
-      const match = treesMember.find((m: any) => (m.profileId ?? m.id) === tree.rootId);
+      const match = treesMember.find((m: any) => m.id  === tree.rootId);
       if (match) return match;
     }
     return treesMember[0];
@@ -67,7 +67,7 @@ export default function Content() {
 
   const fetchTree = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -76,17 +76,28 @@ export default function Content() {
         if (res.status === 401) {
           sessionStorage.removeItem('ft_token');
           router.push('/login');
-        }
+			return;
+		}
+		if (res.status === 403) {
+			router.push('/dashboard?error=no-access');
+			return;
+		}
+		if (res.status === 404) {
+			router.push('/dashboard?error=not-found');
+			return;
+		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();
       setTree(data);
+	  setTreeId(data.id);
+	  fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
   };
 
-  const fetchTreeMember = async (authToken: string) => {
+  const fetchTreeMember = async (authToken: string, treeId: number) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
         headers: {
@@ -97,7 +108,16 @@ export default function Content() {
         if (res.status === 401) {
           sessionStorage.removeItem('ft_token');
           router.push('/login');
-        }
+			return;
+		}
+		if (res.status === 403) {
+			router.push('/dashboard?error=no-access');
+			return;
+		}
+		if (res.status === 404) {
+			router.push('/dashboard?error=not-found');
+			return;
+		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();
@@ -371,8 +391,10 @@ export default function Content() {
                 <div
                   key={member.id}
                   onClick={() => {
-                    setPublicTree(true);
-                    handleRootMember(member);
+                    if (member) {
+                      setPublicTree(true);
+                      handleRootMember(member);
+                    }
                   }}
                   className="cursor-pointer"
                 >
