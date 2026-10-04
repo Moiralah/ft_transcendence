@@ -168,7 +168,8 @@ export default function TreePage() {
     setIsSearching(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error('Search failed');
       const data = await res.json();

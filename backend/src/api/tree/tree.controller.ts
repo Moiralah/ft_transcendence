@@ -22,6 +22,7 @@ export class TreeController {
 	}
 
 	@Get('search')
+	@UseGuards(JwtAuthGuard)
 	async searchTree(@Query('q') query: string) {
 		return this.treeService.searchTree(query);
 	}
