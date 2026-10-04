@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
 				<Typography as="h1" variant="h2" className="mb-2">
 					Privacy Policy
 				</Typography>
-				<p className="text-sm text-slate-500 mb-10">Last updated: 2026-09-21</p>
+				<p className="text-sm text-slate-500 mb-10">Last updated: 2026-10-04</p>
 
 				<p className="text-slate-600 text-base leading-relaxed mb-10 border-l-4 border-slate-200 pl-4">
 					My Simple Family Tree is a student project built for the ft_transcendence
@@ -42,9 +42,10 @@ export default function PrivacyPolicyPage() {
 
 				<Section title="1. Information We Collect">
 					<p><strong>Account information.</strong> When you sign up, we collect your email
-					address and, depending on how you sign in, either a password (handled entirely by
-					Supabase Auth — we never see or store your raw password) or your name, email, and
-					profile picture from Google if you use OAuth sign-in.</p>
+					address and, depending on how you sign in, either a password (stored and checked by
+					Supabase Auth — we never store your password; our server only passes it along to
+					Supabase, briefly, when you confirm it to change your email or password) or your
+					name, email, and profile picture from Google if you use OAuth sign-in.</p>
 					<p><strong>Family tree data.</strong> Information you add to a tree — first and
 					last name, gender, birth and death dates, a short bio, and a profile photo — for
 					yourself and for anyone else you add as a family member.</p>
@@ -52,8 +53,13 @@ export default function PrivacyPolicyPage() {
 					we store a TOTP secret and a set of one-time recovery codes. Recovery codes are
 					stored as bcrypt hashes, not in plain text — we cannot read them back.</p>
 					<p><strong>Session data.</strong> A signed session token and your role are kept in
-					your browser&apos;s local storage after you log in, so you stay signed in between
-					page loads. This never leaves your device except when sent to our own backend.</p>
+					your browser&apos;s session storage after you log in, so you stay signed in while the
+					tab is open; closing the tab ends it. This never leaves your device except when sent
+					to our own backend.</p>
+					<p><strong>Feedback.</strong> If you use the <a href="/feedback" className="underline">feedback
+					form</a>, we receive what you write plus, only if you fill them in, your name and
+					email address (so we can reply). It is sent to the project team as an email and is
+					not stored in the app&apos;s database.</p>
 				</Section>
 
 				<Section title="2. Data About People Who Aren't Registered Users">
@@ -81,6 +87,9 @@ export default function PrivacyPolicyPage() {
 					<p><strong>Google.</strong> If you choose to sign in with Google, it shares
 					your name, email, and profile picture with us — nothing else, and only after
 					you approve it on their consent screen.</p>
+					<p><strong>Gmail.</strong> Feedback form messages are delivered to the project
+					team through Google&apos;s Gmail email service, under
+					{' '}<a href="https://policies.google.com/privacy" className="underline" target="_blank" rel="noreferrer">Google&apos;s privacy policy</a>.</p>
 				</Section>
 
 				<Section title="5. Data Security">

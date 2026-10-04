@@ -32,6 +32,10 @@ SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SUPABASE_SERVICE_ROLE_KEY=' .env | cut -d=
 DATABASE_URL_RAW=$(grep -E '^DATABASE_URL=' .env | cut -d= -f2- | tr -d '\r')
 DIRECT_URL_RAW=$(grep -E '^DIRECT_URL=' .env | cut -d= -f2- | tr -d '\r')
 SUPABASE_AUTH_URL_RAW=$(grep -E '^SUPABASE_AUTH_URL=' .env | cut -d= -f2- | tr -d '\r')
+# Optional: Gmail App Password for the feedback form. Google shows it in
+# groups of four with spaces; strip those. Empty is fine (feedback then
+# answers 503 instead of sending).
+SMTP_PASS=$(grep -E '^SMTP_PASS=' .env | cut -d= -f2- | tr -d '\r "')
 # In LOCAL dev, Supabase/Postgres run on the HOST (127.0.0.1/localhost),
 # which inside the backend's Docker container means the container itself,
 # not the host — rewrite to host.docker.internal. See README "Running
@@ -51,7 +55,7 @@ SUPABASE_AUTH_URL_DOCKER=$(rewrite_loopback "$SUPABASE_AUTH_URL_RAW")
 
 echo "[vault-init] writing secret/data/family-tree/backend..."
 curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
-  -d "{\"data\":{\"JWT_SECRET\":\"$JWT_SECRET\",\"SUPABASE_SERVICE_ROLE_KEY\":\"$SUPABASE_SERVICE_ROLE_KEY\",\"DATABASE_URL\":\"$DATABASE_URL_DOCKER\",\"DIRECT_URL\":\"$DIRECT_URL_DOCKER\",\"SUPABASE_AUTH_URL\":\"$SUPABASE_AUTH_URL_DOCKER\"}}" \
+  -d "{\"data\":{\"JWT_SECRET\":\"$JWT_SECRET\",\"SUPABASE_SERVICE_ROLE_KEY\":\"$SUPABASE_SERVICE_ROLE_KEY\",\"DATABASE_URL\":\"$DATABASE_URL_DOCKER\",\"DIRECT_URL\":\"$DIRECT_URL_DOCKER\",\"SUPABASE_AUTH_URL\":\"$SUPABASE_AUTH_URL_DOCKER\",\"SMTP_PASS\":\"$SMTP_PASS\"}}" \
   "$VAULT_ADDR/v1/$SECRET_PATH" >/dev/null
 
 echo "[vault-init] enabling approle auth (ok if already enabled)..."
