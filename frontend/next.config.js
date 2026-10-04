@@ -10,7 +10,11 @@ function originOf(url) {
 }
 const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_URL);
 const supabaseOrigin = originOf(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const connectSrc = ["'self'", apiOrigin, supabaseOrigin].filter(Boolean).join(' ');
+// Supabase Realtime (tree presence + notifications) connects over a WebSocket,
+// wss:// on the same host. Firefox doesn't let an https:// source cover wss://
+// and throws when the socket is blocked, which crashed the whole canvas page.
+const supabaseWs = supabaseOrigin.replace(/^http/, 'ws');
+const connectSrc = ["'self'", apiOrigin, supabaseOrigin, supabaseWs].filter(Boolean).join(' ');
 
 // 'unsafe-inline' on both script-src and style-src is a deliberate, known
 // loosening, not an oversight: self-hosted Next.js App Router (via `next
