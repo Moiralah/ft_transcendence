@@ -146,14 +146,14 @@
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
       <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make security)</text>
       <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
-      <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">localStorage</text>
+      <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">sessionStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
 
       <!-- GCP VM: public entry point in production, forwards over WireGuard -->
       <rect x="30" y="222" width="220" height="104" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5"/>
       <text x="52" y="250" class="box-label" fill="var(--ink)">GCP VM (prod only)</text>
       <text x="52" y="268" class="box-sub" fill="var(--ink)">nginx · Let&apos;s Encrypt TLS</text>
-      <text x="52" y="286" class="box-sub mono" fill="var(--sub)">:8443 / :9443 → 10.8.0.1</text>
+      <text x="52" y="286" class="box-sub mono" fill="var(--sub)">:443 · /api → :9443, / → :8443</text>
       <text x="52" y="304" class="box-sub" fill="var(--sub)">WireGuard tunnel to solsys</text>
       <text x="52" y="318" class="box-sub" fill="var(--ext)" font-style="italic">no Docker, proxy only</text>
 
@@ -325,7 +325,7 @@
     </div>
     <div class="step">
       <div class="n waf">3</div>
-      <p><strong>Browser → WAF → Backend</strong> — <code>POST /api/auth/login { accessToken }</code> via the WAF on <code>:9443</code> (in production, through the GCP proxy and WireGuard tunnel first), exchanging the Supabase token for our own session. ModSecurity inspects the request before it reaches NestJS.<span class="tag">login only</span></p>
+      <p><strong>Browser → WAF → Backend</strong> — <code>POST /api/auth/login { accessToken }</code> via the WAF on <code>:9443</code> (in production: <code>https://ft.natscho.my/api/auth/login</code>, no port, through the GCP proxy and WireGuard tunnel first), exchanging the Supabase token for our own session. ModSecurity inspects the request before it reaches NestJS.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n">4</div>
@@ -423,15 +423,20 @@
     <div>
       <strong>Live in production (moved 2026-10-04):</strong> the same architecture now runs on a home
       server, <code>solsys</code>, instead of the free-tier GCP <code>e2-micro</code>, which couldn&apos;t build
-      the images reliably. The GCP VM stays as the public entry point at the same URL,
-      <code>ft.natscho.my</code>: its nginx terminates HTTPS with the real Let&apos;s Encrypt cert on
-      <code>:8443</code>/<code>:9443</code> and proxies over a WireGuard tunnel (GCP <code>10.8.0.2</code> ⇄
-      solsys <code>10.8.0.1</code>) to the WAFs. GCP runs no Docker anymore; its cert-renewal hook just reloads
-      nginx. On solsys the WAFs are published on the tunnel address only, so not even the home LAN can bypass
-      the proxy. URLs, OAuth redirects and CORS are unchanged. Verified over the public internet:
-      <pre>https://ft.natscho.my:8443/login                    → 200
-https://ft.natscho.my:9443/api/trees/my-trees      → 401 (reaches the real app, unauth'd)
-SQLi payload via :9443                             → 403 (solsys WAF blocking it)
+      the images reliably. The GCP VM is the public entry point, and since the same day the site has
+      <strong>no port</strong>: <code>https://ft.natscho.my</code>, with the API at
+      <code>https://ft.natscho.my/api</code>. GCP&apos;s nginx terminates HTTPS on the normal port 443 with the
+      real Let&apos;s Encrypt cert and picks a WAF by path (<code>/api</code> → solsys <code>:9443</code>,
+      everything else → <code>:8443</code>) over a WireGuard tunnel (GCP <code>10.8.0.2</code> ⇄ solsys
+      <code>10.8.0.1</code>). Pages and API share one origin, so <code>CORS_ORIGIN</code> is
+      <code>https://ft.natscho.my</code>. The old <code>:8443</code>/<code>:9443</code> URLs <code>308</code>-redirect
+      to the new address. GCP runs no Docker anymore; its cert-renewal hook just reloads nginx. On solsys the
+      WAFs are published on the tunnel address only, so not even the home LAN can bypass the proxy. Verified
+      over the public internet:
+      <pre>https://ft.natscho.my/login                         → 200
+https://ft.natscho.my/api/trees/my-trees           → 401 (reaches the real app, unauth'd)
+SQLi payload via /api                              → 403 (solsys WAF blocking it)
+https://ft.natscho.my:8443/login                   → 308 → https://ft.natscho.my/login
 backend log: [vault] loaded 5 secrets from secret/data/family-tree/backend</pre>
       Vault is still bound to loopback only (<code>127.0.0.1:8200</code>): its dev-mode root token is
       hardcoded in this public repo. On solsys, start the stack with the extra local
