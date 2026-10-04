@@ -35,7 +35,10 @@ SUPABASE_AUTH_URL_RAW=$(grep -E '^SUPABASE_AUTH_URL=' .env | cut -d= -f2- | tr -
 # Optional: Gmail App Password for the feedback form. Google shows it in
 # groups of four with spaces; strip those. Empty is fine (feedback then
 # answers 503 instead of sending).
-SMTP_PASS=$(grep -E '^SMTP_PASS=' .env | cut -d= -f2- | tr -d '\r "')
+# Last non-empty line only: a duplicate or empty SMTP_PASS= line used to
+# turn this into a multi-line value, the JSON below became invalid, and the
+# Vault write failed silently, keeping the old (empty) secret.
+SMTP_PASS=$(grep -E '^SMTP_PASS=.' .env | tail -n1 | cut -d= -f2- | tr -d '\r "')
 # In LOCAL dev, Supabase/Postgres run on the HOST (127.0.0.1/localhost),
 # which inside the backend's Docker container means the container itself,
 # not the host — rewrite to host.docker.internal. See README "Running
