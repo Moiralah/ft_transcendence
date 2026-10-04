@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
+import { ChangeEmailForm } from '@/components/changeEmailForm';
 
 export default function TwoFactorSettingsPage() {
 	const router = useRouter();
@@ -220,6 +221,7 @@ export default function TwoFactorSettingsPage() {
 				)}
 
 				{!loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
+				{!loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
