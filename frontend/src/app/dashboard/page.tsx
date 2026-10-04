@@ -653,6 +653,103 @@ export default function TreePage() {
           </div>
         </div>
       )}
+      {showProfileSearch && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setShowProfileSearch(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-search-modal-title"
+            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2
+                  id="profile-search-modal-title"
+                  className="text-xl font-bold text-slate-900"
+                >
+                  Search Results
+                </h2>
+
+                <p className="text-sm text-slate-600 mt-1">
+                  {profileTotal} result{profileTotal === 1 ? '' : 's'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowProfileSearch(false)}
+                aria-label="Close profile search results"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div aria-live="polite">
+              {profileResults.map((profile) => {              
+                return (
+                  <div
+                    key={profile.id}
+                    className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-900 text-base">
+                        {[profile.firstName, profile.lastName]
+                          .filter(Boolean)
+                          .join(' ')}
+                      </div>
+              
+                      <div className="text-sm text-slate-700 mt-1">
+                        Gender: {profile.gender || 'N/A'}
+                      </div>
+              
+                      <div className="text-sm text-slate-700 mt-1">
+                        Birth Date: {profile.birthDate || 'N/A'}
+                      </div>
+              
+                      {profile.deathDate && (
+                        <div className="text-sm text-slate-700 mt-1">
+                          Death Date: {profile.deathDate}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {profileTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+                <Button
+                  variant="secondary"
+                  disabled={profilePage <= 1 || isProfileSearching}
+                  onClick={() => searchProfiles(profilePage - 1)}
+                >
+                  Previous
+                </Button>
+
+                <span className="text-sm text-slate-700">
+                  Page {profilePage} of {profileTotalPages}
+                </span>
+
+                <Button
+                  variant="secondary"
+                  disabled={
+                    profilePage >= profileTotalPages || isProfileSearching
+                  }
+                  onClick={() => searchProfiles(profilePage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
