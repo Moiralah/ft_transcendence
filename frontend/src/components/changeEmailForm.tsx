@@ -57,11 +57,11 @@ export function ChangeEmailForm() {
 				setError('Current password is incorrect');
 				return;
 			}
-			// Nothing changes yet: production has Supabase's secure email change
-			// on, so it emails a link to the new AND the current address, and the
-			// switch only happens once both are clicked (one alone leaves it
-			// pending). The backend picks up the new address on the next login
-			// (it matches users by id).
+			// Nothing changes yet: Supabase emails a link to the new address and
+			// the switch happens once it's clicked. Production has "Secure email
+			// change" off (2026-10-04), so the old address isn't asked: the
+			// current password above plus the new inbox are the checks. The
+			// backend picks up the new address on the next login (matches by id).
 			const { error: updateError } = await supabase.auth.updateUser(
 				{ email },
 				{ emailRedirectTo: `${window.location.origin}/login` },
@@ -107,8 +107,7 @@ export function ChangeEmailForm() {
 					{account.pendingEmail && !sentTo && (
 						<p className="text-sm text-slate-700" role="status">
 							A change to <strong>{account.pendingEmail}</strong> is waiting for confirmation. Click the
-							link in <strong>both</strong> inboxes ({account.pendingEmail} and {account.email}). Until
-							then, keep logging in with {account.email}.
+							link we sent to {account.pendingEmail}. Until then, keep logging in with {account.email}.
 						</p>
 					)}
 					<label htmlFor="change-new-email" className="block text-sm font-medium text-slate-800">
@@ -139,9 +138,8 @@ export function ChangeEmailForm() {
 					{error && <div className="error" role="alert">{error}</div>}
 					{sentTo && (
 						<div className="success" role="status">
-							We sent a confirmation link to <strong>both</strong> your new address ({sentTo}) and your
-							current one ({account.email}). Click <strong>both</strong> links: your email won&apos;t
-							change until both are confirmed. Until then, keep logging in with {account.email}.
+							We sent a confirmation link to <strong>{sentTo}</strong>. Click it to finish the change.
+							Until then, keep logging in with {account.email}.
 						</div>
 					)}
 				</form>
