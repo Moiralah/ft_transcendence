@@ -42,6 +42,19 @@ export default function TreePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profileBirthDate, setProfileBirthDate] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
+  const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
+  const [profileResults, setProfileResults] = useState<any[]>([]);
+  const [profilePage, setProfilePage] = useState(1);
+  const [profileTotalPages, setProfileTotalPages] = useState(0);
+  const [profileTotal, setProfileTotal] = useState(0);
+  const [isProfileSearching, setIsProfileSearching] = useState(false);
+  const [showProfileSearch, setShowProfileSearch] = useState(false);
+
   useEffect(() => {
     if (!token) {
       router.push('/login');
@@ -182,6 +195,80 @@ export default function TreePage() {
     }
   };
 
+  const searchProfiles = async (page = 1) => {
+    const hasCriteria = profileFirstName.trim() ||
+      profileLastName.trim() || profileBirthDate || profileGender;
+
+    if (!hasCriteria) {
+      return;
+    }
+
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setIsProfileSearching(true);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (profileFirstName.trim()) {
+        params.set('firstName', profileFirstName.trim());
+      }
+
+      if (profileLastName.trim()) {
+        params.set('lastName', profileLastName.trim());
+      }
+
+      if (profileBirthDate) {
+        params.set('birthDate', profileBirthDate);
+      }
+
+      if (profileGender) {
+        params.set('gender', profileGender);
+      }
+
+      params.set('sortBy', profileSortBy);
+      params.set('order', profileOrder);
+      params.set('page', String(page));
+      params.set('limit', '10');
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/profile/search?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          sessionStorage.removeItem('ft_token');
+          router.push('/login');
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'advanced search failed');
+      }
+
+      const data = await res.json();
+
+      setProfileResults(data.data);
+      setProfilePage(data.pagination.page);
+      setProfileTotalPages(data.pagination.totalPages);
+      setProfileTotal(data.pagination.total);
+	  setShowProfileSearch(true);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProfileSearching(false);
+    }
+  };
+
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   const handleLogout = async () => {
@@ -304,6 +391,141 @@ export default function TreePage() {
           >
             {isSearching ? 'Searching...' : 'Search'}
           </Button>
+        </section>
+
+        <section
+          aria-labelledby="profile-search-heading"
+          className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200"
+        >
+          <h2
+            id="profile-search-heading"
+            className="text-2xl font-bold text-slate-900 mb-4"
+          >
+            Advanced Search
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="profile-first-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                First Name
+              </label>
+              <input
+                id="profile-first-name"
+                type="text"
+                value={profileFirstName}
+                onChange={(e) => setProfileFirstName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-last-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Last Name
+              </label>
+              <input
+                id="profile-last-name"
+                type="text"
+                value={profileLastName}
+                onChange={(e) => setProfileLastName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-birth-date"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Birth Date
+              </label>
+              <input
+                id="profile-birth-date"
+                type="date"
+                value={profileBirthDate}
+                onChange={(e) => setProfileBirthDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-gender"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Gender
+              </label>
+              <select
+                id="profile-gender"
+                value={profileGender}
+                onChange={(e) => setProfileGender(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="">Any</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-sort-by"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Sort By
+              </label>
+              <select
+                id="profile-sort-by"
+                value={profileSortBy}
+                onChange={(e) =>
+                  setProfileSortBy(e.target.value as 'firstName' | 'lastName')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="firstName">First Name</option>
+                <option value="lastName">Last Name</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-order"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Order
+              </label>
+              <select
+                id="profile-order"
+                value={profileOrder}
+                onChange={(e) =>
+                  setProfileOrder(e.target.value as 'asc' | 'desc')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="asc">A–Z</option>
+                <option value="desc">Z–A</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <Button
+              onClick={() => searchProfiles(1)}
+              variant="primary"
+              disabled={
+                isProfileSearching ||
+                !(profileFirstName.trim() || profileLastName.trim() ||
+                  profileBirthDate || profileGender)
+              }
+            >
+              {isProfileSearching ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
         </section>
 
         {/* My Trees List */}
@@ -429,6 +651,103 @@ export default function TreePage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {showProfileSearch && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setShowProfileSearch(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-search-modal-title"
+            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2
+                  id="profile-search-modal-title"
+                  className="text-xl font-bold text-slate-900"
+                >
+                  Search Results
+                </h2>
+
+                <p className="text-sm text-slate-600 mt-1">
+                  {profileTotal} result{profileTotal === 1 ? '' : 's'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowProfileSearch(false)}
+                aria-label="Close profile search results"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div aria-live="polite">
+              {profileResults.map((profile) => {              
+                return (
+                  <div
+                    key={profile.id}
+                    className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-900 text-base">
+                        {[profile.firstName, profile.lastName]
+                          .filter(Boolean)
+                          .join(' ')}
+                      </div>
+              
+                      <div className="text-sm text-slate-700 mt-1">
+                        Gender: {profile.gender || 'N/A'}
+                      </div>
+              
+                      <div className="text-sm text-slate-700 mt-1">
+                        Birth Date: {profile.birthDate || 'N/A'}
+                      </div>
+              
+                      {profile.deathDate && (
+                        <div className="text-sm text-slate-700 mt-1">
+                          Death Date: {profile.deathDate}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {profileTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+                <Button
+                  variant="secondary"
+                  disabled={profilePage <= 1 || isProfileSearching}
+                  onClick={() => searchProfiles(profilePage - 1)}
+                >
+                  Previous
+                </Button>
+
+                <span className="text-sm text-slate-700">
+                  Page {profilePage} of {profileTotalPages}
+                </span>
+
+                <Button
+                  variant="secondary"
+                  disabled={
+                    profilePage >= profileTotalPages || isProfileSearching
+                  }
+                  onClick={() => searchProfiles(profilePage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
