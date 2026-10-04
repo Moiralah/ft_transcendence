@@ -451,7 +451,8 @@ export function NodeProfileModal({
             }
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shadow-sm"
           >
-            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Save Changes'}
+            {member.role === 'ADMIN' && 'Save Changes'}
+            {member.role === 'MODERATOR' && 'Save Changes'}
             {member.role === 'MEMBER' && member.linkId === member.profileId && 'Save Changes'}
             {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot save'}
             {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot save'}
