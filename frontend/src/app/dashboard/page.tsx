@@ -392,6 +392,141 @@ export default function TreePage() {
           </Button>
         </section>
 
+        <section
+          aria-labelledby="profile-search-heading"
+          className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200"
+        >
+          <h2
+            id="profile-search-heading"
+            className="text-2xl font-bold text-slate-900 mb-4"
+          >
+            Advanced Search
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="profile-first-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                First Name
+              </label>
+              <input
+                id="profile-first-name"
+                type="text"
+                value={profileFirstName}
+                onChange={(e) => setProfileFirstName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-last-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Last Name
+              </label>
+              <input
+                id="profile-last-name"
+                type="text"
+                value={profileLastName}
+                onChange={(e) => setProfileLastName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-birth-date"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Birth Date
+              </label>
+              <input
+                id="profile-birth-date"
+                type="date"
+                value={profileBirthDate}
+                onChange={(e) => setProfileBirthDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-gender"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Gender
+              </label>
+              <select
+                id="profile-gender"
+                value={profileGender}
+                onChange={(e) => setProfileGender(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="">Any</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-sort-by"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Sort By
+              </label>
+              <select
+                id="profile-sort-by"
+                value={profileSortBy}
+                onChange={(e) =>
+                  setProfileSortBy(e.target.value as 'firstName' | 'lastName')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="firstName">First Name</option>
+                <option value="lastName">Last Name</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-order"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Order
+              </label>
+              <select
+                id="profile-order"
+                value={profileOrder}
+                onChange={(e) =>
+                  setProfileOrder(e.target.value as 'asc' | 'desc')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="asc">A–Z</option>
+                <option value="desc">Z–A</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <Button
+              onClick={() => searchProfiles(1)}
+              variant="primary"
+              disabled={
+                isProfileSearching ||
+                !(profileFirstName.trim() || profileLastName.trim() ||
+                  profileBirthDate || profileGender)
+              }
+            >
+              {isProfileSearching ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
+        </section>
+
         {/* My Trees List */}
         <section aria-labelledby="your-trees-heading" className="space-y-4">
           <h2 id="your-trees-heading" className="text-2xl font-bold text-slate-900">
