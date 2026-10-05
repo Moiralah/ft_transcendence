@@ -177,10 +177,10 @@ export class TreeService {
 			include: {
 				tree: {
 					include: {
-						owner: true,
+						owner: { include: {user: true}},
 						members: {
-							take: 10,
-							include: { profile: true },
+							where: {role: {not: 'HOLDER'}},
+							select: { id: true },
 						},
 					},
 				},
@@ -192,6 +192,7 @@ export class TreeService {
 			.map((m) => ({
 				...m.tree,
 				profileRole: m.role,
+				userCount: m.tree?.members.length ?? 0,
 			}));
 	}
 

@@ -36,17 +36,15 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
     lastName: "",
     gender: null,
     birthDate: "",
-    deathDate: "",
     bio: "",
     photoUrl: "",
   });
 
-  const fields: { key: 'firstName' | 'lastName' | 'gender' | 'birthDate' | 'deathDate' | 'bio'; label: string; type: string }[] = [
+  const fields: { key: 'firstName' | 'lastName' | 'gender' | 'birthDate' | 'bio'; label: string; type: string }[] = [
     { key: "firstName", label: "first name", type: "text" },
     { key: "lastName", label: "last name", type: "text" },
     { key: "gender", label: "gender", type: "select" },
     { key: "birthDate", label: "birth date", type: "date" },
-    { key: "deathDate", label: "death date", type: "date" },
     { key: "bio", label: "bio", type: "text" },
   ];
 
@@ -61,9 +59,6 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
         gender: existingProfile.gender ?? null,
         birthDate: existingProfile.birthDate
           ? existingProfile.birthDate.split("T")[0]
-          : "",
-        deathDate: existingProfile.deathDate
-          ? existingProfile.deathDate.split("T")[0]
           : "",
         bio: existingProfile.bio ?? "",
         photoUrl: existingProfile.photoUrl ?? "",

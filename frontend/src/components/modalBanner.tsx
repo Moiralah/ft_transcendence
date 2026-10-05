@@ -38,9 +38,9 @@ export function ModalBanner({
                 />
                 <input
                   type="text"
-                  placeholder="Descritpion"
+                  placeholder="Description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value.toUpperCase())}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="w-full border rounded px-4 py-2 mb-3"
                   required
                 />
