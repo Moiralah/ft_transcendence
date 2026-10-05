@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MIN_PASSWORD_LENGTH, SessionExpiredError, changePassword, getAccount } from '@/lib/auth';
+import { MIN_PASSWORD_LENGTH, SessionExpiredError, changePassword, getAccount, sendSetPasswordEmail } from '@/lib/auth';
 
 type Account =
 	| { kind: 'loading' }
 	| { kind: 'no-session' }
-	| { kind: 'no-password' }
+	| { kind: 'no-password'; email: string }
 	| { kind: 'ready'; email: string };
 
 export function ChangePasswordForm() {
@@ -18,13 +18,28 @@ export function ChangePasswordForm() {
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
+	const [linkSent, setLinkSent] = useState(false);
+
+	const handleSetPassword = async () => {
+		if (account.kind !== 'no-password') return;
+		setError(null);
+		setSubmitting(true);
+		try {
+			await sendSetPasswordEmail(account.email);
+			setLinkSent(true);
+		} catch (err) {
+			setError((err as Error).message);
+		} finally {
+			setSubmitting(false);
+		}
+	};
 
 	useEffect(() => {
 		getAccount()
 			.then((info) => {
 				if (!info.email) setAccount({ kind: 'no-session' });
 				// Signed up through Google only: there is no password to change.
-				else if (!info.hasPassword) setAccount({ kind: 'no-password' });
+				else if (!info.hasPassword) setAccount({ kind: 'no-password', email: info.email });
 				else setAccount({ kind: 'ready', email: info.email });
 			})
 			.catch(() => setAccount({ kind: 'no-session' }));
@@ -85,9 +100,24 @@ export function ChangePasswordForm() {
 			)}
 
 			{account.kind === 'no-password' && (
-				<p className="text-sm text-slate-700">
-					You signed in with Google, so this account has no password to change.
-				</p>
+				<div className="space-y-2">
+					<p className="text-sm text-slate-700">
+						You signed in with Google, so this account has no password yet. You can add one: we&apos;ll
+						email a link to <strong>{account.email}</strong>. After that you can also sign in with email
+						and password, and change your email below.
+					</p>
+					{linkSent ? (
+						<div className="success" role="status">
+							Check your inbox at {account.email} and follow the link to choose a password. You&apos;ll be
+							asked to log in again afterwards.
+						</div>
+					) : (
+						<button type="button" onClick={handleSetPassword} disabled={submitting}>
+							{submitting ? 'Sending...' : 'Set a password'}
+						</button>
+					)}
+					{error && <div className="error" role="alert">{error}</div>}
+				</div>
 			)}
 
 			{account.kind === 'ready' && (

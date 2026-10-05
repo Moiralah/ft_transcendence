@@ -122,12 +122,31 @@ export class AuthService {
 			throw new NotFoundException('Account not found');
 		}
 		const user = data.user;
+		const hasGoogle = !!user.identities?.some((i) => i.provider === 'google');
 		return {
 			email: user.email ?? null,
 			pendingEmail: user.new_email ?? null,
-			// Google-only accounts have no password, and Google owns their email.
-			hasPassword: !!user.identities?.some((i) => i.provider === 'email'),
+			hasPassword: await this.hasPassword(userId, user),
+			// Signs in with Google too. If they change the email, they should
+			// expect to sign in with email + password from then on.
+			hasGoogle,
 		};
+	}
+
+	// Whether the account can sign in with a password. How it signed up isn't
+	// enough: a Google account that later set a password via the reset link
+	// still only lists a 'google' identity. Supabase's own auth.users row is the
+	// source of truth (only whether a hash exists is read, never the hash).
+	private async hasPassword(userId: string, user: { identities?: { provider: string }[] }): Promise<boolean> {
+		try {
+			const rows = await this.prisma.$queryRaw<{ has: boolean }[]>`
+				SELECT (encrypted_password IS NOT NULL AND encrypted_password <> '') AS has
+				FROM auth.users WHERE id = ${userId}::uuid`;
+			if (rows.length) return rows[0].has;
+		} catch (err) {
+			// e.g. a local DB without the auth schema: fall back to the sign-up method.
+		}
+		return !!user.identities?.some((i) => i.provider === 'email');
 	}
 
 	private async signInAsUser(userId: string, currentPassword: string) {
@@ -136,7 +155,7 @@ export class AuthService {
 		}
 		const account = await this.getAccount(userId);
 		if (!account.hasPassword || !account.email) {
-			throw new BadRequestException('This account signs in with Google, so it has no password or email to change here.');
+			throw new BadRequestException('This account has no password yet. Use "Set a password" in Settings first.');
 		}
 		const client = this.userScopedClient();
 		const { error } = await client.auth.signInWithPassword({ email: account.email, password: currentPassword });

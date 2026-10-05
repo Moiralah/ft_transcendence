@@ -93,6 +93,7 @@ export interface AccountInfo {
 	email: string | null;
 	pendingEmail: string | null;
 	hasPassword: boolean;
+	hasGoogle: boolean;
 }
 
 export class SessionExpiredError extends Error {}
@@ -123,3 +124,13 @@ export const changeEmail = (currentPassword: string, newEmail: string) =>
 
 export const changePassword = (currentPassword: string, newPassword: string) =>
 	accountRequest<{ ok: true }>('change-password', { currentPassword, newPassword });
+
+// For accounts with no password yet (signed up with Google): emails the same
+// link as "Forgot password". Setting a password there adds an email + password
+// login to the same account, after which Change email works too.
+export async function sendSetPasswordEmail(email: string) {
+	const { error } = await supabase.auth.resetPasswordForEmail(email, {
+		redirectTo: `${window.location.origin}/reset-password`,
+	});
+	if (error) throw new Error(error.message);
+}
