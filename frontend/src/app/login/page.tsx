@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession } from '@/lib/auth';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, getToken } from '@/lib/auth';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -27,7 +27,7 @@ export default function LoginPage() {
 
 	// Already signed in — no reason to show the login form again.
 	useEffect(() => {
-		if (sessionStorage.getItem('ft_token')) {
+		if (getToken()) {
 			router.push('/dashboard');
 		}
 	}, [router]);

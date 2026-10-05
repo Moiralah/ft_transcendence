@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from './button';
+import { getToken } from '@/lib/auth';
 
 export interface Profile {
   id: number;
@@ -84,7 +85,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
   const handleSave = async () => {
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. please log in");
       }
