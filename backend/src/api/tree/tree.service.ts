@@ -1058,7 +1058,6 @@ export class TreeService {
 			}, // the real claimant, e.g. "John"
 		},
 	});
-	console.log('[getPendingClaims] service result:', JSON.stringify(result, null, 2));
 	return result;
 }
 
