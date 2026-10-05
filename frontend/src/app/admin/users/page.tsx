@@ -8,6 +8,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/button';
+import { getRole, getToken } from '@/lib/auth';
 
 interface AdminUser {
 	id: string;
@@ -24,8 +25,8 @@ const ROLES: AdminUser['role'][] = ['ADMIN', 'MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
 	const router = useRouter();
-	const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
-	const role = typeof window !== 'undefined' ? sessionStorage.getItem('ft_role') : null;
+	const token = getToken();
+	const role = getRole();
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
 	const [loading, setLoading] = useState(true);

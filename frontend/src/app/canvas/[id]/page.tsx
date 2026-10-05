@@ -10,6 +10,7 @@ import { TreeBranch } from '@/components/treeBranch';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
+import { clearSession, getToken } from '@/lib/auth';
 
 
 interface PendingClaim {
@@ -47,7 +48,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const slug = params.id as unknown as string;
-  const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
+  const token = getToken();
 
   const [rootMember, setRootMember] = useState<any>();
   const [treeId, setTreeId] = useState<number | null>(null);
@@ -136,7 +137,7 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          sessionStorage.removeItem('ft_token');
+          clearSession();
           router.push('/login');
 			return;
 		}
@@ -168,7 +169,7 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          sessionStorage.removeItem('ft_token');
+          clearSession();
           router.push('/login');
 			return;
 		}
@@ -245,7 +246,7 @@ export default function Content() {
     setEditTreeName(false);
 
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -307,7 +308,7 @@ export default function Content() {
 
   const handlePending = async () => {
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -336,7 +337,7 @@ export default function Content() {
 
   const handleApproveClaim = async (holderMemberId: number) => {
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -364,7 +365,7 @@ export default function Content() {
 
   const handleApproveUnclaim = async (holderMemberId: number) => {
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }

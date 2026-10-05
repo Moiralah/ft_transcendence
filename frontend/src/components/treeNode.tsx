@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
+import { getToken } from '@/lib/auth';
 
 export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
 
@@ -84,7 +85,7 @@ export function TreeNode({
     e.preventDefault();
 
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
         if (!token) {
         throw new Error("No token found. please log in");
       }

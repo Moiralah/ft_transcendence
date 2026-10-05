@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { getToken } from '@/lib/auth';
 
 export interface Member {
   id: number;
@@ -82,7 +83,7 @@ export function NodeProfileModal({
 
   const handleAddChild = async () => {
   try {
-    const token = sessionStorage.getItem("ft_token");
+    const token = getToken();
     if (!token) throw new Error("No token found. Please log in.");
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -127,7 +128,7 @@ export function NodeProfileModal({
 
   const handleAddSpouse = async () => {
     try {
-      const token = sessionStorage.getItem('ft_token');
+      const token = getToken();
       if (!token) throw new Error('No token found. Please log in.');
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -157,7 +158,7 @@ export function NodeProfileModal({
 
   const handleClaim = async () => {
     try {
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
         if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -190,7 +191,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
   if (!holderMemberId) return;
 
   try {
-    const token = sessionStorage.getItem('ft_token');
+    const token = getToken();
     if (!token) throw new Error('No token found. Please log in.');
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -221,7 +222,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
     try {
       if (!formMember?.profileId) return;
 
-      const token = sessionStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. please log in");
       }

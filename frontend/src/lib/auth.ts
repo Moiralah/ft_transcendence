@@ -22,14 +22,35 @@ export function isTwoFactorRequired(result: LoginResult): result is TwoFactorReq
 // what actually enforces it server-side (this only gives a friendlier message).
 export const MIN_PASSWORD_LENGTH = 8;
 
+// --- The app session (our own JWT + role) ---------------------------------
+// This file is the only place that knows where the session is kept. Use
+// getToken()/getRole()/storeSession()/clearSession() instead of touching
+// browser storage directly: it moved from localStorage to sessionStorage on
+// 2026-10-01 (tab-isolated, gone when the tab closes), and code that still
+// read localStorage silently found no token and acted logged out.
+const TOKEN_KEY = 'ft_token';
+const ROLE_KEY = 'ft_role';
+
+export function getToken(): string | null {
+	if (typeof window === 'undefined') return null; // server render: no session
+	return sessionStorage.getItem(TOKEN_KEY);
+}
+
+// UX only (e.g. showing the admin link). The backend checks the role in the
+// signed JWT; editing this value grants nothing.
+export function getRole(): string | null {
+	if (typeof window === 'undefined') return null;
+	return sessionStorage.getItem(ROLE_KEY);
+}
+
 export function storeSession(result: LoginSuccess) {
-	sessionStorage.setItem('ft_token', result.accessToken);
-	sessionStorage.setItem('ft_role', result.user.role);
+	sessionStorage.setItem(TOKEN_KEY, result.accessToken);
+	sessionStorage.setItem(ROLE_KEY, result.user.role);
 }
 
 export function clearSession() {
-	sessionStorage.removeItem('ft_token');
-	sessionStorage.removeItem('ft_role');
+	sessionStorage.removeItem(TOKEN_KEY);
+	sessionStorage.removeItem(ROLE_KEY);
 }
 
 export async function exchangeSupabaseToken(accessToken: string): Promise<LoginResult> {
@@ -77,7 +98,7 @@ export interface AccountInfo {
 export class SessionExpiredError extends Error {}
 
 async function accountRequest<T>(path: string, body?: unknown): Promise<T> {
-	const token = sessionStorage.getItem('ft_token');
+	const token = getToken();
 	if (!token) throw new SessionExpiredError('Not logged in');
 	const res = await fetch(`${apiUrl()}/auth/${path}`, {
 		method: body === undefined ? 'GET' : 'POST',

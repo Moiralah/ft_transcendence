@@ -8,7 +8,7 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH } from '@/lib/auth';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function SignupPage() {
 
   // Already signed in — no reason to show the signup form again.
   useEffect(() => {
-    if (sessionStorage.getItem('ft_token')) {
+    if (getToken()) {
       router.push('/dashboard');
     }
   }, [router]);

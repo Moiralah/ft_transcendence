@@ -9,10 +9,11 @@ import { Footer } from '@/components/footer';
 import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
+import { getToken } from '@/lib/auth';
 
 export default function TwoFactorSettingsPage() {
 	const router = useRouter();
-	const token = typeof window !== 'undefined' ? sessionStorage.getItem('ft_token') : null;
+	const token = getToken();
 
 	const [loading, setLoading] = useState(true);
 	const [enabled, setEnabled] = useState(false);
