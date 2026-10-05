@@ -8,7 +8,7 @@ type Account =
 	| { kind: 'loading' }
 	| { kind: 'no-session' }
 	| { kind: 'google-only' }
-	| { kind: 'ready'; email: string; pendingEmail?: string };
+	| { kind: 'ready'; email: string; pendingEmail?: string; hasGoogle: boolean };
 
 export function ChangeEmailForm() {
 	const [account, setAccount] = useState<Account>({ kind: 'loading' });
@@ -25,7 +25,7 @@ export function ChangeEmailForm() {
 				// Google-only account: the email belongs to Google, and the next
 				// Google login would just overwrite a change made here.
 				else if (!info.hasPassword) setAccount({ kind: 'google-only' });
-				else setAccount({ kind: 'ready', email: info.email, pendingEmail: info.pendingEmail ?? undefined });
+				else setAccount({ kind: 'ready', email: info.email, pendingEmail: info.pendingEmail ?? undefined, hasGoogle: info.hasGoogle });
 			})
 			.catch(() => setAccount({ kind: 'no-session' }));
 	}, []);
@@ -80,7 +80,8 @@ export function ChangeEmailForm() {
 
 			{account.kind === 'google-only' && (
 				<p className="text-sm text-slate-700">
-					You signed in with Google, so your email is managed by your Google account.
+					You signed in with Google and haven&apos;t set a password yet. To change your email, first use
+					<strong> Set a password</strong> above, then come back here.
 				</p>
 			)}
 
@@ -89,6 +90,12 @@ export function ChangeEmailForm() {
 					<p className="text-sm text-slate-700">
 						Current email: <strong>{account.email}</strong>
 					</p>
+					{account.hasGoogle && (
+						<p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-2" role="note">
+							This account also signs in with Google. After changing your email, sign in with your new
+							email and password; &quot;Sign in with Google&quot; may no longer open this account.
+						</p>
+					)}
 					{account.pendingEmail && !sentTo && (
 						<p className="text-sm text-slate-700" role="status">
 							A change to <strong>{account.pendingEmail}</strong> is waiting for confirmation. Click the
