@@ -103,6 +103,17 @@ services:
       VAULT_ADDR: ${VAULT_ADDR:-}
       VAULT_ROLE_ID: ${VAULT_ROLE_ID:-}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID:-}
+      # Secrets come ONLY from Vault in this stack (loaded in main.ts before
+      # Nest starts). docker-compose.yml passes them from .env for the plain
+      # `make up` stack; blanked here so they don't sit in clear text in the
+      # container's environment (`docker inspect`). Same as SMTP_PASS, which
+      # was never passed. Manual Prisma commands inside this container now
+      # need the URL given explicitly, e.g.
+      #   docker exec -e DIRECT_URL=... <backend> npx prisma db execute ...
+      JWT_SECRET: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      DATABASE_URL: ""
+      DIRECT_URL: ""
       # The browser now loads the app from the WAF (:8443), so that's the
       # origin CORS has to allow. Overrides .env's :3000 for this stack only.
       CORS_ORIGIN: "https://localhost:8443"
