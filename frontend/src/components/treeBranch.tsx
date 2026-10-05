@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { TreeNode } from './treeNode';
 
+
 export interface Member {
   id: number;
   profileId?: number;
   treeId?: number;
   role?: string;
+  linkId: number | null;
   joinedAt?: string | Date;
   firstName: string;
   lastName?: string | null;
@@ -24,14 +26,14 @@ export interface Member {
 interface TreeBranchProp {
   allMembers?: Member[];
   currentMember?: Member;
-  publicTree: boolean;
+  treeView;
   onMembersChange?: (updatedMembers: Member[]) => void;
 }
 
 export function TreeBranch({
   allMembers = [],
   currentMember,
-  publicTree,
+  treeView,
   onMembersChange,
 }: TreeBranchProp) {
 
@@ -76,12 +78,26 @@ export function TreeBranch({
 
   if (!currentMember) return null;
 
-  // Added safeguard (localMembers ?? []) to prevent runtime crashes
   const activeCurrentMember = (localMembers ?? []).find(
     (m) => m.profileId === currentMember.profileId
   ) ?? currentMember;
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
+
+  const getLinkMember = (targetId?: number | null): Member | undefined => {
+    if (targetId == null) return undefined;
+
+    const member = (localMembers ?? []).find((m) => m.profileId === targetId);
+    if (!member) return undefined;
+    
+    if (member.linkId != null) {
+      const linkedMember = (localMembers ?? []).find(
+        (m) => m.id === member.linkId
+      );
+      if (linkedMember) return linkedMember;
+    }
+     return member;
+  };
 
 const renderAddSpouse = (BranchAddMember: Member) => {
   if (!activeCurrentMember.profileId) return;
@@ -90,7 +106,6 @@ const renderAddSpouse = (BranchAddMember: Member) => {
   const currentProfileId = activeCurrentMember.profileId;
 
   setLocalMembers((prevMembers) => {
-    // 1. Link active member to new spouse
     const updatedList = prevMembers.map((m) => {
       if (m.profileId === currentProfileId) {
         return {
@@ -101,7 +116,6 @@ const renderAddSpouse = (BranchAddMember: Member) => {
       return m;
     });
 
-    // 2. Add spouse to list if not already present
     const exists = updatedList.some(
       (m) => (m.profileId ?? m.id) === spouseProfileId
     );
@@ -191,8 +205,8 @@ const renderAddChild = (BranchAddMember: Member) => {
       updateMembers(updatedList);
     }
   };
-
   return (
+
    <div className="flex flex-col items-center">
     {/* Primary Node & Spouse Unit */}
     <div 
@@ -200,11 +214,11 @@ const renderAddChild = (BranchAddMember: Member) => {
     >
       <TreeNode 
         members={localMembers} 
-        currentMember={activeCurrentMember} 
+        currentMember={getLinkMember(activeCurrentMember.profileId)} 
         NodeAddChild={renderAddChild}
         NodeAddSpouse={renderAddSpouse}          
         NodeRemove={(deletedId) => renderRemove(deletedId)} 
-        showProfileModal={publicTree}      
+        treeView={treeView}      
         showDeleteButton={children.length === 0 && !spouse} 
       />
 
@@ -213,11 +227,11 @@ const renderAddChild = (BranchAddMember: Member) => {
           <span className="h-20 w-0.5 bg-black"></span>
           <TreeNode 
             members={localMembers} 
-            currentMember={spouse}
+            currentMember={getLinkMember(spouse.id)}
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}  
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-            showProfileModal={publicTree}      
+            treeView={treeView}      
             showDeleteButton={children.length === 0}    
           />
         </div>
@@ -249,7 +263,7 @@ const renderAddChild = (BranchAddMember: Member) => {
                 <div className="h-6 w-0.5 bg-black z-10" />
                 <TreeBranch
                   allMembers={localMembers}
-                  publicTree={publicTree}
+                  treeView={treeView}
                   currentMember={child}
                   onMembersChange={updateMembers}
                 />

@@ -183,35 +183,36 @@ export function NodeProfileModal({
     }
   };
 
-  const handleUnclaim = async () => {
-    try {
-      const token = localStorage.getItem('ft_token');
-      if (!token) throw new Error('No token found. Please log in.');
+const handleUnclaim = async (holderMemberId?: number | null) => {
+  if (!holderMemberId) return;
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}/unclaim`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error('Session expired. Please log in again.');
-        throw new Error(`Failed to update profile: ${res.statusText}`);
-      }
+  try {
+    const token = localStorage.getItem('ft_token');
+    if (!token) throw new Error('No token found. Please log in.');
 
-      const updatedMember: Member = {
-        ...member,
-        linkId: null,
-        claim: 'EMPTY',
-      };
-
-      if (onUnclaim) onUnclaim(updatedMember);
-    } catch (err: any) {
-      console.error('Save error:', err.message);
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${holderMemberId}/unclaim`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      if (res.status === 401) throw new Error('Session expired. Please log in again.');
+      throw new Error(`Failed to unclaim profile: ${res.statusText}`);
     }
-  };
+
+    const updatedMember: Member = {
+      ...member,
+      linkId: null,
+    };
+
+    if (onUnclaim) onUnclaim(updatedMember);
+  } catch (err: any) {
+    console.error('Save error:', err.message);
+  }
+};
 
   const handleSave = async () => {
     try {
@@ -400,6 +401,8 @@ export function NodeProfileModal({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+
+          {/* cancel button */}
           <button
             type="button"
             onClick={(e) => {
@@ -410,28 +413,31 @@ export function NodeProfileModal({
           >
             Cancel
           </button>
+
+          {/* claim / unclaim button */}
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation();
-              if (member.claim === 'EMPTY') {
-                handleClaim();
-              } else if (member.claim === 'ACCEPTED' && member.profileId === member.linkId) {
-                handleUnclaim();
-              }
+            e.stopPropagation();
+            if (member.role !== 'HOLDER' && member.linkId) {
+              handleUnclaim(member.linkId);
+            } else if (member.claim === 'EMPTY' || !member.claim) {
+              handleClaim();
+            }
               onClose();
             }}
             disabled={
-              member.claim !== 'EMPTY' &&
-              !(member.claim === 'ACCEPTED' && member.profileId === member.linkId)
+              member.claim === 'PENDING' && member.role === 'HOLDER'
             }
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
-            {member.claim === 'EMPTY' && 'Want to claim'}
-            {member.claim === 'PENDING' && 'Pending'}
-            {member.claim === 'ACCEPTED' && member.profileId === member.linkId && 'Unclaim from me'}
-            {member.claim === 'ACCEPTED' && member.profileId !== member.linkId && 'Claimed by others'}
+            {member.role !== 'HOLDER' && 'Unclaim from me'}
+            {member.claim === 'PENDING' && member.role === 'HOLDER' && 'PENDING'}
+            {member.claim === 'EMPTY' && member.role === 'HOLDER' && 'claim for me'}
+
           </button>
+
+
           <button
             type="button"
             onClick={(e) => {
