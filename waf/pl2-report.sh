@@ -1,9 +1,9 @@
 #!/bin/sh
-# Paranoia-level-2 rollout helper (see DETECTION_PARANOIA in
-# docker-compose-security.yml). Lists requests that were ALLOWED (blocking is
-# still level 1) but matched level-2 rules: the false positives to look at
-# before turning BLOCKING_PARANOIA up to 2. Requests already blocked at
-# level 1 (real attacks, test-waf.sh) are left out.
+# Paranoia-level-2 false-positive finder. Lists requests that matched level-2
+# rules but NO level-1 rule: with BLOCKING_PARANOIA=2 (since 2026-10-06) these
+# were blocked only because of level 2, so they're where false positives show
+# up (bots and scanners also appear here; judge by the request). Requests that
+# also matched level-1 rules (real attacks, test-waf.sh) are left out.
 #
 #   ./waf/pl2-report.sh            # last 24h, both WAFs
 #   ./waf/pl2-report.sh 72h        # longer window
@@ -24,15 +24,20 @@ for line in sys.stdin:
         t = json.loads(line)["transaction"]
     except Exception:
         continue
+    msgs = t.get("messages", [])
+    rule_msgs = [m for m in msgs if any(tag.startswith("paranoia-level/") for tag in m.get("details", {}).get("tags", []))]
     if t.get("response", {}).get("http_code") == 403:
-        continue  # blocked anyway at level 1
-    for m in t.get("messages", []):
+        # Since BLOCKING_PARANOIA=2: also show requests blocked ONLY because of
+        # level-2 rules (no level-1 rule matched), i.e. possible false positives.
+        if any("paranoia-level/1" in m["details"]["tags"] for m in rule_msgs):
+            continue  # a level-1 rule matched too: a real attack
+    for m in msgs:
         d = m.get("details", {})
         if "paranoia-level/2" in d.get("tags", []):
             uri = t["request"]["uri"].split("?")[0][:60]
             hits[(d.get("ruleId"), m.get("message", "")[:55], t["request"]["method"], uri, d.get("data", "")[:60])] += 1
 if not hits:
-    print("  no false-positive candidates: safe to raise BLOCKING_PARANOIA to 2 for this WAF")
+    print("  nothing blocked by level 2 alone")
 for (rid, msg, method, uri, data), n in hits.most_common(30):
     print(f"  rule {rid} x{n}: {msg} | {method} {uri} | {data}")
 '
