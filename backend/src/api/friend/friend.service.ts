@@ -24,7 +24,7 @@ export class FriendService {
       throw new NotFoundException('User not found');
     }
 
-    const existing = await this.prisma.friend.findFirst({
+    const existing = await this.prisma.friendship.findFirst({
       where: {
         OR: [
           {
@@ -63,7 +63,7 @@ export class FriendService {
       throw new ConflictException('A previous friend relationship exists');
     }
 
-    return this.prisma.friend.create({
+    return this.prisma.friendship.create({
       data: {
         requesterId,
         addresseeId,
@@ -84,7 +84,7 @@ export class FriendService {
   }
 
   async acceptRequest(userId: string, friendId: number) {
-    const request = await this.prisma.friend.findUnique({
+    const request = await this.prisma.friendship.findUnique({
       where: { id: friendId },
     });
 
@@ -102,7 +102,7 @@ export class FriendService {
       throw new ConflictException('Friend request is no longer pending');
     }
 
-    return this.prisma.friend.update({
+    return this.prisma.friendship.update({
       where: { id: friendId },
       data: {
         status: 'ACCEPTED',
@@ -124,7 +124,7 @@ export class FriendService {
   }
 
   async rejectRequest(userId: string, friendId: number) {
-    const request = await this.prisma.friend.findUnique({
+    const request = await this.prisma.friendship.findUnique({
       where: { id: friendId },
     });
 
@@ -142,7 +142,7 @@ export class FriendService {
       throw new ConflictException('Friend request is no longer pending');
     }
 
-    return this.prisma.friend.update({
+    return this.prisma.friendship.update({
       where: { id: friendId },
       data: {
         status: 'DECLINED',
@@ -163,6 +163,53 @@ export class FriendService {
     });
   }
 
+  async cancelRequest(userId: string, friendId: number) {
+    const request = await this.prisma.friendship.findUnique({
+      where: { id: friendId }
+    });
+  
+    if (!request) {
+      throw new NotFoundException('Friend request not found');
+    }
+  
+    if (request.requesterId !== userId) {
+      throw new ForbiddenException('Only the requester can cancel this request');
+    }
+  
+    if (request.status !== 'PENDING') {
+      throw new ConflictException('Friend request is no longer pending');
+    }
+  
+    return this.prisma.friendship.delete({
+      where: { id: friendId }
+    });
+  }
+  
+  async unfriend(userId: string, friendId: number) {
+    const friendship = await this.prisma.friendship.findUnique({
+      where: { id: friendId },
+    });
+  
+    if (!friendship) {
+      throw new NotFoundException('Friendship not found');
+    }
+  
+    const isParticipant = friendship.requesterId === userId ||
+      friendship.addresseeId === userId;
+  
+    if (!isParticipant) {
+      throw new ForbiddenException('You are not part of this friendship');
+    }
+  
+    if (friendship.status !== 'ACCEPTED') {
+      throw new ConflictException('You are not currently friends');
+    }
+  
+    return this.prisma.friendship.delete({
+      where: { id: friendId }
+    });
+  }
+
   async getStatuses(userId: string, targetUserIds: string[]) {
     const ids = [...new Set(targetUserIds)].filter((id) => id !== userId);
 
@@ -170,7 +217,7 @@ export class FriendService {
       return [];
     }
 
-    const friendships = await this.prisma.friend.findMany({
+    const friendships = await this.prisma.friendship.findMany({
       where: {
         OR: [
           {
@@ -226,7 +273,7 @@ export class FriendService {
   }
 
   async getFriends(userId: string) {
-    const friendships = await this.prisma.friend.findMany({
+    const friendships = await this.prisma.friendship.findMany({
       where: {
         status: 'ACCEPTED',
         OR: [
@@ -268,7 +315,7 @@ export class FriendService {
   }
 
   async getInRequests(userId: string) {
-    return this.prisma.friend.findMany({
+    return this.prisma.friendship.findMany({
       where: {
         addresseeId: userId,
         status: 'PENDING',
@@ -291,7 +338,7 @@ export class FriendService {
   }
 
   async getOutRequests(userId: string) {
-    return this.prisma.friend.findMany({
+    return this.prisma.friendship.findMany({
       where: {
         requesterId: userId,
         status: 'PENDING',

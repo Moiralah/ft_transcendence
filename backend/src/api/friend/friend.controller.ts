@@ -40,6 +40,22 @@ export class FriendController {
     return this.friendService.rejectRequest(req.user.id, friendId);
   }
 
+  @Patch('request/:friendId/cancel')
+  cancelRequest(
+    @Req() req: Request,
+    @Param('friendId', ParseIntPipe) friendId: number,
+  ) {
+    return this.friendService.cancelRequest(req.user.id, friendId);
+  }
+  
+  @Patch(':friendId/unfriend')
+  unfriend(
+    @Req() req: Request,
+    @Param('friendId', ParseIntPipe) friendId: number,
+  ) {
+    return this.friendService.unfriend(req.user.id, friendId);
+  }
+
   @Post('status')
   getStatuses(
     @Req() req: Request,

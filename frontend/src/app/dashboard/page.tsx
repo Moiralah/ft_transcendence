@@ -264,6 +264,7 @@ export default function TreePage() {
       setProfilePage(data.pagination.page);
       setProfileTotalPages(data.pagination.totalPages);
       setProfileTotal(data.pagination.total);
+	  await loadFriendStatuses(data.data);
 	  setShowProfileSearch(true);
     } catch (err: any) {
       alert(err.message);
@@ -405,6 +406,72 @@ export default function TreePage() {
   
       if (!res.ok) {
         throw new Error(data.message || 'Failed to decline friend request');
+      }
+  
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const cancelFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to cancel friend request');
+      }
+  
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        }
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const unfriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        },
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to unfriend user');
       }
   
       setFriendStatuses((prev) => ({
@@ -886,9 +953,19 @@ export default function TreePage() {
                           Add Friend
                         </button>
                       ) : status === 'PENDING_OUT' ? (
-                        <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
-                          Request Sent
-                        </span>
+						<button
+							type="button"
+							className="..."
+							onClick={() => {
+							const friendId = friendStatus?.friendId;
+
+							if (friendId) {
+								cancelFriend(friendId, profile.userId);
+							}
+							}}
+						>
+							Cancel Request
+						</button>
                       ) : status === 'PENDING_IN' ? (
                         <>
                           <button
@@ -920,9 +997,19 @@ export default function TreePage() {
                           </button>
                         </>
                       ) : status === 'ACCEPTED' ? (
-                        <span className="px-3 py-2 rounded-lg bg-green-100 text-green-700 text-sm font-medium">
-                          Friends
-                        </span>
+						<button
+						type="button"
+						className="..."
+						onClick={() => {
+							const friendId = friendStatus?.friendId;
+
+							if (friendId !== null && friendId !== undefined) {
+							unfriend(friendId, profile.userId);
+							}
+						}}
+						>
+						Unfriend
+						</button>
                       ) : (
                         <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
                           {status}
