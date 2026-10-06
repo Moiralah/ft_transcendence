@@ -29,10 +29,10 @@ services:
       PROXY_SSL_VERIFY: "off" # frontend uses our own self-signed dev cert
       PORT: "8080"
       SSL_PORT: "8443"
-      # Hardening step 1 of 2 (2026-10-05): paranoia level 2 rules run and
-      # LOG, but only level 1 BLOCKS. Once the logs show no false positives
-      # from normal use (or they're excluded narrowly), BLOCKING_PARANOIA
-      # goes to 2 as well. See tching/cybersecurity-module.md.
+      # OWASP CRS paranoia level 2 (stricter than the default 1). Rolled out
+      # in two steps: 2026-10-05 detection only (logged, not blocked), then
+      # 2026-10-06 blocking, after waf/pl2-report.sh showed only bots here.
+      BLOCKING_PARANOIA: "2"
       DETECTION_PARANOIA: "2"
     ports:
       - "8443:8443"
@@ -54,7 +54,10 @@ services:
       # REST API also uses PUT/PATCH/DELETE. Not set on waf-frontend, which
       # only serves pages.
       ALLOWED_METHODS: "GET HEAD POST OPTIONS PUT PATCH DELETE"
-      # Same two-step paranoia rollout as waf-frontend.
+      # Paranoia level 2, same two-step rollout as waf-frontend; the two real
+      # false positives in free text (942440, 932236) are excluded narrowly in
+      # waf/backend-exclusions.conf (rule 1000030).
+      BLOCKING_PARANOIA: "2"
       DETECTION_PARANOIA: "2"
       # The API only ever receives JSON and has no file uploads, so anything
       # else is refused (CRS rule 920420), and bodies are capped at 1 MB

@@ -30,6 +30,12 @@ check "API, not logged in: /trees/my-trees"        401 "$API/trees/my-trees"
 check "API, JSON body: POST /auth/login {}"        400 -X POST -H 'Content-Type: application/json' -d '{}' "$API/auth/login"
 check "API, CORS preflight"                         '20[04]' -X OPTIONS -H "Origin: $PAGES" -H 'Access-Control-Request-Method: POST' "$API/auth/login"
 
+echo "== Normal free text must pass the WAF (401/200 = reached the app, 403 = WAF false positive)"
+check "name 'Local' in a profile edit"            401 -X PATCH -H 'Content-Type: application/json' -d '{"firstName":"Local","lastName":"Email Signup"}' "$API/profile/1"
+check "bio with '--' and apostrophes"              401 -X PATCH -H 'Content-Type: application/json' -d "{\"bio\":\"Born 1950 -- died 2001. O'Brien family, Mary-Jane & Tom.\"}" "$API/profile/1"
+check "search with '--' in it"                     401 "$API/trees/search?q=born%201950%20--%20died%202001"
+check "feedback text with '--' (spam-trap, not sent)" 200 -X POST -H 'Content-Type: application/json' -d '{"category":"other","message":"Grandpa -- a carpenter -- loved O'"'"'Brien stories","website":"test"}' "$API/feedback"
+
 echo "== Attacks must be blocked (403)"
 check "SQL injection in query (API)"               403 "$API/trees/search?q=smith%27%20OR%20%271%27=%271"
 check "SQL injection in JSON body (API)"           403 -X POST -H 'Content-Type: application/json' -d "{\"accessToken\":\"x' UNION SELECT password FROM users--\"}" "$API/auth/login"
