@@ -354,6 +354,72 @@ export default function TreePage() {
     }
   };
 
+  const acceptFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to accept friend request');
+      }
+  
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'ACCEPTED',
+          friendId: data.id,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const declineFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to decline friend request');
+      }
+  
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   const handleLogout = async () => {
@@ -828,14 +894,28 @@ export default function TreePage() {
                           <button
                             type="button"
                             className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
-                          >
+							onClick={() => {
+								const friendId = friendStatus?.friendId;
+
+								if (friendId) {
+								acceptFriend(friendId, profile.userId);
+								}
+							}}
+						  >
                             Accept
                           </button>
               
                           <button
                             type="button"
                             className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"
-                          >
+							onClick={() => {
+								const friendId = friendStatus?.friendId;
+
+								if (friendId) {
+								declineFriend(friendId, profile.userId);
+								}
+							}}
+						  >
                             Decline
                           </button>
                         </>
