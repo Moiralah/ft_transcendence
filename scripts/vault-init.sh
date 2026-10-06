@@ -77,8 +77,22 @@ curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/j
 
 ROLE_ID=$(curl -s -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/role-id" \
   | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['role_id'])")
-SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id'])")
+SECRET_ID_JSON=$(curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id")
+SECRET_ID=$(echo "$SECRET_ID_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id'])")
+NEW_ACCESSOR=$(echo "$SECRET_ID_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id_accessor'])")
+
+# Revoke every older secret_id for this role. secret_id_ttl is 0 (they never
+# expire, so the backend can log in again after any restart), so without this
+# each run of this script left another valid credential behind (21 had piled up
+# by 2026-10-06). Only the one the backend is about to start with stays valid.
+echo "[vault-init] revoking older backend secret_ids..."
+for accessor in $(curl -s -X LIST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id" \
+  | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin).get('data', {}).get('keys', [])))" 2>/dev/null); do
+  [ "$accessor" = "$NEW_ACCESSOR" ] && continue
+  curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
+    -d "{\"secret_id_accessor\":\"$accessor\"}" \
+    "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id-accessor/destroy" >/dev/null
+done
 
 # Overridable so a production deploy can add docker-compose.prod.yml — without this,
 # this restart would recreate `backend` using only the base + security files, silently
