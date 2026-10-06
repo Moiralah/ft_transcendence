@@ -49,6 +49,10 @@ export default function TreePage() {
   const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
   const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
   const [profileResults, setProfileResults] = useState<any[]>([]);
+  const [friendStatuses, setFriendStatuses] = useState<Record<string, {
+    status: string;
+    friendId: number | null;
+  }>>({});  
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
@@ -265,6 +269,88 @@ export default function TreePage() {
       alert(err.message);
     } finally {
       setIsProfileSearching(false);
+    }
+  };
+
+  const loadFriendStatuses = async (profiles: any[]) => {
+    if (!token) return;
+  
+    const userIds = profiles
+      .map((profile) => profile.userId)
+      .filter(Boolean);
+  
+    if (userIds.length === 0) {
+      setFriendStatuses({});
+      return;
+    }
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userIds }),
+        },
+      );
+  
+      if (!res.ok) {
+        throw new Error('Failed to load friend statuses');
+      }
+  
+      const statuses = await res.json();
+  
+      const statusMap: Record<string, {
+        status: string;
+        friendId: number | null;
+      }> = {};
+  
+      statuses.forEach((item: any) => {
+        statusMap[item.userId] = {
+          status: item.status,
+          friendId: item.friendId,
+        };
+      });
+  
+      setFriendStatuses(statusMap);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  const addFriend = async (userId: string) => {
+    if (!token) return;
+  
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to send friend request');
+      }
+  
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'PENDING_OUT',
+          friendId: data.id,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
     }
   };
 
@@ -690,7 +776,11 @@ export default function TreePage() {
             </div>
 
             <div aria-live="polite">
-              {profileResults.map((profile) => {              
+              {profileResults.map((profile) => {
+                const friendStatus = profile.userId
+                  ? friendStatuses[profile.userId] : undefined;
+              
+                const status = friendStatus?.status ?? 'NONE';          
                 return (
                   <div
                     key={profile.id}
@@ -702,7 +792,6 @@ export default function TreePage() {
                           .filter(Boolean)
                           .join(' ')}
                       </div>
-              
                       <div className="text-sm text-slate-700 mt-1">
                         Gender: {profile.gender || 'N/A'}
                       </div>
@@ -715,6 +804,49 @@ export default function TreePage() {
                         <div className="text-sm text-slate-700 mt-1">
                           Death Date: {profile.deathDate}
                         </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!profile.userId ? (
+                        <span className="text-sm text-slate-500">
+                          No account
+                        </span>
+                      ) : status === 'NONE' ? (
+                        <button
+                          type="button"
+                          onClick={() => addFriend(profile.userId)}
+                          className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
+                          Add Friend
+                        </button>
+                      ) : status === 'PENDING_OUT' ? (
+                        <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
+                          Request Sent
+                        </span>
+                      ) : status === 'PENDING_IN' ? (
+                        <>
+                          <button
+                            type="button"
+                            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
+                          >
+                            Accept
+                          </button>
+              
+                          <button
+                            type="button"
+                            className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"
+                          >
+                            Decline
+                          </button>
+                        </>
+                      ) : status === 'ACCEPTED' ? (
+                        <span className="px-3 py-2 rounded-lg bg-green-100 text-green-700 text-sm font-medium">
+                          Friends
+                        </span>
+                      ) : (
+                        <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
+                          {status}
+                        </span>
                       )}
                     </div>
                   </div>
