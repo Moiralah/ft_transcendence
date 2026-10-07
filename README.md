@@ -218,94 +218,90 @@ All services run with a single `make` command.
 We have chosen the following modules.
 **Completed** ✅ are already functional; **In‑progress** 🔄 need finishing; **Not started** ❌ need implementation.
 
-| Module | Type | Points | Status | Notes |
-|--------|------|--------|--------|-------|
-| Use a frontend framework (React/Next.js) | Minor | 1 | ✅ Done | Next.js 14 |
-| Use a backend framework (NestJS) | Minor | 1 | ✅ Done | NestJS 10 |
-| Use an ORM (Prisma) | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
-| Custom design system with ≥10 reusable components | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
-| **Remote authentication with OAuth 2.0 (Google)** | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
-| **Standard user management and authentication** | Major | 2 | 🔄 Partial | Login/signup working, but still need: avatar upload, friends system, online status, profile page |
-| **Advanced permissions system** (global roles) | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users`; moderators can suspend/unsuspend users (suspension blocks login and ends active sessions immediately) |
-| **Organization system** (trees as orgs) | Major | 2 | 🔄 Partial | Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system |
-| **Real‑time features** (Supabase Realtime) | Major | 2 | ❌ Not started | Chat, real‑time updates, notifications |
-| **Public API** with secured API key, rate limiting, docs, ≥5 endpoints | Major | 2 | ❌ Not started | Need to expose a public API for e.g. public trees or profiles |
-| **Complete notification system** for CRUD actions | Minor | 1 | ❌ Not started | Should be integrated with Supabase Realtime |
-| **Real‑time collaborative features** (shared workspaces, live editing) | Minor | 1 | ❌ Not started | Could be part of Supabase Realtimereal‑time features |
-| **Advanced search** with filters, sorting, pagination | Minor | 1 | ❌ Not started | For trees and profiles |
-| **Complete accessibility compliance** (WCAG 2.1 AA) | Major | 2 | ❌ Not started | Need audit and fixes (keyboard nav, screen reader, ARIA) |
-| **Support for additional browsers** (Firefox, Safari, Edge) | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
-| **2FA (Two‑Factor Authentication)** | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
-| **User activity analytics dashboard** | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
-| **Cybersecurity** (WAF + secrets manager) | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is locked down in this stack (`ports: !reset []` on both) — the WAF is the only way in |
+| Module | Owner | Type | Points | Status | Notes |
+|--------|-------|------|--------|--------|-------|
+| Use a frontend framework (React/Next.js) | Jon | Minor | 1 | ✅ Done | Next.js 14 |
+| Use a backend framework (NestJS) | Moira | Minor | 1 | ✅ Done | NestJS 10 |
+| Use an ORM (Prisma) | Moira | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
+| Custom design system with ≥10 reusable components | Jon | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
+| **Remote authentication with OAuth 2.0 (Google)** | Tiara | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
+| **Standard user management and authentication** | Moira & Jon (profile, avatar, profile page); Yiwei (friends, online status) | Major | 2 | 🔄 Partial | Login/signup working, but still need: avatar upload, friends system, online status, profile page |
+| **Advanced permissions system** (global roles) | Tiara | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users`; moderators can suspend/unsuspend users (suspension blocks login and ends active sessions immediately) |
+| **Organization system** (trees as orgs) | Moira | Major | 2 | 🔄 Partial | Trees exist with members and roles; need to implement: edit/delete tree, add/remove members via UI, invitation system |
+| **Real‑time features** (Supabase Realtime) | Moira | Major | 2 | ❌ Not started | Chat, real‑time updates, notifications |
+| **Public API** with secured API key, rate limiting, docs, ≥5 endpoints | Yiwei | Major | 2 | ❌ Not started | Need to expose a public API for e.g. public trees or profiles |
+| **Complete notification system** for CRUD actions | Moira & Tiara | Minor | 1 | ❌ Not started | Should be integrated with Supabase Realtime |
+| **Real‑time collaborative features** (shared workspaces, live editing) | Moira & Jon | Minor | 1 | ❌ Not started | Could be part of Supabase Realtimereal‑time features |
+| **Advanced search** with filters, sorting, pagination | Yiwei | Minor | 1 | ❌ Not started | For trees and profiles |
+| **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | ❌ Not started | Need audit and fixes (keyboard nav, screen reader, ARIA) |
+| **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
+| **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
+| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is locked down in this stack (`ports: !reset []` on both) — the WAF is the only way in |
+| **Server‑Side Rendering (SSR)** for performance and SEO | *TBA* | Minor | 1 | ❌ Not started | Not assigned yet. Public pages are currently pre-rendered at build time (static), and all user data loads in the browser; claiming the module needs per-page SEO metadata and at least one page rendered on the server per request with data (e.g. a public tree page) |
+| **User activity analytics dashboard** | *Unassigned* | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
 
-### Total possible points
-Completed so far: 1+1+1+1+1+2+1+2 = **10 points**
-Remaining (if we implement everything) = 2+2+2+2+1+1+1+2+1+1 = **15 points**
-Minimum required: **14 points** – currently 4 points short of the minimum; need at least 2 more Major (or equivalent) modules from the remaining list to qualify.
+### Points
+Assigned modules: 7 Majors (14 pts) + 10 Minors (10 pts) = **24 points**, 10 above the required **14**,
+which leaves a margin in case a module isn't validated at evaluation. Not assigned yet: SSR (Minor, TBA)
+and the user activity analytics dashboard (Minor). Each module's current status is in the table above.
 
 ---
 
-## 📋 Task Breakdown Plan (4 People)
+## 📋 Roles and module ownership
 
-Task breakdown by person. Each task includes a rough effort estimate.
+### Team roles
 
-### 👤 Moira – Real‑time & Notifications
-- **Real‑time features (Supabase Realtime)** – 2 pts
-  - Set up  gateway in NestJS
-  - Implement chat between users (direct and tree‑based)
-  - Handle connection/disconnection, broadcast events
-- **Notification system** – 1 pt
-  - Create notification model (Prisma)
-  - Push notifications on create/update/delete actions
-  - Display notifications in frontend (with real‑time updates)
-- **Real‑time collaborative features** – 1 pt
+| Role | Who | Responsibilities |
+|------|-----|------------------|
+| **Product Owner (PO)** | Moira | Product vision, feature priorities and backlog; validates completed work; speaks for the team to evaluators and peers |
+| **Project Manager (PM) / Scrum Master** | Tiara | Organises meetings and planning, tracks progress and deadlines, keeps communication going, manages risks and blockers |
+| **Technical Lead / Architect** | Moira & Jon | Technical architecture and stack decisions, code quality and best practices, reviews of critical changes |
+| **Developers** | Moira, Jon, Yiwei, Tiara | Build their assigned modules (below), review each other's code, test and document their work |
 
+### Module ownership
 
-### 👤 Jon – User Management
-- **Complete user management** – 2 pts
-  - Profile page (view/edit)
-  - Avatar upload (file upload)
-  - Online status (using Supabase Realtime presence)
-- **Organization system (trees as orgs)** – 2 pts
-  - Edit/delete tree (admin only)
-  - Add/remove members via UI (admin only)
-  - Invitation system (already has model, need frontend)
-- **Additional browsers** – 1 pt
-  - Test on Firefox, Safari (macOS), Edge
-  - Fix layout/CSS issues
-  - Document differences
+Who owns which module (shared modules list every owner). Effort per module in points.
 
+### 👤 Moira
+- **Backend framework (NestJS)** – Minor, 1 pt
+- **ORM (Prisma)** – Minor, 1 pt
+- **Organization system (trees as orgs)** – Major, 2 pts
+  - Create, edit and delete trees; add and remove members; actions per member role
+- **Real‑time features** – Major, 2 pts
+  - Real-time updates across clients, connection/disconnection handling, efficient broadcasting
+- **Notification system** for create/update/delete actions – Minor, 1 pt *(with Tiara)*
+- **Real‑time collaborative features** – Minor, 1 pt *(with Jon)*
+- **Standard user management** – Major, 2 pts *(with Jon; Yiwei does friends and online status)*
+  - Update profile information, avatar upload with a default, profile page
 
-### 👤 Yiwei – Friends, Accessibility & Search *(assignment to be confirmed)*
-- **Friends system** – 1 pt
-  - Add/remove friends, list friends (`Friendship` model already in the schema)
-  - Friend requests and responses in the frontend
-- **Accessibility (WCAG 2.1 AA)** – 2 pts
-  - Audit with Lighthouse/axe
-  - Fix keyboard navigation, ARIA labels, semantic HTML
-  - Ensure screen reader compatibility
-- **Advanced search** – 1 pt
-  - Implement search endpoint with filters (name, date, tree)
-  - Add sorting and pagination (Prisma `skip`/`take`)
-  - Frontend search UI
+### 👤 Jon
+- **Frontend framework (Next.js)** – Minor, 1 pt
+- **Custom design system** (≥10 reusable components) – Minor, 1 pt
+- **Accessibility (WCAG 2.1 AA)** – Major, 2 pts
+  - Screen reader support, keyboard navigation, assistive technologies
+- **Support for additional browsers** – Minor, 1 pt
+- **Real‑time collaborative features** – Minor *(with Moira)*
+- **Standard user management** – Major *(with Moira)*: profile update, avatar, profile page
 
+### 👤 Yiwei
+- **Public API** – Major, 2 pts
+  - Secured API key, rate limiting, documentation, at least 5 endpoints
+- **Advanced search** with filters, sorting and pagination – Minor, 1 pt
+- **Standard user management** – Major *(friends and online status part)*
 
-### 👤 Tiara – Accessibility, Permissions & Browsers
-- **Advanced permissions (global roles)** – 2 pts ✅ Done
+### 👤 Tiara
+- **Remote authentication with OAuth 2.0 (Google)** – Minor, 1 pt ✅ Done
+- **Advanced permissions (global roles)** – Major, 2 pts ✅ Done
   - Global `role` on `User` (admin, moderator, user), enforced by `RolesGuard`
-  - User management UI: list, change roles, delete (admin only)
-  - Moderators can view users and suspend/unsuspend them, but not delete or change roles
-  - Admin panel restricted to admins and moderators (moderators get a reduced view)
-- **2FA** – 1 pt ✅ Done
+  - User management UI: list, change roles, suspend, delete; moderators get a reduced view
+- **2FA** – Minor, 1 pt ✅ Done
   - TOTP setup, verification, recovery codes
+- **Cybersecurity: WAF/ModSecurity + HashiCorp Vault** – Major, 2 pts ✅ Done
+- **Notification system** – Minor *(with Moira)*
 
-### 👤 Unassigned – Public API
-- **Public API** – 2 pts
-  - Design public endpoints (e.g., `/api/public/trees`, `/api/public/profiles`)
-  - Secure with API key (header)
-  - Add rate limiting (e.g., using `@nestjs/throttler`)
-  - Document using OpenAPI/Swagger
+### Not assigned yet
+- **Server‑Side Rendering (SSR)** – Minor, 1 pt – *TBA*
+- **User activity analytics dashboard** – Minor, 1 pt
 
 ---
 
