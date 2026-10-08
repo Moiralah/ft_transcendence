@@ -2,11 +2,21 @@
 
 ## 🚀 How to run
 
-1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
-   comments in that file say where each value comes from), then run `make` to
-   start the environment.
-2. **Approve backend cert** open new tab 'https://localhost:4000
-3. **Approve frontend cert** open new tab 'https://localhost:3000
+1. **Clone the repository** and copy `.env.example` to `.env`. Fill in only
+   the non-secret settings (ports, URLs); leave the secret lines empty, the
+   secrets come from Vault.
+2. **Turn on WireGuard** (ask Tiara for your key and your Vault login, one time).
+3. **`make up`**: asks your Vault password (once a day), loads the dev secrets
+   into memory and starts the app on a local Supabase (needs the
+   [Supabase CLI](https://supabase.com/docs/guides/cli); it starts it for you).
+   No WireGuard or Vault right now? `make up-env` is the old way, with every
+   value filled in `.env`.
+4. **Approve backend cert** open new tab 'https://localhost:4000
+5. **Approve frontend cert** open new tab 'https://localhost:3000
+
+How Vault, `make up`, `make deploy` and `make unseal` fit together:
+[diagram/vault-remote-env.html](diagram/vault-remote-env.html) and
+[vault/README.md](vault/README.md).
 
 Running the security stack (`make security`, see below) instead? Ports `3000`
 and `4000` are not published there. Approve `https://localhost:9443` (API) and
@@ -190,6 +200,23 @@ should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
 `backend` was started without going through `make security`/`vault-init.sh`.
 
+### Vault on solsys: secrets kept remotely (built, not switched on yet)
+
+The dev-mode setup above is what production runs today. Its replacement is
+built and was rehearsed on 2026-10-08; it goes live on solsys on switch day
+([vault/README.md](vault/README.md)):
+
+- **One server-mode Vault on solsys**: encrypted on disk, keeps its data
+  across restarts, sealed after every restart until 2 of 5 unseal shares are
+  entered (`make unseal`, from any share holder's laptop over WireGuard).
+- **Two paths**: `secret/family-tree/prod`, read only by the production
+  backend's AppRole, and `secret/family-tree/dev`, read by everyone's
+  `make up`. Each person has their own Vault login; there is no root token.
+  Every request goes to the audit log.
+- **`make deploy`** (laptop with SSH to solsys) pulls `branchsaurus` there and
+  runs `make prod`, which uses this Vault once the backend's login file
+  (`vault/backend-approle.env`) exists.
+
 ---
 
 ## 📍 Summary
@@ -236,7 +263,7 @@ We have chosen the following modules.
 | **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | ❌ Not started | Need audit and fixes (keyboard nav, screen reader, ARIA) |
 | **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ❌ Not started | Test and document cross‑browser compatibility |
 | **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
-| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is locked down in this stack (`ports: !reset []` on both) — the WAF is the only way in |
+| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS fronting both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault (dev mode in production today; server mode with 5 unseal shares, per-person logins and an audit log built and rehearsed, see `vault/README.md`) storing backend secrets, AppRole auth (not root token), backend fetches at boot via `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is locked down in this stack (`ports: !reset []` on both) — the WAF is the only way in |
 | **Server‑Side Rendering (SSR)** for performance and SEO | *TBA* | Minor | 1 | ❌ Not started | Not assigned yet. Public pages are currently pre-rendered at build time (static), and all user data loads in the browser; claiming the module needs per-page SEO metadata and at least one page rendered on the server per request with data (e.g. a public tree page) |
 | **User activity analytics dashboard** | *Unassigned* | Minor | 1 | ❌ Not started | Show user actions, logs, insights |
 

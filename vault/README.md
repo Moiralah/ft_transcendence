@@ -17,7 +17,7 @@ The unseal key is split into 5 shares (Tiara, solsys, Yiwei, Jon, Moira); any 2 
 | `make up` | your laptop, WireGuard on | logs in to Vault (password once a day), loads the dev secrets into memory, starts the app on local Supabase at https://localhost:3000 |
 | `make up-env` | your laptop | the old way, values from `.env`; for when Vault or WireGuard is down |
 | `make deploy` | your laptop (needs SSH to solsys) | pulls `branchsaurus` on solsys and runs `make prod` there |
-| `make unseal` | any share holder's laptop, WireGuard on | type your share after solsys restarts; solsys adds its own |
+| `make unseal` | any share holder's laptop, WireGuard on | type your share after solsys restarts; solsys adds its own (cron, every minute) |
 
 After a reboot of solsys the pages still load, but the API answers 502 (nobody can log in)
 until Vault is unsealed. It comes back by itself within seconds of the second share;
@@ -44,8 +44,14 @@ Run in `~/ft_transcendence`, after this work is merged into `branchsaurus` and p
    scripts/vault/unseal.sh                          # type any 2 shares
    scripts/vault/configure.sh ~/vault-init.json ~/vault-passwords.txt   # revokes the root token
    ```
-3. Keep solsys's share where `make prod` looks for it, owner-only:
-   `mkdir -m 700 ~/.ft-vault && (umask 077; echo '<share 2>' > ~/.ft-vault/unseal-share)`
+3. Keep solsys's share where `make prod` looks for it, owner-only, and let solsys add it
+   by itself after a reboot (so one teammate's `make unseal` is enough; without this, a
+   reboot needs two people, or someone with SSH running `make prod`):
+   ```sh
+   mkdir -m 700 ~/.ft-vault && (umask 077; echo '<share 2>' > ~/.ft-vault/unseal-share)
+   crontab -e   # add:
+   * * * * * cd ~/ft_transcendence && VAULT_ADDR=http://127.0.0.1:8200 VAULT_LOCAL_SHARE_FILE=$HOME/.ft-vault/unseal-share scripts/vault/unseal.sh --machine-only >/dev/null 2>&1
+   ```
 4. Move the production secrets in, and give the backend its login:
    ```sh
    VAULT_USER=tiara scripts/vault/put-secrets.sh prod .env

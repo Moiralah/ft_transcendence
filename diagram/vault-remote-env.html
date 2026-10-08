@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vault Remote Env — Proposal</title>
-<meta name="description" content="Proposal: every secret lives only in HashiCorp Vault on solsys; teammates run the app locally with `make up`, and `make deploy` updates ft.natscho.my, both fetching secrets from Vault.">
+<title>Vault Remote Env</title>
+<meta name="description" content="Every secret lives only in HashiCorp Vault on solsys; teammates run the app locally with `make up`, and `make deploy` updates ft.natscho.my, both fetching secrets from Vault.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -93,17 +93,22 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">ft_transcendence · proposal, not built yet · decisions made 2026-10-08</p>
+  <p class="kicker">ft_transcendence · built and rehearsed 2026-10-08 (branch tching-cybersec) · not switched on solsys yet</p>
   <h1>Secrets in Vault: how it all ties together</h1>
   <p class="lede"><strong>Every secret lives only in Vault on solsys.</strong> Teammates build and run the app on their own
-  laptop with <code>make up</code> (at <code>https://localhost:8443</code>), and <code>make deploy</code> updates
-  <code>https://ft.natscho.my</code>. Both fetch the secrets from Vault; no secret file is kept anywhere.</p>
+  laptop with <code>make up</code> (at <code>https://localhost:3000</code>, on a local Supabase), and <code>make deploy</code>
+  updates <code>https://ft.natscho.my</code>. Both get the secrets from Vault; no secret file is kept anywhere.</p>
+  <div class="callout ok"><div class="ic">✅</div><div>
+    <strong>Status, 2026-10-08 23:04.</strong> Steps 1–3 are built on <code>tching-cybersec</code> and were rehearsed on a
+    laptop: <code>make up</code> as Moira, and the whole production switch with a production build. What is still left is
+    in section 6. Until then production keeps running the old way (dev-mode Vault refilled from solsys's <code>.env</code>).
+  </div></div>
 
   <!-- ===================== 1. THE BIG PICTURE ===================== -->
   <h2>1 · The big picture</h2>
-  <p class="note">Gold lines are secrets, always coming from Vault. Blue is the private WireGuard network. Grey is code. Red is public website traffic. Green is the database.</p>
+  <p class="note">Gold lines are secrets, always coming from Vault. Blue is the private WireGuard network. Grey is code. Red is public website traffic. Green is the production database; the dashed green box is each laptop's dev database.</p>
   <div class="card">
-  <svg viewBox="0 0 1000 620" role="img" aria-label="Big picture: team laptops run make up and fetch secrets from Vault on solsys through the WireGuard hub on the GCP VM; code goes through GitHub; make deploy updates the production stack on solsys, which also reads Vault; visitors reach ft.natscho.my through the GCP proxy; the database is Supabase in the cloud">
+  <svg viewBox="0 0 1000 620" role="img" aria-label="Big picture: team laptops run make up and fetch dev secrets from Vault on solsys through the WireGuard hub on the GCP VM, then run the app on a local Supabase; code goes through GitHub; make deploy updates the production stack on solsys, which reads production secrets from Vault; visitors reach ft.natscho.my through the GCP proxy; the production database is Supabase in the cloud">
     <defs>
       <marker id="mv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
       <marker id="mb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
@@ -125,15 +130,15 @@
     <text x="48" y="120" class="lbl" fill="var(--browser)">$ make up</text>
     <text x="48" y="140" class="sub" fill="var(--ink)">1. log in to Vault (once a day)</text>
     <text x="48" y="157" class="sub" fill="var(--ink)">2. fetch DEV secrets into memory</text>
-    <text x="48" y="174" class="sub" fill="var(--ink)">3. build + start local containers</text>
-    <text x="48" y="198" class="sub mono" fill="var(--browser)">→ https://localhost:8443</text>
+    <text x="48" y="174" class="sub" fill="var(--ink)">3. build + start on local Supabase</text>
+    <text x="48" y="198" class="sub mono" fill="var(--browser)">→ https://localhost:3000</text>
     <text x="48" y="216" class="tiny" fill="var(--sub)">no .env with secrets on the laptop</text>
     <rect x="34" y="242" width="260" height="62" rx="10" fill="var(--panel)" stroke="var(--line)"/>
     <text x="48" y="264" class="lbl" fill="var(--git)">$ git push</text>
     <text x="48" y="284" class="sub" fill="var(--ink)">code changes go to GitHub</text>
     <rect x="34" y="316" width="260" height="62" rx="10" fill="var(--panel)" stroke="var(--backend)"/>
     <text x="48" y="338" class="lbl" fill="var(--backend)">$ make deploy</text>
-    <text x="48" y="358" class="sub" fill="var(--ink)">updates ft.natscho.my (Tiara)</text>
+    <text x="48" y="358" class="sub" fill="var(--ink)">updates ft.natscho.my (needs ssh: Tiara)</text>
 
     <!-- VISITORS -->
     <rect x="16" y="430" width="296" height="74" rx="14" fill="var(--waf-soft)" stroke="var(--waf)"/>
@@ -164,23 +169,23 @@
     <!-- SUPABASE -->
     <rect x="344" y="440" width="284" height="140" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)"/>
     <text x="362" y="466" class="lbl" fill="var(--supabase)">Supabase (cloud)</text>
-    <text x="362" y="486" class="sub" fill="var(--ink)">the DATABASE + logins + emails</text>
-    <text x="362" y="504" class="tiny" fill="var(--sub)">not on solsys; two separate projects:</text>
-    <text x="362" y="522" class="tiny" fill="var(--ink)">• production ← the live site only</text>
-    <text x="362" y="538" class="tiny" fill="var(--ink)">• dev ← everyone's make up</text>
-    <text x="362" y="560" class="tiny" fill="var(--sub)">URLs and keys for both come from Vault</text>
+    <text x="362" y="486" class="sub" fill="var(--ink)">the PRODUCTION database + logins</text>
+    <text x="362" y="504" class="tiny" fill="var(--sub)">not on solsys; used by the live site only</text>
+    <text x="362" y="522" class="tiny" fill="var(--ink)">its URLs and service key: in Vault (prod)</text>
+    <text x="362" y="540" class="tiny" fill="var(--ink)">laptops never connect to it</text>
+    <text x="362" y="562" class="tiny" fill="var(--sub)">dev data: local Supabase (left, below)</text>
 
     <!-- SOLSYS -->
     <rect x="656" y="40" width="328" height="560" rx="14" fill="var(--ext-soft)" stroke="var(--ext)"/>
     <rect x="674" y="56" width="292" height="200" rx="12" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="2"/>
     <text x="690" y="82" class="lbl" fill="var(--vault)">🔒 Vault (server mode)</text>
     <text x="690" y="100" class="sub" fill="var(--ink)" font-weight="600">the only home of every secret</text>
-    <text x="690" y="118" class="tiny" fill="var(--sub)">encrypted on disk · survives restarts</text>
+    <text x="690" y="118" class="tiny" fill="var(--sub)">encrypted on disk · 10.8.0.1:8200 (WireGuard only)</text>
     <text x="690" y="132" class="tiny" fill="var(--sub)">after reboot: locked until 2 of 5 shares</text>
     <rect x="690" y="144" width="260" height="62" rx="8" fill="var(--panel)" stroke="var(--line)"/>
     <text x="702" y="162" class="tiny mono" fill="var(--ink)">secret/family-tree/prod  ← production</text>
     <text x="702" y="178" class="tiny mono" fill="var(--ink)">secret/family-tree/dev   ← laptops</text>
-    <text x="702" y="194" class="tiny mono" fill="var(--sub)">JWT_SECRET · DATABASE_URL · SUPABASE_*</text>
+    <text x="702" y="194" class="tiny mono" fill="var(--sub)">prod: 6 secrets · dev: JWT_SECRET</text>
     <text x="690" y="224" class="tiny" fill="var(--ink)">logins: one per teammate + backend</text>
     <text x="690" y="240" class="tiny" fill="var(--sub)">📒 audit log: every read recorded</text>
     <rect x="674" y="276" width="292" height="232" rx="12" fill="var(--backend-soft)" stroke="var(--backend)"/>
@@ -196,7 +201,7 @@
     <text x="690" y="432" class="tiny" fill="var(--sub)">built from the code on GitHub</text>
     <text x="690" y="448" class="tiny" fill="var(--sub)">by make prod (what make deploy runs)</text>
     <text x="690" y="470" class="tiny" fill="var(--ink)">.env here: non-secret settings only</text>
-    <text x="690" y="486" class="tiny" fill="var(--ink)">(URLs, ports, CORS origin)</text>
+    <text x="690" y="486" class="tiny" fill="var(--ink)">+ backend's Vault login file</text>
     <rect x="674" y="528" width="292" height="56" rx="12" fill="var(--git-soft)" stroke="var(--git)"/>
     <text x="690" y="552" class="sub mono" fill="var(--git)" font-weight="600">~/ft_transcendence</text>
     <text x="690" y="570" class="tiny" fill="var(--sub)">checkout of branchsaurus (git pull)</text>
@@ -217,7 +222,7 @@
     <!-- make deploy: laptop -> hub -> solsys -->
     <path d="M294,352 C330,352 330,262 362,262" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
     <path d="M610,262 C642,262 644,292 674,292" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
-    <text x="34" y="414" class="tiny" fill="var(--backend)">make deploy = ssh solsys "make prod" (through the tunnel)</text>
+    <text x="34" y="414" class="tiny" fill="var(--backend)">make deploy = ssh solsys: git pull + make prod</text>
     <!-- vault -> prod backend -->
     <path d="M888,256 L888,358" stroke="var(--vault)" stroke-width="2.4" marker-end="url(#mv)"/>
     <text x="896" y="274" class="tiny" fill="var(--vault)" font-weight="600">read at</text>
@@ -227,8 +232,11 @@
     <path d="M610,333 L690,333" stroke="var(--waf)" stroke-width="2" marker-end="url(#mr)"/>
     <!-- db -->
     <path d="M888,408 C888,520 670,520 630,512" stroke="var(--supabase)" stroke-width="1.8" fill="none" marker-end="url(#ms)"/>
-    <path d="M28,392 L7,410 L7,606 L440,606 L440,584" stroke="var(--supabase)" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ms)"/>
-    <text x="24" y="598" class="tiny" fill="var(--supabase)">laptops' local backend → the DEV database</text>
+    <!-- local Supabase on each laptop = the dev database -->
+    <rect x="16" y="522" width="296" height="74" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-dasharray="5 4"/>
+    <text x="34" y="546" class="lbl" fill="var(--supabase)">Local Supabase (Docker)</text>
+    <text x="34" y="566" class="sub" fill="var(--ink)">the DEV database, on each laptop</text>
+    <text x="34" y="584" class="tiny" fill="var(--sub)">free, offline, can't touch production</text>
   </svg>
   <div class="legend">
     <span><i class="sw" style="border-color:var(--vault)"></i>secrets (from Vault)</span>
@@ -236,13 +244,14 @@
     <span><i class="sw" style="border-color:var(--backend); border-top-style:dashed"></i>make deploy</span>
     <span><i class="sw" style="border-color:var(--git)"></i>code (GitHub)</span>
     <span><i class="sw" style="border-color:var(--waf)"></i>public website traffic</span>
-    <span><i class="sw" style="border-color:var(--supabase)"></i>database</span>
+    <span><i class="sw" style="border-color:var(--supabase)"></i>production database</span>
   </div>
   </div>
 
   <!-- ===================== 2. COMMANDS ===================== -->
   <h2>2 · The commands</h2>
-  <p class="note">Same names the team already uses, so habits don't change; <code>make deploy</code> and <code>make unseal</code> are new.</p>
+  <p class="note">Same names the team already uses, so habits don't change; <code>make deploy</code> and <code>make unseal</code> are new.
+  <code>make up-env</code> keeps the old way (values from <code>.env</code>) for when Vault or WireGuard is down.</p>
   <div class="cmds">
     <div class="cmd up">
       <p class="who">Anyone · on their laptop</p>
@@ -251,44 +260,47 @@
         <li>Checks WireGuard is on (Vault reachable at <code>10.8.0.1:8200</code>)</li>
         <li>Logs you in to Vault if today's token expired (your username + password)</li>
         <li>Fetches the <strong>dev</strong> secrets into memory (laptops can't read production)</li>
-        <li>Builds and starts the containers with them</li>
+        <li>Builds and starts the app with them, on local Supabase</li>
       </ol>
-      <p class="result">→ the app at <code>https://localhost:8443</code>. <code>make down</code> stops it; the secrets go with it.</p>
+      <p class="result">→ the app at <code>https://localhost:3000</code>. <code>make down</code> stops it; the secrets go with it.
+      Rehearsed as Moira: the backend's <code>JWT_SECRET</code> came from Vault, not from <code>.env</code>.</p>
     </div>
     <div class="cmd deploy">
-      <p class="who">Tiara · from her laptop</p>
+      <p class="who">Tiara · from a laptop with ssh to solsys</p>
       <p class="name">make deploy</p>
       <ol>
-        <li>Connects to solsys (<code>ssh solsys</code>)</li>
-        <li>Runs <code>make prod</code> there: pulls the latest <code>branchsaurus</code>, checks Vault is unsealed, builds,
-          starts the production stack, gives the backend a fresh Vault login, restarts the WAFs</li>
-        <li>Runs <code>waf/test-waf.sh</code> against the live site</li>
+        <li>Connects to solsys (<code>ssh solsys</code>) and pulls the latest <code>branchsaurus</code></li>
+        <li>Runs <code>make prod</code> there: builds, adds solsys's share if Vault is sealed, and <strong>stops without
+          touching the live site</strong> if it is still sealed</li>
+        <li>Starts the production stack (the backend logs in to Vault with its AppRole), restarts the WAFs</li>
+        <li>Checks it: pages 200, API 401</li>
       </ol>
-      <p class="result">→ <code>https://ft.natscho.my</code> is updated and verified, in one command.</p>
+      <p class="result">→ <code>https://ft.natscho.my</code> is updated and checked, in one command.</p>
     </div>
     <div class="cmd unseal">
       <p class="who">Any share holder · only after solsys reboots</p>
       <p class="name">make unseal</p>
       <ol>
-        <li>solsys supplies its own share automatically</li>
-        <li>Asks one person (Tiara, Moira, Jon or Yiwei) to type their share (never stored)</li>
-        <li>2 of 5 shares → Vault unlocks</li>
-        <li>Starts the production stack (same as <code>make prod</code>)</li>
+        <li>Runs on your own laptop, through WireGuard (no ssh to solsys needed)</li>
+        <li>You type your share (hidden, never stored)</li>
+        <li>solsys adds its own share by itself (a job that checks every minute)</li>
+        <li>2 of 5 shares → Vault unlocks; the backend reconnects on its own</li>
       </ol>
-      <p class="result">→ until this runs, nobody (laptops or production) can read the secrets. Any one teammate can do it.</p>
+      <p class="result">→ while sealed, pages load but the API is down (nobody can log in), and <code>make up</code> stops. Rehearsed:
+      the API was back 6 s after the second share, with no redeploy.</p>
     </div>
   </div>
 
   <!-- ===================== 3. BEFORE / AFTER ===================== -->
   <h2>3 · Before and after</h2>
   <div class="card">
-  <svg viewBox="0 0 1000 250" role="img" aria-label="Before: plaintext .env files on solsys and on every laptop, copied into an in-memory Vault. After: one encrypted Vault on solsys, read by laptops and production">
+  <svg viewBox="0 0 1000 250" role="img" aria-label="Today in production: a plaintext .env on solsys copied into an in-memory Vault, and laptop .env files. After switch day: one encrypted Vault on solsys, read by laptops and production">
     <defs>
       <marker id="xa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--sub)"/></marker>
       <marker id="xv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
       <marker id="xr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bad)"/></marker>
     </defs>
-    <text x="24" y="28" class="grp" fill="var(--sub)">Today</text>
+    <text x="24" y="28" class="grp" fill="var(--sub)">Before (production today)</text>
     <rect x="16" y="40" width="460" height="196" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
     <rect x="34" y="58" width="190" height="50" rx="9" fill="var(--waf-soft)" stroke="var(--bad)" stroke-width="1.6"/>
     <text x="48" y="80" class="lbl" fill="var(--bad)">solsys .env</text>
@@ -305,7 +317,7 @@
     <text x="254" y="168" class="tiny" fill="var(--sub)">copies passed around by hand,</text>
     <text x="254" y="183" class="tiny" fill="var(--sub)">easy to leak, commit or forget</text>
     <path d="M484,138 L516,138" stroke="var(--sub)" stroke-width="2" marker-end="url(#xa)"/>
-    <text x="532" y="28" class="grp" fill="var(--sub)">Proposed</text>
+    <text x="532" y="28" class="grp" fill="var(--sub)">After switch day (built, rehearsed)</text>
     <rect x="524" y="40" width="460" height="196" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
     <rect x="542" y="58" width="220" height="92" rx="10" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="2"/>
     <text x="556" y="82" class="lbl" fill="var(--vault)">🔒 Vault on solsys</text>
@@ -347,21 +359,42 @@
     campus network.
   </div></div>
   <div class="callout ok"><div class="ic">🧪</div><div>
-    <strong>Laptops get a separate dev set.</strong> <code>secret/family-tree/dev</code> points at a second Supabase
-    project (free tier) for development; laptops can't read <code>secret/family-tree/prod</code>, so a lost laptop or a
-    local test can never touch production. A copy of production data can be loaded into dev when needed.
+    <strong>Laptops get a separate dev set, on local Supabase.</strong> First planned as a second cloud project; changed
+    the same day to a local Supabase on each laptop (no cost, never paused, works offline). Its keys are public defaults,
+    so <code>secret/family-tree/dev</code> only holds what is really secret (today <code>JWT_SECRET</code>). Laptops can't
+    read <code>secret/family-tree/prod</code>, so a lost laptop or a local test can never touch production.
   </div></div>
   <div class="callout warn"><div class="ic">🔑</div><div>
     <strong>Unseal: 5 shares (Tiara, solsys, Yiwei, Jon, Moira), any 2 unlock.</strong> After a reboot, solsys adds its
     own share, so <strong>any one teammate can bring Vault back alone</strong>: convenient, no waiting for a second
     person. The accepted cost: solsys's share sits on the same machine as the encrypted data, so someone who gets into
-    solsys <em>and</em> obtains one person's share could unlock everything. Mitigations: solsys's share is a root-only
-    file outside Vault's data, each person keeps their share offline, and every unseal is logged.
+    solsys <em>and</em> obtains one person's share could unlock everything. Mitigations: solsys's share is an owner-only
+    file (<code>~/.ft-vault/unseal-share</code>) outside Vault's data, each person keeps their share offline, and every
+    unseal is logged.
   </div></div>
   <div class="callout warn"><div class="ic">🛟</div><div>
     <strong>Evaluation-day fallback.</strong> If solsys or the home internet fails during the evaluation, both the live
-    site and every <code>make up</code> stop. Keep a sealed, offline copy of what's needed to run the demo (held by Tiara).
+    site and every <code>make up</code> stop. <code>make up-env</code> still runs the app from a local <code>.env</code>; keep a
+    sealed, offline copy of what's needed for the demo (held by Tiara).
   </div></div>
+
+  <!-- ===================== 6. WHERE WE ARE ===================== -->
+  <h2>6 · Where we are</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Step</th><th>What</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Server-mode Vault, 5 shares / 2 to unlock, policies, logins, audit log</td><td class="yes">built, rehearsed (<code>49c3e13</code>)</td></tr>
+      <tr><td>2</td><td><code>make up</code> gets the dev secrets from Vault, runs on local Supabase</td><td class="yes">built, rehearsed (<code>08fdc13</code>)</td></tr>
+      <tr><td>3</td><td><code>make deploy</code>, <code>make unseal</code>, production on server-mode Vault</td><td class="yes">built, rehearsed (<code>ede2d9f</code>)</td></tr>
+      <tr><td>4</td><td>Merge <code>tching-cybersec</code> → <code>branchsaurus</code> (teammates review)</td><td>to do</td></tr>
+      <tr><td>5</td><td>WireGuard keys for each laptop; check it works from the 42 network</td><td>to do</td></tr>
+      <tr><td>6</td><td>Switch day on solsys, with Tiara: steps in <code>vault/README.md</code>, then hand out shares and passwords in person</td><td>to do</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:10px">The switch is reversible until shares are handed out: moving <code>vault/backend-approle.env</code>
+  away and running <code>make prod</code> puts production back on the old dev-mode Vault.</p>
 </div>
 </body>
 </html>
