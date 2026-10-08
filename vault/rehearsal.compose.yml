@@ -1,0 +1,20 @@
+# Local rehearsal only: a server-mode Vault on 127.0.0.1:18200, separate from
+# the team's dev-mode Vault (port 8200) so nothing existing is affected.
+#   docker compose -p vault-rehearsal -f vault/rehearsal.compose.yml up -d
+services:
+  vault:
+    image: hashicorp/vault:latest
+    command: server
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"   # for `docker exec ... vault` inside the container
+    volumes:
+      - ./config/vault.hcl:/vault/config/vault.hcl:ro
+      - vault-file:/vault/file
+      - vault-logs:/vault/logs
+    ports:
+      - "127.0.0.1:18200:8200"
+volumes:
+  vault-file:
+  vault-logs:
