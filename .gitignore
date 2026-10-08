@@ -71,3 +71,6 @@ generated/
 tching/
 # local/production DB backups — never commit real data
 db-backups/
+
+# Backend's Vault login on the production server (scripts/vault/backend-creds.sh)
+vault/backend-approle.env

@@ -1,0 +1,41 @@
+# Server-mode Vault for production. Layered LAST, on top of docker-compose.yml +
+# docker-compose-security.yml + docker-compose.prod.yml (scripts/prod-up.sh does
+# this by itself once vault/backend-approle.env exists).
+#
+# What changes vs. the dev-mode Vault in docker-compose-security.yml:
+# - real storage (named volume vault-file): secrets, users and policies survive
+#   restarts, so nothing is re-written from .env any more; .env keeps only
+#   non-secret settings
+# - starts SEALED after every restart; 2 of the 5 unseal shares open it
+#   (scripts/vault/unseal.sh, `make unseal`)
+# - no root token: people log in with their own userpass account, the backend
+#   with its AppRole (role_id/secret_id from vault/backend-approle.env)
+# - every request recorded in the audit log (volume vault-logs)
+#
+# One-time setup on a new Vault: scripts/vault/init.sh, unseal.sh, configure.sh,
+# put-secrets.sh prod, backend-creds.sh. See diagram/vault-remote-env.html.
+
+services:
+  vault:
+    command: server
+    environment: !override
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    volumes:
+      - ./vault/config/vault.hcl:/vault/config/vault.hcl:ro
+      - vault-file:/vault/file
+      - vault-logs:/vault/logs
+    # Loopback only here. On solsys, docker-compose.home.yml adds the WireGuard
+    # address (10.8.0.1:8200) so teammates' `make up` can reach it through the
+    # tunnel, the same way it publishes the WAFs.
+    ports: !override
+      - "127.0.0.1:8200:8200"
+
+  backend:
+    environment:
+      # Production secrets live at secret/family-tree/prod in this Vault (the
+      # backend-prod policy allows reading exactly that path, nothing else).
+      VAULT_SECRET_PATH: "secret/data/family-tree/prod"
+
+volumes:
+  vault-file:
+  vault-logs:

@@ -44,12 +44,25 @@ local: certs
 local-security: certs
 	./scripts/local-up.sh security
 
-# Production only (needs docker-compose.prod.yml and the VM's real .env) —
-# NOT a local dev target. Assumes backend/frontend are already built; see
-# scripts/prod-up.sh for why this always uses all three compose files
-# together, unlike `security` above.
+# Production only, run ON the server (needs docker-compose.prod.yml and the
+# server's .env) — NOT a local dev target. Builds and restarts everything; see
+# scripts/prod-up.sh for which compose files it uses and why.
 prod:
 	./scripts/prod-up.sh
+
+# From your laptop: update and restart https://ft.natscho.my in one command.
+# Pulls DEPLOY_BRANCH on the server, then runs `make prod` there. Needs SSH
+# access to the server (`solsys` in ~/.ssh/config, jumping through GCP).
+DEPLOY_HOST ?= solsys
+DEPLOY_DIR ?= ft_transcendence
+DEPLOY_BRANCH ?= branchsaurus
+deploy:
+	ssh $(DEPLOY_HOST) 'set -e; cd $(DEPLOY_DIR); git fetch -q origin; git checkout -q $(DEPLOY_BRANCH); git pull -q --ff-only origin $(DEPLOY_BRANCH); echo "[deploy] $$(hostname) now at $$(git log --oneline -1)"; make prod'
+
+# Share holders: unseal Vault after solsys restarts (2 of 5 shares; solsys's
+# own share is applied by `make prod`). Works over WireGuard, no SSH needed.
+unseal:
+	./scripts/vault/unseal.sh
 
 certs:
 	@if [ ! -f certs/localhost.pem ] || [ ! -f certs/localhost-key.pem ]; then \
@@ -108,4 +121,4 @@ seed:
 clean: down
 	docker compose -f docker-compose.yml -f docker-compose-security.yml rm -f
 
-.PHONY: up up-security up-env security security-down local local-security prod certs down build logs ps backend frontend backend-shell frontend-shell seed clean
+.PHONY: up up-security up-env security security-down local local-security prod deploy unseal certs down build logs ps backend frontend backend-shell frontend-shell seed clean
