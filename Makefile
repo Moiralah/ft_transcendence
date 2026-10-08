@@ -1,7 +1,22 @@
 # Generate SSL certificates if they don't exist
 
+# Default local start: dev secrets come from Vault (solsys, over WireGuard),
+# held in memory only, and the app runs against local Supabase. No secrets in
+# .env. See diagram/vault-remote-env.html. Override VAULT_ADDR to point
+# elsewhere (e.g. the local rehearsal Vault at http://127.0.0.1:18200).
 up: certs
-	docker compose up -d --build
+	./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh up
+
+# Same, with the WAF + local dev-mode Vault security stack on top.
+up-security: certs
+	./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh security
+
+# The old `make up`: plain stack, values straight from .env. Fallback for when
+# Vault/WireGuard isn't available; also what local-up.sh runs underneath.
+# -V: fresh node_modules volumes from the new image, so newly added packages
+# (e.g. after a pull) aren't hidden by an old container's copy.
+up-env: certs
+	docker compose up -d --build -V
 
 # WAF + Vault, IV.5 Cybersecurity module — separate from `up` so the rest
 # of the team isn't forced to pull those images.
@@ -93,4 +108,4 @@ seed:
 clean: down
 	docker compose -f docker-compose.yml -f docker-compose-security.yml rm -f
 
-.PHONY: up security security-down local local-security prod certs down build logs ps backend frontend backend-shell frontend-shell seed clean
+.PHONY: up up-security up-env security security-down local local-security prod certs down build logs ps backend frontend backend-shell frontend-shell seed clean

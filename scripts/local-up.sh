@@ -5,7 +5,7 @@
 # orchestration logic (and its gotcha fixes) lives in exactly one place.
 #
 # Usage:
-#   ./scripts/local-up.sh            # plain `make up`, against local Supabase
+#   ./scripts/local-up.sh            # plain stack (`make up-env`), against local Supabase
 #   ./scripts/local-up.sh security   # `make security`, against local Supabase
 #
 # Handles the two gotchas documented in README > "Running Supabase Locally":
@@ -51,7 +51,7 @@ echo "[local-up] bringing up '$MODE' against local Supabase..."
 if [ "$MODE" = "security" ]; then
   make security
 else
-  make up
+  make up-env
 fi
 
 echo "[local-up] done. Open https://localhost:$( [ "$MODE" = "security" ] && echo 8443 || echo 3000 )"
