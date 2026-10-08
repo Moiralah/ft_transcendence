@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vault Remote Env — Proposal</title>
+<meta name="description" content="Proposal: every secret lives only in HashiCorp Vault on solsys; teammates run the app locally with `make up`, and `make deploy` updates ft.natscho.my, both fetching secrets from Vault.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6FA; --panel:#FFFFFF; --ink:#1B2130; --sub:#5B6478; --line:#DEE2EC;
+    --browser:#3B67E0; --browser-soft:#E9EEFD;
+    --waf:#C4364E; --waf-soft:#FBE7EA;
+    --vault:#A6740A; --vault-soft:#FBF0D9;
+    --backend:#7C5CFA; --backend-soft:#EFEAFF;
+    --supabase:#1FA971; --supabase-soft:#E4F6EE;
+    --git:#3F4A5E; --git-soft:#ECEEF3;
+    --ext:#8A93A6; --ext-soft:#EEF0F4;
+    --warn-bg:#FFF6E5; --warn-line:#F0CE86; --warn-ink:#7A5715;
+    --ok-bg:#E9F8EF; --ok-line:#9FDBB8; --ok-ink:#1B6B3F;
+    --bad:#C4364E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
+      --browser:#7C98FF; --browser-soft:#1C2440;
+      --waf:#FF7B90; --waf-soft:#301620;
+      --vault:#E8B84B; --vault-soft:#2E2410;
+      --backend:#B39CFF; --backend-soft:#241D3D;
+      --supabase:#4FD69C; --supabase-soft:#12291F;
+      --git:#C3CAD8; --git-soft:#20242F;
+      --ext:#9AA2B4; --ext-soft:#20242F;
+      --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+      --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
+      --bad:#FF7B90;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
+    --browser:#7C98FF; --browser-soft:#1C2440;
+    --waf:#FF7B90; --waf-soft:#301620;
+    --vault:#E8B84B; --vault-soft:#2E2410;
+    --backend:#B39CFF; --backend-soft:#241D3D;
+    --supabase:#4FD69C; --supabase-soft:#12291F;
+    --git:#C3CAD8; --git-soft:#20242F;
+    --ext:#9AA2B4; --ext-soft:#20242F;
+    --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+    --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
+    --bad:#FF7B90;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans',system-ui,sans-serif; margin:0; padding:28px 16px 48px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+  .kicker{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); margin:0 0 10px;}
+  h1{font-size:clamp(22px,3.4vw,30px); font-weight:700; letter-spacing:-0.01em; margin:0 0 6px;}
+  h2{font-size:19px; margin:36px 0 6px;}
+  .lede{color:var(--sub); font-size:15px; line-height:1.55; max-width:72ch; margin:0 0 22px;}
+  .note{color:var(--sub); font-size:14px; line-height:1.5; max-width:76ch; margin:0 0 12px;}
+  code{font-family:'IBM Plex Mono',monospace; font-size:.9em;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:8px; margin-bottom:14px; overflow-x:auto;}
+  svg{display:block; width:100%; height:auto; min-width:720px;}
+  .lbl{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;}
+  .sub{font-size:11.5px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .tiny{font-size:10.5px;}
+  .grp{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;}
+  .legend{display:flex; flex-wrap:wrap; gap:10px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sub); margin:8px 6px 4px;}
+  .legend span{display:inline-flex; align-items:center; gap:7px;}
+  .sw{width:22px; height:0; border-top:2px solid; display:inline-block;}
+
+  .cmds{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin-bottom:14px;}
+  .cmd{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px;}
+  .cmd .who{font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); margin:0 0 6px;}
+  .cmd .name{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:17px; margin:0 0 8px;}
+  .cmd.up .name{color:var(--browser);} .cmd.deploy .name{color:var(--backend);} .cmd.unseal .name{color:var(--vault);}
+  .cmd ol{margin:0; padding-left:20px; font-size:13.5px; line-height:1.5;}
+  .cmd li{margin:0 0 4px;}
+  .cmd .result{margin:10px 0 0; font-size:13px; color:var(--sub); border-top:1px solid var(--line); padding-top:8px;}
+
+  .callout{display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start; border-radius:12px; padding:14px 16px; font-size:13.5px; line-height:1.55; margin:0 0 14px;}
+  .callout.warn{background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink);}
+  .callout.ok{background:var(--ok-bg); border:1px solid var(--ok-line); color:var(--ok-ink);}
+  .ic{font-size:16px; line-height:1.2;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; background:var(--panel); border:1px solid var(--line);}
+  th, td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'IBM Plex Mono',monospace; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); font-weight:600;}
+  tr:last-child td{border-bottom:none;}
+  .yes{color:var(--ok-ink); font-weight:600;} .no{color:var(--bad); font-weight:600;}
+  .tablewrap{overflow-x:auto; border-radius:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">ft_transcendence · proposal, not built yet · decisions made 2026-10-08</p>
+  <h1>Secrets in Vault: how it all ties together</h1>
+  <p class="lede"><strong>Every secret lives only in Vault on solsys.</strong> Teammates build and run the app on their own
+  laptop with <code>make up</code> (at <code>https://localhost:8443</code>), and <code>make deploy</code> updates
+  <code>https://ft.natscho.my</code>. Both fetch the secrets from Vault; no secret file is kept anywhere.</p>
+
+  <!-- ===================== 1. THE BIG PICTURE ===================== -->
+  <h2>1 · The big picture</h2>
+  <p class="note">Gold lines are secrets, always coming from Vault. Blue is the private WireGuard network. Grey is code. Red is public website traffic. Green is the database.</p>
+  <div class="card">
+  <svg viewBox="0 0 1000 620" role="img" aria-label="Big picture: team laptops run make up and fetch secrets from Vault on solsys through the WireGuard hub on the GCP VM; code goes through GitHub; make deploy updates the production stack on solsys, which also reads Vault; visitors reach ft.natscho.my through the GCP proxy; the database is Supabase in the cloud">
+    <defs>
+      <marker id="mv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
+      <marker id="mb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
+      <marker id="mp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--backend)"/></marker>
+      <marker id="mg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--git)"/></marker>
+      <marker id="mr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/></marker>
+      <marker id="ms" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--supabase)"/></marker>
+    </defs>
+
+    <text x="24" y="28" class="grp" fill="var(--sub)">Team laptops</text>
+    <text x="352" y="28" class="grp" fill="var(--sub)">Internet</text>
+    <text x="664" y="28" class="grp" fill="var(--sub)">solsys (home server)</text>
+
+    <!-- LAPTOPS -->
+    <rect x="16" y="40" width="296" height="352" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
+    <text x="34" y="66" class="lbl" fill="var(--browser)">Moira · Jon · Yiwei · Tiara</text>
+    <text x="34" y="84" class="tiny" fill="var(--sub)">each with their own Vault login + WireGuard key</text>
+    <rect x="34" y="98" width="260" height="132" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="48" y="120" class="lbl" fill="var(--browser)">$ make up</text>
+    <text x="48" y="140" class="sub" fill="var(--ink)">1. log in to Vault (once a day)</text>
+    <text x="48" y="157" class="sub" fill="var(--ink)">2. fetch DEV secrets into memory</text>
+    <text x="48" y="174" class="sub" fill="var(--ink)">3. build + start local containers</text>
+    <text x="48" y="198" class="sub mono" fill="var(--browser)">→ https://localhost:8443</text>
+    <text x="48" y="216" class="tiny" fill="var(--sub)">no .env with secrets on the laptop</text>
+    <rect x="34" y="242" width="260" height="62" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="48" y="264" class="lbl" fill="var(--git)">$ git push</text>
+    <text x="48" y="284" class="sub" fill="var(--ink)">code changes go to GitHub</text>
+    <rect x="34" y="316" width="260" height="62" rx="10" fill="var(--panel)" stroke="var(--backend)"/>
+    <text x="48" y="338" class="lbl" fill="var(--backend)">$ make deploy</text>
+    <text x="48" y="358" class="sub" fill="var(--ink)">updates ft.natscho.my (Tiara)</text>
+
+    <!-- VISITORS -->
+    <rect x="16" y="430" width="296" height="74" rx="14" fill="var(--waf-soft)" stroke="var(--waf)"/>
+    <text x="34" y="456" class="lbl" fill="var(--waf)">Visitors' browsers</text>
+    <text x="34" y="476" class="sub" fill="var(--ink)">https://ft.natscho.my</text>
+    <text x="34" y="492" class="tiny" fill="var(--sub)">never see Vault or any secret</text>
+
+    <!-- GITHUB -->
+    <rect x="344" y="40" width="284" height="86" rx="14" fill="var(--git-soft)" stroke="var(--git)"/>
+    <text x="362" y="66" class="lbl" fill="var(--git)">GitHub</text>
+    <text x="362" y="86" class="sub" fill="var(--ink)">the code: main / branchsaurus</text>
+    <text x="362" y="104" class="tiny" fill="var(--sub)">no secrets in the repo, ever</text>
+
+    <!-- GCP VM -->
+    <rect x="344" y="160" width="284" height="234" rx="14" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <text x="362" y="186" class="lbl" fill="var(--ink)">GCP VM (public IP)</text>
+    <rect x="362" y="200" width="248" height="78" rx="10" fill="var(--panel)" stroke="var(--browser)"/>
+    <text x="376" y="222" class="sub" fill="var(--browser)" font-weight="600">WireGuard hub · 10.8.0.2</text>
+    <text x="376" y="240" class="tiny" fill="var(--sub)">laptops and solsys meet here;</text>
+    <text x="376" y="254" class="tiny" fill="var(--sub)">private, encrypted, invisible</text>
+    <text x="376" y="268" class="tiny" fill="var(--sub)">to the internet</text>
+    <rect x="362" y="290" width="248" height="88" rx="10" fill="var(--panel)" stroke="var(--waf)"/>
+    <text x="376" y="312" class="sub" fill="var(--waf)" font-weight="600">nginx · ft.natscho.my</text>
+    <text x="376" y="330" class="tiny" fill="var(--sub)">HTTPS (Let's Encrypt), rate limits,</text>
+    <text x="376" y="344" class="tiny" fill="var(--sub)">security headers; forwards to</text>
+    <text x="376" y="358" class="tiny" fill="var(--sub)">solsys through the tunnel</text>
+
+    <!-- SUPABASE -->
+    <rect x="344" y="440" width="284" height="140" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)"/>
+    <text x="362" y="466" class="lbl" fill="var(--supabase)">Supabase (cloud)</text>
+    <text x="362" y="486" class="sub" fill="var(--ink)">the DATABASE + logins + emails</text>
+    <text x="362" y="504" class="tiny" fill="var(--sub)">not on solsys; two separate projects:</text>
+    <text x="362" y="522" class="tiny" fill="var(--ink)">• production ← the live site only</text>
+    <text x="362" y="538" class="tiny" fill="var(--ink)">• dev ← everyone's make up</text>
+    <text x="362" y="560" class="tiny" fill="var(--sub)">URLs and keys for both come from Vault</text>
+
+    <!-- SOLSYS -->
+    <rect x="656" y="40" width="328" height="560" rx="14" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <rect x="674" y="56" width="292" height="200" rx="12" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="2"/>
+    <text x="690" y="82" class="lbl" fill="var(--vault)">🔒 Vault (server mode)</text>
+    <text x="690" y="100" class="sub" fill="var(--ink)" font-weight="600">the only home of every secret</text>
+    <text x="690" y="118" class="tiny" fill="var(--sub)">encrypted on disk · survives restarts</text>
+    <text x="690" y="132" class="tiny" fill="var(--sub)">after reboot: locked until 2 of 5 shares</text>
+    <rect x="690" y="144" width="260" height="62" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="702" y="162" class="tiny mono" fill="var(--ink)">secret/family-tree/prod  ← production</text>
+    <text x="702" y="178" class="tiny mono" fill="var(--ink)">secret/family-tree/dev   ← laptops</text>
+    <text x="702" y="194" class="tiny mono" fill="var(--sub)">JWT_SECRET · DATABASE_URL · SUPABASE_*</text>
+    <text x="690" y="224" class="tiny" fill="var(--ink)">logins: one per teammate + backend</text>
+    <text x="690" y="240" class="tiny" fill="var(--sub)">📒 audit log: every read recorded</text>
+    <rect x="674" y="276" width="292" height="232" rx="12" fill="var(--backend-soft)" stroke="var(--backend)"/>
+    <text x="690" y="302" class="lbl" fill="var(--backend)">Production stack (Docker)</text>
+    <rect x="690" y="316" width="260" height="34" rx="8" fill="var(--waf-soft)" stroke="var(--waf)"/>
+    <text x="702" y="337" class="sub" fill="var(--waf)" font-weight="600">WAFs · 10.8.0.1:8443 / :9443</text>
+    <rect x="690" y="360" width="124" height="48" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="702" y="381" class="sub" fill="var(--ink)" font-weight="600">frontend</text>
+    <text x="702" y="397" class="tiny" fill="var(--sub)">Next.js</text>
+    <rect x="826" y="360" width="124" height="48" rx="8" fill="var(--panel)" stroke="var(--backend)"/>
+    <text x="838" y="381" class="sub" fill="var(--backend)" font-weight="600">backend</text>
+    <text x="838" y="397" class="tiny" fill="var(--sub)">NestJS</text>
+    <text x="690" y="432" class="tiny" fill="var(--sub)">built from the code on GitHub</text>
+    <text x="690" y="448" class="tiny" fill="var(--sub)">by make prod (what make deploy runs)</text>
+    <text x="690" y="470" class="tiny" fill="var(--ink)">.env here: non-secret settings only</text>
+    <text x="690" y="486" class="tiny" fill="var(--ink)">(URLs, ports, CORS origin)</text>
+    <rect x="674" y="528" width="292" height="56" rx="12" fill="var(--git-soft)" stroke="var(--git)"/>
+    <text x="690" y="552" class="sub mono" fill="var(--git)" font-weight="600">~/ft_transcendence</text>
+    <text x="690" y="570" class="tiny" fill="var(--sub)">checkout of branchsaurus (git pull)</text>
+
+    <!-- ARROWS -->
+    <!-- make up: laptop -> WireGuard hub -> Vault -->
+    <path d="M294,150 C326,150 330,218 362,218" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#mb)"/>
+    <path d="M610,218 C642,218 642,150 674,150" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#mb)"/>
+    <!-- secrets back to laptop -->
+    <path d="M674,108 C560,140 420,140 296,124" stroke="var(--vault)" stroke-width="2.4" fill="none" marker-end="url(#mv)"/>
+    <text x="454" y="152" class="tiny" fill="var(--vault)" font-weight="600">dev secrets → laptop memory</text>
+    <!-- git push -->
+    <path d="M294,272 C322,272 318,100 344,100" stroke="var(--git)" stroke-width="1.8" fill="none" marker-end="url(#mg)"/>
+    <!-- github -> solsys checkout -->
+    <path d="M628,64 C648,64 646,40 646,40 L646,40" stroke="none" fill="none"/>
+    <path d="M628,110 C642,110 640,560 674,556" stroke="var(--git)" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#mg)"/>
+    <text x="668" y="612" class="tiny" fill="var(--git)" text-anchor="end">git pull →</text>
+    <!-- make deploy: laptop -> hub -> solsys -->
+    <path d="M294,352 C330,352 330,262 362,262" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
+    <path d="M610,262 C642,262 644,292 674,292" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
+    <text x="34" y="414" class="tiny" fill="var(--backend)">make deploy = ssh solsys "make prod" (through the tunnel)</text>
+    <!-- vault -> prod backend -->
+    <path d="M888,256 L888,358" stroke="var(--vault)" stroke-width="2.4" marker-end="url(#mv)"/>
+    <text x="896" y="274" class="tiny" fill="var(--vault)" font-weight="600">read at</text>
+    <text x="896" y="288" class="tiny" fill="var(--vault)" font-weight="600">start-up</text>
+    <!-- visitors -> nginx -> WAF -->
+    <path d="M312,466 C340,466 334,334 362,334" stroke="var(--waf)" stroke-width="2" fill="none" marker-end="url(#mr)"/>
+    <path d="M610,333 L690,333" stroke="var(--waf)" stroke-width="2" marker-end="url(#mr)"/>
+    <!-- db -->
+    <path d="M888,408 C888,520 670,520 630,512" stroke="var(--supabase)" stroke-width="1.8" fill="none" marker-end="url(#ms)"/>
+    <path d="M28,392 L7,410 L7,606 L440,606 L440,584" stroke="var(--supabase)" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ms)"/>
+    <text x="24" y="598" class="tiny" fill="var(--supabase)">laptops' local backend → the DEV database</text>
+  </svg>
+  <div class="legend">
+    <span><i class="sw" style="border-color:var(--vault)"></i>secrets (from Vault)</span>
+    <span><i class="sw" style="border-color:var(--browser)"></i>WireGuard (private)</span>
+    <span><i class="sw" style="border-color:var(--backend); border-top-style:dashed"></i>make deploy</span>
+    <span><i class="sw" style="border-color:var(--git)"></i>code (GitHub)</span>
+    <span><i class="sw" style="border-color:var(--waf)"></i>public website traffic</span>
+    <span><i class="sw" style="border-color:var(--supabase)"></i>database</span>
+  </div>
+  </div>
+
+  <!-- ===================== 2. COMMANDS ===================== -->
+  <h2>2 · The commands</h2>
+  <p class="note">Same names the team already uses, so habits don't change; <code>make deploy</code> and <code>make unseal</code> are new.</p>
+  <div class="cmds">
+    <div class="cmd up">
+      <p class="who">Anyone · on their laptop</p>
+      <p class="name">make up</p>
+      <ol>
+        <li>Checks WireGuard is on (Vault reachable at <code>10.8.0.1:8200</code>)</li>
+        <li>Logs you in to Vault if today's token expired (your username + password)</li>
+        <li>Fetches the <strong>dev</strong> secrets into memory (laptops can't read production)</li>
+        <li>Builds and starts the containers with them</li>
+      </ol>
+      <p class="result">→ the app at <code>https://localhost:8443</code>. <code>make down</code> stops it; the secrets go with it.</p>
+    </div>
+    <div class="cmd deploy">
+      <p class="who">Tiara · from her laptop</p>
+      <p class="name">make deploy</p>
+      <ol>
+        <li>Connects to solsys (<code>ssh solsys</code>)</li>
+        <li>Runs <code>make prod</code> there: pulls the latest <code>branchsaurus</code>, checks Vault is unsealed, builds,
+          starts the production stack, gives the backend a fresh Vault login, restarts the WAFs</li>
+        <li>Runs <code>waf/test-waf.sh</code> against the live site</li>
+      </ol>
+      <p class="result">→ <code>https://ft.natscho.my</code> is updated and verified, in one command.</p>
+    </div>
+    <div class="cmd unseal">
+      <p class="who">Any share holder · only after solsys reboots</p>
+      <p class="name">make unseal</p>
+      <ol>
+        <li>solsys supplies its own share automatically</li>
+        <li>Asks one person (Tiara, Moira, Jon or Yiwei) to type their share (never stored)</li>
+        <li>2 of 5 shares → Vault unlocks</li>
+        <li>Starts the production stack (same as <code>make prod</code>)</li>
+      </ol>
+      <p class="result">→ until this runs, nobody (laptops or production) can read the secrets. Any one teammate can do it.</p>
+    </div>
+  </div>
+
+  <!-- ===================== 3. BEFORE / AFTER ===================== -->
+  <h2>3 · Before and after</h2>
+  <div class="card">
+  <svg viewBox="0 0 1000 250" role="img" aria-label="Before: plaintext .env files on solsys and on every laptop, copied into an in-memory Vault. After: one encrypted Vault on solsys, read by laptops and production">
+    <defs>
+      <marker id="xa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--sub)"/></marker>
+      <marker id="xv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
+      <marker id="xr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bad)"/></marker>
+    </defs>
+    <text x="24" y="28" class="grp" fill="var(--sub)">Today</text>
+    <rect x="16" y="40" width="460" height="196" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+    <rect x="34" y="58" width="190" height="50" rx="9" fill="var(--waf-soft)" stroke="var(--bad)" stroke-width="1.6"/>
+    <text x="48" y="80" class="lbl" fill="var(--bad)">solsys .env</text>
+    <text x="48" y="97" class="tiny" fill="var(--ink)">plain text, the real source</text>
+    <path d="M129,108 L129,134" stroke="var(--bad)" stroke-width="1.6" marker-end="url(#xr)"/>
+    <rect x="34" y="136" width="190" height="50" rx="9" fill="var(--vault-soft)" stroke="var(--vault)"/>
+    <text x="48" y="158" class="lbl" fill="var(--vault)">Vault (dev mode)</text>
+    <text x="48" y="175" class="tiny" fill="var(--ink)">memory only, refilled each deploy</text>
+    <text x="34" y="214" class="tiny" fill="var(--sub)">→ production backend</text>
+    <rect x="254" y="58" width="200" height="38" rx="9" fill="var(--waf-soft)" stroke="var(--bad)"/>
+    <text x="268" y="82" class="sub mono" fill="var(--bad)">laptop .env (Tiara)</text>
+    <rect x="254" y="104" width="200" height="38" rx="9" fill="var(--waf-soft)" stroke="var(--bad)"/>
+    <text x="268" y="128" class="sub mono" fill="var(--bad)">laptop .env (Moira) …</text>
+    <text x="254" y="168" class="tiny" fill="var(--sub)">copies passed around by hand,</text>
+    <text x="254" y="183" class="tiny" fill="var(--sub)">easy to leak, commit or forget</text>
+    <path d="M484,138 L516,138" stroke="var(--sub)" stroke-width="2" marker-end="url(#xa)"/>
+    <text x="532" y="28" class="grp" fill="var(--sub)">Proposed</text>
+    <rect x="524" y="40" width="460" height="196" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+    <rect x="542" y="58" width="220" height="92" rx="10" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="2"/>
+    <text x="556" y="82" class="lbl" fill="var(--vault)">🔒 Vault on solsys</text>
+    <text x="556" y="102" class="sub" fill="var(--ink)">the only copy of the secrets</text>
+    <text x="556" y="120" class="tiny" fill="var(--sub)">encrypted · persistent · logged</text>
+    <text x="556" y="136" class="tiny" fill="var(--sub)">locked until unsealed</text>
+    <rect x="792" y="58" width="174" height="38" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="806" y="82" class="sub" fill="var(--ink)">laptops: make up</text>
+    <rect x="792" y="112" width="174" height="38" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="806" y="136" class="sub" fill="var(--ink)">production backend</text>
+    <path d="M762,86 L790,78" stroke="var(--vault)" stroke-width="1.8" marker-end="url(#xv)"/>
+    <path d="M762,120 L790,128" stroke="var(--vault)" stroke-width="1.8" marker-end="url(#xv)"/>
+    <text x="542" y="180" class="tiny" fill="var(--sub)">.env files: only non-secret settings (URLs, ports)</text>
+    <text x="542" y="196" class="tiny" fill="var(--sub)">nothing to pass around; revoke one person in one place</text>
+  </svg>
+  </div>
+
+  <!-- ===================== 4. WHO CAN DO WHAT ===================== -->
+  <h2>4 · Who can do what</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Who</th><th>How they log in</th><th>Read secrets</th><th>Change secrets</th><th>Deploy ft.natscho.my</th><th>Unseal Vault</th></tr></thead>
+    <tbody>
+      <tr><td>Production backend</td><td>AppRole (machine login)</td><td class="yes">prod only</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+      <tr><td>Moira, Jon, Yiwei</td><td>own Vault user + WireGuard key</td><td class="yes">dev only</td><td class="no">no</td><td class="no">no</td><td class="yes">yes (own share)</td></tr>
+      <tr><td>Tiara (admin)</td><td>own Vault user + WireGuard key + ssh to solsys</td><td class="yes">dev + prod</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes (own share)</td></tr>
+      <tr><td>solsys</td><td>holds 1 of the 5 unseal shares</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td>adds its share</td></tr>
+      <tr><td>Anyone else</td><td>—</td><td class="no">no</td><td class="no">no</td><td class="no">no</td><td class="no">no</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:10px">Every read and change in Vault is written to its audit log. Removing a teammate = disable their Vault user and their WireGuard key; nobody else is affected.</p>
+
+  <!-- ===================== 5. DECISIONS ===================== -->
+  <h2>5 · Decisions (2026-10-08)</h2>
+  <div class="callout ok"><div class="ic">🧭</div><div>
+    <strong>Access path: A · WireGuard.</strong> Vault is never on the internet; each teammate gets a personal WireGuard
+    key (one-time setup) and turns it on before <code>make up</code>. To check first: that WireGuard works from the 42
+    campus network.
+  </div></div>
+  <div class="callout ok"><div class="ic">🧪</div><div>
+    <strong>Laptops get a separate dev set.</strong> <code>secret/family-tree/dev</code> points at a second Supabase
+    project (free tier) for development; laptops can't read <code>secret/family-tree/prod</code>, so a lost laptop or a
+    local test can never touch production. A copy of production data can be loaded into dev when needed.
+  </div></div>
+  <div class="callout warn"><div class="ic">🔑</div><div>
+    <strong>Unseal: 5 shares (Tiara, solsys, Yiwei, Jon, Moira), any 2 unlock.</strong> After a reboot, solsys adds its
+    own share, so <strong>any one teammate can bring Vault back alone</strong>: convenient, no waiting for a second
+    person. The accepted cost: solsys's share sits on the same machine as the encrypted data, so someone who gets into
+    solsys <em>and</em> obtains one person's share could unlock everything. Mitigations: solsys's share is a root-only
+    file outside Vault's data, each person keeps their share offline, and every unseal is logged.
+  </div></div>
+  <div class="callout warn"><div class="ic">🛟</div><div>
+    <strong>Evaluation-day fallback.</strong> If solsys or the home internet fails during the evaluation, both the live
+    site and every <code>make up</code> stop. Keep a sealed, offline copy of what's needed to run the demo (held by Tiara).
+  </div></div>
+</div>
+</body>
+</html>
