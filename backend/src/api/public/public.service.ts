@@ -192,6 +192,6 @@ export class PublicService {
 			dto
 		);
 
-		return this.getPublicTree(treeId);
+		return;
 	}
 }
