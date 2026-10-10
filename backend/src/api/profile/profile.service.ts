@@ -1,9 +1,39 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ProfileService {
 	constructor(private readonly prisma: PrismaService) { }
+
+	// Who may change a profile (PATCH /profile/:id). Mirrors the canvas's own
+	// rule (nodeProfileBanner): your own profile; any profile in a tree where
+	// you are ADMIN or MODERATOR; as a MEMBER, only the node you claimed.
+	// Before this, any logged-in user could edit any profile by its id.
+	async assertCanEdit(userId: string, userProfileId: number | null, targetId: number) {
+		const target = await this.prisma.profile.findUnique({
+			where: { id: targetId },
+			select: { id: true, userId: true },
+		});
+		if (!target) throw new NotFoundException('Profile not found.');
+		if (target.userId === userId || (userProfileId !== null && target.id === userProfileId)) return;
+
+		if (userProfileId !== null) {
+			const nodes = await this.prisma.treeMember.findMany({
+				where: { profileId: targetId, treeId: { not: null } },
+				select: { treeId: true, linkId: true, claim: true },
+			});
+			for (const node of nodes) {
+				const mine = await this.prisma.treeMember.findUnique({
+					where: { profileId_treeId: { profileId: userProfileId, treeId: node.treeId! } },
+					select: { id: true, role: true },
+				});
+				if (!mine) continue;
+				if (mine.role === 'ADMIN' || mine.role === 'MODERATOR') return;
+				if (mine.role === 'MEMBER' && node.claim === 'ACCEPTED' && node.linkId === mine.id) return;
+			}
+		}
+		throw new ForbiddenException('You do not have permission to edit this profile.');
+	}
 
 	async findMe(Id: string) {
     	const profile = await this.prisma.profile.findFirst({
