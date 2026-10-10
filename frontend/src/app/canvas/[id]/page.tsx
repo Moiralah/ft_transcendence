@@ -94,7 +94,7 @@ export default function Content() {
   const initialTreeType = useMemo((): TreeVisibility => {
     if (myProfile?.id && Array.isArray(treesMember)) {
       const matchMember = treesMember.find((m: any) => m.profileId === myProfile.id);
-      
+
       if (matchMember?.role) {
       return matchMember.role as TreeVisibility;
       }
@@ -484,11 +484,11 @@ export default function Content() {
             </button>
           </div>
         </div>
-        
+
         <div>
           {pending?.map((m: any) => (
             <div key={m.id}>
-            {m.linkId} claiming {m.id} 
+            {m.linkId} claiming {m.id}
             <button
               type="button"
               onClick={() => {handleApproveClaim(m.id)}}

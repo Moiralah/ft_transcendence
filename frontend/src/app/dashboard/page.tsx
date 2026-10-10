@@ -58,7 +58,7 @@ export default function TreePage() {
   const [friendStatuses, setFriendStatuses] = useState<Record<string, {
     status: string;
     friendId: number | null;
-  }>>({});  
+  }>>({});
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
@@ -282,16 +282,16 @@ export default function TreePage() {
 
   const loadFriendStatuses = async (profiles: any[]) => {
     if (!token) return;
-  
+
     const userIds = profiles
       .map((profile) => profile.userId)
       .filter(Boolean);
-  
+
     if (userIds.length === 0) {
       setFriendStatuses({});
       return;
     }
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
@@ -304,25 +304,25 @@ export default function TreePage() {
           body: JSON.stringify({ userIds }),
         },
       );
-  
+
       if (!res.ok) {
         throw new Error('Failed to load friend statuses');
       }
-  
+
       const statuses = await res.json();
-  
+
       const statusMap: Record<string, {
         status: string;
         friendId: number | null;
       }> = {};
-  
+
       statuses.forEach((item: any) => {
         statusMap[item.userId] = {
           status: item.status,
           friendId: item.friendId,
         };
       });
-  
+
       setFriendStatuses(statusMap);
     } catch (err: any) {
       console.error(err);
@@ -331,7 +331,7 @@ export default function TreePage() {
 
   const addFriend = async (userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
@@ -342,13 +342,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to send friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -364,7 +364,7 @@ export default function TreePage() {
 
   const acceptFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
@@ -375,13 +375,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to accept friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -397,7 +397,7 @@ export default function TreePage() {
 
   const declineFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
@@ -408,13 +408,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to decline friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -430,7 +430,7 @@ export default function TreePage() {
 
   const cancelFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
@@ -441,13 +441,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to cancel friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -463,7 +463,7 @@ export default function TreePage() {
 
   const unfriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
@@ -474,13 +474,13 @@ export default function TreePage() {
           }
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to unfriend user');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -919,8 +919,8 @@ export default function TreePage() {
               {profileResults.map((profile) => {
                 const friendStatus = profile.userId
                   ? friendStatuses[profile.userId] : undefined;
-              
-                const status = friendStatus?.status ?? 'NONE';          
+
+                const status = friendStatus?.status ?? 'NONE';
                 return (
                   <div
                     key={profile.id}
@@ -935,11 +935,11 @@ export default function TreePage() {
                       <div className="text-sm text-slate-700 mt-1">
                         Gender: {profile.gender || 'N/A'}
                       </div>
-              
+
                       <div className="text-sm text-slate-700 mt-1">
                         Birth Date: {profile.birthDate || 'N/A'}
                       </div>
-              
+
                       {profile.deathDate && (
                         <div className="text-sm text-slate-700 mt-1">
                           Death Date: {profile.deathDate}
@@ -988,7 +988,7 @@ export default function TreePage() {
 						  >
                             Accept
                           </button>
-              
+
                           <button
                             type="button"
                             className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"
