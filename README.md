@@ -143,19 +143,6 @@ WAFs still reach the frontend and backend over the Docker network. The plain
 To see a request that the WAF blocks reach the app unfiltered, run the plain
 `make up` stack and send it to `:4000`.
 
-**Two gotchas, both already hit once:**
-1. Same as the local-Supabase section above — any `docker compose up`
-   touching `backend` (including just bringing the WAF up, via
-   `depends_on`) can silently reset `DATABASE_URL`/`SUPABASE_AUTH_URL`
-   back to `127.0.0.1`. Check `docker exec transpeed-backend-1 sh -c
-   'echo $DATABASE_URL'` after any compose command.
-2. **New one**: the WAF's nginx resolves `backend`'s IP once at its own
-   startup. If `backend` gets recreated afterward (a new container gets a
-   new IP), the WAF starts returning `502` even though everything looks
-   healthy — nginx is still pointing at the old, dead IP. Fix: `docker
-   restart transpeed-waf-backend-1 transpeed-waf-frontend-1` any time
-   `backend`/`frontend` get recreated while the WAF is up.
-
 ### Vault (secrets management)
 
 `make security` also starts a HashiCorp Vault (dev mode) and runs
