@@ -57,6 +57,9 @@ export class MailService {
 			replyTo: message.replyTo,
 			subject: oneLine(message.subject),
 			text: message.text,
+			// nodemailer always writes the Date header in UTC (+0000); send it in
+			// Malaysia time so every mail client shows when it really happened.
+			date: malaysiaDateHeader(),
 		});
 	}
 
@@ -76,4 +79,23 @@ export class MailService {
 // Header values (subject, names) must stay on one line, or they could inject headers.
 export function oneLine(value?: string): string {
 	return (value ?? '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+// The site's users are in Malaysia (GMT+8, no daylight saving), whatever time
+// zone the server or container runs in.
+export const SITE_TIME_ZONE = 'Asia/Kuala_Lumpur';
+
+// For email text: "Saturday, 10 October 2026 at 7:20 pm (Malaysia time, GMT+8)".
+export function malaysiaTime(date: Date = new Date()): string {
+	const formatted = new Intl.DateTimeFormat('en-GB', {
+		timeZone: SITE_TIME_ZONE,
+		weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+		hour: 'numeric', minute: '2-digit', hour12: true,
+	}).format(date);
+	return `${formatted} (Malaysia time, GMT+8)`;
+}
+
+// RFC 2822 Date header in GMT+8: "Sat, 10 Oct 2026 19:20:05 +0800".
+export function malaysiaDateHeader(date: Date = new Date()): string {
+	return new Date(date.getTime() + 8 * 60 * 60 * 1000).toUTCString().replace('GMT', '+0800');
 }

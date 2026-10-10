@@ -25,6 +25,7 @@ services:
     image: owasp/modsecurity-crs:nginx
     restart: unless-stopped
     environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
       BACKEND: "https://frontend:3000"
       PROXY_SSL_VERIFY: "off" # frontend uses our own self-signed dev cert
       PORT: "8080"
@@ -46,6 +47,7 @@ services:
     image: owasp/modsecurity-crs:nginx
     restart: unless-stopped
     environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
       BACKEND: "https://backend:4000"
       PROXY_SSL_VERIFY: "off" # backend uses our own self-signed dev cert
       PORT: "8080"
@@ -88,6 +90,7 @@ services:
     image: hashicorp/vault:latest
     restart: unless-stopped
     environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
       VAULT_DEV_ROOT_TOKEN_ID: "dev-only-root-token"
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
     cap_add:

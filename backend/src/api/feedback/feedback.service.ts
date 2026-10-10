@@ -2,7 +2,7 @@ import {
 	BadRequestException, HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MailService, oneLine } from '../../mail/mail.service';
+import { MailService, malaysiaTime, oneLine } from '../../mail/mail.service';
 
 export interface FeedbackInput {
 	category?: string;
@@ -72,7 +72,7 @@ export class FeedbackService {
 					`Name: ${name || '(not given)'}`,
 					`Email: ${email || '(not given)'}`,
 					`Page: ${page || '(unknown)'}`,
-					`Sent: ${new Date().toISOString()}`,
+					`Sent: ${malaysiaTime()}`,
 					'',
 					message,
 				].join('\n'),

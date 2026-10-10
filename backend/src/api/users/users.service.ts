@@ -4,7 +4,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../prisma/prisma.service';
-import { MailService } from '../../mail/mail.service';
+import { MailService, malaysiaTime } from '../../mail/mail.service';
 
 const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User' };
 const ROLE_RIGHTS: Record<string, string> = {
@@ -71,6 +71,7 @@ export class UsersService {
 					'',
 					`An administrator changed your role on My Simple Family Tree from ${ROLE_NAMES[user.role] ?? user.role} to ${ROLE_NAMES[role]}.`,
 					ROLE_RIGHTS[role],
+					`When: ${malaysiaTime()}`,
 					'',
 					'Log out and log in again for the change to show.',
 					'',
@@ -116,6 +117,7 @@ export class UsersService {
 						'',
 						'Your account on My Simple Family Tree has been suspended by a moderator or administrator.',
 						'You are logged out and can\'t log in until it is reactivated.',
+						`When: ${malaysiaTime()}`,
 						'',
 						'If you think this is a mistake, reply through the feedback form on the site.',
 					]
@@ -123,6 +125,7 @@ export class UsersService {
 						`Hi ${updated.username},`,
 						'',
 						'Your account on My Simple Family Tree has been reactivated. You can log in again.',
+						`When: ${malaysiaTime()}`,
 						'',
 						this.siteLink(),
 					]).join('\n'),
