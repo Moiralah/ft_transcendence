@@ -252,9 +252,9 @@ export class TreeService {
 	async getTreeBySlug(slug: string, profileId: number) {
 		const tree = await this.prisma.tree.findUnique({
 			where: { slug },
-			select: {id: true},
+			select: { id: true },
 		});
-		if(!tree) {
+		if (!tree) {
 			throw new NotFoundException('Tree not found');
 		}
 		const member = await this.prisma.treeMember.findUnique({
@@ -770,296 +770,363 @@ export class TreeService {
 	// frontend renders link.profile instead of profile once claim === ACCEPTED.
 
 	async requestClaim(treeId: number, requesterProfileId: number, holderMemberId: number) {
-	const requesterMember = await this.prisma.treeMember.findUnique({
-		where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
-	});
-	if (!requesterMember) {
-		throw new ForbiddenException('Join the tree before claiming a profile.');
-	}
-
-	if (requesterMember.linkId) {
-		throw new ForbiddenException('You already have an active claim. Unclaim it first.');
-	}
-
-	const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
-	if (!holder || holder.treeId !== treeId || holder.role !== 'HOLDER') {
-		throw new NotFoundException('Placeholder profile not found in this tree.');
-	}
-	if (holder.claim === 'PENDING' || holder.claim === 'ACCEPTED') {
-		throw new ForbiddenException('This profile already has a pending or accepted claim.');
-	}
-
-	return this.prisma.$transaction(async (tx) => {
-
-		await tx.treeMember.update({
-			where: { id: requesterMember.id },
-			data: { linkId: holderMemberId },
+		const requesterMember = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
 		});
+		if (!requesterMember) {
+			throw new ForbiddenException('Join the tree before claiming a profile.');
+		}
 
-		const updated = await tx.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: requesterMember.id, claim: 'PENDING' },
-			include: { profile: true, link: { include: { profile: true } } },
+		if (requesterMember.linkId) {
+			throw new ForbiddenException('You already have an active claim. Unclaim it first.');
+		}
+
+		const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
+		if (!holder || holder.treeId !== treeId || holder.role !== 'HOLDER') {
+			throw new NotFoundException('Placeholder profile not found in this tree.');
+		}
+		if (holder.claim === 'PENDING' || holder.claim === 'ACCEPTED') {
+			throw new ForbiddenException('This profile already has a pending or accepted claim.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+
+			await tx.treeMember.update({
+				where: { id: requesterMember.id },
+				data: { linkId: holderMemberId },
+			});
+
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: requesterMember.id, claim: 'PENDING' },
+				include: { profile: true, link: { include: { profile: true } } },
+			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'REQUEST_CLAIM',
+					details: `Requested to claim profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
 		});
-
-		await tx.auditLog.create({
-			data: {
-				treeId,
-				profileId: requesterProfileId,
-				action: 'REQUEST_CLAIM',
-				details: `Requested to claim profile ${holder.profileId}`,
-			},
-		});
-
-		return updated;
-	});
-}
+	}
 
 	async approveClaim(treeId: number, approverProfileId: number, holderMemberId: number) {
-	await this.assertModeratorOrAdmin(treeId, approverProfileId);
+		await this.assertModeratorOrAdmin(treeId, approverProfileId);
 
-	const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
-	if (!holder || holder.treeId !== treeId) {
-		throw new NotFoundException('Placeholder profile not found in this tree.');
-	}
-	if (holder.claim !== 'PENDING' || !holder.linkId) {
-		throw new ForbiddenException('There is no pending claim on this profile.');
-	}
-
-	return this.prisma.$transaction(async (tx) => {
-		const linkedMember = await tx.treeMember.findUnique({ where: { id: holder.linkId! } });
-		if (!linkedMember) {
-			throw new NotFoundException('Linked member not found.');
+		const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
+		if (!holder || holder.treeId !== treeId) {
+			throw new NotFoundException('Placeholder profile not found in this tree.');
+		}
+		if (holder.claim !== 'PENDING' || !holder.linkId) {
+			throw new ForbiddenException('There is no pending claim on this profile.');
 		}
 
-		// Only promote JOINER -> MEMBER.
-		// ADMIN / MODERATOR keep their role.
-		if (linkedMember.role === 'JOINER') {
-			await tx.treeMember.update({
-				where: { id: linkedMember.id },
-				data: { role: 'MEMBER' },
-			});
-		}
+		return this.prisma.$transaction(async (tx) => {
+			const linkedMember = await tx.treeMember.findUnique({ where: { id: holder.linkId! } });
+			if (!linkedMember) {
+				throw new NotFoundException('Linked member not found.');
+			}
 
-		const updated = await tx.treeMember.update({
-			where: { id: holderMemberId },
-			data: { claim: 'ACCEPTED' },
-			include: { profile: true, link: { include: { profile: true } } },
-		});
-
-		await tx.auditLog.create({
-			data: {
-				treeId,
-				profileId: approverProfileId,
-				action: 'APPROVE_CLAIM',
-				details: `Approved claim on profile ${holder.profileId}`,
-			},
-		});
-
-		return updated;
-	});
-}
-
-	async rejectClaim(treeId: number, approverProfileId: number, holderMemberId: number) {
-	await this.assertModeratorOrAdmin(treeId, approverProfileId);
-
-	const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
-	if (!holder || holder.treeId !== treeId) {
-		throw new NotFoundException('Placeholder profile not found in this tree.');
-	}
-	if (holder.claim !== 'PENDING') {
-		throw new ForbiddenException('There is no pending claim on this profile.');
-	}
-
-	const linkedMemberId = holder.linkId;
-
-	// Free the node back up rather than locking it permanently — a fresh
-	// request flips it back to PENDING, so this doesn't block a retry
-	// (by this or another claimant).
-	return this.prisma.$transaction(async (tx) => {
-
-		if (linkedMemberId) {
-			await tx.treeMember.updateMany({
-				where: { id: linkedMemberId, linkId: holderMemberId },
-				data: { linkId: null },
-			});
-		}
-
-		const updated = await tx.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: null, claim: 'EMPTY' },
-		});
-
-		await tx.auditLog.create({
-			data: {
-				treeId,
-				profileId: approverProfileId,
-				action: 'REJECT_CLAIM',
-				details: `Rejected claim on profile ${holder.profileId}`,
-			},
-		});
-
-		return updated;
-	});
-}
-
-	async unclaim(treeId: number, requesterProfileId: number, holderMemberId: number) {
-	// 1. Look up the requester's own membership row in this tree.
-	const requesterMember = await this.prisma.treeMember.findUnique({
-		where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
-	});
-	if (!requesterMember) {
-		throw new ForbiddenException('You are not a member of this tree.');
-	}
-
-	// 2. Load the placeholder being unclaimed.
-	const holder = await this.prisma.treeMember.findUnique({
-		where: { id: holderMemberId },
-	});
-	if (!holder || holder.treeId !== treeId) {
-		throw new NotFoundException('Placeholder profile not found in this tree.');
-	}
-
-	const isPending = holder.claim === 'PENDING';
-	const isAccepted = holder.claim === 'ACCEPTED';
-
-	if ((!isPending && !isAccepted) || !holder.linkId) {
-		throw new ForbiddenException('Profile has no pending or accepted claim to remove.');
-	}
-
-	// 3. Authorization:
-	//    - The claimant can unclaim their own slot.
-	//    - ADMIN / MODERATOR can unclaim any slot.
-	const isClaimant = holder.linkId === requesterMember.id;
-	const isModeratorOrAdmin = ['ADMIN', 'MODERATOR'].includes(requesterMember.role);
-
-	if (!isClaimant && !isModeratorOrAdmin) {
-		throw new ForbiddenException('You can only unclaim a slot you claimed yourself.');
-	}
-
-	const linkedMemberId = holder.linkId;
-
-	return this.prisma.$transaction(async (tx) => {
-		// 4. If the claim was accepted, the claimant may have been promoted
-		//    from JOINER to MEMBER. Revert that.
-		//    ADMIN / MODERATOR keep their role.
-
-		if (isAccepted && linkedMemberId) {
-			const linkedMember = await tx.treeMember.findUnique({
-				where: { id: linkedMemberId },
-			});
-			if (linkedMember && linkedMember.role === 'MEMBER') {
+			// Only promote JOINER -> MEMBER.
+			// ADMIN / MODERATOR keep their role.
+			if (linkedMember.role === 'JOINER') {
 				await tx.treeMember.update({
 					where: { id: linkedMember.id },
-					data: { role: 'JOINER' },
+					data: { role: 'MEMBER' },
 				});
 			}
-		}
 
-		if (linkedMemberId) {
-			await tx.treeMember.updateMany({
-				where: { id: linkedMemberId, linkId: holderMemberId },
-				data: { linkId: null },
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { claim: 'ACCEPTED' },
+				include: { profile: true, link: { include: { profile: true } } },
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'APPROVE_CLAIM',
+					details: `Approved claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
+		});
+	}
+
+	async rejectClaim(treeId: number, approverProfileId: number, holderMemberId: number) {
+		await this.assertModeratorOrAdmin(treeId, approverProfileId);
+
+		const holder = await this.prisma.treeMember.findUnique({ where: { id: holderMemberId } });
+		if (!holder || holder.treeId !== treeId) {
+			throw new NotFoundException('Placeholder profile not found in this tree.');
+		}
+		if (holder.claim !== 'PENDING') {
+			throw new ForbiddenException('There is no pending claim on this profile.');
 		}
 
-		// 5. Clear the link on the placeholder.
-		const updated = await tx.treeMember.update({
-			where: { id: holderMemberId },
-			data: { linkId: null, claim: 'EMPTY' },
-			include: { profile: true, link: { include: { profile: true } } },
-		});
+		const linkedMemberId = holder.linkId;
 
-		// 6. Audit log.
-		await tx.auditLog.create({
-			data: {
-				treeId,
-				profileId: requesterProfileId,
-				action: isAccepted ? 'UNCLAIM' : 'REJECT_CLAIM',
-				details: isAccepted
-					? `Unclaimed profile ${holder.profileId}`
-					: `Withdrew pending claim on profile ${holder.profileId}`,
-			},
-		});
+		// Free the node back up rather than locking it permanently — a fresh
+		// request flips it back to PENDING, so this doesn't block a retry
+		// (by this or another claimant).
+		return this.prisma.$transaction(async (tx) => {
 
-		return updated;
-	});
-}
+			if (linkedMemberId) {
+				await tx.treeMember.updateMany({
+					where: { id: linkedMemberId, linkId: holderMemberId },
+					data: { linkId: null },
+				});
+			}
 
-	async leaveTree(profileId: number, treeId: number) {
-	const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
-	if (!tree) {
-		throw new NotFoundException('Tree not found.');
-	}
-	// Bug fix: was comparing tree.ownerId (a Profile id) against a user id.
-	if (tree.ownerId === profileId) {
-		throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
-	}
-
-	const member = await this.prisma.treeMember.findUnique({
-		where: { profileId_treeId: { profileId, treeId } },
-	});
-	if (!member) {
-		throw new NotFoundException('You are not a member of this tree.');
-	}
-
-	return this.prisma.$transaction(async (tx) => {
-		// If this member had claimed a placeholder node, unlink it so the
-		// made-up profile re-surfaces on that node.
-		const claimedHolder = await tx.treeMember.findUnique({ where: { linkId: member.id } });
-		if (claimedHolder) {
-			await tx.treeMember.update({
-				where: { id: claimedHolder.id },
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
 				data: { linkId: null, claim: 'EMPTY' },
 			});
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: approverProfileId,
+					action: 'REJECT_CLAIM',
+					details: `Rejected claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
+		});
+	}
+
+	async unclaim(treeId: number, requesterProfileId: number, holderMemberId: number) {
+		// 1. Look up the requester's own membership row in this tree.
+		const requesterMember = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+		});
+		if (!requesterMember) {
+			throw new ForbiddenException('You are not a member of this tree.');
 		}
 
-		await tx.treeMember.delete({ where: { id: member.id } });
-
-		await tx.auditLog.create({
-			data: {
-				treeId,
-				profileId,
-				action: 'LEAVE_TREE',
-				details: `Left the tree`,
-			},
+		// 2. Load the placeholder being unclaimed.
+		const holder = await this.prisma.treeMember.findUnique({
+			where: { id: holderMemberId },
 		});
+		if (!holder || holder.treeId !== treeId) {
+			throw new NotFoundException('Placeholder profile not found in this tree.');
+		}
 
-		return { message: 'Successfully left the tree.' };
-	});
-}
+		const isPending = holder.claim === 'PENDING';
+		const isAccepted = holder.claim === 'ACCEPTED';
+
+		if ((!isPending && !isAccepted) || !holder.linkId) {
+			throw new ForbiddenException('Profile has no pending or accepted claim to remove.');
+		}
+
+		// 3. Authorization:
+		//    - The claimant can unclaim their own slot.
+		//    - ADMIN / MODERATOR can unclaim any slot.
+		const isClaimant = holder.linkId === requesterMember.id;
+		const isModeratorOrAdmin = ['ADMIN', 'MODERATOR'].includes(requesterMember.role);
+
+		if (!isClaimant && !isModeratorOrAdmin) {
+			throw new ForbiddenException('You can only unclaim a slot you claimed yourself.');
+		}
+
+		const linkedMemberId = holder.linkId;
+
+		return this.prisma.$transaction(async (tx) => {
+			// 4. If the claim was accepted, the claimant may have been promoted
+			//    from JOINER to MEMBER. Revert that.
+			//    ADMIN / MODERATOR keep their role.
+
+			if (isAccepted && linkedMemberId) {
+				const linkedMember = await tx.treeMember.findUnique({
+					where: { id: linkedMemberId },
+				});
+				if (linkedMember && linkedMember.role === 'MEMBER') {
+					await tx.treeMember.update({
+						where: { id: linkedMember.id },
+						data: { role: 'JOINER' },
+					});
+				}
+			}
+
+			if (linkedMemberId) {
+				await tx.treeMember.updateMany({
+					where: { id: linkedMemberId, linkId: holderMemberId },
+					data: { linkId: null },
+				});
+			}
+
+			// 5. Clear the link on the placeholder.
+			const updated = await tx.treeMember.update({
+				where: { id: holderMemberId },
+				data: { linkId: null, claim: 'EMPTY' },
+				include: { profile: true, link: { include: { profile: true } } },
+			});
+
+			// 6. Audit log.
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: isAccepted ? 'UNCLAIM' : 'REJECT_CLAIM',
+					details: isAccepted
+						? `Unclaimed profile ${holder.profileId}`
+						: `Withdrew pending claim on profile ${holder.profileId}`,
+				},
+			});
+
+			return updated;
+		});
+	}
+
+	async leaveTree(profileId: number, treeId: number) {
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
+		if (!tree) {
+			throw new NotFoundException('Tree not found.');
+		}
+		// Bug fix: was comparing tree.ownerId (a Profile id) against a user id.
+		if (tree.ownerId === profileId) {
+			throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
+		}
+
+		const member = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId, treeId } },
+		});
+		if (!member) {
+			throw new NotFoundException('You are not a member of this tree.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			// If this member had claimed a placeholder node, unlink it so the
+			// made-up profile re-surfaces on that node.
+			const claimedHolder = await tx.treeMember.findUnique({ where: { linkId: member.id } });
+			if (claimedHolder) {
+				await tx.treeMember.update({
+					where: { id: claimedHolder.id },
+					data: { linkId: null, claim: 'EMPTY' },
+				});
+			}
+
+			await tx.treeMember.delete({ where: { id: member.id } });
+
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId,
+					action: 'LEAVE_TREE',
+					details: `Left the tree`,
+				},
+			});
+
+			return { message: 'Successfully left the tree.' };
+		});
+	}
+
+	/**
+	 * Global platform admin — role on User, not TreeMember.
+	 * Used to let superusers bypass per-tree permission checks.
+	 */
+	private async isGlobalAdmin(profileId: number): Promise<boolean> {
+		const user = await this.prisma.user.findUnique({
+			where: { profileId },
+			select: { role: true },
+		});
+		return user?.role === 'ADMIN';
+	}
+
+	async deleteTree(treeId: number, requesterProfileId: number) {
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
+		if (!tree) throw new NotFoundException('Tree not found.');
+
+		// Only the owner and global admin can delete.
+		const isAdmin = await this.isGlobalAdmin(requesterProfileId);
+		if (tree.ownerId !== requesterProfileId && !isAdmin) {
+			throw new ForbiddenException('Only the tree owner and global admin can delete this tree.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			// 1. Collect the placeholder Profile ids belonging to this tree.
+			//    "Placeholder" = userId IS NULL (no real user attached).
+			const memberRows = await tx.treeMember.findMany({
+				where: { treeId },
+				select: { profileId: true },
+			});
+
+			const candidateProfileIds = memberRows
+				.map((m) => m.profileId)
+				.filter((id): id is number => id !== null);
+
+			// 2. Of those, keep only the ones that are not user-owned
+			const placeholders = await tx.profile.findMany({
+				where: {
+					id: { in: candidateProfileIds },
+					userId: null,
+				},
+				select: { id: true },
+			});
+			const deletableProfileIds = placeholders.map((p) => p.id);
+
+			// 3. Delete the tree itself — this cascades TreeMember / Invitation / AuditLog.
+			await tx.tree.delete({ where: { id: treeId } });
+
+			// 4. Clean up the orphaned placeholder profiles.
+			//    Break the cross-references first (motherId / fatherId / spouseId
+			//    form a web between the placeholders).
+			if (deletableProfileIds.length > 0) {
+				await tx.profile.updateMany({
+					where: { id: { in: deletableProfileIds } },
+					data: { motherId: null, fatherId: null, spouseId: null },
+				});
+				await tx.profile.deleteMany({
+					where: { id: { in: deletableProfileIds } },
+				});
+			}
+			return {
+				message: 'Tree deleted.',
+				treeId,
+				deletedProfileCount: deletableProfileIds.length,
+			};
+		});
+	}
 
 	// Powers a "pending claims" notification panel for admins/moderators.
 	async getPendingClaims(treeId: number, requesterProfileId: number) {
-	await this.assertModeratorOrAdmin(treeId, requesterProfileId);
+		await this.assertModeratorOrAdmin(treeId, requesterProfileId);
 
-	const result = await this.prisma.treeMember.findMany({
-		where: { treeId, role: 'HOLDER', claim: 'PENDING' },
-		include: {
-			profile: {
-				select: {
-					id: true,
-					firstName: true,
-					lastName: true,
-					photoUrl: true,
-				}
-			}, // the placeholder being claimed, e.g. "John Chan"
-			link: {
-				include: {
-					profile: {
-						select: {
-							id: true,
-							firstName: true,
-							lastName: true,
-							photoUrl: true,
+		const result = await this.prisma.treeMember.findMany({
+			where: { treeId, role: 'HOLDER', claim: 'PENDING' },
+			include: {
+				profile: {
+					select: {
+						id: true,
+						firstName: true,
+						lastName: true,
+						photoUrl: true,
+					}
+				}, // the placeholder being claimed, e.g. "John Chan"
+				link: {
+					include: {
+						profile: {
+							select: {
+								id: true,
+								firstName: true,
+								lastName: true,
+								photoUrl: true,
+							}
 						}
 					}
-				}
-			}, // the real claimant, e.g. "John"
-		},
-	});
-	return result;
-}
+				}, // the real claimant, e.g. "John"
+			},
+		});
+		return result;
+	}
 
 	// 	return from get pending claims[
 	//   {

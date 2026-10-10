@@ -181,6 +181,12 @@ export class TreeController {
 		return this.treeService.leaveTree(req.user.profileId, Number(treeId));
 	}
 
+	@Delete(':treeId')
+	@UseGuards(JwtAuthGuard)
+	async deleteTree(@Req() req, @Param('treeId') treeId: string) {
+	return this.treeService.deleteTree(Number(treeId), req.user.profileId);
+	}
+
 	// Powers the claim-request notification panel.
 	@Get(':treeId/claims/pending')
 	@UseGuards(JwtAuthGuard)
