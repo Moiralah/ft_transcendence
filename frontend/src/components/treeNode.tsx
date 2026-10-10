@@ -96,8 +96,10 @@ export function TreeNode({
 
     // Better: expose your TreeMember.id to the treeView context.
     // Then: isMyClaim = nodeMember.linkId === treeView.memberId;
-
-    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim));
+	const isUnclaimedHolder =
+		nodeMember.role === 'HOLDER' &&
+		(nodeMember.claim === 'EMPTY' || !nodeMember.claim);
+    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim || isUnclaimedHolder));
 
   }, [treeView, nodeMember]);
 

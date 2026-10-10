@@ -272,6 +272,8 @@ export function NodeProfileModal({
 
 	const viewerRole = treeView.viewType;
 
+	const isJoiner = viewerRole === 'JOINER';
+
 	const canEdit =
 	viewerRole === 'ADMIN' || viewerRole === 'MODERATOR';
 
@@ -294,6 +296,13 @@ export function NodeProfileModal({
 		member.role === 'HOLDER' &&
 		(member.claim === 'EMPTY' || !member.claim) &&
 		!iAlreadyHaveAClaim;
+
+	const isClaimedNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
+
+	// Fields (name, birth date, gender) can only be edited on unclaimed rows.
+	const canEditFields = !isClaimedNode && !isJoiner;
 
   if (!mounted) return null;
 
@@ -339,12 +348,14 @@ export function NodeProfileModal({
                 <div className="flex text-2xl">
                   {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
                 </div>
-                <div
-                  className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
-                  onClick={() => setEditName(true)}
-                >
-                  Edit Name
-                </div>
+					{canEditFields && (
+					<div
+						className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
+						onClick={() => setEditName(true)}
+					>
+						Edit Name
+					</div>
+					)}
               </div>
             )}
           </div>
@@ -365,12 +376,14 @@ export function NodeProfileModal({
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-                <span
-                  onClick={() => setEditingField('birthDate')}
-                  className="cursor-pointer hover:bg-gray-100 rounded text-xl px-2 py-1"
-                >
-                  {formMember?.birthDate || 'Click to add birth date'}
-                </span>
+			<span
+				onClick={() => canEditFields && setEditingField('birthDate')}
+				className={`rounded text-xl px-2 py-1 ${
+					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				}`}
+				>
+				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				</span>
               )}
             </div>
           </div>
@@ -383,6 +396,7 @@ export function NodeProfileModal({
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
+				disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -401,6 +415,7 @@ export function NodeProfileModal({
                   alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(true)}
+				disabled={!canEditFields}
               >
                 Alive
               </button>
@@ -410,6 +425,7 @@ export function NodeProfileModal({
                   !alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(false)}
+				disabled={!canEditFields}
               >
                 Deceased
               </button>
@@ -460,18 +476,18 @@ export function NodeProfileModal({
 			{canClaimThisNode && 'Claim for me'}
 		</button>
 		)}
-
-			<button
+		{(canAddOrSave && !isClaimedNode) && (
+		<button
 			type="button"
 			onClick={(e) => {
 				e.stopPropagation();
-				if (canAddOrSave) handleSave();
+				handleSave();
 			}}
-			disabled={!canAddOrSave}
 			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
-			>
-			{canAddOrSave ? 'Save Changes' : 'Cannot save'}
-			</button>
+		>
+			Save Changes
+		</button>
+		)}
         </div>
 
         {/* Family Section */}
@@ -493,24 +509,25 @@ export function NodeProfileModal({
 
         {/* Add Family Section */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+			{canAddOrSave && (
 			<button
-			type="button"
-			onClick={(e) => {
-				e.stopPropagation();
-				if (canAddOrSave) handleAddChild();
-			}}
-			disabled={!canAddOrSave}
-			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					handleAddChild();
+					}}
+				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
 			>
-			{canAddOrSave ? 'Add child' : 'Cannot add'}
+				Add child
 			</button>
+			)}
 			{canAddOrSave && !member.spouseId && (
 			<button
 				type="button"
 				onClick={(e) => {
-				e.stopPropagation();
-				handleAddSpouse();
-				}}
+					e.stopPropagation();
+					handleAddSpouse();
+					}}
 				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
 			>
 				Add spouse

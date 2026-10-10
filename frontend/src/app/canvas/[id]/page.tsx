@@ -72,7 +72,7 @@ export default function Content() {
   useEffect(() => {
     if (token) {
       fetchTree(token);
-	    fetchMyProfile(token);
+      fetchMyProfile(token);
     }
   }, [slug, token]);
 
@@ -163,8 +163,8 @@ export default function Content() {
       }
       const data = await res.json();
       setTree(data);
-	    setTreeId(data.id);
-	    fetchTreeMember(token, data.id);
+      setTreeId(data.id);
+      fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
