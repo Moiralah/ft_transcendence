@@ -4,6 +4,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../../mail/mail.service';
+
+const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User' };
+const ROLE_RIGHTS: Record<string, string> = {
+	ADMIN: 'You can now open the Admin Panel from your dashboard: see all users, change their roles, suspend and delete accounts.',
+	MODERATOR: 'You can now open Moderation from your dashboard: see all users and suspend or reactivate accounts.',
+	USER: 'You no longer have access to the Admin Panel or Moderation.',
+};
 
 @Injectable()
 export class UsersService {
@@ -14,7 +22,8 @@ export class UsersService {
 
 	constructor(
 		private readonly prisma: PrismaService,
-		config: ConfigService,
+		private readonly config: ConfigService,
+		private readonly mail: MailService,
 	) {
 		const url = config.get<string>('SUPABASE_AUTH_URL');
 		const key = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
@@ -47,11 +56,34 @@ export class UsersService {
 			throw new NotFoundException('User not found.');
 		}
 
-		return this.prisma.user.update({
+		const updated = await this.prisma.user.update({
 			where: { id },
 			data: { role },
 			select: { id: true, username: true, email: true, role: true },
 		});
+		if (user.role !== role && updated.email) {
+			// Don't wait for Gmail: the change is saved whatever happens to the email.
+			void this.mail.sendQuietly({
+				to: updated.email,
+				subject: `Your role on My Simple Family Tree is now ${ROLE_NAMES[role]}`,
+				text: [
+					`Hi ${updated.username},`,
+					'',
+					`An administrator changed your role on My Simple Family Tree from ${ROLE_NAMES[user.role] ?? user.role} to ${ROLE_NAMES[role]}.`,
+					ROLE_RIGHTS[role],
+					'',
+					'Log out and log in again for the change to show.',
+					'',
+					this.siteLink(),
+				].join('\n'),
+			}, 'Role change');
+		}
+		return updated;
+	}
+
+	private siteLink(): string {
+		const site = (this.config.get<string>('CORS_ORIGIN') || '').split(',')[0].trim();
+		return site ? `${site}/login` : '';
 	}
 
 	async setSuspended(id: string, suspended: boolean, requesterId: string, requesterRole: string) {
@@ -67,11 +99,36 @@ export class UsersService {
 			throw new ForbiddenException('Moderators cannot suspend an admin.');
 		}
 
-		return this.prisma.user.update({
+		const updated = await this.prisma.user.update({
 			where: { id },
 			data: { suspended },
 			select: { id: true, username: true, email: true, suspended: true },
 		});
+		if (user.suspended !== suspended && updated.email) {
+			void this.mail.sendQuietly({
+				to: updated.email,
+				subject: suspended
+					? 'Your My Simple Family Tree account has been suspended'
+					: 'Your My Simple Family Tree account is active again',
+				text: (suspended
+					? [
+						`Hi ${updated.username},`,
+						'',
+						'Your account on My Simple Family Tree has been suspended by a moderator or administrator.',
+						'You are logged out and can\'t log in until it is reactivated.',
+						'',
+						'If you think this is a mistake, reply through the feedback form on the site.',
+					]
+					: [
+						`Hi ${updated.username},`,
+						'',
+						'Your account on My Simple Family Tree has been reactivated. You can log in again.',
+						'',
+						this.siteLink(),
+					]).join('\n'),
+			}, suspended ? 'Suspension' : 'Reactivation');
+		}
+		return updated;
 	}
 
 	async remove(id: string, requesterId: string) {
