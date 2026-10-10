@@ -6,6 +6,7 @@ export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOIN
 export interface TreeViewContext {
   viewType: TreeVisibility;
   viewId: number | null;
+  memberId: number | null;
 }
 
 export interface Member {
@@ -13,6 +14,7 @@ export interface Member {
   profileId?: number;
   treeId?: number;
   role?: string;
+  linkId: number | null;
   joinedAt?: string | Date;
   firstName: string;
   lastName?: string | null;
@@ -42,6 +44,7 @@ interface TreeNodeProp {
   NodeAddSpouse: (addMember: Member) => void;
   NodeAddChild: (addMember: Member) => void;
   NodeRemove?: (id: number) => void;
+  NodeUpdate?: (updated: Member) => void;
   treeView: TreeViewContext;
   showDeleteButton?: boolean;
 }
@@ -52,6 +55,7 @@ export function TreeNode({
   NodeAddChild,
   NodeAddSpouse,
   NodeRemove,
+  NodeUpdate,
   treeView,
   showDeleteButton = true,
 }: TreeNodeProp) {
@@ -66,14 +70,33 @@ export function TreeNode({
   useEffect(() => {
     if (!nodeMember || !treeView) return;
 
-    const isSelf = 
-    treeView.viewId === nodeMember.profileId;
+    // const isSelf =
+    // treeView.viewId === nodeMember.profileId;
 
-    const isHolderAdmin = 
-      (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') && 
+    // const isHolderAdmin =
+    //   (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
+    //   nodeMember.role === 'HOLDER';
+
+    // setShowProfileModal(Boolean(isSelf || isHolderAdmin));
+
+	const isSelf = treeView.viewId === nodeMember.profileId;
+    const isHolderAdmin =
+      (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
       nodeMember.role === 'HOLDER';
 
-    setShowProfileModal(Boolean(isSelf || isHolderAdmin));
+    // NEW: the node's linkId points at ME
+	const isMyClaim = nodeMember.id === treeView.memberId;
+    // const isMyClaim =
+    //   nodeMember.linkId != null &&
+    //   treeView.viewId != null &&
+    //   treeView.viewId === nodeMember.profileId
+    //     ? true  // (this path won't trigger; keep the check below)
+    //     : false;
+
+    // Better: expose your TreeMember.id to the treeView context.
+    // Then: isMyClaim = nodeMember.linkId === treeView.memberId;
+
+    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim));
 
   }, [treeView, nodeMember]);
 
@@ -117,26 +140,26 @@ export function TreeNode({
 
   return (
     <div className="flex flex-col items-center relative z-10">
-      <div 
+      <div
         onClick={handleNodeClick}
         className={`
-          ${nodeMember.gender === 'male' ? 
-            'bg-blue-200 border-blue-600' : 
-          nodeMember.gender === 'female' ? 
-            'bg-red-200 border-red-600' : 
-          'bg-amber-100 border-amber-600'} 
+          ${nodeMember.gender === 'male' ?
+            'bg-blue-200 border-blue-600' :
+          nodeMember.gender === 'female' ?
+            'bg-red-200 border-red-600' :
+          'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]
           ${showProfileModal ? 'cursor-pointer hover:ring-2 hover:ring-amber-500' : 'cursor-default'}
         `}
       >
         {showDeleteButton ? (
-          <button 
+          <button
             type="button"
             className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 bg-transparent rounded-lg transition-colors"
             onClick={handleDeleteNode}
           >
             ✕
-          </button> 
+          </button>
         ) : (
           <div className="h-4" />
         )}
@@ -171,21 +194,26 @@ export function TreeNode({
         <NodeProfileModal
           allMembers={members}
           member={nodeMember}
+		  treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
+
           onClaim={(updatedMember: Member) => {
             setNodeMember(updatedMember);
+			if (NodeUpdate) NodeUpdate(updatedMember);
             setNodeProfileModal(false);
           }}
           onUnclaim={(updatedMember: Member) => {
             setNodeMember(updatedMember);
+			if (NodeUpdate) NodeUpdate(updatedMember);   // ← propagate
             setNodeProfileModal(false);
           }}
           onSave={(updatedMember: Member) => {
             setNodeMember(updatedMember);
+			if (NodeUpdate) NodeUpdate(updatedMember);
             setNodeProfileModal(false);
           }}
           onAddChild={(newChildMember: Member) => {
-            NodeAddChild(newChildMember);  
+            NodeAddChild(newChildMember);
           }}
           onAddSpouse={(newSpouseMember: Member) => {
             NodeAddSpouse(newSpouseMember);

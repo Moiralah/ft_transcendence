@@ -28,6 +28,7 @@ interface TreeBranchProp {
   currentMember?: Member;
   treeView;
   onMembersChange?: (updatedMembers: Member[]) => void;
+  ancestor?:  Set<number>;
 }
 
 export function TreeBranch({
@@ -35,7 +36,17 @@ export function TreeBranch({
   currentMember,
   treeView,
   onMembersChange,
+  ancestor = new Set(),
 }: TreeBranchProp) {
+
+   if (!currentMember) return null;
+
+  const id = currentMember.profileId ?? currentMember.id;
+  if (ancestor.has(id)) {
+    return <div className="text-xs text-gray-400">[cycle detected]</div>;
+  }
+
+  const nextAncestors = new Set(ancestor).add(id);
 
   interface FamilyMembers {
     children: Member[];
@@ -49,6 +60,16 @@ export function TreeBranch({
   useEffect(() => {
     setLocalMembers(allMembers ?? []);
   }, [allMembers]);
+
+	const handleMemberUpdate = (updated: Member) => {
+	const next = localMembers.map((m) =>
+		(m.profileId ?? m.id) === (updated.profileId ?? updated.id)
+		? { ...m, ...updated }
+		: m
+	);
+	setLocalMembers(next);
+	if (onMembersChange) onMembersChange(next);
+	};
 
   // Safe helper to notify parent without triggering nested state updates
   const updateMembers = (newMembers: Member[]) => {
@@ -78,9 +99,31 @@ export function TreeBranch({
 
   if (!currentMember) return null;
 
-  const activeCurrentMember = (localMembers ?? []).find(
-    (m) => m.profileId === currentMember.profileId
-  ) ?? currentMember;
+  /** Given any member, return the row that owns the tree edges. */
+const positionHolderOf = (m?: Member): Member | undefined => {
+  if (!m) return undefined;
+
+  // A placeholder owns its own edges.
+  if (m.role === 'HOLDER') return m;
+
+  // A claimant defers to the placeholder that links to them.
+  if (m.linkId != null) {
+    const holder = (localMembers ?? []).find(
+      (row) => row.id === m.linkId && row.role === 'HOLDER'
+    );
+    if (holder) return holder;
+  }
+
+  return m;
+};
+
+const holder = positionHolderOf(currentMember);
+const activeCurrentMember =
+  (localMembers ?? []).find((m) => m.id === holder?.id) ?? holder;
+
+//   const activeCurrentMember = (localMembers ?? []).find(
+//     (m) => m.profileId === currentMember.profileId
+//   ) ?? currentMember;
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
 
@@ -89,12 +132,21 @@ export function TreeBranch({
 
     const member = (localMembers ?? []).find((m) => m.profileId === targetId);
     if (!member) return undefined;
-    
-    if (member.linkId != null) {
-      const linkedMember = (localMembers ?? []).find(
+
+    if (member.role === 'HOLDER' && member.claim === 'ACCEPTED' && member.linkId != null) {
+      const claimant = (localMembers ?? []).find(
         (m) => m.id === member.linkId
       );
-      if (linkedMember) return linkedMember;
+      if (claimant) return {
+		...member,
+		firstName: claimant.firstName,
+        lastName: claimant.lastName,
+        photoUrl: claimant.photoUrl,
+        gender: claimant.gender,
+        birthDate: claimant.birthDate,
+        deathDate: claimant.deathDate,
+        bio: claimant.bio,
+	  };
     }
      return member;
   };
@@ -164,14 +216,14 @@ const renderAddChild = (BranchAddMember: Member) => {
     return nextState;
   });
 };
-  
+
   const renderRemove = (targetId) => {
-    
+
     const targetMember = localMembers.find(
       (m) => m.profileId === targetId
     );
     if (!targetMember) return;
-        
+
     if (!targetMember.spouseId)
     {
       const updatedList = localMembers.map((m) => {
@@ -205,34 +257,42 @@ const renderAddChild = (BranchAddMember: Member) => {
       updateMembers(updatedList);
     }
   };
+
+	const canDelete =
+  		treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR';
+	const isUnclaimedHolder = activeCurrentMember.role === 'HOLDER';
+
   return (
 
    <div className="flex flex-col items-center">
     {/* Primary Node & Spouse Unit */}
-    <div 
+    <div
       className={`relative flex flex-row items-center`}
     >
-      <TreeNode 
-        members={localMembers} 
-        currentMember={getLinkMember(activeCurrentMember.profileId)} 
+      <TreeNode
+        members={localMembers}
+        currentMember={getLinkMember(activeCurrentMember.profileId)}
         NodeAddChild={renderAddChild}
-        NodeAddSpouse={renderAddSpouse}          
-        NodeRemove={(deletedId) => renderRemove(deletedId)} 
-        treeView={treeView}      
-        showDeleteButton={children.length === 0 && !spouse} 
+        NodeAddSpouse={renderAddSpouse}
+        NodeRemove={(deletedId) => renderRemove(deletedId)}
+		NodeUpdate={handleMemberUpdate}
+        treeView={treeView}
+        showDeleteButton={children.length === 0 && !spouse}
       />
 
       {spouse && (
         <div className="flex items-center">
           <span className="h-20 w-0.5 bg-black"></span>
-          <TreeNode 
-            members={localMembers} 
-            currentMember={getLinkMember(spouse.id)}
+          <TreeNode
+            members={localMembers}
+            currentMember={getLinkMember(spouse.profileId)}
             NodeAddChild={renderAddChild}
-            NodeAddSpouse={renderAddSpouse}  
+            NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-            treeView={treeView}      
-            showDeleteButton={children.length === 0}    
+			NodeUpdate={handleMemberUpdate}
+            treeView={treeView}
+            showDeleteButton={canDelete && isUnclaimedHolder &&
+				children.length === 0 && !spouse}
           />
         </div>
       )}
@@ -262,10 +322,11 @@ const renderAddChild = (BranchAddMember: Member) => {
                 {/* Drop line going directly into the child */}
                 <div className="h-6 w-0.5 bg-black z-10" />
                 <TreeBranch
-                  allMembers={localMembers}
-                  treeView={treeView}
-                  currentMember={child}
-                  onMembersChange={updateMembers}
+					allMembers={localMembers}
+					currentMember={child}
+					treeView={treeView}
+					ancestor={nextAncestors}
+					onMembersChange={updateMembers}
                 />
               </div>
             );
