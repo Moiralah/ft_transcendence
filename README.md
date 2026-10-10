@@ -1,3 +1,5 @@
+*This project has been created as part of the 42 curriculum by tching, lechan, huidris, yiwei.*
+
 # 👨‍👩‍👧‍👦 Family Tree – ft_transcendence
 
 ## 🚀 How to run
