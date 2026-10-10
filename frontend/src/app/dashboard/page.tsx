@@ -12,7 +12,7 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken } from '@/lib/auth';
+import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
@@ -98,7 +98,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
@@ -119,7 +119,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);
       }
@@ -257,7 +257,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
           return;
         }
 

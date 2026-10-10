@@ -116,6 +116,42 @@ export function borrowSessionFromOtherTab(timeoutMs = 400): Promise<boolean> {
 	});
 }
 
+// --- Login errors shown to people ---------------------------------------------
+// One wording for a suspended account, wherever it's detected: at login (email or
+// Google) or mid-session (the backend checks suspension on every request).
+export const SUSPENDED_MESSAGE =
+	'This account has been suspended. If you think this is a mistake, please contact the site administrator through the feedback page.';
+
+// Keeps the HTTP status, so callers can tell "suspended" (403) from other failures.
+export class LoginError extends Error {
+	constructor(message: string, public readonly status: number) {
+		super(message);
+	}
+}
+
+export function isSuspended(err: unknown): boolean {
+	return err instanceof LoginError && err.status === 403 && /suspended/i.test(err.message);
+}
+
+// /login?error=<code> -> what the login page shows.
+export function loginErrorMessage(code: string | null): string | null {
+	if (code === 'suspended') return SUSPENDED_MESSAGE;
+	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
+	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
+	return null;
+}
+
+// After a 401 on an API call: back to /login, saying why if the account was suspended.
+export async function loginPathAfter401(res: Response): Promise<string> {
+	try {
+		const data = await res.clone().json();
+		if (/suspended/i.test(String(data?.message ?? ''))) return '/login?error=suspended';
+	} catch {
+		// not JSON: plain expired session
+	}
+	return '/login';
+}
+
 export async function exchangeSupabaseToken(accessToken: string): Promise<LoginResult> {
 	try {
 		const res = await fetch(`${apiUrl()}/auth/login`, {
@@ -123,9 +159,9 @@ export async function exchangeSupabaseToken(accessToken: string): Promise<LoginR
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ accessToken }),
 		});
-		const data = await res.json();
+		const data = await res.json().catch(() => ({}));
 		if (!res.ok) {
-			throw new Error(data.message || 'Login failed');
+			throw new LoginError(data.message || 'Login failed', res.status);
 		}
 		return data;
 	} finally {
