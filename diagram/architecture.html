@@ -452,7 +452,7 @@
   <div class="callout">
     <div class="ic">⚠️</div>
     <div>
-      <strong>Local dev gotcha (bit us three times this project):</strong> when the backend runs in Docker and
+      <strong>Local dev dependency note (it bit us three times this project):</strong> when the backend runs in Docker and
       Supabase runs locally on the host, <code>127.0.0.1</code> inside the container means the container itself,
       not your machine — steps 4 and 5 silently fail if <code>SUPABASE_AUTH_URL</code>/<code>DATABASE_URL</code>
       aren't set to <code>host.docker.internal</code> instead. Any <code>docker compose up</code> that touches

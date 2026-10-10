@@ -17,7 +17,13 @@ import { clearSession, getRole, getToken } from '@/lib/auth';
 export default function TreePage() {
   const router = useRouter();
   const token = getToken();
-  const role = getRole();
+  // Read after the first render: the server has no sessionStorage, so reading
+  // it while rendering made the server and browser HTML differ for admins and
+  // moderators (the Admin Panel button) and React threw a hydration error.
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    setRole(getRole());
+  }, []);
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);

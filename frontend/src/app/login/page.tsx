@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, getToken } from '@/lib/auth';
+import { borrowSessionFromOtherTab, exchangeSupabaseToken, isTwoFactorRequired, storeSession, getToken } from '@/lib/auth';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -25,11 +25,16 @@ export default function LoginPage() {
 		}
 	}, []);
 
-	// Already signed in — no reason to show the login form again.
+	// Already signed in — in this tab, or in another open tab that hands its
+	// session over — no reason to show the login form again.
 	useEffect(() => {
 		if (getToken()) {
 			router.push('/dashboard');
+			return;
 		}
+		borrowSessionFromOtherTab().then((ok) => {
+			if (ok) router.push('/dashboard');
+		});
 	}, [router]);
 
 	const handleOAuthLogin = async (provider: 'google') => {

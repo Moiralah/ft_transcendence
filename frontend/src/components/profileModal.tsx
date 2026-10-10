@@ -89,6 +89,10 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
       if (!token) {
         throw new Error("No token found. please log in");
       }
+      // The profile didn't load (e.g. the network dropped); never save to "/profile/0".
+      if (!formData.id) {
+        throw new Error("Your profile hasn't loaded yet. Please reload the page and try again.");
+      }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
       const res = await fetch(`${API_URL}/profile/${formData.id}`, {

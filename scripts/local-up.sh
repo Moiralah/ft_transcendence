@@ -2,13 +2,13 @@
 # Point the stack at local Supabase (`supabase start`) instead of the shared
 # dev DB, then bring up either the plain stack or the WAF+Vault security
 # stack — via the existing Makefile targets, so the actual Docker
-# orchestration logic (and its gotcha fixes) lives in exactly one place.
+# orchestration logic (and its dependency fixes) lives in exactly one place.
 #
 # Usage:
 #   ./scripts/local-up.sh            # plain `make up`, against local Supabase
 #   ./scripts/local-up.sh security   # `make security`, against local Supabase
 #
-# Handles the two gotchas documented in README > "Running Supabase Locally":
+# Handles the two dependency notes documented in README > "Running Supabase Locally":
 # containers reach local Supabase via host.docker.internal, not 127.0.0.1
 # (which inside a container means the container itself); the browser uses
 # 127.0.0.1 directly. And it reads the local anon/service-role keys straight
