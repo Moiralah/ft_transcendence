@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TreeNode } from './treeNode';
 
 
@@ -28,7 +28,6 @@ interface TreeBranchProp {
   currentMember?: Member;
   treeView;
   onMembersChange?: (updatedMembers: Member[]) => void;
-  ancestor?:  Set<number>;
 }
 
 export function TreeBranch({
@@ -36,17 +35,7 @@ export function TreeBranch({
   currentMember,
   treeView,
   onMembersChange,
-  ancestor = new Set(),
 }: TreeBranchProp) {
-
-   if (!currentMember) return null;
-
-  const id = currentMember.profileId ?? currentMember.id;
-  if (ancestor.has(id)) {
-    return <div className="text-xs text-gray-400">[cycle detected]</div>;
-  }
-
-  const nextAncestors = new Set(ancestor).add(id);
 
   interface FamilyMembers {
     children: Member[];
@@ -61,16 +50,6 @@ export function TreeBranch({
     setLocalMembers(allMembers ?? []);
   }, [allMembers]);
 
-	const handleMemberUpdate = (updated: Member) => {
-	const next = localMembers.map((m) =>
-		(m.profileId ?? m.id) === (updated.profileId ?? updated.id)
-		? { ...m, ...updated }
-		: m
-	);
-	setLocalMembers(next);
-	if (onMembersChange) onMembersChange(next);
-	};
-
   // Safe helper to notify parent without triggering nested state updates
   const updateMembers = (newMembers: Member[]) => {
     setLocalMembers(newMembers);
@@ -79,12 +58,34 @@ export function TreeBranch({
     }
   };
 
-  const getMember = (targetId?: number | null): Member | undefined => {
-    if (!targetId) return undefined;
-    return (localMembers ?? []).find(
-      (m) => m.profileId === targetId
-    );
-  };
+//   const getMember = (targetId?: number | null): Member | undefined => {
+//     if (!targetId) return undefined;
+//     return (localMembers ?? []).find(
+//       (m) => m.profileId === targetId
+//     );
+//   };
+
+	const {byProfileId, byId} = useMemo(() => {
+		const byProfileId = new Map<number, Member>();
+		const byId = new Map<number, Member>();
+		for (const m of localMembers) {
+			byId.set(m.id, m);
+  			if (m.profileId != null) byProfileId.set(m.profileId, m);
+		}
+	return { byProfileId, byId };
+	}, [localMembers]);
+
+	const getMember = (targetId?: number | null): Member | undefined => {
+		if (!targetId)
+			return undefined;
+		return byProfileId.get(targetId);
+	};
+
+	const getMemberbyId = (targetId?: number | null): Member | undefined => {
+		if (!targetId)
+			return undefined;
+		return byId.get(targetId);
+	};
 
   const getFamilyMembers = (parent?: Member): FamilyMembers => {
     if (!parent) return { children: [], spouse: undefined };
@@ -99,28 +100,24 @@ export function TreeBranch({
 
   if (!currentMember) return null;
 
-  /** Given any member, return the row that owns the tree edges. */
-const positionHolderOf = (m?: Member): Member | undefined => {
-  if (!m) return undefined;
+    /** Given any member, return the row that owns the tree edges. */
+	const positionHolderOf = (m?: Member): Member | undefined => {
+		if (!m) return undefined;
 
-  // A placeholder owns its own edges.
-  if (m.role === 'HOLDER') return m;
+		// A placeholder owns its own edges.
+		if (m.role === 'HOLDER') return m;
 
-  // A claimant defers to the placeholder that links to them.
-  if (m.linkId != null) {
-    const holder = (localMembers ?? []).find(
-      (row) => row.id === m.linkId && row.role === 'HOLDER'
-    );
-    if (holder) return holder;
-  }
+		// A claimant defers to the placeholder that links to them.
+		if (m.linkId != null) {
+			const holder = getMemberbyId(m.linkId);
+			if (holder && holder.role === 'HOLDER') return holder;
+		}
+		return m;
+	};
 
-  return m;
-};
-
-const holder = positionHolderOf(currentMember);
-const activeCurrentMember =
-  (localMembers ?? []).find((m) => m.id === holder?.id) ?? holder;
-
+	const holder = positionHolderOf(currentMember);
+	const activeCurrentMember = holder ? (byId.get(holder.id) ?? holder) : undefined;
+		if (!activeCurrentMember) return null;
 //   const activeCurrentMember = (localMembers ?? []).find(
 //     (m) => m.profileId === currentMember.profileId
 //   ) ?? currentMember;
@@ -130,13 +127,11 @@ const activeCurrentMember =
   const getLinkMember = (targetId?: number | null): Member | undefined => {
     if (targetId == null) return undefined;
 
-    const member = (localMembers ?? []).find((m) => m.profileId === targetId);
+    const member = byProfileId.get(targetId);
     if (!member) return undefined;
 
     if (member.role === 'HOLDER' && member.claim === 'ACCEPTED' && member.linkId != null) {
-      const claimant = (localMembers ?? []).find(
-        (m) => m.id === member.linkId
-      );
+      const claimant = byId.get(member.linkId);
       if (claimant) return {
 		...member,
 		firstName: claimant.firstName,
@@ -148,7 +143,7 @@ const activeCurrentMember =
         bio: claimant.bio,
 	  };
     }
-     return member;
+    return member;
   };
 
 const renderAddSpouse = (BranchAddMember: Member) => {
@@ -207,15 +202,15 @@ const renderAddChild = (BranchAddMember: Member) => {
       return m;
     });
 
-    const exists = updatedList.some(
-      (m) => (m.profileId ?? m.id) === newChildId
-    );
-    const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
+	const exists = updatedList.some(
+	(m) => (m.profileId ?? m.id) === newChildId
+	);
+	const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
 
-    if (onMembersChange) onMembersChange(nextState);
-    return nextState;
-  });
-};
+	if (onMembersChange) onMembersChange(nextState);
+	return nextState;
+	});
+	};
 
   const renderRemove = (targetId) => {
 
@@ -259,8 +254,29 @@ const renderAddChild = (BranchAddMember: Member) => {
   };
 
 	const canDelete =
-  		treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR';
-	const isUnclaimedHolder = activeCurrentMember.role === 'HOLDER';
+		treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR';
+
+	const isRoot = activeCurrentMember.id === treeView.rootMemberId;
+
+	// Main node is deletable if the viewer is privileged, the node is an
+	// unclaimed placeholder, and it has no children in the graph.
+	const isUnclaimedHolder =
+		activeCurrentMember.role === 'HOLDER' &&
+		(activeCurrentMember.claim === 'EMPTY' || !activeCurrentMember.claim);
+
+	const canDeleteMain =
+		canDelete && isUnclaimedHolder &&
+		children.length === 0 && !spouse && !isRoot;
+
+	// Spouse node is deletable if the SPOUSE itself is an unclaimed placeholder
+	// with no children. (A spouse shares the main node's children, so if the
+	// main node has children, the spouse does too — no way around it.)
+	const spouseIsUnclaimedHolder =
+		spouse?.role === 'HOLDER' &&
+		(spouse?.claim === 'EMPTY' || !spouse?.claim);
+
+	const canDeleteSpouse =
+		canDelete && spouseIsUnclaimedHolder && (spouse?.childrenIds?.length ?? 0) === 0;
 
   return (
 
@@ -275,9 +291,8 @@ const renderAddChild = (BranchAddMember: Member) => {
         NodeAddChild={renderAddChild}
         NodeAddSpouse={renderAddSpouse}
         NodeRemove={(deletedId) => renderRemove(deletedId)}
-		NodeUpdate={handleMemberUpdate}
         treeView={treeView}
-        showDeleteButton={children.length === 0 && !spouse}
+        showDeleteButton={canDeleteMain}
       />
 
       {spouse && (
@@ -289,10 +304,8 @@ const renderAddChild = (BranchAddMember: Member) => {
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-			NodeUpdate={handleMemberUpdate}
             treeView={treeView}
-            showDeleteButton={canDelete && isUnclaimedHolder &&
-				children.length === 0 && !spouse}
+            showDeleteButton={canDeleteSpouse}
           />
         </div>
       )}
@@ -322,11 +335,10 @@ const renderAddChild = (BranchAddMember: Member) => {
                 {/* Drop line going directly into the child */}
                 <div className="h-6 w-0.5 bg-black z-10" />
                 <TreeBranch
-					allMembers={localMembers}
-					currentMember={child}
-					treeView={treeView}
-					ancestor={nextAncestors}
-					onMembersChange={updateMembers}
+                  allMembers={localMembers}
+                  treeView={treeView}
+                  currentMember={child}
+                  onMembersChange={updateMembers}
                 />
               </div>
             );

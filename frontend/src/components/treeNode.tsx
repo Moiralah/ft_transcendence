@@ -7,6 +7,7 @@ export interface TreeViewContext {
   viewType: TreeVisibility;
   viewId: number | null;
   memberId: number | null;
+  linkId: number | null;
 }
 
 export interface Member {

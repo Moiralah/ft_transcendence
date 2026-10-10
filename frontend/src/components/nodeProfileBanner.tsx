@@ -186,8 +186,8 @@ export function NodeProfileModal({
     }
   };
 
-const handleUnclaim = async (holderMemberId?: number | null) => {
-  if (!holderMemberId) return;
+	const handleUnclaim = async (holderMemberId?: number | null) => {
+	if (!holderMemberId) return;
 
   try {
     const token = localStorage.getItem('ft_token');
@@ -279,6 +279,21 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
 	viewerRole === 'MEMBER' && member.id === treeView.memberId;
 
 	const canAddOrSave = canEdit || isMyClaimedNode;
+
+	// Do I already have a claim somewhere in this tree?
+	const iAlreadyHaveAClaim = treeView.linkId != null;
+
+	// Is THIS node the one I've claimed?
+	const isMyClaimOnThisNode =
+		member.role === 'HOLDER' &&
+		member.linkId != null &&
+		member.linkId === treeView.memberId;
+
+	// Can I claim this node?
+	const canClaimThisNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'EMPTY' || !member.claim) &&
+		!iAlreadyHaveAClaim;
 
   if (!mounted) return null;
 
@@ -427,28 +442,24 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
             Cancel
           </button>
 
-          {/* claim / unclaim button */}
-          <button
-            type="button"
-            onClick={(e) => {
-            e.stopPropagation();
-            if (member.role !== 'HOLDER' && member.linkId) {
-              handleUnclaim(member.linkId);
-            } else if (member.claim === 'EMPTY' || !member.claim) {
-              handleClaim();
-            }
-              onClose();
-            }}
-            disabled={
-              member.claim === 'PENDING' && member.role === 'HOLDER'
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            {member.role !== 'HOLDER' && 'Unclaim from me'}
-            {member.claim === 'PENDING' && member.role === 'HOLDER' && 'PENDING'}
-            {member.claim === 'EMPTY' && member.role === 'HOLDER' && 'claim for me'}
-
-          </button>
+		{(isMyClaimOnThisNode || canClaimThisNode) && (
+		<button
+			type="button"
+			onClick={(e) => {
+			e.stopPropagation();
+			if (isMyClaimOnThisNode) {
+				handleUnclaim(member.id);   // ← HOLDER's TreeMember.id
+			} else if (canClaimThisNode) {
+				handleClaim();
+			}
+			onClose();
+			}}
+			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+		>
+			{isMyClaimOnThisNode && 'Unclaim from me'}
+			{canClaimThisNode && 'Claim for me'}
+		</button>
+		)}
 
 			<button
 			type="button"

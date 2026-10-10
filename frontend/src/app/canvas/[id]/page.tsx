@@ -63,6 +63,8 @@ export default function Content() {
     viewType: TreeVisibility;
     viewId: number | null;
 	memberId: number | null;
+	linkId: number | null;
+	rootMemberId: number | null,
   }
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -118,8 +120,10 @@ export default function Content() {
   const treeView = useMemo(() => ({
     viewType: treeType,
     viewId: myProfile?.id ?? null,
-    memberId: myMembership?.id ?? null,   // ← your TreeMember.id
-  }), [treeType, myProfile?.id, myMembership?.id]);
+    memberId: myMembership?.id ?? null,
+	linkId: myMembership?.linkId ?? null,
+	rootMemberId: tree?.rootId ?? null,
+  }), [treeType, myProfile?.id, myMembership?.id, myMembership?.linkId, tree?.rootId]);
 
   useEffect(() => {
     if (!rootMember && initialMember) {
