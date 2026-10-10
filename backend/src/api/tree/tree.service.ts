@@ -177,7 +177,7 @@ export class TreeService {
 			include: {
 				tree: {
 					include: {
-						owner: { include: {user: true}},
+						owner: { include: {user: { select : { username : true } }}},
 						members: {
 							where: {role: {not: 'HOLDER'}},
 							select: { id: true },
