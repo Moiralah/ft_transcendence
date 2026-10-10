@@ -546,15 +546,17 @@ backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Still open (as of 2026-10-10):</strong> <code>PATCH</code> and <code>DELETE /api/profile/:id</code> only
-      check that the caller is logged in, not that the profile is theirs or that they may edit its tree, so any
-      logged-in user can change or delete any profile by its id. <code>/dashboard</code> throws a React hydration error
-      for admins and moderators (the role is read from <code>sessionStorage</code> while rendering). The
-      <code>spouse_id</code> unique-constraint crash in the add-spouse flow (2026-09-25) is believed fixed but hasn&apos;t
-      been re-tested on production. Resolved since this list was first written: a fresh production backup was taken
-      (<code>20261004_174807</code>); <code>/api/trees/search</code> requires login (<code>401</code>, no raw
-      <code>500</code>); signup no longer fails on a taken username (2026-10-09); production runs current code on
-      solsys. Full detail in <code>tching/progress_log.md</code> (gitignored, not in this diagram&apos;s own repo
+      <strong>Still open (as of 2026-10-10, evening):</strong> the <code>spouse_id</code> unique-constraint crash in the
+      add-spouse flow (2026-09-25) is believed fixed but hasn&apos;t been re-tested on production. Product question for the
+      trees module: a tree MODERATOR may edit any member&apos;s profile in that tree, including a real user&apos;s own profile
+      (the canvas&apos;s existing behaviour, kept for now). The Realtime row-level-security check above (step R).
+      Resolved since this list was first written: <strong>profile permissions</strong>: <code>PATCH /api/profile/:id</code>
+      now needs your own profile, ADMIN/MODERATOR in that tree, or (as MEMBER) your claimed node (403 otherwise, 404 for an
+      unknown id), and <code>DELETE</code>, <code>POST</code>, <code>GET /</code>, <code>GET /:id</code> are site-admin only
+      (2026-10-10, <code>56df851</code>); the <strong>dashboard hydration error</strong> for admins and moderators is gone
+      (role read after mount, same commit); a fresh production backup was taken (<code>20261004_174807</code>);
+      <code>/api/trees/search</code> requires login (<code>401</code>, no raw <code>500</code>); signup no longer fails on
+      a taken username (2026-10-09); production runs current code on solsys. Full detail in <code>tching/progress_log.md</code> (gitignored, not in this diagram&apos;s own repo
       history).
     </div>
   </div>
