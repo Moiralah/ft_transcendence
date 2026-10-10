@@ -143,6 +143,13 @@ WAFs still reach the frontend and backend over the Docker network. The plain
 To see a request that the WAF blocks reach the app unfiltered, run the plain
 `make up` stack and send it to `:4000`.
 
+**Dependency note:** the WAFs depend on the containers behind them. Their
+nginx looks up `backend`'s and `frontend`'s addresses once, when it starts, so
+whenever `backend` or `frontend` is recreated while the WAF is running, restart
+the WAFs (`docker restart transpeed-waf-backend-1 transpeed-waf-frontend-1`),
+or they answer `502`. `scripts/prod-up.sh` does this by itself; after a plain
+`make security` re-run with the WAFs already up, restart them by hand.
+
 ### Vault (secrets management)
 
 `make security` also starts a HashiCorp Vault (dev mode) and runs
