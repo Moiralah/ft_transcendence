@@ -2,7 +2,7 @@ import {
 	BadRequestException, HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { MailService, oneLine } from '../../mail/mail.service';
 
 export interface FeedbackInput {
 	category?: string;
@@ -29,7 +29,10 @@ export class FeedbackService {
 	private dailyCount = 0;
 	private dailyResetAt = Date.now() + 24 * 60 * 60 * 1000;
 
-	constructor(private readonly config: ConfigService) { }
+	constructor(
+		private readonly config: ConfigService,
+		private readonly mail: MailService,
+	) { }
 
 	async submit(input: FeedbackInput, ip: string) {
 		// Bots that fill the hidden field get a normal-looking success, nothing sent.
@@ -51,26 +54,16 @@ export class FeedbackService {
 
 		this.checkRateLimit(ip);
 
-		const user = this.config.get<string>('SMTP_USER');
-		const pass = this.config.get<string>('SMTP_PASS');
 		const to = this.config.get<string>('FEEDBACK_TO');
-		if (!user || !pass || !to) {
-			this.logger.warn('Feedback not sent: SMTP_USER / SMTP_PASS / FEEDBACK_TO not configured');
+		if (!this.mail.isConfigured() || !to) {
+			this.logger.warn('Feedback not sent: SMTP or FEEDBACK_TO not configured');
 			throw new ServiceUnavailableException('Feedback is temporarily unavailable. Please try again later.');
 		}
 
-		const transport = nodemailer.createTransport({
-			host: this.config.get<string>('SMTP_HOST') || 'smtp.gmail.com',
-			port: Number(this.config.get<string>('SMTP_PORT') || 587),
-			secure: false, // STARTTLS on 587
-			requireTLS: true,
-			auth: { user, pass },
-		});
-
 		const from = name || email || 'anonymous visitor';
 		try {
-			await transport.sendMail({
-				from: `"My Simple Family Tree feedback" <${user}>`, // Gmail only sends as the authenticated account
+			await this.mail.send({
+				fromName: 'My Simple Family Tree feedback',
 				to,
 				replyTo: email || undefined,
 				subject: `[Feedback · ${category}] from ${from}`,
@@ -106,8 +99,4 @@ export class FeedbackService {
 		this.dailyCount++;
 		if (this.recentByIp.size > 10000) this.recentByIp.clear(); // keep memory bounded
 	}
-}
-
-function oneLine(value?: string): string {
-	return (value ?? '').replace(/[\r\n]+/g, ' ').trim();
 }
