@@ -10,7 +10,7 @@ import { TreeBranch } from '@/components/treeBranch';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
-import { clearSession, getToken } from '@/lib/auth';
+import { clearSession, getToken, loginPathAfter401 } from '@/lib/auth';
 
 
 interface PendingClaim {
@@ -94,7 +94,7 @@ export default function Content() {
   const initialTreeType = useMemo((): TreeVisibility => {
     if (myProfile?.id && Array.isArray(treesMember)) {
       const matchMember = treesMember.find((m: any) => m.profileId === myProfile.id);
-      
+
       if (matchMember?.role) {
       return matchMember.role as TreeVisibility;
       }
@@ -138,7 +138,7 @@ export default function Content() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
@@ -170,7 +170,7 @@ export default function Content() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
@@ -484,11 +484,11 @@ export default function Content() {
             </button>
           </div>
         </div>
-        
+
         <div>
           {pending?.map((m: any) => (
             <div key={m.id}>
-            {m.linkId} claiming {m.id} 
+            {m.linkId} claiming {m.id}
             <button
               type="button"
               onClick={() => {handleApproveClaim(m.id)}}
