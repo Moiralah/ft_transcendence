@@ -48,6 +48,13 @@ export function storeSession(result: LoginSuccess) {
 	sessionStorage.setItem(ROLE_KEY, result.user.role);
 }
 
+// Keeps the stored role in step with the server (from GET /profile/me), so a
+// role change made by an admin shows up without logging out and back in.
+export function updateRole(role: string) {
+	if (typeof window === 'undefined') return;
+	if (sessionStorage.getItem(TOKEN_KEY)) sessionStorage.setItem(ROLE_KEY, role);
+}
+
 export function clearSession() {
 	sessionStorage.removeItem(TOKEN_KEY);
 	sessionStorage.removeItem(ROLE_KEY);

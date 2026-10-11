@@ -12,7 +12,7 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
+import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
@@ -104,6 +104,10 @@ export default function TreePage() {
       }
       const profileData = await res.json();
       setMyProfile(profileData);
+      if (profileData?.role) {
+        updateRole(profileData.role);
+        setRole(profileData.role);
+      }
     } catch (err) {
       console.error('Error fetching current user:', err);
     }

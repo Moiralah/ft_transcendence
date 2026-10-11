@@ -20,6 +20,7 @@ interface AuthenticatedRequest {
 		id: string; // The user ID extracted from JWT token payload
 		username?: string;
 		profileId?: number | null;
+		role?: string; // read from the database on every request (JwtStrategy)
 	};
 }
 
@@ -29,8 +30,11 @@ export class ProfileController {
 
 	@Get('me')
 	@UseGuards(JwtAuthGuard)
-	findMe(@Req() req: AuthenticatedRequest) {
-		return this.profile.findMe(req.user.id);
+	async findMe(@Req() req: AuthenticatedRequest) {
+		// The current site role goes along so the frontend can drop an admin or
+		// moderator button straight after a demotion, without a new login.
+		const profile = await this.profile.findMe(req.user.id);
+		return profile && { ...profile, role: req.user.role };
 	}
 
 	@Get()
