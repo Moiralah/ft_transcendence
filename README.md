@@ -12,7 +12,8 @@
 3. **Approve frontend cert** open new tab 'https://localhost:8443, and use the app there.
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
-set `VAULT_USER` once (e.g. `export VAULT_USER=moira` in `~/.zshrc`). `make up`
+set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
+`~/.zshrc`). `make up`
 then opens your own SSH tunnel to the Vault on solsys, asks your Vault password
 (once a day), and keeps the dev secrets in memory only. One-time setup (your SSH
 key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits

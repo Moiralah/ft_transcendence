@@ -12,7 +12,8 @@
 #   - audit log at /vault/logs/audit.log (every request recorded)
 #   - policies: backend-prod (read prod), dev-read (read dev), admin
 #   - AppRole "backend" (production backend's machine login, backend-prod)
-#   - userpass users: tiara (admin); moira, jon, yiwei (dev-read)
+#   - userpass users: tching (admin); huidris, lechan, yiwei (dev-read), the same
+#     names as their SSH accounts on the GCP proxy (scripts/vault/tunnel-key.sh)
 #     with random initial passwords written to <passwords-output-file>
 set -e
 C=${VAULT_CONTAINER:-vault-rehearsal-vault-1}
@@ -50,11 +51,11 @@ echo "[configure] userpass logins"
 v auth enable userpass >/dev/null 2>&1 || echo "  (userpass already enabled)"
 umask 077
 : > "$PWOUT"; chmod 600 "$PWOUT"
-for u in tiara moira jon yiwei; do
+for u in tching huidris lechan yiwei; do
 	pw=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)
 	# admin alone: adding dev-read would REMOVE write on the dev path, because
 	# Vault applies the most specific matching rule (exact path beats secret/*).
-	pol=dev-read; [ "$u" = tiara ] && pol=admin
+	pol=dev-read; [ "$u" = tching ] && pol=admin
 	v write "auth/userpass/users/$u" password="$pw" token_policies="$pol" token_ttl=12h token_max_ttl=24h >/dev/null
 	echo "$u $pw" >> "$PWOUT"
 done
@@ -62,4 +63,4 @@ echo "  initial passwords written to $PWOUT (owner-only); each person should cha
 
 echo "[configure] revoking the initial root token"
 v token revoke -self >/dev/null
-echo "[configure] done. Root token revoked; admin = userpass 'tiara'."
+echo "[configure] done. Root token revoked; admin = userpass 'tching'."

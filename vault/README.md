@@ -23,14 +23,16 @@ The unseal key is split into 5 shares (Tiara, solsys, Yiwei, Jon, Moira); any 2 
 ## Your access (each person, one time)
 
 Nobody's laptop is on WireGuard. Each person reaches Vault through their **own SSH
-tunnel**: their key may log in to the `vault` account on the GCP proxy, which can only
-forward to Vault on solsys (10.8.0.1:8200), with no shell. `make up` opens it by itself.
+tunnel**: their own account on the GCP proxy (`tching`, `huidris`, `lechan`, `yiwei`, the
+same names as the Vault logins) can only forward to Vault on solsys (10.8.0.1:8200), with
+no shell and no password. Nobody has an account on solsys. `make up` opens the tunnel by
+itself.
 
 1. Make a key for this (or reuse yours) and send Tiara the **`.pub`** file only:
    `ssh-keygen -t ed25519 -f ~/.ssh/ft_vault -C ft-vault`
-2. Tiara adds it: `scripts/vault/tunnel-key.sh add <name> <name>.pub`
-   (`list` shows who has access, `remove <name>` takes it away).
-3. In `~/.zshrc`: `export VAULT_USER=<name>` and `export VAULT_SSH_KEY=~/.ssh/ft_vault`.
+2. Tiara adds it: `scripts/vault/tunnel-key.sh add <login> <login>.pub`
+   (`list` shows the accounts and who has a key, `remove <login>` deletes the account).
+3. In `~/.zshrc`: `export VAULT_USER=<login>` and `export VAULT_SSH_KEY=~/.ssh/ft_vault`.
 4. Leave the secret lines in `.env` empty and run `make up`. The first time it asks your
    Vault password (from Tiara, in person); change it after.
 
@@ -69,8 +71,8 @@ Run in `~/ft_transcendence`, after this work is merged into `branchsaurus` and p
    ```
 4. Move the production secrets in, and give the backend its login:
    ```sh
-   VAULT_USER=tiara scripts/vault/put-secrets.sh prod .env
-   VAULT_USER=tiara scripts/vault/backend-creds.sh  # writes vault/backend-approle.env
+   VAULT_USER=tching scripts/vault/put-secrets.sh prod .env
+   VAULT_USER=tching scripts/vault/backend-creds.sh  # writes vault/backend-approle.env
    ```
    Then the dev secrets (`put-secrets.sh dev <file>`; today only `JWT_SECRET`).
 5. `make prod`. It now sees `vault/backend-approle.env` and uses the server-mode Vault.

@@ -2,7 +2,7 @@
 # Admin only: store secrets in Vault from an env file (KEY=VALUE lines), e.g.
 # moving production's .env values in once, or rotating one later.
 #
-#   VAULT_USER=tiara scripts/vault/put-secrets.sh <dev|prod> <env-file> [KEY ...]
+#   VAULT_USER=tching scripts/vault/put-secrets.sh <dev|prod> <env-file> [KEY ...]
 #
 # Without KEYs, stores the backend's secret set (DEFAULT_KEYS below). Replaces
 # what is at secret/family-tree/<dev|prod> (Vault keeps the old version, see

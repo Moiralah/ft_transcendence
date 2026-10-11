@@ -2,7 +2,7 @@
 # Admin only, on the production machine: give the backend its Vault login
 # (AppRole "backend", which may read secret/family-tree/prod and nothing else).
 #
-#   VAULT_ADDR=http://127.0.0.1:8200 VAULT_USER=tiara scripts/vault/backend-creds.sh
+#   VAULT_ADDR=http://127.0.0.1:8200 VAULT_USER=tching scripts/vault/backend-creds.sh
 #
 # Writes vault/backend-approle.env (owner-only, gitignored). Its presence is
 # what switches scripts/prod-up.sh to the server-mode Vault. Re-run to rotate:
