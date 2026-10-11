@@ -871,7 +871,7 @@ export default function TreePage() {
                         Description: {tree.description || 'N/A'}
                       </div>
                       <div className="text-xs text-slate-600 mt-1">
-                        Owner: {tree?.ownerId || 'Unknown'}
+                        Owner: {tree.owner?.user?.username || tree.owner?.firstName || 'Unknown'}
                       </div>
                     </Link>
                   ))}

@@ -1,16 +1,22 @@
 import {
-	Injectable, NotFoundException, ForbiddenException,
+	Injectable, Logger, NotFoundException, ForbiddenException,
 	BadRequestException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService, malaysiaTime } from '../../mail/mail.service';
 
 const ASSIGNABLE_ROLES = ['ADMIN', 'MODERATOR', 'MEMBER', 'JOINER'] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 @Injectable()
 export class TreeService {
-	constructor(private readonly prisma: PrismaService) { }
+	private readonly logger = new Logger(TreeService.name);
+
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly mail: MailService,
+	) { }
 
 	// TREE CREATION
 	// What will happen?
@@ -154,17 +160,19 @@ export class TreeService {
 				name: { contains: query, mode: 'insensitive' },
 				isPublic: true,
 			},
+			// A card, not the tree: no member profiles (birth dates, bios of
+			// people in someone else's family) and no internal user ids.
 			select: {
 				id: true,
 				name: true,
+				slug: true,
 				description: true,
 				isPublic: true,
 				createdAt: true,
-				owner: true,
-				members: {
-					take: 5,
-					include: { profile: true },
+				owner: {
+					select: { firstName: true, lastName: true, user: { select: { username: true } } },
 				},
+				_count: { select: { members: { where: { role: { not: 'HOLDER' } } } } },
 			},
 		});
 	}
@@ -655,6 +663,22 @@ export class TreeService {
 			throw new ForbiddenException("Cannot change the owner's role.");
 		}
 
+		const target = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: targetProfileId, treeId } },
+		});
+		if (!target) {
+			throw new NotFoundException('That person is not a member of this tree.');
+		}
+		// A placeholder (made-up person) has no user behind it; giving it a
+		// role would turn it into a fake member.
+		if (target.role === 'HOLDER') {
+			throw new ForbiddenException('Made-up profiles do not have a role.');
+		}
+		// A moderator can't outrank an admin: only an admin changes an admin's role.
+		if (target.role === 'ADMIN' && currentMember.role !== 'ADMIN') {
+			throw new ForbiddenException("Only an admin can change another admin's role.");
+		}
+
 		return this.prisma.$transaction(async (tx) => {
 			const updated = await tx.treeMember.update({
 				where: { profileId_treeId: { profileId: targetProfileId, treeId } },
@@ -1052,7 +1076,7 @@ export class TreeService {
 			throw new ForbiddenException('Only the tree owner and global admin can delete this tree.');
 		}
 
-		return this.prisma.$transaction(async (tx) => {
+		const result = await this.prisma.$transaction(async (tx) => {
 			// 1. Collect the placeholder Profile ids belonging to this tree.
 			//    "Placeholder" = userId IS NULL (no real user attached).
 			const memberRows = await tx.treeMember.findMany({
@@ -1064,11 +1088,18 @@ export class TreeService {
 				.map((m) => m.profileId)
 				.filter((id): id is number => id !== null);
 
-			// 2. Of those, keep only the ones that are not user-owned
+			// 2. Of those, keep only the ones that are not user-owned and live
+			//    only in this tree. A deleted user's old profile also has no
+			//    userId, but it can still be in, own, or have audit entries in
+			//    other trees; deleting it would remove it there too, or fail on
+			//    the foreign keys and roll back the whole delete.
 			const placeholders = await tx.profile.findMany({
 				where: {
 					id: { in: candidateProfileIds },
 					userId: null,
+					treeMembers: { every: { treeId } },
+					ownedTrees: { none: { id: { not: treeId } } },
+					auditLogs: { none: { treeId: { not: treeId } } },
 				},
 				select: { id: true },
 			});
@@ -1095,6 +1126,35 @@ export class TreeService {
 				deletedProfileCount: deletableProfileIds.length,
 			};
 		});
+
+		// The tree's own audit log is gone with it, so leave a trace here, and
+		// tell the owner when it wasn't them.
+		const byOwner = tree.ownerId === requesterProfileId;
+		this.logger.log(
+			`Tree ${treeId} "${tree.name}" deleted by profile ${requesterProfileId}`
+			+ `${byOwner ? ' (owner)' : ' (site admin)'}; ${result.deletedProfileCount} made-up profiles removed`,
+		);
+		if (!byOwner) {
+			const owner = await this.prisma.user.findUnique({
+				where: { profileId: tree.ownerId },
+				select: { email: true, username: true },
+			});
+			if (owner?.email) {
+				void this.mail.sendQuietly({
+					to: owner.email,
+					subject: `Your family tree "${tree.name}" was deleted`,
+					text: [
+						`Hi ${owner.username},`,
+						'',
+						`Your family tree "${tree.name}" on My Simple Family Tree was deleted by a site administrator.`,
+						`When: ${malaysiaTime()}`,
+						'',
+						'If you think this is a mistake, contact the site administrator through the feedback page.',
+					].join('\n'),
+				}, 'Tree deletion');
+			}
+		}
+		return result;
 	}
 
 	// Powers a "pending claims" notification panel for admins/moderators.

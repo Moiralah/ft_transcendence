@@ -23,14 +23,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// Checked on every request (not just at login) so a suspension takes
 		// effect immediately against an already-issued token, instead of
 		// waiting up to JWT_EXPIRES_IN for the session to expire on its own.
+		// Same for the role: it comes from the database, not the token, so a
+		// demoted admin loses the admin endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true },
+			select: { suspended: true, role: true },
 		});
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: payload.role };
+		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role };
 	}
 }
