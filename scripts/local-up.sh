@@ -1,11 +1,11 @@
 #!/bin/sh
 # Point the stack at local Supabase (`supabase start`) instead of the shared
-# dev DB, then bring up the whole stack (app + WAFs + Vault) with `make up`,
-# so the actual Docker orchestration logic (and its dependency fixes) lives in
-# exactly one place.
+# dev DB, then bring up the whole stack (app + WAFs + Vault) with `make stack`
+# (what `make up` runs), so the actual Docker orchestration logic (and its
+# dependency fixes) lives in exactly one place.
 #
 # Usage:
-#   ./scripts/local-up.sh            # `make up`, against local Supabase (or `make local`)
+#   make local    (runs this, under scripts/vault/with-secrets.sh when VAULT_USER is set)
 #
 # Handles the two dependency notes documented in README > "Running Supabase Locally":
 # containers reach local Supabase via host.docker.internal, not 127.0.0.1
@@ -39,11 +39,11 @@ export SUPABASE_AUTH_URL="http://host.docker.internal:54321"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 export NEXT_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"
 export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
-# Tells vault-init.sh (run by make up) to use the values above, not .env.
-export FT_LOCAL_SUPABASE=1
+# vault-init.sh takes each value from the environment before .env, so these
+# win over a .env (or Vault dev secrets) that point at the cloud project.
 
 echo "[local-up] bringing up the stack against local Supabase..."
-make up
+make stack
 
 # A fresh local Supabase has no tables. Push the Prisma schema from inside the
 # backend container (it already has the Prisma CLI), so the host needs no Node.

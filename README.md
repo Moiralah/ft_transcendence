@@ -11,6 +11,13 @@
 2. **Approve backend cert** open new tab 'https://localhost:9443
 3. **Approve frontend cert** open new tab 'https://localhost:8443, and use the app there.
 
+**Team members with a Vault login** leave the secret lines in `.env` empty and
+set `VAULT_USER` once (e.g. `export VAULT_USER=moira` in `~/.zshrc`). `make up`
+then opens your own SSH tunnel to the Vault on solsys, asks your Vault password
+(once a day), and keeps the dev secrets in memory only. One-time setup (your SSH
+key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
+together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html).
+
 
 ## 🧪 Running Supabase Locally
 
@@ -153,7 +160,10 @@ or they answer `502`. `make up`, `make backend`, `make frontend` and
 `scripts/vault-init.sh`, which:
 1. Writes `JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
    `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` into Vault's KV v2
-   store at `secret/data/family-tree/backend`.
+   store at `secret/data/family-tree/backend`. Each value is taken from the
+   environment when it is set there (`make up` with `VAULT_USER` set gets them
+   from the solsys Vault; `local-up.sh` sets the local Supabase ones), otherwise from
+   `.env`. It stops with an error if a required one is empty.
 2. Sets up **AppRole** auth with a policy scoped to read-only on exactly
    that one path — not the root token. (`vault-init.sh` itself still uses
    the root token, since something has to bootstrap the AppRole in the
@@ -182,6 +192,23 @@ Raft), TLS, and proper unsealing instead of a baked-in root token.
 should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
 `backend` was started without going through `make up`/`vault-init.sh`.
+
+### Vault on solsys: secrets kept remotely (built, not switched on yet)
+
+The dev-mode setup above is what production runs today. Its replacement is
+built and was rehearsed on 2026-10-08; it goes live on solsys on switch day
+([vault/README.md](vault/README.md)):
+
+- **One server-mode Vault on solsys**: encrypted on disk, keeps its data
+  across restarts, sealed after every restart until 2 of 5 unseal shares are
+  entered (`make unseal`, from any share holder's laptop through their SSH tunnel).
+- **Two paths**: `secret/family-tree/prod`, read only by the production
+  backend's AppRole, and `secret/family-tree/dev`, read by everyone's
+  `make up`. Each person has their own Vault login; there is no root token.
+  Every request goes to the audit log.
+- **`make deploy`** (laptop with SSH to solsys) pulls `branchsaurus` there and
+  runs `make prod`, which uses this Vault once the backend's login file
+  (`vault/backend-approle.env`) exists.
 
 ---
 
@@ -231,7 +258,7 @@ Statuses checked against the code on `branchsaurus` on 2026-10-10.
 | **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | 🔄 Partial | Skip link, landmarks, labelled forms, ARIA attributes. Still needed: a full WCAG 2.1 AA audit (axe/Lighthouse, keyboard-only, screen reader), especially the tree canvas |
 | **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ✅ Done | Tested by Jon. Still to add here: the browsers tested and any known limitations (the subject asks for them to be documented) |
 | **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
-| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets, AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, started by `make up`. Direct `:3000`/`:4000` access is closed, so the WAF is the only way in |
+| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets (server mode with 5 unseal shares, per-person logins reached through each person's own SSH tunnel, and an audit log; see `vault/README.md`), AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, started by `make up`. Direct `:3000`/`:4000` access is closed, so the WAF is the only way in |
 
 ### Points
 Claimed modules: 7 Majors (14 pts) + 10 Minors (10 pts) = **24 points**, 10 above the required **14**,
