@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Setup — My Simple Family Tree</title>
+<meta name="description" content="How My Simple Family Tree runs on one computer (for example a 42 campus machine): Docker, local Supabase, the WAF and a local Vault, with nothing from solsys or production involved.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6FA; --panel:#FFFFFF; --ink:#1B2130; --sub:#5B6478; --line:#DEE2EC;
+    --browser:#3B67E0; --browser-soft:#E9EEFD;
+    --waf:#C4364E; --waf-soft:#FBE7EA;
+    --vault:#A6740A; --vault-soft:#FBF0D9;
+    --backend:#7C5CFA; --backend-soft:#EFEAFF;
+    --supabase:#1FA971; --supabase-soft:#E4F6EE;
+    --db:#DD8A2E; --db-soft:#FBEBD6;
+    --ext:#8A93A6; --ext-soft:#EEF0F4;
+    --warn-bg:#FFF6E5; --warn-line:#F0CE86; --warn-ink:#7A5715;
+    --ok-bg:#E9F8EF; --ok-line:#9FDBB8; --ok-ink:#1B6B3F;
+    --bad-bg:#FDECEE; --bad-line:#F1B3BD; --bad-ink:#8E2234;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
+      --browser:#7C98FF; --browser-soft:#1C2440;
+      --waf:#FF7B90; --waf-soft:#301620;
+      --vault:#E8B84B; --vault-soft:#2E2410;
+      --backend:#B39CFF; --backend-soft:#241D3D;
+      --supabase:#4FD69C; --supabase-soft:#12291F;
+      --db:#F0AC5C; --db-soft:#332209;
+      --ext:#9AA2B4; --ext-soft:#20242F;
+      --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+      --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
+      --bad-bg:#2E1418; --bad-line:#6B2A35; --bad-ink:#FF9DAC;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151C; --panel:#191D26; --ink:#E8EAF1; --sub:#9AA2B4; --line:#2B3040;
+    --browser:#7C98FF; --browser-soft:#1C2440;
+    --waf:#FF7B90; --waf-soft:#301620;
+    --vault:#E8B84B; --vault-soft:#2E2410;
+    --backend:#B39CFF; --backend-soft:#241D3D;
+    --supabase:#4FD69C; --supabase-soft:#12291F;
+    --db:#F0AC5C; --db-soft:#332209;
+    --ext:#9AA2B4; --ext-soft:#20242F;
+    --warn-bg:#2A230E; --warn-line:#5C481B; --warn-ink:#E8C374;
+    --ok-bg:#0F2A1C; --ok-line:#2E6B47; --ok-ink:#7FDDA4;
+    --bad-bg:#2E1418; --bad-line:#6B2A35; --bad-ink:#FF9DAC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    margin:0; padding-inline:20px; padding-block:28px 48px;
+  }
+  .wrap{max-width:1080px; margin:0 auto;}
+  h1{font-size:clamp(22px,3.4vw,30px); font-weight:700; letter-spacing:-0.01em; margin:0 0 6px;}
+  h2{font-size:18px; font-weight:700; margin:30px 0 12px;}
+  .kicker{font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); margin:0 0 10px;}
+  .lede{color:var(--sub); font-size:15px; line-height:1.55; max-width:68ch; margin:0 0 28px;}
+  .lede code, td code, li code{font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+
+  .diagram-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:8px; margin-bottom:22px; overflow-x:auto;
+  }
+  svg{display:block; width:100%; height:auto; min-width:680px;}
+  .box-label{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;}
+  .box-sub{font-family:'IBM Plex Sans',sans-serif; font-size:11px;}
+  .step-num{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10.5px;}
+  .group-title{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;}
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:14px 22px; margin:0 0 30px;
+    font-size:12.5px; color:var(--sub); font-family:'IBM Plex Mono',monospace;
+  }
+  .legend span{display:inline-flex; align-items:center; gap:7px;}
+  .swatch{width:11px; height:11px; border-radius:3px; display:inline-block; flex:none;}
+  .dash{width:18px; height:0; border-top:2px dashed; display:inline-block; flex:none;}
+
+  .steps{
+    border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel);
+    margin-bottom:22px;
+  }
+  .step{
+    display:grid; grid-template-columns:34px 1fr; gap:14px;
+    padding:13px 16px; border-bottom:1px solid var(--line);
+  }
+  .step:last-child{border-bottom:none;}
+  .step .n{
+    width:26px; height:26px; border-radius:50%; background:var(--backend-soft); color:var(--backend);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
+    font-weight:700; font-size:11px;
+  }
+  .step .n.waf{background:var(--waf-soft); color:var(--waf);}
+  .step .n.vault{background:var(--vault-soft); color:var(--vault);}
+  .step .n.sb{background:var(--supabase-soft); color:var(--supabase);}
+  .step p{margin:0; font-size:13.5px; line-height:1.5;}
+  .step code{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--browser-soft); color:var(--browser);
+    padding:1px 6px; border-radius:5px;
+  }
+
+  .tablewrap{overflow-x:auto; margin-bottom:22px; border:1px solid var(--line); border-radius:14px; background:var(--panel);}
+  table{border-collapse:collapse; width:100%; min-width:620px; font-size:13px;}
+  th,td{text-align:left; vertical-align:top; padding:11px 14px; border-bottom:1px solid var(--line); line-height:1.5;}
+  th{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); font-weight:600;}
+  tr:last-child td{border-bottom:none;}
+  .good{color:var(--ok-ink); font-weight:600;}
+  .bad{color:var(--bad-ink); font-weight:600;}
+
+  .callout{
+    display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start;
+    background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink);
+    border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.55; margin-bottom:14px;
+  }
+  .callout.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-ink);}
+  .callout.bad{background:var(--bad-bg); border-color:var(--bad-line); color:var(--bad-ink);}
+  .callout .ic{font-size:16px; line-height:1;}
+  .callout strong{font-weight:600;}
+  .callout code{font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  .callout ol, .callout ul{margin:6px 0 0; padding-left:20px;}
+  .callout li{margin:3px 0;}
+  .callout pre{
+    margin:8px 0 0; padding:10px 12px; border-radius:8px; overflow-x:auto;
+    background:rgba(0,0,0,.06); font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6;
+  }
+  .foot{color:var(--sub); font-size:12px; margin-top:26px; line-height:1.5;}
+
+  @media (max-width:520px){
+    .step{grid-template-columns:26px 1fr; gap:10px; padding:11px 12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">my simple family tree — local setup · updated 2026-10-11</p>
+  <h1>Running it on one computer (e.g. a 42 machine)</h1>
+  <p class="lede">
+    Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
+    the one computer: Docker for our four containers (WAF ×2, frontend, backend) plus a dev-mode Vault, and the
+    Supabase CLI for a local copy of Supabase (Auth, Realtime, Postgres, a mail catcher). <strong>Nothing goes to solsys
+    or ft.natscho.my</strong>, and with <code>make local-security</code> nothing touches production data either.
+    The only things that can leave the machine are optional: Google sign-in, and the shared <code>.env</code>
+    route in red below.
+  </p>
+
+  <div class="diagram-card">
+    <svg viewBox="0 0 1010 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
+      <title id="dTitle">Local setup diagram</title>
+      <desc id="dDesc">On one computer, Chrome opens https://localhost:8443 (WAF, then the Next.js frontend) and calls the API on https://localhost:9443 (WAF, then the NestJS backend). Chrome signs in directly with local Supabase Auth on port 54321, which also carries the Realtime WebSocket. The backend reads its secrets from a dev-mode Vault in Docker at boot, verifies sign-in tokens with local Supabase Auth, stores data in local Postgres on port 54322, and sends email to the local Mailpit catcher. Off the machine: Google sign-in is optional; solsys and ft.natscho.my are not involved; the shared .env would point the backend at the cloud Supabase project, which holds production data.</desc>
+      <defs>
+        <marker id="aB" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
+        <marker id="aW" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/></marker>
+        <marker id="aK" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--backend)"/></marker>
+        <marker id="aV" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
+        <marker id="aS" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--supabase)"/></marker>
+        <marker id="aE" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ext)"/></marker>
+      </defs>
+
+      <!-- the computer -->
+      <rect x="10" y="10" width="752" height="620" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
+      <text x="28" y="34" class="group-title" fill="var(--sub)">this computer · e.g. a 42 machine (no admin rights)</text>
+
+      <!-- Chrome -->
+      <rect x="28" y="60" width="200" height="72" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.6"/>
+      <text x="44" y="88" class="box-label" fill="var(--browser)">Chrome</text>
+      <text x="44" y="106" class="box-sub" fill="var(--ink)">https://localhost:8443</text>
+      <text x="44" y="121" class="box-sub" fill="var(--sub)">pages · API on :9443</text>
+
+      <!-- Docker group -->
+      <rect x="262" y="46" width="484" height="290" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+      <text x="278" y="66" class="group-title" fill="var(--sub)">docker · make local-security</text>
+
+      <rect x="278" y="80" width="200" height="60" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
+      <text x="292" y="105" class="box-label" fill="var(--waf)">waf-frontend :8443</text>
+      <text x="292" y="123" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS, PL2</text>
+
+      <rect x="530" y="80" width="200" height="60" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>
+      <text x="544" y="105" class="box-label" fill="var(--ink)">frontend :3000</text>
+      <text x="544" y="123" class="box-sub" fill="var(--sub)">Next.js 14 (dev, hot reload)</text>
+
+      <rect x="278" y="166" width="200" height="60" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
+      <text x="292" y="191" class="box-label" fill="var(--waf)">waf-backend :9443</text>
+      <text x="292" y="209" class="box-sub" fill="var(--ink)">same rules + PUT/PATCH/DELETE</text>
+
+      <rect x="530" y="166" width="200" height="60" rx="10" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.4"/>
+      <text x="544" y="191" class="box-label" fill="var(--backend)">backend :4000</text>
+      <text x="544" y="209" class="box-sub" fill="var(--ink)">NestJS + Prisma (dev, watch)</text>
+
+      <rect x="278" y="256" width="200" height="64" rx="10" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.4"/>
+      <text x="292" y="281" class="box-label" fill="var(--vault)">vault :8200</text>
+      <text x="292" y="298" class="box-sub" fill="var(--ink)">dev mode, in memory, local</text>
+      <text x="292" y="312" class="box-sub" fill="var(--sub)">filled from .env by vault-init.sh</text>
+
+      <!-- Local Supabase group -->
+      <rect x="262" y="370" width="484" height="250" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+      <text x="278" y="604" class="group-title" fill="var(--sub)">local supabase · supabase start (also docker)</text>
+
+      <rect x="278" y="404" width="200" height="72" rx="10" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.4"/>
+      <text x="292" y="429" class="box-label" fill="var(--supabase)">Auth + Realtime</text>
+      <text x="292" y="447" class="box-sub" fill="var(--ink)">http://127.0.0.1:54321</text>
+      <text x="292" y="462" class="box-sub" fill="var(--sub)">sign-in, tokens, WebSocket</text>
+
+      <rect x="530" y="404" width="200" height="72" rx="10" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.4"/>
+      <text x="544" y="429" class="box-label" fill="var(--db)">Postgres :54322</text>
+      <text x="544" y="447" class="box-sub" fill="var(--ink)">test data only</text>
+      <text x="544" y="462" class="box-sub" fill="var(--sub)">schema pushed by make local-*</text>
+
+      <rect x="278" y="510" width="200" height="72" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>
+      <text x="292" y="535" class="box-label" fill="var(--ink)">Studio :54323</text>
+      <text x="292" y="553" class="box-sub" fill="var(--sub)">look at the tables</text>
+      <text x="292" y="568" class="box-sub" fill="var(--sub)">http://127.0.0.1:54323</text>
+
+      <rect x="530" y="510" width="200" height="72" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>
+      <text x="544" y="535" class="box-label" fill="var(--ink)">Mailpit :54324</text>
+      <text x="544" y="553" class="box-sub" fill="var(--sub)">catches every email (SMTP 54325)</text>
+      <text x="544" y="568" class="box-sub" fill="var(--sub)">nothing is really sent</text>
+
+      <!-- outside the computer -->
+      <text x="782" y="34" class="group-title" fill="var(--sub)">off this computer</text>
+
+      <rect x="782" y="60" width="214" height="72" rx="12" fill="var(--ext-soft)" stroke="var(--ext)" stroke-dasharray="5 4"/>
+      <text x="796" y="86" class="box-label" fill="var(--ext)">Google sign-in</text>
+      <text x="796" y="104" class="box-sub" fill="var(--ink)">optional: only if the Google</text>
+      <text x="796" y="119" class="box-sub" fill="var(--ink)">keys are set; else use email</text>
+
+      <rect x="782" y="210" width="214" height="86" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-dasharray="3 5"/>
+      <text x="796" y="236" class="box-label" fill="var(--sub)">solsys · ft.natscho.my</text>
+      <text x="796" y="255" class="box-sub" fill="var(--sub)">not involved: production keeps</text>
+      <text x="796" y="270" class="box-sub" fill="var(--sub)">running whatever this computer</text>
+      <text x="796" y="285" class="box-sub" fill="var(--sub)">does</text>
+
+      <rect x="782" y="404" width="214" height="100" rx="12" fill="var(--bad-bg)" stroke="var(--waf)" stroke-width="1.4" stroke-dasharray="6 4"/>
+      <text x="796" y="430" class="box-label" fill="var(--waf)">cloud Supabase</text>
+      <text x="796" y="448" class="box-sub" fill="var(--ink)">= production data (real users)</text>
+      <text x="796" y="465" class="box-sub" fill="var(--ink)">reached only if you run with the</text>
+      <text x="796" y="480" class="box-sub" fill="var(--ink)">shared .env (make security)</text>
+      <text x="796" y="495" class="box-sub" fill="var(--waf)">avoid on a shared machine</text>
+
+      <!-- 1: Chrome -> waf-frontend -> frontend -->
+      <path d="M228,96 L276,104" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#aB)"/>
+      <circle cx="250" cy="86" r="9" fill="var(--browser)"/><text x="250" y="90" text-anchor="middle" class="step-num" fill="#fff">1</text>
+      <path d="M478,110 L528,110" stroke="var(--waf)" stroke-width="2" fill="none" marker-end="url(#aW)"/>
+
+      <!-- 2: Chrome -> Auth (direct), also Realtime -->
+      <path d="M90,132 L90,440 L276,440" stroke="var(--supabase)" stroke-width="2" fill="none" marker-end="url(#aS)"/>
+      <circle cx="90" cy="300" r="9" fill="var(--supabase)"/><text x="90" y="304" text-anchor="middle" class="step-num" fill="#fff">2</text>
+      <text x="104" y="430" class="box-sub" fill="var(--supabase)">sign in · Realtime</text>
+
+      <!-- 3: Chrome -> waf-backend -> backend -->
+      <path d="M160,132 L160,196 L276,196" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#aB)"/>
+      <circle cx="160" cy="164" r="9" fill="var(--browser)"/><text x="160" y="168" text-anchor="middle" class="step-num" fill="#fff">3</text>
+      <path d="M478,196 L528,196" stroke="var(--waf)" stroke-width="2" fill="none" marker-end="url(#aW)"/>
+
+      <!-- 0: backend <- vault at boot -->
+      <path d="M530,214 C500,240 500,276 480,286" stroke="var(--vault)" stroke-width="2" fill="none" marker-end="url(#aV)"/>
+      <circle cx="505" cy="250" r="9" fill="var(--vault)"/><text x="505" y="254" text-anchor="middle" class="step-num" fill="#fff">0</text>
+
+      <!-- 4: backend -> Auth verify -->
+      <path d="M560,226 L560,350 L420,350 L420,402" stroke="var(--backend)" stroke-width="2" fill="none" marker-end="url(#aK)"/>
+      <circle cx="490" cy="350" r="9" fill="var(--backend)"/><text x="490" y="354" text-anchor="middle" class="step-num" fill="#fff">4</text>
+
+      <!-- 5: backend -> Postgres -->
+      <path d="M660,226 L660,402" stroke="var(--backend)" stroke-width="2" fill="none" marker-end="url(#aK)"/>
+      <circle cx="660" cy="300" r="9" fill="var(--backend)"/><text x="660" y="304" text-anchor="middle" class="step-num" fill="#fff">5</text>
+
+      <!-- 6: backend -> Mailpit -->
+      <path d="M722,226 L722,240 L740,252 L740,494 L716,508" stroke="var(--backend)" stroke-width="2" fill="none" marker-end="url(#aK)"/>
+      <circle cx="740" cy="380" r="9" fill="var(--backend)"/><text x="740" y="384" text-anchor="middle" class="step-num" fill="#fff">6</text>
+
+      <!-- optional: Chrome -> Google -->
+      <path d="M228,72 C420,22 640,22 780,84" stroke="var(--ext)" stroke-width="1.6" stroke-dasharray="5 4" fill="none" marker-end="url(#aE)"/>
+
+      <!-- the shared .env route (avoid) -->
+      <path d="M730,180 C770,190 760,420 780,440" stroke="var(--waf)" stroke-width="1.6" stroke-dasharray="6 4" fill="none" marker-end="url(#aW)"/>
+      <text x="796" y="394" class="box-sub" fill="var(--waf)">↓ shared .env only</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--browser)"></i>from Chrome</span>
+    <span><i class="swatch" style="background:var(--waf)"></i>WAF</span>
+    <span><i class="swatch" style="background:var(--backend)"></i>from the backend</span>
+    <span><i class="swatch" style="background:var(--vault)"></i>Vault</span>
+    <span><i class="swatch" style="background:var(--supabase)"></i>Supabase</span>
+    <span><i class="dash" style="border-color:var(--ext)"></i>optional</span>
+    <span><i class="dash" style="border-color:var(--waf)"></i>avoid (production data)</span>
+  </div>
+
+  <h2>What happens, in order</h2>
+  <div class="steps">
+    <div class="step"><div class="n vault">0</div><p><strong>At boot</strong> the backend reads its secrets (JWT secret, Supabase keys, database URL, SMTP) from the
+      <strong>local</strong> dev-mode Vault, which <code>vault-init.sh</code> filled from your <code>.env</code> a moment earlier. Not the Vault on solsys.</p></div>
+    <div class="step"><div class="n">1</div><p>Chrome opens <code>https://localhost:8443</code>. The WAF checks the request and passes it to the frontend on <code>:3000</code>.</p></div>
+    <div class="step"><div class="n sb">2</div><p>Signing in goes <strong>straight from Chrome to local Supabase Auth</strong> on <code>127.0.0.1:54321</code>
+      (email + password; Google only if its keys are set). The Realtime WebSocket (who's online, live notices) uses the same port.</p></div>
+    <div class="step"><div class="n">3</div><p>Every API call goes to <code>https://localhost:9443/api</code>: the second WAF, then the backend on <code>:4000</code>.
+      The first call trades the Supabase token for our own login token.</p></div>
+    <div class="step"><div class="n">4</div><p>The backend checks that Supabase token with local Supabase Auth, through <code>host.docker.internal:54321</code>
+      (inside a container, <code>127.0.0.1</code> is the container itself).</p></div>
+    <div class="step"><div class="n">5</div><p>All data goes to the <strong>local Postgres</strong> on <code>host.docker.internal:54322</code>: test data only, gone when you run <code>supabase stop --no-backup</code>.</p></div>
+    <div class="step"><div class="n">6</div><p>Emails (feedback, role and suspension notices, tree deleted) land in <strong>Mailpit</strong>: open <code>http://127.0.0.1:54324</code> to read them.</p></div>
+  </div>
+
+  <h2>Two ways to start it</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th><code>make local-security</code> (recommended)</th><th><code>make security</code> with the shared <code>.env</code></th></tr></thead>
+      <tbody>
+        <tr><td>Database</td><td class="good">local Postgres on this computer, test data</td><td class="bad">cloud Supabase = production (real users)</td></tr>
+        <tr><td>Sign-in accounts</td><td>local Supabase Auth; sign up fresh test users</td><td>the real accounts</td></tr>
+        <tr><td>Emails</td><td>Mailpit, nothing leaves the machine</td><td>Gmail, if the <code>.env</code> has the SMTP login: real people get them</td></tr>
+        <tr><td>If something goes wrong</td><td>only this computer's copy is affected</td><td>real users' data changes or is deleted</td></tr>
+        <tr><td>First time on a fresh machine</td><td>one command (with Docker and the Supabase CLI installed); the schema is pushed for you</td><td>one command</td></tr>
+        <tr><td>Fits a shared 42 machine</td><td class="good">yes</td><td class="bad">no: the <code>.env</code> holds production keys on a shared computer</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>On a 42 machine</h2>
+  <div class="callout ok"><div class="ic">✅</div><div>
+    <strong>First time, step by step</strong>
+    <ol>
+      <li>Docker running. If your home folder has a small quota, keep Docker's data in your <code>goinfre</code>: the images need a few GB.</li>
+      <li>The Supabase CLI (or use <code>npx supabase</code> wherever the steps say <code>supabase</code>).</li>
+      <li><code>make local-security</code>: makes the certificates, starts local Supabase, starts our containers, and pushes the
+        database schema (from inside the backend container, so no Node needed on the machine).</li>
+      <li>Open <code>https://localhost:9443/api</code> once and accept the certificate warning, then <code>https://localhost:8443</code> and accept it again.</li>
+      <li>Sign up a test user. The confirmation email (if any) is in Mailpit.</li>
+    </ol>
+  </div></div>
+  <div class="callout"><div class="ic">⚠️</div><div>
+    <strong>No admin rights: the certificate warnings.</strong> <code>make certs</code> uses <code>mkcert</code> when it's installed, but
+    trusting mkcert's certificates usually needs admin rights. Without it, the Makefile makes a self-signed certificate and
+    Chrome warns on both ports. If you only accept <code>:8443</code>, the page loads but every API call to <code>:9443</code>
+    fails quietly and login looks broken. Accept <code>:9443</code> too (step 4).
+  </div></div>
+  <div class="callout"><div class="ic">⚠️</div><div>
+    <strong>After the Vault switch (planned after 24 Oct).</strong> <code>make up</code> will fetch the dev secrets from the Vault on
+    solsys over WireGuard. Installing WireGuard needs admin rights, so on a 42 machine keep using
+    <code>make local-security</code> (local Vault, local Supabase), which needs neither.
+  </div></div>
+  <div class="callout ok"><div class="ic">✅</div><div>
+    <strong>Evaluation note: one command.</strong> The subject asks for one command to run the project.
+    <code>make local-security</code> is that command without touching production data: since 11 Oct it also pushes the schema
+    into the empty local database, so a fresh machine needs only Docker and the Supabase CLI.
+  </div></div>
+
+  <p class="foot">Sources: <code>Makefile</code>, <code>scripts/local-up.sh</code>, <code>docker-compose.yml</code>,
+  <code>docker-compose-security.yml</code>, <code>supabase/config.toml</code>, README “Running Supabase Locally”, and the
+  8 Oct Vault decisions (<code>vault/README.md</code> on <code>tching-cybersec</code>). Production: see <code>architecture.html</code>.</p>
+</div>
+</body>
+</html>

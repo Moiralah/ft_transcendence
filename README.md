@@ -58,6 +58,9 @@ publishable one: the publishable key is enough to sign people in, but not for
 admin actions such as removing a deleted user's Supabase login.)
 
 ### 3. Push the schema
+`make local` / `make local-security` do this for you after the containers start
+(`npx prisma db push` inside the backend container, so the host needs no Node; a
+re-run with no schema change does nothing). By hand:
 ```bash
 cd backend
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

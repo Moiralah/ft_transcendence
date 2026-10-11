@@ -54,4 +54,23 @@ else
   make up
 fi
 
+# A fresh local Supabase has no tables. Push the Prisma schema from inside the
+# backend container (it already has the Prisma CLI), so the host needs no Node.
+# Safe to re-run: no changes means nothing happens, and a change that would lose
+# data stops with an error instead of applying it (no --accept-data-loss).
+echo "[local-up] pushing the database schema to local Supabase..."
+for attempt in 1 2 3 4 5 6; do
+  if docker compose exec -T \
+      -e DIRECT_URL="$DIRECT_URL" -e DATABASE_URL="$DATABASE_URL" \
+      backend npx prisma db push; then
+    break
+  fi
+  if [ "$attempt" = 6 ]; then
+    echo "[local-up] schema push failed; see the error above (the app is up, but tables may be missing)" >&2
+    exit 1
+  fi
+  echo "[local-up] backend not ready yet, retrying in 5 s..."
+  sleep 5
+done
+
 echo "[local-up] done. Open https://localhost:$( [ "$MODE" = "security" ] && echo 8443 || echo 3000 )"
