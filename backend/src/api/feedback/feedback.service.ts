@@ -16,6 +16,10 @@ export interface FeedbackInput {
 const CATEGORIES = ['bug', 'idea', 'question', 'other'] as const;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// The body is whatever JSON was sent: anything that isn't a string (an array,
+// an object) counts as empty instead of crashing .trim() with a 500.
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+
 // Public, unauthenticated form, so it has to be cheap to abuse-proof.
 // In memory is fine for one backend instance; resets on restart.
 const PER_IP_LIMIT = 3;
@@ -40,17 +44,17 @@ export class FeedbackService {
 			return { ok: true };
 		}
 
-		const message = (input.message ?? '').trim();
+		const message = text(input.message).trim();
 		if (message.length < 10) throw new BadRequestException('Please write at least 10 characters.');
 		if (message.length > 5000) throw new BadRequestException('Please keep it under 5000 characters.');
 
 		const category = CATEGORIES.includes(input.category as any) ? input.category! : 'other';
 		// Single-line fields end up in mail headers (subject, reply-to): strip
 		// line breaks so they can't inject extra headers.
-		const name = oneLine(input.name).slice(0, 100);
-		const email = oneLine(input.email).slice(0, 200);
+		const name = oneLine(text(input.name)).slice(0, 100);
+		const email = oneLine(text(input.email)).slice(0, 200);
 		if (email && !EMAIL_RE.test(email)) throw new BadRequestException('That email address doesn\'t look right.');
-		const page = oneLine(input.page).slice(0, 300);
+		const page = oneLine(text(input.page)).slice(0, 300);
 
 		this.checkRateLimit(ip);
 

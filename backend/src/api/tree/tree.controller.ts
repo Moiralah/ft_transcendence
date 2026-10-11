@@ -4,6 +4,8 @@ import {
 } from '@nestjs/common';
 import { TreeService } from './tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateTreeDto } from './dto/create-tree.dto';
+import { JoinTreeDto } from './dto/join-tree.dto';
 
 @Controller('trees')
 export class TreeController {
@@ -11,13 +13,13 @@ export class TreeController {
 
 	@Post('create')
 	@UseGuards(JwtAuthGuard)
-	async createTree(@Req() req, @Body() body: { name: string; description?: string }) {
+	async createTree(@Req() req, @Body() body: CreateTreeDto) {
 		return this.treeService.createTree(req.user.profileId, body.name, body.description);
 	}
 
 	@Post('join')
 	@UseGuards(JwtAuthGuard)
-	async joinTree(@Req() req, @Body() body: { name: string; code: string }) {
+	async joinTree(@Req() req, @Body() body: JoinTreeDto) {
 		return this.treeService.joinTree(req.user.profileId, body.name, body.code);
 	}
 

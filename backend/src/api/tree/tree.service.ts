@@ -119,6 +119,11 @@ export class TreeService {
 	}
 
 	async joinTree(profileId: number, name: string, code: string) {
+		// Also checked by JoinTreeDto: only plain strings may reach the where
+		// clause, or { "not": "" } as the code would match any tree.
+		if (typeof name !== 'string' || typeof code !== 'string' || !name || !code) {
+			throw new BadRequestException('Tree name and code are required.');
+		}
 		const tree = await this.prisma.tree.findFirst({ where: { name, code } });
 		if (!tree) {
 			throw new NotFoundException('Tree not found. Check name and code.');
@@ -133,7 +138,8 @@ export class TreeService {
 
 		const member = await this.prisma.treeMember.create({
 			data: { profileId, treeId: tree.id, role: 'JOINER' },
-			include: { profile: true, tree: true },
+			// Not the whole tree: its join code is for admins to hand out.
+			include: { profile: true, tree: { select: { id: true, name: true, slug: true } } },
 		});
 
 		await this.prisma.auditLog.create({
