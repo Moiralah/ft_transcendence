@@ -192,9 +192,9 @@ export class TreeService {
 			include: {
 				tree: {
 					include: {
-						owner: { include: {user: { select : { username : true } }}},
+						owner: { include: { user: { select: { username: true } } } },
 						members: {
-							where: {role: {not: 'HOLDER'}},
+							where: { role: { not: 'HOLDER' } },
 							select: { id: true },
 						},
 					},
@@ -1025,6 +1025,104 @@ export class TreeService {
 			return updated;
 		});
 	}
+
+	async kickUser(treeId: number, requesterProfileId: number, targetProfileId: number) {
+		// 1. Look up the requester's own membership row in this tree.
+		const requesterMember = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+		});
+		if (!requesterMember) {
+			throw new ForbiddenException('You are not a member of this tree.');
+		}
+
+		// 2. Authorize: only ADMIN / MODERATOR can kick someone else.
+		if (!['ADMIN', 'MODERATOR'].includes(requesterMember.role)) {
+			throw new ForbiddenException('Only admins or moderators can kick members.');
+		}
+
+		// 3. Load the tree + target.
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
+		if (!tree) throw new NotFoundException('Tree not found.');
+
+		if (tree.ownerId === targetProfileId) {
+			throw new ForbiddenException('Cannot kick the tree owner.');
+		}
+
+		const target = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: targetProfileId, treeId } },
+		});
+		if (!target) {
+			throw new NotFoundException('That user is not in this tree.');
+		}
+
+		// 4. Optional ceiling: MODERATOR can't kick ADMIN.
+		if (requesterMember.role === 'MODERATOR' && target.role === 'ADMIN') {
+			throw new ForbiddenException('Moderators cannot kick admins.');
+		}
+
+		return this.prisma.$transaction(async (tx) => {
+			// 5. If the target had claimed a placeholder, release it.
+			const claimedHolder = await tx.treeMember.findUnique({
+				where: { linkId: target.id },
+			});
+
+			let freedHolder = null;
+
+			if (claimedHolder) {
+				// Clear the placeholder: drop the link, reset claim state.
+				freedHolder = await tx.treeMember.update({
+					where: { id: claimedHolder.id },
+					data: { linkId: null, claim: 'EMPTY' },
+					include: {
+						profile: { select: this.memberProfileSelect },
+						link: { include: { profile: { select: this.memberProfileSelect } } },
+					},
+				});
+			}
+
+			// 6. Delete the target's TreeMember row.
+			await tx.treeMember.delete({ where: { id: target.id } });
+
+			// 7. Audit log.
+			await tx.auditLog.create({
+				data: {
+					treeId,
+					profileId: requesterProfileId,
+					action: 'KICK_USER',
+					details: `Kicked profile ${targetProfileId} from the tree`,
+				},
+			});
+
+			// 8. Return both the removed row and the freed holder (if any),
+			return {
+				message: 'User removed from tree.',
+				kickedMemberId: target.id,
+				kickedProfileId: target.profileId,
+				freedHolder: freedHolder ? this.mapMemberRow(freedHolder) : null,
+			};
+		});
+	}
+
+// how it return
+// 	{
+//   "message": "User removed from tree.",
+//   "kickedMemberId": 42,
+//   "kickedProfileId": 99,
+//   "freedHolder": { "id": 12, "profileId": 55, "role": "HOLDER", "claim": "EMPTY", ... } | null
+// }
+
+// how put it in the frontend
+// const res = await fetch(`/trees/${treeId}/members/${targetProfileId}`, {
+//   method: 'DELETE',
+//   headers: { Authorization: `Bearer ${token}` },
+// });
+// const { kickedMemberId, freedHolder } = await res.json();
+
+// setTreesMember((prev) => {
+//   const withoutKicked = prev.filter((m) => m.id !== kickedMemberId);
+//   if (!freedHolder) return withoutKicked;
+//   return withoutKicked.map((m) => (m.id === freedHolder.id ? freedHolder : m));
+// });
 
 	async leaveTree(profileId: number, treeId: number) {
 		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });

@@ -387,7 +387,7 @@ const renderAddChild = (BranchAddMember: Member) => {
                 (
                 <div className="h-6 w-0.5 -ml-[170px] -translate-x-1/2 bg-black z-10" />
                 ) : (
-                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />                 
+                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />
                 )
                 }
 
