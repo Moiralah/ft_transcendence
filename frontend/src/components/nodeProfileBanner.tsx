@@ -29,8 +29,8 @@ interface NodeProfileModalProps {
   member: Member;
   treeView: TreeViewContext;
   onClose: () => void;
-  onClaim: (updatedMember: Member) => void;
-  onUnclaim: (updatedMember: Member) => void;
+  onClaim: (updatedMember: Member[]) => void;
+  onUnclaim: (updatedMember: Member[]) => void;
   onSave: (updatedMember: Member) => void;
   onAddChild: (newChildMember: Member) => void;
   onAddSpouse: (newSpouseMember: Member) => void;
@@ -180,11 +180,18 @@ export function NodeProfileModal({
 
       const updatedMember: Member = {
         ...member,
-        linkId: member.profileId,
+        linkId: treeView.memberId,
         claim: 'PENDING',
       };
 
-      if (onClaim) onClaim(updatedMember);
+	const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
+    const updates: Member[] = [updatedMember];
+    if (requesterRow) {
+      updates.push({ ...requesterRow, linkId: member.id });
+    }
+
+    if (onClaim) onClaim(updates);
+    //if (onClose) onClose();
     } catch (err: any) {
       console.error('Save error:', err.message);
     }
@@ -213,9 +220,20 @@ export function NodeProfileModal({
     const updatedMember: Member = {
       ...member,
       linkId: null,
+	  claim: 'EMPTY',
     };
 
-    if (onUnclaim) onUnclaim(updatedMember);
+    const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
+    const updates: Member[] = [updatedMember];
+    if (requesterRow) {
+      updates.push({
+        ...requesterRow,
+        linkId: null,
+        role: requesterRow.role === 'MEMBER' ? 'JOINER' : requesterRow.role,
+      });
+    }
+
+    if (onUnclaim) onUnclaim(updates);
   } catch (err: any) {
     console.error('Save error:', err.message);
   }

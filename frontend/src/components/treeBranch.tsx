@@ -58,12 +58,15 @@ export function TreeBranch({
     }
   };
 
-//   const getMember = (targetId?: number | null): Member | undefined => {
-//     if (!targetId) return undefined;
-//     return (localMembers ?? []).find(
-//       (m) => m.profileId === targetId
-//     );
-//   };
+  const handleMemberUpdate = (updated: Member) => {
+	setLocalMembers((prev) => {
+		const next = prev.map((m) =>
+		m.id === updated.id ? { ...m, ...updated } : m
+		);
+		if (onMembersChange) onMembersChange(next);
+		return next;
+	});
+	};
 
 	const {byProfileId, byId} = useMemo(() => {
 		const byProfileId = new Map<number, Member>();
@@ -110,7 +113,7 @@ export function TreeBranch({
 		// A claimant defers to the placeholder that links to them.
 		if (m.linkId != null) {
 			const holder = getMemberbyId(m.linkId);
-			if (holder && holder.role === 'HOLDER') return holder;
+			if (holder && holder.role === 'HOLDER' && holder.claim === 'ACCEPTED') return holder;
 		}
 		return m;
 	};
@@ -118,9 +121,6 @@ export function TreeBranch({
 	const holder = positionHolderOf(currentMember);
 	const activeCurrentMember = holder ? (byId.get(holder.id) ?? holder) : undefined;
 		if (!activeCurrentMember) return null;
-//   const activeCurrentMember = (localMembers ?? []).find(
-//     (m) => m.profileId === currentMember.profileId
-//   ) ?? currentMember;
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
 
@@ -145,41 +145,6 @@ export function TreeBranch({
     }
     return member;
   };
-
-const renderUnclaim = (BranchRemoveMember: Member) => {
-  if (!activeCurrentMember.profileId) return;
-
-  const unclaimProfileId = BranchRemoveMember.profileId ?? BranchRemoveMember.id;
-  const holderProfileId = BranchRemoveMember.linkId;
-
-  setLocalMembers((prevMembers) => {
-    const updatedList = prevMembers.map((m) => {
-      if (m.profileId === unclaimProfileId) {
-        return {
-          ...m,
-          linkId: null,
-        };
-      }
-      if (m.profileId === holderProfileId) {
-        return {
-          ...m,
-          claims: 'EMPTY',
-          linkId: null,
-        };
-      }      
-      return m;
-    });
-
-    const nextState = updatedList;
-
-    if (onMembersChange) {
-      onMembersChange(nextState);
-    }
-
-    if (onMembersChange) onMembersChange(nextState);
-    return nextState;
-  });
-};
 
 const renderAddSpouse = (BranchAddMember: Member) => {
   if (!activeCurrentMember.profileId) return;
@@ -331,7 +296,7 @@ const renderAddChild = (BranchAddMember: Member) => {
           NodeAddChild={renderAddChild}
           NodeAddSpouse={renderAddSpouse}
           NodeRemove={(deletedId) => renderRemove(deletedId)}
-          NodeUnclaim={renderUnclaim}
+		  NodeUpdate={handleMemberUpdate}
           treeView={treeView}
           showDeleteButton={children.length === 0 && !spouse}
         />
@@ -350,7 +315,7 @@ const renderAddChild = (BranchAddMember: Member) => {
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-            NodeUnclaim={renderUnclaim}
+			NodeUpdate={handleMemberUpdate}
             treeView={treeView}
             showDeleteButton={canDeleteSpouse}
           />

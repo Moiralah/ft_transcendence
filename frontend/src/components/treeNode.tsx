@@ -47,7 +47,6 @@ interface TreeNodeProp {
   NodeAddChild: (addMember: Member) => void;
   NodeRemove?: (id: number) => void;
   NodeUpdate?: (updated: Member) => void;
-  NodeUnclaim?: (unclaimMember: Member) => void;
   treeView: TreeViewContext;
   showDeleteButton?: boolean;
 }
@@ -58,35 +57,16 @@ export function TreeNode({
   NodeAddChild,
   NodeAddSpouse,
   NodeRemove,
-  NodeUnclaim,
+  NodeUpdate,
   treeView,
   showDeleteButton = true,
 }: TreeNodeProp) {
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     setNodeMember(currentMember);
   }, [currentMember]);
-
-  useEffect(() => {
-    if (!nodeMember || !treeView) return;
-
-
-	const isSelf = treeView.viewId === nodeMember.profileId;
-    const isHolderAdmin =
-      (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
-      nodeMember.role === 'HOLDER';
-
-    // NEW: the node's linkId points at ME
-	const isMyClaim = nodeMember.id === treeView.memberId;
-
-	const isUnclaimedHolder =
-		nodeMember.role === 'HOLDER' &&
-		(nodeMember.claim === 'EMPTY' || !nodeMember.claim);
-    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim || isUnclaimedHolder));
-  }, [treeView, nodeMember]);
 
   if (!nodeMember) return null;
 
@@ -122,9 +102,7 @@ export function TreeNode({
   };
 
   const handleNodeClick = () => {
-    if (showProfileModal) {
-      setNodeProfileModal(true);
-    }
+	 setNodeProfileModal(true);
   };
 
   return (
@@ -138,7 +116,6 @@ export function TreeNode({
             'bg-red-200 border-red-600' :
           'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]
-          ${showProfileModal ? 'cursor-pointer hover:ring-2 hover:ring-amber-500' : 'cursor-default'}
         `}
       >
         {showDeleteButton ? (
@@ -171,7 +148,7 @@ export function TreeNode({
         </div>
 
         <div className="text-[10px] font-mono text-gray-500 mt-1">
-          {nodeMember.profileId} - {treeView.viewId} - {showProfileModal ? 'on' : 'off'}
+          {nodeMember.profileId} - {treeView.viewId}
         </div>
       </div>
 
@@ -186,15 +163,16 @@ export function TreeNode({
 		      treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
 
-          onClaim={(updatedMember: Member) => {
-            setNodeMember(updatedMember);
-            setNodeProfileModal(false);
+          onClaim={(updatedMember: Member[]) => {
+			if (updatedMember[0]) setNodeMember(updatedMember[0]);
+			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+			setNodeProfileModal(false);
           }}
 
-          onUnclaim={(updatedMember: Member) => {
-            setNodeMember(updatedMember);
-            NodeUnclaim(updatedMember);
-            setNodeProfileModal(false);
+          onUnclaim={(updatedMember: Member[]) => {
+			if (updatedMember[0]) setNodeMember(updatedMember[0]);
+			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+			setNodeProfileModal(false);
           }}
 
           onSave={(updatedMember: Member) => {
