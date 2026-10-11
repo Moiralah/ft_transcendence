@@ -34,7 +34,7 @@ export default function TermsOfServicePage() {
 
 				<p className="text-slate-600 text-base leading-relaxed mb-10 border-l-4 border-slate-200 pl-4">
 					My Simple Family Tree is a student project built for the ft_transcendence
-					curriculum. These terms describe how the service is actually meant to be used —
+					curriculum by tching, lechan, huidris and yiwei of 42 Kuala Lumpur MALAYSIA. These terms describe how the service is actually meant to be used —
 					they are not reviewed by a lawyer and shouldn&apos;t be treated as a legally
 					binding contract if this project is ever used beyond course evaluation.
 				</p>
@@ -95,9 +95,9 @@ export default function TermsOfServicePage() {
 
 				<Section title="8. No Warranty">
 					<p>This is a student project, actively under development, provided "as is." Features
-					may be incomplete, change, or break — see the README's module status table for
-					what's actually finished versus in progress. We make no guarantee the service will
-					be available, error-free, or fit for any particular purpose.</p>
+					are limited to its design — see the README's module status table for
+					what's actually finished versus future development (if any). We make no guarantee the service will
+					be available, error-free, or fit for any commercial purpose.</p>
 				</Section>
 
 				<Section title="9. Limitation of Liability">
