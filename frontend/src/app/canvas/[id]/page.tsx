@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast'
 
@@ -63,9 +63,9 @@ export default function Content() {
   interface treeView {
     viewType: TreeVisibility;
     viewId: number | null;
-	memberId: number | null;
-	linkId: number | null;
-	rootMemberId: number | null,
+	  memberId: number | null;
+	  linkId: number | null;
+	  rootMemberId: number | null,
   }
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -114,18 +114,14 @@ export default function Content() {
 
   const [treeType, setTreeType] = useState<TreeVisibility>(initialTreeType);
 
-//   const treeView = useMemo(() => ({
-//     viewType: treeType,
-//     viewId: myProfile?.id ?? null,
-//   }), [treeType, myProfile?.id]);
-
   const myMembership = treesMember.find((m: any) => m.profileId === myProfile?.id);
+
   const treeView = useMemo(() => ({
     viewType: treeType,
     viewId: myProfile?.id ?? null,
     memberId: myMembership?.id ?? null,
-	linkId: myMembership?.linkId ?? null,
-	rootMemberId: tree?.rootId ?? null,
+	  linkId: myMembership?.linkId ?? null,
+	  rootMemberId: tree?.rootId ?? null,
   }), [treeType, myProfile?.id, myMembership?.id, myMembership?.linkId, tree?.rootId]);
 
   useEffect(() => {
@@ -340,7 +336,6 @@ export default function Content() {
         }
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
-      // console.log(res);
       const updatedPending = await res.json();
       setPending(updatedPending);
     } catch (err: any) {
@@ -428,6 +423,39 @@ export default function Content() {
         }
       : null,
   );
+
+  const handleKickUser = async (member: any) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("No token found. Please log in.");
+      }
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/trees/${treeId}/members/${member.profileId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        }
+        throw new Error(`Failed to update profile: ${res.statusText}`);
+      }
+      const memberIdToRemove = member.profileId ?? member.id;
+      
+      const updatedMembers = treesMember.filter(
+        (m) => (m.profileId ?? m.id) !== memberIdToRemove
+      );
+      updateMembers(updatedMembers);
+    } catch (err: any) {
+      console.error("Save error:", err.message);
+    }
+    setTreeMemberModal(false);
+  }
 
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
@@ -596,7 +624,7 @@ export default function Content() {
                   }}
                   className="cursor-pointer"
                 >
-                  <div className="flex flex-row w-full border-t border-b border-gray-200 p-4 gap-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-600">
+                  <div className="flex flex-row w-full items-center border-t border-b border-gray-200 p-4 gap-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-600">
                     <div className="flex w-12 h-12 shrink-0 rounded-full bg-black text-white items-center justify-center overflow-hidden">
                       {member.photoUrl ? (
                         <img src={member.photoUrl} alt="" className="w-full h-full object-cover" />
@@ -610,6 +638,16 @@ export default function Content() {
                         {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`}
                       </span>
                     </div>
+                    {(treeView.viewType === 'ADMIN' && treeView.viewId !== member.profileId) && (
+                    <div className="ml-auto">
+                      <span 
+                        onClick={() => handleKickUser(member)}
+                        className="flex w-12 h-12 shrink-0 rounded-full hover:bg-red-200 text-grey-200 font-bold items-center justify-center overflow-hidden"
+                      >
+                        X
+                      </span>
+                    </div>
+                    )}
                   </div>
                 </div>
               ))}

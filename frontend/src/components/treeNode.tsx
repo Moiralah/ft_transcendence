@@ -73,14 +73,6 @@ export function TreeNode({
   useEffect(() => {
     if (!nodeMember || !treeView) return;
 
-    // const isSelf =
-    // treeView.viewId === nodeMember.profileId;
-
-    // const isHolderAdmin =
-    //   (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
-    //   nodeMember.role === 'HOLDER';
-
-    // setShowProfileModal(Boolean(isSelf || isHolderAdmin));
 
 	const isSelf = treeView.viewId === nodeMember.profileId;
     const isHolderAdmin =
@@ -89,20 +81,11 @@ export function TreeNode({
 
     // NEW: the node's linkId points at ME
 	const isMyClaim = nodeMember.id === treeView.memberId;
-    // const isMyClaim =
-    //   nodeMember.linkId != null &&
-    //   treeView.viewId != null &&
-    //   treeView.viewId === nodeMember.profileId
-    //     ? true  // (this path won't trigger; keep the check below)
-    //     : false;
 
-    // Better: expose your TreeMember.id to the treeView context.
-    // Then: isMyClaim = nodeMember.linkId === treeView.memberId;
 	const isUnclaimedHolder =
 		nodeMember.role === 'HOLDER' &&
 		(nodeMember.claim === 'EMPTY' || !nodeMember.claim);
     setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim || isUnclaimedHolder));
-
   }, [treeView, nodeMember]);
 
   if (!nodeMember) return null;
