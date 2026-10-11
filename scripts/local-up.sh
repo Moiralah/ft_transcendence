@@ -46,6 +46,8 @@ export SUPABASE_AUTH_URL="http://host.docker.internal:54321"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 export NEXT_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"
 export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+# Tells vault-init.sh (make local-security) to use the values above, not .env.
+export FT_LOCAL_SUPABASE=1
 
 echo "[local-up] bringing up '$MODE' against local Supabase..."
 if [ "$MODE" = "security" ]; then

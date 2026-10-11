@@ -49,7 +49,8 @@ check "Known scanner user agent (sqlmap)"          403 -A 'sqlmap/1.7' "$API/tre
 echo "== Protocol hardening (API)"
 check "Method not allowed (PROPFIND)"              '403|405' -X PROPFIND "$API/trees/my-trees"
 check "Non-JSON content type (XML)"                403 -X POST -H 'Content-Type: application/xml' -d '<a>1</a>' "$API/auth/login"
-check "Body over 1 MB"                             413 -X POST -H 'Content-Type: application/json' --data-binary @<(head -c 2000000 /dev/zero | tr '\0' 'a' | sed 's/^/{"a":"/;s/$/"}/') "$API/feedback"
+# 413 from the GCP nginx in production; locally ModSecurity rejects it itself (403).
+check "Body over 1 MB"                             '413|403' -X POST -H 'Content-Type: application/json' --data-binary @<(head -c 2000000 /dev/zero | tr '\0' 'a' | sed 's/^/{"a":"/;s/$/"}/') "$API/feedback"
 
 echo "== No way around the WAF"
 check "Backend port 4000 not reachable"            000 --connect-timeout 5 "${PAGES%/}:4000/"
