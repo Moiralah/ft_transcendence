@@ -296,7 +296,6 @@ const renderAddChild = (BranchAddMember: Member) => {
           NodeAddChild={renderAddChild}
           NodeAddSpouse={renderAddSpouse}
           NodeRemove={(deletedId) => renderRemove(deletedId)}
-		      NodeUpdate={handleMemberUpdate}
           treeView={treeView}
           showDeleteButton={children.length === 0 && !spouse}
         />
@@ -351,7 +350,7 @@ const renderAddChild = (BranchAddMember: Member) => {
                 (
                 <div className="h-6 w-0.5 -ml-[170px] -translate-x-1/2 bg-black z-10" />
                 ) : (
-                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />                 
+                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />
                 )
                 }
 
