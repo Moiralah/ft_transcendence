@@ -2,13 +2,13 @@
 # Point the stack at local Supabase (`supabase start`) instead of the shared
 # dev DB, then bring up either the plain stack or the WAF+Vault security
 # stack — via the existing Makefile targets, so the actual Docker
-# orchestration logic (and its gotcha fixes) lives in exactly one place.
+# orchestration logic (and its dependency fixes) lives in exactly one place.
 #
 # Usage:
 #   ./scripts/local-up.sh            # plain stack (`make up-env`), against local Supabase
 #   ./scripts/local-up.sh security   # `make security`, against local Supabase
 #
-# Handles the two gotchas documented in README > "Running Supabase Locally":
+# Handles the two dependency notes documented in README > "Running Supabase Locally":
 # containers reach local Supabase via host.docker.internal, not 127.0.0.1
 # (which inside a container means the container itself); the browser uses
 # 127.0.0.1 directly. And it reads the local anon/service-role keys straight
@@ -46,6 +46,8 @@ export SUPABASE_AUTH_URL="http://host.docker.internal:54321"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 export NEXT_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"
 export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+# Tells vault-init.sh (make local-security) to use the values above, not .env.
+export FT_LOCAL_SUPABASE=1
 
 echo "[local-up] bringing up '$MODE' against local Supabase..."
 if [ "$MODE" = "security" ]; then
@@ -53,5 +55,24 @@ if [ "$MODE" = "security" ]; then
 else
   make up-env
 fi
+
+# A fresh local Supabase has no tables. Push the Prisma schema from inside the
+# backend container (it already has the Prisma CLI), so the host needs no Node.
+# Safe to re-run: no changes means nothing happens, and a change that would lose
+# data stops with an error instead of applying it (no --accept-data-loss).
+echo "[local-up] pushing the database schema to local Supabase..."
+for attempt in 1 2 3 4 5 6; do
+  if docker compose exec -T \
+      -e DIRECT_URL="$DIRECT_URL" -e DATABASE_URL="$DATABASE_URL" \
+      backend npx prisma db push; then
+    break
+  fi
+  if [ "$attempt" = 6 ]; then
+    echo "[local-up] schema push failed; see the error above (the app is up, but tables may be missing)" >&2
+    exit 1
+  fi
+  echo "[local-up] backend not ready yet, retrying in 5 s..."
+  sleep 5
+done
 
 echo "[local-up] done. Open https://localhost:$( [ "$MODE" = "security" ] && echo 8443 || echo 3000 )"

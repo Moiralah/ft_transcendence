@@ -53,6 +53,105 @@ export function clearSession() {
 	sessionStorage.removeItem(ROLE_KEY);
 }
 
+// --- Handing the session to a new tab -------------------------------------
+// Each tab keeps its own session (above), so a new tab used to start logged
+// out. Now a new tab asks the other open tabs of this site once; a logged-in
+// tab answers with its token, and from then on the two tabs are independent
+// again (logging out or switching account in one doesn't touch the other).
+// BroadcastChannel only reaches tabs of this same origin.
+const SESSION_CHANNEL = 'ft-session';
+const BORROWED_AT_KEY = 'ft_borrowed_at';
+
+// Only hand over (or accept) a token that is still valid for a while, so a
+// new tab never loops between /login and a 401 on an expired session.
+function tokenStillValid(token: string, marginMs = 60_000): boolean {
+	try {
+		const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+		return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now() + marginMs;
+	} catch {
+		return false;
+	}
+}
+
+// Runs in every tab (see components/sessionShare.tsx): answers new tabs.
+export function answerSessionRequests(): () => void {
+	if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return () => {};
+	const channel = new BroadcastChannel(SESSION_CHANNEL);
+	channel.onmessage = (event) => {
+		if (event.data?.type !== 'request') return;
+		const token = getToken();
+		const role = getRole();
+		if (token && role && tokenStillValid(token)) {
+			channel.postMessage({ type: 'session', id: event.data.id, token, role });
+		}
+	};
+	return () => channel.close();
+}
+
+// Called by /login: resolves true if another tab handed over a session.
+// At most once per 30 s per tab, so a suspended account can't loop.
+export function borrowSessionFromOtherTab(timeoutMs = 400): Promise<boolean> {
+	if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return Promise.resolve(false);
+	if (getToken()) return Promise.resolve(true);
+	const last = Number(sessionStorage.getItem(BORROWED_AT_KEY) || 0);
+	if (Date.now() - last < 30_000) return Promise.resolve(false);
+	return new Promise((resolve) => {
+		const channel = new BroadcastChannel(SESSION_CHANNEL);
+		const id = Math.random().toString(36).slice(2);
+		const finish = (ok: boolean) => {
+			clearTimeout(timer);
+			channel.close();
+			resolve(ok);
+		};
+		const timer = setTimeout(() => finish(false), timeoutMs);
+		channel.onmessage = (event) => {
+			const { type, id: replyTo, token, role } = event.data || {};
+			if (type !== 'session' || replyTo !== id || getToken() || !tokenStillValid(token)) return;
+			sessionStorage.setItem(TOKEN_KEY, token);
+			sessionStorage.setItem(ROLE_KEY, role);
+			sessionStorage.setItem(BORROWED_AT_KEY, String(Date.now()));
+			finish(true);
+		};
+		channel.postMessage({ type: 'request', id });
+	});
+}
+
+// --- Login errors shown to people ---------------------------------------------
+// One wording for a suspended account, wherever it's detected: at login (email or
+// Google) or mid-session (the backend checks suspension on every request).
+export const SUSPENDED_MESSAGE =
+	'This account has been suspended. If you think this is a mistake, please contact the site administrator through the feedback page.';
+
+// Keeps the HTTP status, so callers can tell "suspended" (403) from other failures.
+export class LoginError extends Error {
+	constructor(message: string, public readonly status: number) {
+		super(message);
+	}
+}
+
+export function isSuspended(err: unknown): boolean {
+	return err instanceof LoginError && err.status === 403 && /suspended/i.test(err.message);
+}
+
+// /login?error=<code> -> what the login page shows.
+export function loginErrorMessage(code: string | null): string | null {
+	if (code === 'suspended') return SUSPENDED_MESSAGE;
+	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
+	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
+	return null;
+}
+
+// After a 401 on an API call: back to /login, saying why if the account was suspended.
+export async function loginPathAfter401(res: Response): Promise<string> {
+	try {
+		const data = await res.clone().json();
+		if (/suspended/i.test(String(data?.message ?? ''))) return '/login?error=suspended';
+	} catch {
+		// not JSON: plain expired session
+	}
+	return '/login';
+}
+
 export async function exchangeSupabaseToken(accessToken: string): Promise<LoginResult> {
 	try {
 		const res = await fetch(`${apiUrl()}/auth/login`, {
@@ -60,9 +159,9 @@ export async function exchangeSupabaseToken(accessToken: string): Promise<LoginR
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ accessToken }),
 		});
-		const data = await res.json();
+		const data = await res.json().catch(() => ({}));
 		if (!res.ok) {
-			throw new Error(data.message || 'Login failed');
+			throw new LoginError(data.message || 'Login failed', res.status);
 		}
 		return data;
 	} finally {

@@ -12,12 +12,18 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken } from '@/lib/auth';
+import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
   const token = getToken();
-  const role = getRole();
+  // Read after the first render: the server has no sessionStorage, so reading
+  // it while rendering made the server and browser HTML differ for admins and
+  // moderators (the Admin Panel button) and React threw a hydration error.
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    setRole(getRole());
+  }, []);
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -52,7 +58,7 @@ export default function TreePage() {
   const [friendStatuses, setFriendStatuses] = useState<Record<string, {
     status: string;
     friendId: number | null;
-  }>>({});  
+  }>>({});
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
@@ -92,7 +98,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
@@ -113,7 +119,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);
       }
@@ -251,7 +257,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push('/login');
+          router.push(await loginPathAfter401(res));
           return;
         }
 
@@ -276,16 +282,16 @@ export default function TreePage() {
 
   const loadFriendStatuses = async (profiles: any[]) => {
     if (!token) return;
-  
+
     const userIds = profiles
       .map((profile) => profile.userId)
       .filter(Boolean);
-  
+
     if (userIds.length === 0) {
       setFriendStatuses({});
       return;
     }
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
@@ -298,25 +304,25 @@ export default function TreePage() {
           body: JSON.stringify({ userIds }),
         },
       );
-  
+
       if (!res.ok) {
         throw new Error('Failed to load friend statuses');
       }
-  
+
       const statuses = await res.json();
-  
+
       const statusMap: Record<string, {
         status: string;
         friendId: number | null;
       }> = {};
-  
+
       statuses.forEach((item: any) => {
         statusMap[item.userId] = {
           status: item.status,
           friendId: item.friendId,
         };
       });
-  
+
       setFriendStatuses(statusMap);
     } catch (err: any) {
       console.error(err);
@@ -325,7 +331,7 @@ export default function TreePage() {
 
   const addFriend = async (userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
@@ -336,13 +342,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to send friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -358,7 +364,7 @@ export default function TreePage() {
 
   const acceptFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
@@ -369,13 +375,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to accept friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -391,7 +397,7 @@ export default function TreePage() {
 
   const declineFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
@@ -402,13 +408,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to decline friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -424,7 +430,7 @@ export default function TreePage() {
 
   const cancelFriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
@@ -435,13 +441,13 @@ export default function TreePage() {
           },
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to cancel friend request');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -457,7 +463,7 @@ export default function TreePage() {
 
   const unfriend = async (friendId: number, userId: string) => {
     if (!token) return;
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
@@ -468,13 +474,13 @@ export default function TreePage() {
           }
         },
       );
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to unfriend user');
       }
-  
+
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: {
@@ -554,10 +560,9 @@ export default function TreePage() {
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span> {myProfile?.lastName || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span>{myProfile?.lastName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span> {formatDate(myProfile?.birthDate) || ' —'}</span></div>
-              <div><strong className="inline-block w-28 font-semibold">Death Date:</strong><span>{formatDate(myProfile?.deathDate) || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span>{formatDate(myProfile?.birthDate) || ' —'}</span></div>
 
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button onClick={() => setShowProfileModal(true)} variant="primary">
@@ -768,9 +773,9 @@ export default function TreePage() {
                 >
                   <TreeBanner
                     name={tree.name}
-                    code={tree.code}
-                    userRole={tree.userRole}
-                    profiles={tree.profiles}
+                    description={tree.description}
+                    userRole={tree.profileRole}
+                    userCount={tree.userCount}
                     owner={tree.owner}
                   />
                 </Link>
@@ -815,7 +820,10 @@ export default function TreePage() {
         <ProfileModal
           existingProfile={myProfile}
           onClose={() => setShowProfileModal(false)}
-          onSave={(updatedProfile) => setMyProfile(updatedProfile)}
+          onSave={(updatedProfile) =>{
+			setMyProfile(updatedProfile);
+			if (token) fetchMyTrees(token);
+		  }}
         />
       )}
 
@@ -863,7 +871,7 @@ export default function TreePage() {
                         Description: {tree.description || 'N/A'}
                       </div>
                       <div className="text-xs text-slate-600 mt-1">
-                        Owner: {tree?.ownerId || 'Unknown'}
+                        Owner: {tree.owner?.user?.username || tree.owner?.firstName || 'Unknown'}
                       </div>
                     </Link>
                   ))}
@@ -913,8 +921,8 @@ export default function TreePage() {
               {profileResults.map((profile) => {
                 const friendStatus = profile.userId
                   ? friendStatuses[profile.userId] : undefined;
-              
-                const status = friendStatus?.status ?? 'NONE';          
+
+                const status = friendStatus?.status ?? 'NONE';
                 return (
                   <div
                     key={profile.id}
@@ -929,11 +937,11 @@ export default function TreePage() {
                       <div className="text-sm text-slate-700 mt-1">
                         Gender: {profile.gender || 'N/A'}
                       </div>
-              
+
                       <div className="text-sm text-slate-700 mt-1">
                         Birth Date: {profile.birthDate || 'N/A'}
                       </div>
-              
+
                       {profile.deathDate && (
                         <div className="text-sm text-slate-700 mt-1">
                           Death Date: {profile.deathDate}
@@ -982,7 +990,7 @@ export default function TreePage() {
 						  >
                             Accept
                           </button>
-              
+
                           <button
                             type="button"
                             className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"

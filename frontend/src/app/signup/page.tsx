@@ -117,6 +117,7 @@ export default function SignupPage() {
             otherwise trips React's hydration diff on a false positive. */}
         <input
           type="email"
+          autoComplete="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -125,6 +126,7 @@ export default function SignupPage() {
         />
         <input
           type="password"
+          autoComplete="new-password"
           placeholder={`Password (min. ${MIN_PASSWORD_LENGTH} characters)`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -133,6 +135,7 @@ export default function SignupPage() {
         />
         <input
           type="password"
+          autoComplete="new-password"
           placeholder="Confirm Password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}

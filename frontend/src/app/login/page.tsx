@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, getToken } from '@/lib/auth';
+import { borrowSessionFromOtherTab, exchangeSupabaseToken, isSuspended, isTwoFactorRequired, loginErrorMessage, storeSession, getToken, SUSPENDED_MESSAGE } from '@/lib/auth';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -18,18 +18,27 @@ export default function LoginPage() {
 	const [challengeToken, setChallengeToken] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 
-	// The reset-password page sends people back here with ?reset=1.
+	// The reset-password page sends people back here with ?reset=1; Google
+	// sign-in (/consent) and the app's pages send ?error=<code> on failures.
 	useEffect(() => {
-		if (new URLSearchParams(window.location.search).get('reset')) {
+		const params = new URLSearchParams(window.location.search);
+		if (params.get('reset')) {
 			setNotice('Password updated. Please sign in with your new password.');
 		}
+		const message = loginErrorMessage(params.get('error'));
+		if (message) setError(message);
 	}, []);
 
-	// Already signed in — no reason to show the login form again.
+	// Already signed in — in this tab, or in another open tab that hands its
+	// session over — no reason to show the login form again.
 	useEffect(() => {
 		if (getToken()) {
 			router.push('/dashboard');
+			return;
 		}
+		borrowSessionFromOtherTab().then((ok) => {
+			if (ok) router.push('/dashboard');
+		});
 	}, [router]);
 
 	const handleOAuthLogin = async (provider: 'google') => {
@@ -69,7 +78,7 @@ export default function LoginPage() {
 			storeSession(result);
 			router.push('/dashboard');
 		} catch (err: any) {
-			setError(err.message || 'Login failed');
+			setError(isSuspended(err) ? SUSPENDED_MESSAGE : err.message || 'Login failed');
 		}
 	};
 
@@ -94,12 +103,19 @@ export default function LoginPage() {
 								{/* suppressHydrationWarning: browser extensions (password managers,
 								    Grammarly, etc.) inject class/style onto these after load, which
 								    otherwise trips React's hydration diff on a false positive. */}
-								<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" suppressHydrationWarning />
-								<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" suppressHydrationWarning />
+								<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" suppressHydrationWarning />
+								<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" suppressHydrationWarning />
 								<button type="submit">Sign in with email</button>
 							</form>
 							{notice && <div className="success" role="status">{notice}</div>}
-							{error && <div className="error">{error}</div>}
+							{error && (
+								<div className="error" role="alert">
+									{error}
+									{error === SUSPENDED_MESSAGE && (
+										<> <Link href="/feedback" className="underline">Go to the feedback page</Link>.</>
+									)}
+								</div>
+							)}
 							<p className="text-sm mb-3">
 								<Link href="/forgot-password" className="underline">Forgot password?</Link>
 							</p>

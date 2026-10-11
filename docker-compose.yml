@@ -13,6 +13,8 @@ services:
     restart: unless-stopped
     depends_on: []
     environment:
+      # Logs and server-side times in Malaysia time (GMT+8), like the host.
+      TZ: ${TZ:-Asia/Kuala_Lumpur}
       PORT: ${PORT}
       NODE_ENV: ${NODE_ENV}
       JWT_SECRET: ${JWT_SECRET}
@@ -44,6 +46,7 @@ services:
     depends_on:
       - backend
     environment:
+      TZ: ${TZ:-Asia/Kuala_Lumpur}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}

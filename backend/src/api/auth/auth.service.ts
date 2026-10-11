@@ -1,8 +1,9 @@
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -42,20 +43,8 @@ export class AuthService {
 		});
 
 		if (!user) {
-			user = await this.prisma.user.create({
-				data: {
-					id: supabaseUser.id, // use the Supabase UUID
-					email: supabaseUser.email,
-					username: supabaseUser.email.split('@')[0], // or use user_metadata.full_name
-
-					profile: {
-						create: {
-							firstName: '',
-							userId: supabaseUser.id,
-						}
-					}
-				},
-			});
+			user = await this.findOrphanedAccount(supabaseUser.id, supabaseUser.email)
+				?? await this.createUser(supabaseUser.id, supabaseUser.email);
 		} else if (user.email !== supabaseUser.email) {
 			// Keep our local copy in sync if it ever drifts — e.g. after a
 			// confirmed email change in Supabase.
@@ -81,6 +70,61 @@ export class AuthService {
 		}
 
 		return this.issueSession(user);
+	}
+
+	// Same email, different Supabase id: the person's Supabase login was deleted
+	// and they signed up again, so Supabase gave them a new id while our row still
+	// has the old one. Creating a second row would crash on the unique email.
+	// Move the old account over to the new id, but only when the old login is
+	// really gone (otherwise it's a different, live account: refuse clearly).
+	// Signing up needs a confirmed email, so this is the same person.
+	private async findOrphanedAccount(newId: string, email: string) {
+		const old = await this.prisma.user.findUnique({ where: { email } });
+		if (!old) return null;
+
+		const { data, error } = await this.supabase.auth.admin.getUserById(old.id);
+		if (data?.user) {
+			throw new ConflictException('An account with this email already exists. Log in with it instead.');
+		}
+		if (error && error.status !== 404) {
+			throw new ServiceUnavailableException('Could not check your account right now. Please try again.');
+		}
+
+		// profiles.userId is a plain column (no foreign key), so it's moved by hand;
+		// recovery codes, friendships and invitations follow via ON UPDATE CASCADE.
+		return this.prisma.$transaction(async (tx) => {
+			await tx.profile.updateMany({ where: { userId: old.id }, data: { userId: newId } });
+			return tx.user.update({ where: { id: old.id }, data: { id: newId } });
+		});
+	}
+
+	// The username is the part of the email before the @. Two different emails
+	// can share it (hello@a.com, hello@b.com), and usernames are unique, so on a
+	// clash add a short random suffix instead of failing the signup.
+	private async createUser(id: string, email: string) {
+		const base = email.split('@')[0] || 'user';
+		for (let attempt = 0; attempt < 5; attempt++) {
+			const username = attempt === 0 ? base : `${base}-${randomBytes(2).toString('hex')}`;
+			try {
+				return await this.prisma.user.create({
+					data: {
+						id, // use the Supabase UUID
+						email,
+						username,
+						profile: {
+							create: {
+								firstName: '',
+								userId: id,
+							}
+						}
+					},
+				});
+			} catch (e: any) {
+				const usernameTaken = e?.code === 'P2002' && String(e?.meta?.target ?? e?.message).includes('username');
+				if (!usernameTaken) throw e;
+			}
+		}
+		throw new ServiceUnavailableException('Could not create your account right now. Please try again.');
 	}
 
 	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
