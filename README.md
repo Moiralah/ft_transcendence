@@ -169,7 +169,10 @@ or they answer `502`. `scripts/prod-up.sh` does this by itself; after a plain
 `scripts/vault-init.sh`, which:
 1. Writes `JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
    `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` into Vault's KV v2
-   store at `secret/data/family-tree/backend`.
+   store at `secret/data/family-tree/backend`. Each value is taken from the
+   environment when it is set there (`make up-security` gets them from the
+   solsys Vault; `local-up.sh` sets the local Supabase ones), otherwise from
+   `.env`. It stops with an error if a required one is empty.
 2. Sets up **AppRole** auth with a policy scoped to read-only on exactly
    that one path — not the root token. (`vault-init.sh` itself still uses
    the root token, since something has to bootstrap the AppRole in the
