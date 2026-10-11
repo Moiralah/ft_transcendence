@@ -146,6 +146,41 @@ export function TreeBranch({
     return member;
   };
 
+const renderUnclaim = (BranchRemoveMember: Member) => {
+  if (!activeCurrentMember.profileId) return;
+
+  const unclaimProfileId = BranchRemoveMember.profileId ?? BranchRemoveMember.id;
+  const holderProfileId = BranchRemoveMember.linkId;
+
+  setLocalMembers((prevMembers) => {
+    const updatedList = prevMembers.map((m) => {
+      if (m.profileId === unclaimProfileId) {
+        return {
+          ...m,
+          linkId: null,
+        };
+      }
+      if (m.profileId === holderProfileId) {
+        return {
+          ...m,
+          claims: 'EMPTY',
+          linkId: null,
+        };
+      }      
+      return m;
+    });
+
+    const nextState = updatedList;
+
+    if (onMembersChange) {
+      onMembersChange(nextState);
+    }
+
+    if (onMembersChange) onMembersChange(nextState);
+    return nextState;
+  });
+};
+
 const renderAddSpouse = (BranchAddMember: Member) => {
   if (!activeCurrentMember.profileId) return;
 
@@ -296,7 +331,7 @@ const renderAddChild = (BranchAddMember: Member) => {
           NodeAddChild={renderAddChild}
           NodeAddSpouse={renderAddSpouse}
           NodeRemove={(deletedId) => renderRemove(deletedId)}
-		      NodeUpdate={handleMemberUpdate}
+          NodeUnclaim={renderUnclaim}
           treeView={treeView}
           showDeleteButton={children.length === 0 && !spouse}
         />
@@ -315,6 +350,7 @@ const renderAddChild = (BranchAddMember: Member) => {
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
+            NodeUnclaim={renderUnclaim}
             treeView={treeView}
             showDeleteButton={canDeleteSpouse}
           />

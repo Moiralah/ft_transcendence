@@ -47,6 +47,7 @@ interface TreeNodeProp {
   NodeAddChild: (addMember: Member) => void;
   NodeRemove?: (id: number) => void;
   NodeUpdate?: (updated: Member) => void;
+  NodeUnclaim?: (unclaimMember: Member) => void;
   treeView: TreeViewContext;
   showDeleteButton?: boolean;
 }
@@ -57,7 +58,7 @@ export function TreeNode({
   NodeAddChild,
   NodeAddSpouse,
   NodeRemove,
-  NodeUpdate,
+  NodeUnclaim,
   treeView,
   showDeleteButton = true,
 }: TreeNodeProp) {
@@ -199,27 +200,29 @@ export function TreeNode({
         <NodeProfileModal
           allMembers={members}
           member={nodeMember}
-		  treeView={treeView}
+		      treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
 
           onClaim={(updatedMember: Member) => {
             setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);
             setNodeProfileModal(false);
           }}
+
           onUnclaim={(updatedMember: Member) => {
             setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);   // ← propagate
+            NodeUnclaim(updatedMember);
             setNodeProfileModal(false);
           }}
+
           onSave={(updatedMember: Member) => {
             setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);
             setNodeProfileModal(false);
           }}
+
           onAddChild={(newChildMember: Member) => {
             NodeAddChild(newChildMember);
           }}
+
           onAddSpouse={(newSpouseMember: Member) => {
             NodeAddSpouse(newSpouseMember);
           }}

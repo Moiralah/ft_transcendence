@@ -440,7 +440,7 @@ export default function Content() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="focus:outline-none max-w-6xl w-full mx-auto px-4 flex-1 pt-20"
+        className="focus:outline-none max-w-8xl w-full mx-auto px-4 flex-1 pt-20"
       >
         {/* Tree member card */}
         <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
@@ -498,30 +498,43 @@ export default function Content() {
             </button>
           </div>
         </div>
-
-		<div>
-		{pending && pending.length > 0 && (
-			<div className="mb-4 space-y-2">
-			{pending.map((m: any) => (
-				<div key={m.id} className="flex items-center gap-2 py-2">
-				<span className="font-medium">
-					{m.link?.profile?.firstName} {m.link?.profile?.lastName}
-				</span>
-				<span className="text-gray-500">wants to claim</span>
-				<span className="font-semibold">
-					{m.profile?.firstName} {m.profile?.lastName}
-				</span>
-				<button type="button" onClick={() => handleApproveClaim(m.id)}>
-					approve
-				</button>
-				<button type="button" onClick={() => handleApproveUnclaim(m.id)}>
-					reject
-				</button>
-				</div>
-			))}
-			</div>
-		)}
-		</div>
+        
+        {/* approval notification */}
+		    <div className="sticky top-72 max-h-[50vh] overflow-y-auto z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
+		      {pending && pending.length > 0 && (
+			      <div className="mb-4 space-y-2 bg-transparent">
+			      {pending.map((m: any) => (
+				      <div key={m.id} className="flex items-center gap-2 py-2 mx-2">
+				        <span className="font-medium">
+					        {m.link?.profile?.firstName} {m.link?.profile?.lastName}
+				        </span>
+				        <span className="text-gray-500 text-xs"> claim </span>
+				        <span className="font-semibold">
+					        {m.profile?.firstName} {m.profile?.lastName}
+				        </span>
+                <div className="flex lg:flex-row flex-col">
+				          <button 
+                    type="button" 
+                    aria-label={'Approve Claim'}
+                    className="flex h-full items-center px-3 text-xs font-semibold text-gray-800 rounded-lg bg-transparent hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+                    onClick={() => handleApproveClaim(m.id)}
+                  >
+					        approve
+				         </button>
+				        <button 
+                  type="button" 
+                  aria-label={'Reject Claim'}
+                  className="flex h-full items-center px-3 text-xs font-semibold text-gray-800 rounded-lg bg-transparent hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+                  onClick={() => handleApproveUnclaim(m.id)}
+                >
+					        reject
+				        </button>
+              </div>
+				    </div>
+			      ))}
+			    </div>
+		      )}
+		    </div>
 
         {/* Interactive Workspace */}
         <div
