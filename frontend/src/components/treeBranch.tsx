@@ -269,30 +269,40 @@ const renderAddChild = (BranchAddMember: Member) => {
     <div
       className={`relative flex flex-row items-center`}
     >
-      <TreeNode
-        members={localMembers}
-        currentMember={getLinkMember(activeCurrentMember.profileId)}
-        NodeAddChild={renderAddChild}
-        NodeAddSpouse={renderAddSpouse}
-        NodeRemove={(deletedId) => renderRemove(deletedId)}
-		NodeUpdate={handleMemberUpdate}
-        treeView={treeView}
-        showDeleteButton={children.length === 0 && !spouse}
-      />
+      <div className="flex flex-col items-center">
+        {/* Lift line from primary node */}
+        {children.length > 0 && (
+          <div className="absolute left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+        )}
+        <TreeNode
+          members={localMembers}
+          currentMember={getLinkMember(activeCurrentMember.profileId)}
+          NodeAddChild={renderAddChild}
+          NodeAddSpouse={renderAddSpouse}
+          NodeRemove={(deletedId) => renderRemove(deletedId)}
+		      NodeUpdate={handleMemberUpdate}
+          treeView={treeView}
+          showDeleteButton={children.length === 0 && !spouse}
+        />
+        {/* Drop line from primary node */}
+        {children.length > 0 && (
+          <div className="absolute bottom-0 left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+        )}
+      </div>
 
       {spouse && (
         <div className="flex items-center">
-          <span className="h-20 w-0.5 bg-black"></span>
+          <span className="w-8 h-0.5 bg-black"></span>
           <TreeNode
             members={localMembers}
             currentMember={getLinkMember(spouse.profileId)}
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-			NodeUpdate={handleMemberUpdate}
+			      NodeUpdate={handleMemberUpdate}
             treeView={treeView}
             showDeleteButton={canDelete && isUnclaimedHolder &&
-				children.length === 0 && !spouse}
+				      children.length === 0 && !spouse}
           />
         </div>
       )}
@@ -300,33 +310,43 @@ const renderAddChild = (BranchAddMember: Member) => {
 
       {children.length > 0 && (
       <>
-        {/* Stem dropping straight down from parent center */}
-        <div className="h-6 w-0.5 bg-black"></div>
-
         {/* Children Row Container */}
         <div className="flex flex-row">
           {children.map((child, index) => {
             const isFirst = index === 0;
             const isLast = index === children.length - 1;
             const isOnly = children.length === 1;
+            const haveSpouse = Boolean(child.spouseId);
 
             return (
-              <div key={child.profileId ?? child.id} className="relative flex flex-col items-center px-4">
+              <div key={child.profileId ?? child.id} className={`relative flex flex-col items-center px-4`}>
                 {/* Horizontal & Vertical Connector Lines */}
-                {!isOnly && (
+                {!isOnly ? (
                   <div className="absolute top-0 left-0 right-0 h-6 flex">
-                    <div className={`w-1/2 border-t-2 border-black ${isFirst ? 'invisible' : ''}`} />
-                    <div className={`w-1/2 border-t-2 border-black ${isLast ? 'invisible' : ''}`} />
+                    <div className={`absolute left-0 right-[calc(50%+85px)] border-t-2 border-black ${isFirst? 'invisible' : ''}`} />
+                    <div className={`absolute left-[calc(50%-85px)] right-1/2 border-t-2 border-black ${((isLast && haveSpouse) || (isFirst && !haveSpouse))? 'invisible' : ''}`} />
+                    <div className={`absolute left-1/2 right-0 border-t-2 border-black ${(isLast)? 'invisible' : ''}`} />
+                  </div>
+                ) : (
+                  <div className="absolute top-0 left-0 right-0 h-6 flex">
+                    <div className={`absolute left-0 right-1/2 border-t-2 border-black ${haveSpouse? 'invisible' : ''}`} />
                   </div>
                 )}
                 {/* Drop line going directly into the child */}
-                <div className="h-6 w-0.5 bg-black z-10" />
+                { haveSpouse ?
+                (
+                <div className="h-6 w-0.5 -ml-[170px] -translate-x-1/2 bg-black z-10" />
+                ) : (
+                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />                 
+                )
+                }
+
                 <TreeBranch
-					allMembers={localMembers}
-					currentMember={child}
-					treeView={treeView}
-					ancestor={nextAncestors}
-					onMembersChange={updateMembers}
+					        allMembers={localMembers}
+					        currentMember={child}
+					        treeView={treeView}
+					        ancestor={nextAncestors}
+					        onMembersChange={updateMembers}
                 />
               </div>
             );
