@@ -363,17 +363,18 @@
   </p>
 
   <div class="diagram-card">
-    <svg viewBox="0 0 1010 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pTitle pDesc">
+    <svg viewBox="0 0 1010 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pTitle pDesc">
       <title id="pTitle">Planned local setup with Vault on solsys</title>
       <desc id="pDesc">On the computer, make up checks Vault, logs in with the person's own Vault password and reads the dev secrets, over WireGuard through the GCP VM hub (10.8.0.2) to the Vault on solsys (10.8.0.1:8200). The secrets are held in memory only and passed to the local Docker stack and local Supabase, which run on https://localhost:3000, or :8443 with make up-security. On solsys, the dev-read policy only allows reading the dev path; production secrets, the production stack and the cloud Supabase project are not reachable from the computer. Every read is recorded in Vault's audit log.</desc>
       <defs>
         <marker id="pB" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
         <marker id="pV" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
+        <marker id="pW" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/></marker>
         <marker id="pK" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--backend)"/></marker>
       </defs>
 
       <!-- the computer -->
-      <rect x="10" y="10" width="462" height="540" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
+      <rect x="10" y="10" width="462" height="600" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
       <text x="28" y="34" class="group-title" fill="var(--sub)">this computer · laptop or 42 machine</text>
 
       <rect x="28" y="52" width="210" height="100" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.6"/>
@@ -402,22 +403,26 @@
       <text x="272" y="244" class="box-sub" fill="var(--ink)">valid 12 h (max 24 h)</text>
       <text x="272" y="260" class="box-sub" fill="var(--sub)">password once a day</text>
 
-      <rect x="28" y="310" width="426" height="162" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
-      <text x="44" y="463" class="group-title" fill="var(--sub)">docker + local supabase · same as part 1</text>
+      <rect x="28" y="310" width="426" height="236" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+      <text x="438" y="537" text-anchor="end" class="group-title" fill="var(--sub)">docker + local supabase · same as part 1</text>
       <rect x="44" y="326" width="186" height="96" rx="10" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.4"/>
       <text x="58" y="350" class="box-label" fill="var(--backend)">our containers</text>
-      <text x="58" y="370" class="box-sub" fill="var(--ink)">frontend · backend</text>
-      <text x="58" y="386" class="box-sub" fill="var(--ink)">(+ WAFs and a local Vault</text>
-      <text x="58" y="402" class="box-sub" fill="var(--ink)">with make up-security)</text>
+      <text x="58" y="370" class="box-sub" fill="var(--ink)">frontend :3000</text>
+      <text x="58" y="386" class="box-sub" fill="var(--ink)">backend :4000</text>
+      <text x="58" y="402" class="box-sub" fill="var(--sub)">(+ local Vault: up-security)</text>
       <rect x="250" y="326" width="188" height="96" rx="10" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.4"/>
       <text x="264" y="350" class="box-label" fill="var(--supabase)">local Supabase</text>
       <text x="264" y="370" class="box-sub" fill="var(--ink)">Auth · Realtime · Postgres</text>
       <text x="264" y="386" class="box-sub" fill="var(--ink)">Mailpit · test data only</text>
       <text x="264" y="402" class="box-sub" fill="var(--sub)">schema pushed by make</text>
 
-      <rect x="28" y="488" width="426" height="52" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.4"/>
-      <text x="44" y="510" class="box-label" fill="var(--browser)">Chrome → https://localhost:3000</text>
-      <text x="44" y="528" class="box-sub" fill="var(--ink)">or https://localhost:8443 with make up-security</text>
+      <rect x="44" y="440" width="394" height="74" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
+      <text x="58" y="464" class="box-label" fill="var(--waf)">WAFs · :8443 pages · :9443 API</text>
+      <text x="58" y="482" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS, paranoia level 2, same rules as production</text>
+      <text x="58" y="498" class="box-sub" fill="var(--sub)">with make up-security; plain make up has none (Chrome → :3000)</text>
+      <rect x="28" y="560" width="426" height="48" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.4"/>
+      <text x="44" y="580" class="box-label" fill="var(--browser)">Chrome → https://localhost:8443</text>
+      <text x="44" y="598" class="box-sub" fill="var(--ink)">make up-security (or :3000 with plain make up)</text>
 
       <!-- GCP hub -->
       <rect x="500" y="52" width="190" height="100" rx="12" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.4"/>
@@ -428,7 +433,7 @@
       <text x="514" y="145" class="box-sub" fill="var(--sub)">proxy, not used here)</text>
 
       <!-- solsys -->
-      <rect x="716" y="10" width="284" height="540" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
+      <rect x="716" y="10" width="284" height="600" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
       <text x="734" y="34" class="group-title" fill="var(--sub)">solsys (home server)</text>
 
       <rect x="734" y="52" width="250" height="176" rx="12" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.8"/>
@@ -470,8 +475,9 @@
       <circle cx="152" cy="298" r="9" fill="var(--backend)"/><text x="152" y="302" text-anchor="middle" class="step-num" fill="#fff">3</text>
 
       <!-- browser -> stack -->
-      <path d="M330,488 L330,424" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#pB)"/>
-      <circle cx="348" cy="446" r="9" fill="var(--browser)"/><text x="348" y="450" text-anchor="middle" class="step-num" fill="#fff">4</text>
+      <path d="M137,560 L137,516" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#pB)"/>
+      <path d="M137,440 L137,424" stroke="var(--waf)" stroke-width="2" fill="none" marker-end="url(#pW)"/>
+      <circle cx="116" cy="538" r="9" fill="var(--browser)"/><text x="116" y="542" text-anchor="middle" class="step-num" fill="#fff">4</text>
     </svg>
   </div>
 
@@ -482,7 +488,7 @@
     <div class="step"><div class="n vault">2</div><p>The dev secrets come back <strong>into memory only</strong>, for this one command. No file is written; when the command ends they're gone.
       A teammate's login can't read <code>…/prod</code>: Vault answers 403.</p></div>
     <div class="step"><div class="n">3</div><p>The same local stack as part 1 starts with them: our containers on the computer, local Supabase with test data, schema pushed automatically.</p></div>
-    <div class="step"><div class="n">4</div><p>Chrome opens <code>https://localhost:3000</code> (or <code>:8443</code> with <code>make up-security</code>). From here on, nothing touches solsys again.</p></div>
+    <div class="step"><div class="n waf">4</div><p>With <code>make up-security</code>, Chrome opens <code>https://localhost:8443</code>: every page and API call goes through the local WAFs first (<code>:8443</code> pages, <code>:9443</code> API), the same ModSecurity rules as production. Plain <code>make up</code> has no WAF: Chrome talks to <code>:3000</code> directly. From here on, nothing touches solsys again.</p></div>
   </div>
 
   <div class="tablewrap">
