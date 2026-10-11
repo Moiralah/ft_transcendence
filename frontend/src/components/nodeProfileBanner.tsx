@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { getToken } from '@/lib/auth';
+import type { TreeViewContext } from './treeNode';
 
 export interface Member {
   id: number;
@@ -26,6 +27,7 @@ export interface Member {
 interface NodeProfileModalProps {
   allMembers: Member[];
   member: Member;
+  treeView: TreeViewContext;
   onClose: () => void;
   onClaim: (updatedMember: Member) => void;
   onUnclaim: (updatedMember: Member) => void;
@@ -37,6 +39,7 @@ interface NodeProfileModalProps {
 export function NodeProfileModal({
   allMembers,
   member,
+  treeView,
   onClose,
   onClaim,
   onUnclaim,
@@ -187,8 +190,8 @@ export function NodeProfileModal({
     }
   };
 
-const handleUnclaim = async (holderMemberId?: number | null) => {
-  if (!holderMemberId) return;
+	const handleUnclaim = async (holderMemberId?: number | null) => {
+	if (!holderMemberId) return;
 
   try {
     const token = getToken();
@@ -272,6 +275,40 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
     setEditName(false);
   };
 
+	const viewerRole = treeView.viewType;
+
+	const isJoiner = viewerRole === 'JOINER';
+
+	const canEdit =
+	viewerRole === 'ADMIN' || viewerRole === 'MODERATOR';
+
+	const isMyClaimedNode =
+	viewerRole === 'MEMBER' && member.id === treeView.memberId;
+
+	const canAddOrSave = canEdit || isMyClaimedNode;
+
+	// Do I already have a claim somewhere in this tree?
+	const iAlreadyHaveAClaim = treeView.linkId != null;
+
+	// Is THIS node the one I've claimed?
+	const isMyClaimOnThisNode =
+		member.role === 'HOLDER' &&
+		member.linkId != null &&
+		member.linkId === treeView.memberId;
+
+	// Can I claim this node?
+	const canClaimThisNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'EMPTY' || !member.claim) &&
+		!iAlreadyHaveAClaim;
+
+	const isClaimedNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
+
+	// Fields (name, birth date, gender) can only be edited on unclaimed rows.
+	const canEditFields = !isClaimedNode && !isJoiner;
+
   if (!mounted) return null;
 
   return ReactDOM.createPortal(
@@ -316,12 +353,14 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                 <div className="flex text-2xl">
                   {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
                 </div>
-                <div
-                  className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
-                  onClick={() => setEditName(true)}
-                >
-                  Edit Name
-                </div>
+					{canEditFields && (
+					<div
+						className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
+						onClick={() => setEditName(true)}
+					>
+						Edit Name
+					</div>
+					)}
               </div>
             )}
           </div>
@@ -342,12 +381,14 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-                <span
-                  onClick={() => setEditingField('birthDate')}
-                  className="cursor-pointer hover:bg-gray-100 rounded text-xl px-2 py-1"
-                >
-                  {formMember?.birthDate || 'Click to add birth date'}
-                </span>
+			<span
+				onClick={() => canEditFields && setEditingField('birthDate')}
+				className={`rounded text-xl px-2 py-1 ${
+					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				}`}
+				>
+				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				</span>
               )}
             </div>
           </div>
@@ -360,6 +401,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
+				disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -378,6 +420,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(true)}
+				disabled={!canEditFields}
               >
                 Alive
               </button>
@@ -387,6 +430,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   !alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(false)}
+				disabled={!canEditFields}
               >
                 Deceased
               </button>
@@ -419,50 +463,36 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
             Cancel
           </button>
 
-          {/* claim / unclaim button */}
-          <button
-            type="button"
-            onClick={(e) => {
-            e.stopPropagation();
-            if (member.role !== 'HOLDER' && member.linkId) {
-              handleUnclaim(member.linkId);
-            } else if (member.claim === 'EMPTY' || !member.claim) {
-              handleClaim();
-            }
-              onClose();
-            }}
-            disabled={
-              member.claim === 'PENDING' && member.role === 'HOLDER'
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            {member.role !== 'HOLDER' && 'Unclaim from me'}
-            {member.claim === 'PENDING' && member.role === 'HOLDER' && 'PENDING'}
-            {member.claim === 'EMPTY' && member.role === 'HOLDER' && 'claim for me'}
-
-          </button>
-
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
-                handleSave();
-            }}
-            disabled={
-              member.role === 'JOINER' ||
-              member.role === 'HOLDER' ||
-              (member.role === 'MEMBER' && member.linkId !== member.profileId )
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shadow-sm"
-          >
-            {member.role === 'ADMIN' && 'Save Changes'}
-            {member.role === 'MODERATOR' && 'Save Changes'}
-            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Save Changes'}
-            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot save'}
-            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot save'}
-          </button>
+		{(isMyClaimOnThisNode || canClaimThisNode) && (
+		<button
+			type="button"
+			onClick={(e) => {
+			e.stopPropagation();
+			if (isMyClaimOnThisNode) {
+				handleUnclaim(member.id);   // ← HOLDER's TreeMember.id
+			} else if (canClaimThisNode) {
+				handleClaim();
+			}
+			onClose();
+			}}
+			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+		>
+			{isMyClaimOnThisNode && 'Unclaim from me'}
+			{canClaimThisNode && 'Claim for me'}
+		</button>
+		)}
+		{(canAddOrSave && !isClaimedNode) && (
+		<button
+			type="button"
+			onClick={(e) => {
+				e.stopPropagation();
+				handleSave();
+			}}
+			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
+		>
+			Save Changes
+		</button>
+		)}
         </div>
 
         {/* Family Section */}
@@ -484,44 +514,30 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
 
         {/* Add Family Section */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
-                handleAddChild();
-            }}
-            disabled={
-              member.role === 'JOINER' ||
-              member.role === 'HOLDER' ||
-              (member.role === 'MEMBER' && member.linkId !== member.profileId )
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Add child'}
-            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Add child'}
-            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot add'}
-            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot add'}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (member.role === 'ADMIN' || member.role === 'MODERATOR' || (member.role === 'MEMBER' && member.linkId === member.profileId ))
-                handleAddSpouse();
-            }}
-            disabled={
-              member.role === 'JOINER' ||
-              member.role === 'HOLDER' ||
-              (member.role === 'MEMBER' && member.linkId !== member.profileId )
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            {(member.role === 'ADMIN' || member.role === 'MODERATOR') && 'Add spouse'}
-            {member.role === 'MEMBER' && member.linkId === member.profileId && 'Add spouse'}
-            {member.role === 'MEMBER' && member.linkId !== member.profileId && 'Cannot add'}
-            {(member.role === 'JOINER' || member.role === 'HOLDER') && 'Cannot add'}
-          </button>
+			{canAddOrSave && (
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					handleAddChild();
+					}}
+				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+			>
+				Add child
+			</button>
+			)}
+			{canAddOrSave && !member.spouseId && (
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					handleAddSpouse();
+					}}
+				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+			>
+				Add spouse
+			</button>
+			)}
         </div>
       </div>
     </div>,

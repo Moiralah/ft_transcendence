@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast'
 
 import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
@@ -62,6 +63,9 @@ export default function Content() {
   interface treeView {
     viewType: TreeVisibility;
     viewId: number | null;
+	memberId: number | null;
+	linkId: number | null;
+	rootMemberId: number | null,
   }
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -88,7 +92,7 @@ export default function Content() {
       const match = treesMember.find((m: any) => m.id  === tree.rootId);
       if (match) return match;
     }
-    // return treesMember[0];
+    return treesMember[0];
   }, [tree, treesMember]);
 
   const initialTreeType = useMemo((): TreeVisibility => {
@@ -110,10 +114,19 @@ export default function Content() {
 
   const [treeType, setTreeType] = useState<TreeVisibility>(initialTreeType);
 
+//   const treeView = useMemo(() => ({
+//     viewType: treeType,
+//     viewId: myProfile?.id ?? null,
+//   }), [treeType, myProfile?.id]);
+
+  const myMembership = treesMember.find((m: any) => m.profileId === myProfile?.id);
   const treeView = useMemo(() => ({
     viewType: treeType,
     viewId: myProfile?.id ?? null,
-  }), [treeType, myProfile?.id]);
+    memberId: myMembership?.id ?? null,
+	linkId: myMembership?.linkId ?? null,
+	rootMemberId: tree?.rootId ?? null,
+  }), [treeType, myProfile?.id, myMembership?.id, myMembership?.linkId, tree?.rootId]);
 
   useEffect(() => {
     if (!rootMember && initialMember) {
@@ -153,8 +166,8 @@ export default function Content() {
       }
       const data = await res.json();
       setTree(data);
-	    setTreeId(data.id);
-	    fetchTreeMember(token, data.id);
+      setTreeId(data.id);
+      fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
@@ -331,6 +344,7 @@ export default function Content() {
       const updatedPending = await res.json();
       setPending(updatedPending);
     } catch (err: any) {
+	  toast.error('Could not load pending claims');
       console.error("Save error:", err.message);
     }
   };
@@ -485,21 +499,29 @@ export default function Content() {
           </div>
         </div>
 
-        <div>
-          {pending?.map((m: any) => (
-            <div key={m.id}>
-            {m.linkId} claiming {m.id}
-            <button
-              type="button"
-              onClick={() => {handleApproveClaim(m.id)}}
-            >approve</button>
-            <button
-              type="button"
-              onClick={() => {handleApproveUnclaim(m.id)}}
-            >reject</button>
-            </div>
-          ))}
-        </div>
+		<div>
+		{pending && pending.length > 0 && (
+			<div className="mb-4 space-y-2">
+			{pending.map((m: any) => (
+				<div key={m.id} className="flex items-center gap-2 py-2">
+				<span className="font-medium">
+					{m.link?.profile?.firstName} {m.link?.profile?.lastName}
+				</span>
+				<span className="text-gray-500">wants to claim</span>
+				<span className="font-semibold">
+					{m.profile?.firstName} {m.profile?.lastName}
+				</span>
+				<button type="button" onClick={() => handleApproveClaim(m.id)}>
+					approve
+				</button>
+				<button type="button" onClick={() => handleApproveUnclaim(m.id)}>
+					reject
+				</button>
+				</div>
+			))}
+			</div>
+		)}
+		</div>
 
         {/* Interactive Workspace */}
         <div
