@@ -103,7 +103,8 @@ export class TreeService {
 					treeId: tree.id,
 					profileId,
 					action: 'CREATE_TREE',
-					details: `Created tree "${name}" with code ${code}`,
+					// No join code here: audit rows reach browsers as live notifications.
+					details: `Created tree "${name}"`,
 				},
 			});
 
@@ -204,7 +205,7 @@ export class TreeService {
 		return memberships
 			.filter((m) => m.tree)
 			.map((m) => ({
-				...m.tree,
+				...this.codeForAdminsOnly(m.tree!, m.role),
 				profileRole: m.role,
 				userCount: m.tree?.members.length ?? 0,
 			}));
@@ -261,7 +262,7 @@ export class TreeService {
 		if (!tree) {
 			throw new NotFoundException('Tree not found.');
 		}
-		return { ...tree, userRole: member.role };
+		return { ...this.codeForAdminsOnly(tree, member.role), userRole: member.role };
 	}
 
 	async getTreeBySlug(slug: string, profileId: number) {
@@ -299,7 +300,15 @@ export class TreeService {
 		if (!fulltree) {
 			throw new NotFoundException('Tree not found.');
 		}
-		return { ...fulltree, userRole: member.role };
+		return { ...this.codeForAdminsOnly(fulltree, member.role), userRole: member.role };
+	}
+
+	// The join code is for the people who invite: tree admins (the owner is
+	// one). Other members get the tree without it.
+	private codeForAdminsOnly<T extends { code: string | null }>(tree: T, role: string): T | Omit<T, 'code'> {
+		if (role === 'ADMIN') return tree;
+		const { code: _code, ...rest } = tree;
+		return rest;
 	}
 
 	async update(
@@ -1137,7 +1146,8 @@ export class TreeService {
 		// tell the owner when it wasn't them.
 		const byOwner = tree.ownerId === requesterProfileId;
 		this.logger.log(
-			`Tree ${treeId} "${tree.name}" deleted by profile ${requesterProfileId}`
+			// JSON.stringify: a name with line breaks can't forge extra log lines.
+			`Tree ${treeId} ${JSON.stringify(tree.name)} deleted by profile ${requesterProfileId}`
 			+ `${byOwner ? ' (owner)' : ' (site admin)'}; ${result.deletedProfileCount} made-up profiles removed`,
 		);
 		if (!byOwner) {

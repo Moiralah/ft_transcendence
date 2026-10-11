@@ -6,6 +6,8 @@ import { TreeService } from './tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTreeDto } from './dto/create-tree.dto';
 import { JoinTreeDto } from './dto/join-tree.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { UpdateTreeDto } from './dto/update-tree.dto';
 
 @Controller('trees')
 export class TreeController {
@@ -26,6 +28,10 @@ export class TreeController {
 	@Get('search')
 	@UseGuards(JwtAuthGuard)
 	async searchTree(@Query('q') query: string) {
+		// ?q=a&q=b arrives as an array, which Prisma would reject with a 500.
+		if (typeof query !== 'string' || query.length > 200) {
+			throw new BadRequestException('Search text is required (max 200 characters).');
+		}
 		return this.treeService.searchTree(query);
 	}
 
@@ -55,7 +61,7 @@ export class TreeController {
 
 	@Patch(':treeId')
 	@UseGuards(JwtAuthGuard)
-	async update(@Req() req, @Param('treeId', ParseIntPipe) treeId: number, @Body() body: any) {
+	async update(@Req() req, @Param('treeId', ParseIntPipe) treeId: number, @Body() body: UpdateTreeDto) {
 		return this.treeService.update(
 			Number(treeId),
 			req.user.profileId,
@@ -69,7 +75,7 @@ export class TreeController {
 		@Req() req,
 		@Param('treeId', ParseIntPipe) treeId: number,
 		@Param('targetProfileId', ParseIntPipe) targetProfileId: number,
-		@Body() body: { role: string },
+		@Body() body: UpdateMemberRoleDto,
 	) {
 		return this.treeService.updateMemberRole(
 			Number(treeId),

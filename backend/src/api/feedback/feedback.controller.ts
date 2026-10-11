@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post, Req } from '@nestjs/common';
-import { FeedbackInput, FeedbackService } from './feedback.service';
+import { FeedbackService } from './feedback.service';
+import { FeedbackDto } from './dto/feedback.dto';
 
 // Public on purpose: the footer, privacy and terms pages link here for
 // visitors who may not have (or can't create) an account. Spam is handled
@@ -10,7 +11,7 @@ export class FeedbackController {
 
 	@Post()
 	@HttpCode(200)
-	async submit(@Body() body: FeedbackInput, @Req() req) {
+	async submit(@Body() body: FeedbackDto, @Req() req) {
 		return this.feedback.submit(body ?? {}, clientIp(req));
 	}
 }

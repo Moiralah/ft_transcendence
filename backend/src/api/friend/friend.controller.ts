@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FriendService } from './friend.service';
+import { FriendStatusDto } from './dto/friend-status.dto';
 
 interface Request {
   user: {
@@ -59,7 +60,7 @@ export class FriendController {
   @Post('status')
   getStatuses(
     @Req() req: Request,
-    @Body() body: { userIds: string[] },
+    @Body() body: FriendStatusDto,
   ) {
     return this.friendService.getStatuses(req.user.id, body.userIds);
   }
