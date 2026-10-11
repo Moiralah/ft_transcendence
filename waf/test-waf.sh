@@ -3,7 +3,7 @@
 # pass. Run it after any change to the WAF config or exclusions.
 #
 #   ./waf/test-waf.sh                          # production (https://ft.natscho.my)
-#   ./waf/test-waf.sh https://localhost:8443 https://localhost:9443/api   # make security
+#   ./waf/test-waf.sh https://localhost:8443 https://localhost:9443/api   # make up
 #   RATE=1 ./waf/test-waf.sh                   # also test rate limiting (prod only;
 #                                              # throttles your own IP for ~1 minute)
 #

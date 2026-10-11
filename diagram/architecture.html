@@ -131,7 +131,7 @@
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. It also keeps one more direct line
     to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree and live change notices. Everything else is
-    one path: browser → WAF → our backend → Postgres (when run with <code>make security</code>, at <code>https://localhost:8443</code>; plain <code>make up</code> has no WAF). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code>, at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -145,7 +145,7 @@
       <rect x="30" y="46" width="220" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
       <text x="52" y="80" class="box-label" fill="var(--browser)">Browser</text>
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
-      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make security)</text>
+      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make up)</text>
       <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">sessionStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
@@ -309,7 +309,7 @@
         <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional (OAuth sign-in, feedback email). <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
       <text x="30" y="588" class="box-sub" fill="var(--sub)">
-        In the <tspan class="mono" fill="var(--sub)">make security</tspan> stack, backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
+        In the <tspan class="mono" fill="var(--sub)">make up</tspan> stack, backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
       </text>
       <text x="30" y="604" class="box-sub" fill="var(--sub)">
         Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
@@ -428,7 +428,7 @@
     <div class="ic">⚠️</div>
     <div>
       <strong>Vault is dev mode — resets on every restart:</strong> in-memory only, no storage backend, unsealed
-      automatically with a hardcoded root token. That's why <code>make security</code> runs
+      automatically with a hardcoded root token. That's why <code>make up</code> runs
       <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
       all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch — seeded from <code>.env</code>, which is still required. A real
       deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead. <strong>That replacement is

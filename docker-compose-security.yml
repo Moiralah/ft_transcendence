@@ -1,12 +1,7 @@
 # WAF (ModSecurity + OWASP CRS) — IV.5 Cybersecurity module.
 #
-# Kept in a separate compose file so the rest of the team's `make up` /
-# `docker compose up` doesn't need to pull the ModSecurity image or care
-# about this module at all. Bring it up alongside the base stack with:
-#
-#   docker compose -f docker-compose.yml -f docker-compose-security.yml up -d --build
-#
-# or `make security` (see Makefile). Requires backend/frontend to already
+# Kept in its own compose file, layered on docker-compose.yml. `make up` always
+# uses both (see Makefile for the start order). Requires backend/frontend to already
 # be defined by docker-compose.yml — this file only adds to that stack, it
 # doesn't stand alone.
 #
@@ -17,8 +12,8 @@
 # In this stack the WAF is the *only* way in: backend's :4000 and frontend's
 # :3000 are not published (see `ports: !reset []` below — a WAF with a bypass
 # path isn't protecting anything). They still exist on the Docker network, which
-# is how the WAFs reach them. The plain `make up` stack, which has no WAF, is
-# unchanged and still publishes them. `!reset` needs Docker Compose >= 2.24.
+# is how the WAFs reach them. A plain `docker compose up` (base file only, no
+# WAF) still publishes them. `!reset` needs Docker Compose >= 2.24.
 
 services:
   waf-frontend:
@@ -100,7 +95,7 @@ services:
 
   # Adds to (does not replace) backend's definition in docker-compose.yml —
   # compose merges `environment:` maps by key across -f files. Actually
-  # runs with real values via scripts/vault-init.sh / `make security`,
+  # runs with real values via scripts/vault-init.sh / `make up`,
   # which regenerates VAULT_ROLE_ID/VAULT_SECRET_ID every time since dev
   # Vault forgets them on restart. Without those set,
   # backend/src/vault/load-secrets.ts just no-ops and falls back to `.env`.
@@ -110,8 +105,8 @@ services:
       VAULT_ROLE_ID: ${VAULT_ROLE_ID:-}
       VAULT_SECRET_ID: ${VAULT_SECRET_ID:-}
       # Secrets come ONLY from Vault in this stack (loaded in main.ts before
-      # Nest starts). docker-compose.yml passes them from .env for the plain
-      # `make up` stack; blanked here so they don't sit in clear text in the
+      # Nest starts). docker-compose.yml passes them from .env for a plain
+      # `docker compose up`; blanked here so they don't sit in clear text in the
       # container's environment (`docker inspect`). Same as SMTP_PASS, which
       # was never passed. SUPABASE_AUTH_URL is only the project address, not a
       # credential, but it is one of Vault's six, so it is blanked too. Manual

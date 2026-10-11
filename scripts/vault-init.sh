@@ -38,7 +38,7 @@ SUPABASE_SERVICE_ROLE_KEY=$(env_value SUPABASE_SERVICE_ROLE_KEY)
 DATABASE_URL_RAW=$(env_value DATABASE_URL)
 DIRECT_URL_RAW=$(env_value DIRECT_URL)
 SUPABASE_AUTH_URL_RAW=$(env_value SUPABASE_AUTH_URL)
-# `make local` / `make local-security` (scripts/local-up.sh) point the stack at
+# `make local` (scripts/local-up.sh) points the stack at
 # local Supabase by exporting these. Use them over .env then, or a .env that
 # points at the cloud project would quietly connect a "local" run to it.
 if [ "$FT_LOCAL_SUPABASE" = "1" ]; then
