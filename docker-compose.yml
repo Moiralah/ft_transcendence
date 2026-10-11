@@ -13,6 +13,8 @@ services:
     restart: unless-stopped
     depends_on: []
     environment:
+      # Logs and server-side times in Malaysia time (GMT+8), like the host.
+      TZ: ${TZ:-Asia/Kuala_Lumpur}
       PORT: ${PORT}
       NODE_ENV: ${NODE_ENV}
       JWT_SECRET: ${JWT_SECRET}
@@ -22,6 +24,13 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       DIRECT_URL: ${DIRECT_URL}
       DATABASE_URL: ${DATABASE_URL}
+      # Feedback form (/feedback) emails go out through this SMTP account.
+      # SMTP_PASS is a secret: in the security/prod stack it comes from Vault
+      # (vault-init.sh), so it's deliberately not passed here.
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      FEEDBACK_TO: ${FEEDBACK_TO:-tiarabyte@gmail.com}
     ports:
       - "4000:4000"
     volumes:
@@ -37,6 +46,7 @@ services:
     depends_on:
       - backend
     environment:
+      TZ: ${TZ:-Asia/Kuala_Lumpur}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}

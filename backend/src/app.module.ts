@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './api/auth/auth.module';
+import { FriendModule } from './api/friend/friend.module';
 import { ProfileModule } from './api/profile/profile.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TreeModule } from './api/tree/tree.module';
 import { UsersModule } from './api/users/users.module';
+import { FeedbackModule } from './api/feedback/feedback.module';
 
 @Module({
 	imports: [
@@ -17,9 +19,11 @@ import { UsersModule } from './api/users/users.module';
 		SupabaseModule,
 		PrismaModule,
 		AuthModule,
+		FriendModule,
 		ProfileModule,
 		TreeModule,
 		UsersModule,
+		FeedbackModule,
 	],
 	providers:[PrismaService],
 })

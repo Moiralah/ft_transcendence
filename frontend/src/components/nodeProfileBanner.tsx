@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { getToken } from '@/lib/auth';
 import type { TreeViewContext } from './treeNode';
 
 export interface Member {
@@ -84,51 +85,53 @@ export function NodeProfileModal({
     .join(', ');
 
   const handleAddChild = async () => {
-    try {
-      const token = localStorage.getItem('ft_token');
-      if (!token) throw new Error('No token found. Please log in.');
+  try {
+    const token = getToken();
+    if (!token) throw new Error("No token found. Please log in.");
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      if (!res.ok) {
-        if (res.status === 401) throw new Error('Session expired. Please log in again.');
-        throw new Error(`Failed to add child: ${res.statusText}`);
-      }
-
-      const rawResponseBody = await res.json();
-      const serverData: Member[] = rawResponseBody.data || rawResponseBody;
-
-      if (Array.isArray(serverData) && serverData.length > 0) {
-        const newChildMember = serverData[serverData.length - 1];
-
-        const newSpouseMember = serverData.find(
-          (m) =>
-            (m.profileId ?? m.id) !== (newChildMember.profileId ?? newChildMember.id) &&
-            (m.profileId ?? m.id) !== (member.profileId ?? member.id)
-        );
-        if (newSpouseMember && onAddSpouse) {
-          onAddSpouse(newSpouseMember);
-        }
-        if (onAddChild) {
-          onAddChild(newChildMember);
-        }
-      }
-      if (onClose) onClose();
-    } catch (err: any) {
-      console.error('Save error:', err.message);
+    if (!res.ok) {
+      if (res.status === 401) throw new Error("Session expired. Please log in again.");
+      throw new Error(`Failed to add child: ${res.statusText}`);
     }
-  };
+
+    const rawResponseBody = await res.json();
+    const serverData: Member[] = rawResponseBody.data || rawResponseBody;
+
+    if (Array.isArray(serverData) && serverData.length > 0) {
+      const newChildMember = serverData[serverData.length - 1];
+
+      const newSpouseMember = serverData.find(
+        (m) =>
+          (m.profileId ?? m.id) !== (newChildMember.profileId ?? newChildMember.id) &&
+          (m.profileId ?? m.id) !== (member.profileId ?? member.id)
+      );
+      if (newSpouseMember && onAddSpouse) {
+        onAddSpouse(newSpouseMember);
+      }
+      if (onAddChild) {
+        onAddChild(newChildMember);
+      }
+    }
+    if (onClose) {
+      onClose();
+    }
+  } catch (err: any) {
+    console.error("Save error:", err.message);
+  }
+};
 
   const handleAddSpouse = async () => {
     try {
-      const token = localStorage.getItem('ft_token');
+      const token = getToken();
       if (!token) throw new Error('No token found. Please log in.');
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -158,9 +161,10 @@ export function NodeProfileModal({
 
   const handleClaim = async () => {
     try {
-      const token = localStorage.getItem('ft_token');
-      if (!token) throw new Error('No token found. Please log in.');
-
+      const token = getToken();
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
         method: 'POST',
@@ -186,11 +190,11 @@ export function NodeProfileModal({
     }
   };
 
-const handleUnclaim = async (holderMemberId?: number | null) => {
-  if (!holderMemberId) return;
+	const handleUnclaim = async (holderMemberId?: number | null) => {
+	if (!holderMemberId) return;
 
   try {
-    const token = localStorage.getItem('ft_token');
+    const token = getToken();
     if (!token) throw new Error('No token found. Please log in.');
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -221,9 +225,10 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
     try {
       if (!formMember?.profileId) return;
 
-      const token = localStorage.getItem('ft_token');
-      if (!token) throw new Error('No token found. Please log in.');
-
+      const token = getToken();
+      if (!token) {
+        throw new Error("No token found. please log in");
+      }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
       const res = await fetch(`${API_URL}/profile/${formMember.profileId}`, {
@@ -272,6 +277,8 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
 
 	const viewerRole = treeView.viewType;
 
+	const isJoiner = viewerRole === 'JOINER';
+
 	const canEdit =
 	viewerRole === 'ADMIN' || viewerRole === 'MODERATOR';
 
@@ -279,6 +286,28 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
 	viewerRole === 'MEMBER' && member.id === treeView.memberId;
 
 	const canAddOrSave = canEdit || isMyClaimedNode;
+
+	// Do I already have a claim somewhere in this tree?
+	const iAlreadyHaveAClaim = treeView.linkId != null;
+
+	// Is THIS node the one I've claimed?
+	const isMyClaimOnThisNode =
+		member.role === 'HOLDER' &&
+		member.linkId != null &&
+		member.linkId === treeView.memberId;
+
+	// Can I claim this node?
+	const canClaimThisNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'EMPTY' || !member.claim) &&
+		!iAlreadyHaveAClaim;
+
+	const isClaimedNode =
+		member.role === 'HOLDER' &&
+		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
+
+	// Fields (name, birth date, gender) can only be edited on unclaimed rows.
+	const canEditFields = !isClaimedNode && !isJoiner;
 
   if (!mounted) return null;
 
@@ -324,12 +353,14 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                 <div className="flex text-2xl">
                   {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
                 </div>
-                <div
-                  className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
-                  onClick={() => setEditName(true)}
-                >
-                  Edit Name
-                </div>
+					{canEditFields && (
+					<div
+						className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
+						onClick={() => setEditName(true)}
+					>
+						Edit Name
+					</div>
+					)}
               </div>
             )}
           </div>
@@ -350,12 +381,14 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-                <span
-                  onClick={() => setEditingField('birthDate')}
-                  className="cursor-pointer hover:bg-gray-100 rounded text-xl px-2 py-1"
-                >
-                  {formMember?.birthDate || 'Click to add birth date'}
-                </span>
+			<span
+				onClick={() => canEditFields && setEditingField('birthDate')}
+				className={`rounded text-xl px-2 py-1 ${
+					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				}`}
+				>
+				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				</span>
               )}
             </div>
           </div>
@@ -368,6 +401,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
+				disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -386,6 +420,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(true)}
+				disabled={!canEditFields}
               >
                 Alive
               </button>
@@ -395,6 +430,7 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
                   !alive ? 'bg-white shadow-sm' : ''
                 }`}
                 onClick={() => setAlive(false)}
+				disabled={!canEditFields}
               >
                 Deceased
               </button>
@@ -427,40 +463,36 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
             Cancel
           </button>
 
-          {/* claim / unclaim button */}
-          <button
-            type="button"
-            onClick={(e) => {
-            e.stopPropagation();
-            if (member.role !== 'HOLDER' && member.linkId) {
-              handleUnclaim(member.linkId);
-            } else if (member.claim === 'EMPTY' || !member.claim) {
-              handleClaim();
-            }
-              onClose();
-            }}
-            disabled={
-              member.claim === 'PENDING' && member.role === 'HOLDER'
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            {member.role !== 'HOLDER' && 'Unclaim from me'}
-            {member.claim === 'PENDING' && member.role === 'HOLDER' && 'PENDING'}
-            {member.claim === 'EMPTY' && member.role === 'HOLDER' && 'claim for me'}
-
-          </button>
-
-			<button
+		{(isMyClaimOnThisNode || canClaimThisNode) && (
+		<button
+			type="button"
+			onClick={(e) => {
+			e.stopPropagation();
+			if (isMyClaimOnThisNode) {
+				handleUnclaim(member.id);   // ← HOLDER's TreeMember.id
+			} else if (canClaimThisNode) {
+				handleClaim();
+			}
+			onClose();
+			}}
+			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+		>
+			{isMyClaimOnThisNode && 'Unclaim from me'}
+			{canClaimThisNode && 'Claim for me'}
+		</button>
+		)}
+		{(canAddOrSave && !isClaimedNode) && (
+		<button
 			type="button"
 			onClick={(e) => {
 				e.stopPropagation();
-				if (canAddOrSave) handleSave();
+				handleSave();
 			}}
-			disabled={!canAddOrSave}
 			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
-			>
-			{canAddOrSave ? 'Save Changes' : 'Cannot save'}
-			</button>
+		>
+			Save Changes
+		</button>
+		)}
         </div>
 
         {/* Family Section */}
@@ -482,24 +514,25 @@ const handleUnclaim = async (holderMemberId?: number | null) => {
 
         {/* Add Family Section */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+			{canAddOrSave && (
 			<button
-			type="button"
-			onClick={(e) => {
-				e.stopPropagation();
-				if (canAddOrSave) handleAddChild();
-			}}
-			disabled={!canAddOrSave}
-			className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					handleAddChild();
+					}}
+				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
 			>
-			{canAddOrSave ? 'Add child' : 'Cannot add'}
+				Add child
 			</button>
+			)}
 			{canAddOrSave && !member.spouseId && (
 			<button
 				type="button"
 				onClick={(e) => {
-				e.stopPropagation();
-				handleAddSpouse();
-				}}
+					e.stopPropagation();
+					handleAddSpouse();
+					}}
 				className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
 			>
 				Add spouse

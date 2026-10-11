@@ -12,12 +12,18 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession } from '@/lib/auth';
+import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
 
 export default function TreePage() {
   const router = useRouter();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
-  const role = typeof window !== 'undefined' ? localStorage.getItem('ft_role') : null;
+  const token = getToken();
+  // Read after the first render: the server has no sessionStorage, so reading
+  // it while rendering made the server and browser HTML differ for admins and
+  // moderators (the Admin Panel button) and React threw a hydration error.
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    setRole(getRole());
+  }, []);
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -41,6 +47,23 @@ export default function TreePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profileBirthDate, setProfileBirthDate] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
+  const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
+  const [profileResults, setProfileResults] = useState<any[]>([]);
+  const [friendStatuses, setFriendStatuses] = useState<Record<string, {
+    status: string;
+    friendId: number | null;
+  }>>({});
+  const [profilePage, setProfilePage] = useState(1);
+  const [profileTotalPages, setProfileTotalPages] = useState(0);
+  const [profileTotal, setProfileTotal] = useState(0);
+  const [isProfileSearching, setIsProfileSearching] = useState(false);
+  const [showProfileSearch, setShowProfileSearch] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -74,13 +97,17 @@ export default function TreePage() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
-          router.push('/login');
+          clearSession();
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
       const profileData = await res.json();
       setMyProfile(profileData);
+      if (profileData?.role) {
+        updateRole(profileData.role);
+        setRole(profileData.role);
+      }
     } catch (err) {
       console.error('Error fetching current user:', err);
     }
@@ -95,8 +122,8 @@ export default function TreePage() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
-          router.push('/login');
+          clearSession();
+          router.push(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);
       }
@@ -168,7 +195,8 @@ export default function TreePage() {
     setIsSearching(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
@@ -178,6 +206,295 @@ export default function TreePage() {
       alert(err.message);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const searchProfiles = async (page = 1) => {
+    const hasCriteria = profileFirstName.trim() ||
+      profileLastName.trim() || profileBirthDate || profileGender;
+
+    if (!hasCriteria) {
+      return;
+    }
+
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setIsProfileSearching(true);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (profileFirstName.trim()) {
+        params.set('firstName', profileFirstName.trim());
+      }
+
+      if (profileLastName.trim()) {
+        params.set('lastName', profileLastName.trim());
+      }
+
+      if (profileBirthDate) {
+        params.set('birthDate', profileBirthDate);
+      }
+
+      if (profileGender) {
+        params.set('gender', profileGender);
+      }
+
+      params.set('sortBy', profileSortBy);
+      params.set('order', profileOrder);
+      params.set('page', String(page));
+      params.set('limit', '10');
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/profile/search?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          clearSession();
+          router.push(await loginPathAfter401(res));
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'advanced search failed');
+      }
+
+      const data = await res.json();
+
+      setProfileResults(data.data);
+      setProfilePage(data.pagination.page);
+      setProfileTotalPages(data.pagination.totalPages);
+      setProfileTotal(data.pagination.total);
+	  await loadFriendStatuses(data.data);
+	  setShowProfileSearch(true);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProfileSearching(false);
+    }
+  };
+
+  const loadFriendStatuses = async (profiles: any[]) => {
+    if (!token) return;
+
+    const userIds = profiles
+      .map((profile) => profile.userId)
+      .filter(Boolean);
+
+    if (userIds.length === 0) {
+      setFriendStatuses({});
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userIds }),
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to load friend statuses');
+      }
+
+      const statuses = await res.json();
+
+      const statusMap: Record<string, {
+        status: string;
+        friendId: number | null;
+      }> = {};
+
+      statuses.forEach((item: any) => {
+        statusMap[item.userId] = {
+          status: item.status,
+          friendId: item.friendId,
+        };
+      });
+
+      setFriendStatuses(statusMap);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  const addFriend = async (userId: string) => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to send friend request');
+      }
+
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'PENDING_OUT',
+          friendId: data.id,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const acceptFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to accept friend request');
+      }
+
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'ACCEPTED',
+          friendId: data.id,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const declineFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to decline friend request');
+      }
+
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const cancelFriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to cancel friend request');
+      }
+
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        }
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const unfriend = async (friendId: number, userId: string) => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to unfriend user');
+      }
+
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status: 'NONE',
+          friendId: null,
+        },
+      }));
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
     }
   };
 
@@ -258,9 +575,9 @@ export default function TreePage() {
                 <Button href="/settings/2fa" variant="secondary">
                   Security &amp; Password
                 </Button>
-                {role === 'ADMIN' && (
+                {(role === 'ADMIN' || role === 'MODERATOR') && (
                   <Button href="/admin/users" variant="secondary">
-                    Admin Panel
+                    {role === 'ADMIN' ? 'Admin Panel' : 'Moderation'}
                   </Button>
                 )}
                 <Button onClick={handleLogout} variant="secondary">
@@ -302,6 +619,141 @@ export default function TreePage() {
           >
             {isSearching ? 'Searching...' : 'Search'}
           </Button>
+        </section>
+
+        <section
+          aria-labelledby="profile-search-heading"
+          className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200"
+        >
+          <h2
+            id="profile-search-heading"
+            className="text-2xl font-bold text-slate-900 mb-4"
+          >
+            Advanced Search
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="profile-first-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                First Name
+              </label>
+              <input
+                id="profile-first-name"
+                type="text"
+                value={profileFirstName}
+                onChange={(e) => setProfileFirstName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-last-name"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Last Name
+              </label>
+              <input
+                id="profile-last-name"
+                type="text"
+                value={profileLastName}
+                onChange={(e) => setProfileLastName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-birth-date"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Birth Date
+              </label>
+              <input
+                id="profile-birth-date"
+                type="date"
+                value={profileBirthDate}
+                onChange={(e) => setProfileBirthDate(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-gender"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Gender
+              </label>
+              <select
+                id="profile-gender"
+                value={profileGender}
+                onChange={(e) => setProfileGender(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="">Any</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-sort-by"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Sort By
+              </label>
+              <select
+                id="profile-sort-by"
+                value={profileSortBy}
+                onChange={(e) =>
+                  setProfileSortBy(e.target.value as 'firstName' | 'lastName')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="firstName">First Name</option>
+                <option value="lastName">Last Name</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="profile-order"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Order
+              </label>
+              <select
+                id="profile-order"
+                value={profileOrder}
+                onChange={(e) =>
+                  setProfileOrder(e.target.value as 'asc' | 'desc')
+                }
+                className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                <option value="asc">A–Z</option>
+                <option value="desc">Z–A</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <Button
+              onClick={() => searchProfiles(1)}
+              variant="primary"
+              disabled={
+                isProfileSearching ||
+                !(profileFirstName.trim() || profileLastName.trim() ||
+                  profileBirthDate || profileGender)
+              }
+            >
+              {isProfileSearching ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
         </section>
 
         {/* My Trees List */}
@@ -423,13 +875,190 @@ export default function TreePage() {
                         Description: {tree.description || 'N/A'}
                       </div>
                       <div className="text-xs text-slate-600 mt-1">
-                        Owner: {tree?.ownerId || 'Unknown'}
+                        Owner: {tree.owner?.user?.username || tree.owner?.firstName || 'Unknown'}
                       </div>
                     </Link>
                   ))}
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {showProfileSearch && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setShowProfileSearch(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-search-modal-title"
+            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2
+                  id="profile-search-modal-title"
+                  className="text-xl font-bold text-slate-900"
+                >
+                  Search Results
+                </h2>
+
+                <p className="text-sm text-slate-600 mt-1">
+                  {profileTotal} result{profileTotal === 1 ? '' : 's'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowProfileSearch(false)}
+                aria-label="Close profile search results"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div aria-live="polite">
+              {profileResults.map((profile) => {
+                const friendStatus = profile.userId
+                  ? friendStatuses[profile.userId] : undefined;
+
+                const status = friendStatus?.status ?? 'NONE';
+                return (
+                  <div
+                    key={profile.id}
+                    className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <div className="font-bold text-slate-900 text-base">
+                        {[profile.firstName, profile.lastName]
+                          .filter(Boolean)
+                          .join(' ')}
+                      </div>
+                      <div className="text-sm text-slate-700 mt-1">
+                        Gender: {profile.gender || 'N/A'}
+                      </div>
+
+                      <div className="text-sm text-slate-700 mt-1">
+                        Birth Date: {profile.birthDate || 'N/A'}
+                      </div>
+
+                      {profile.deathDate && (
+                        <div className="text-sm text-slate-700 mt-1">
+                          Death Date: {profile.deathDate}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!profile.userId ? (
+                        <span className="text-sm text-slate-500">
+                          No account
+                        </span>
+                      ) : status === 'NONE' ? (
+                        <button
+                          type="button"
+                          onClick={() => addFriend(profile.userId)}
+                          className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
+                          Add Friend
+                        </button>
+                      ) : status === 'PENDING_OUT' ? (
+						<button
+							type="button"
+							className="..."
+							onClick={() => {
+							const friendId = friendStatus?.friendId;
+
+							if (friendId) {
+								cancelFriend(friendId, profile.userId);
+							}
+							}}
+						>
+							Cancel Request
+						</button>
+                      ) : status === 'PENDING_IN' ? (
+                        <>
+                          <button
+                            type="button"
+                            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
+							onClick={() => {
+								const friendId = friendStatus?.friendId;
+
+								if (friendId) {
+								acceptFriend(friendId, profile.userId);
+								}
+							}}
+						  >
+                            Accept
+                          </button>
+
+                          <button
+                            type="button"
+                            className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"
+							onClick={() => {
+								const friendId = friendStatus?.friendId;
+
+								if (friendId) {
+								declineFriend(friendId, profile.userId);
+								}
+							}}
+						  >
+                            Decline
+                          </button>
+                        </>
+                      ) : status === 'ACCEPTED' ? (
+						<button
+						type="button"
+						className="..."
+						onClick={() => {
+							const friendId = friendStatus?.friendId;
+
+							if (friendId !== null && friendId !== undefined) {
+							unfriend(friendId, profile.userId);
+							}
+						}}
+						>
+						Unfriend
+						</button>
+                      ) : (
+                        <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
+                          {status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {profileTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+                <Button
+                  variant="secondary"
+                  disabled={profilePage <= 1 || isProfileSearching}
+                  onClick={() => searchProfiles(profilePage - 1)}
+                >
+                  Previous
+                </Button>
+
+                <span className="text-sm text-slate-700">
+                  Page {profilePage} of {profileTotalPages}
+                </span>
+
+                <Button
+                  variant="secondary"
+                  disabled={
+                    profilePage >= profileTotalPages || isProfileSearching
+                  }
+                  onClick={() => searchProfiles(profilePage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

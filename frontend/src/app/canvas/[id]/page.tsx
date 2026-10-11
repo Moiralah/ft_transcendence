@@ -11,6 +11,7 @@ import { TreeBranch } from '@/components/treeBranch';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
+import { clearSession, getToken, loginPathAfter401 } from '@/lib/auth';
 
 
 interface PendingClaim {
@@ -48,7 +49,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const slug = params.id as unknown as string;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('ft_token') : null;
+  const token = getToken();
 
   const [rootMember, setRootMember] = useState<any>();
   const [treeId, setTreeId] = useState<number | null>(null);
@@ -63,15 +64,19 @@ export default function Content() {
     viewType: TreeVisibility;
     viewId: number | null;
 	memberId: number | null;
+	linkId: number | null;
+	rootMemberId: number | null,
   }
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   useEffect(() => {
-    if (token) {
-      fetchTree(token);
-	    fetchMyProfile(token);
+    if (!token) {
+      router.push('/login');
+      return;
     }
+    fetchTree(token);
+    fetchMyProfile(token);
   }, [slug, token]);
 
   useEffect(() => {
@@ -118,8 +123,10 @@ export default function Content() {
   const treeView = useMemo(() => ({
     viewType: treeType,
     viewId: myProfile?.id ?? null,
-    memberId: myMembership?.id ?? null,   // ← your TreeMember.id
-  }), [treeType, myProfile?.id, myMembership?.id]);
+    memberId: myMembership?.id ?? null,
+	linkId: myMembership?.linkId ?? null,
+	rootMemberId: tree?.rootId ?? null,
+  }), [treeType, myProfile?.id, myMembership?.id, myMembership?.linkId, tree?.rootId]);
 
   useEffect(() => {
     if (!rootMember && initialMember) {
@@ -143,8 +150,8 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
-          router.push('/login');
+          clearSession();
+          router.push(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
@@ -159,8 +166,8 @@ export default function Content() {
       }
       const data = await res.json();
       setTree(data);
-	    setTreeId(data.id);
-	    fetchTreeMember(token, data.id);
+      setTreeId(data.id);
+      fetchTreeMember(token, data.id);
     } catch (err: any) {
       console.error('Error fetching tree:', err);
     }
@@ -175,8 +182,8 @@ export default function Content() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('ft_token');
-          router.push('/login');
+          clearSession();
+          router.push(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
@@ -252,7 +259,7 @@ export default function Content() {
     setEditTreeName(false);
 
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -314,7 +321,7 @@ export default function Content() {
 
   const handlePending = async () => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -344,7 +351,7 @@ export default function Content() {
 
   const handleApproveClaim = async (holderMemberId: number) => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
@@ -372,7 +379,7 @@ export default function Content() {
 
   const handleApproveUnclaim = async (holderMemberId: number) => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }

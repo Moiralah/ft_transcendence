@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
+import { getToken } from '@/lib/auth';
 
 export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
 
@@ -7,6 +8,7 @@ export interface TreeViewContext {
   viewType: TreeVisibility;
   viewId: number | null;
   memberId: number | null;
+  linkId: number | null;
 }
 
 export interface Member {
@@ -95,8 +97,10 @@ export function TreeNode({
 
     // Better: expose your TreeMember.id to the treeView context.
     // Then: isMyClaim = nodeMember.linkId === treeView.memberId;
-
-    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim));
+	const isUnclaimedHolder =
+		nodeMember.role === 'HOLDER' &&
+		(nodeMember.claim === 'EMPTY' || !nodeMember.claim);
+    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim || isUnclaimedHolder));
 
   }, [treeView, nodeMember]);
 
@@ -107,9 +111,10 @@ export function TreeNode({
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("ft_token");
-      if (!token) throw new Error("No token found. Please log in.");
-
+      const token = getToken();
+        if (!token) {
+        throw new Error("No token found. please log in");
+      }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
       const res = await fetch(`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
         method: "DELETE",

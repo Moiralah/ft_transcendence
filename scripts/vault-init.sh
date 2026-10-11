@@ -27,11 +27,34 @@ echo "[vault-init] reading secret values from .env..."
 # .env has CRLF line endings — cut leaves the trailing \r in the value,
 # which breaks Vault's JSON parsing later (same CRLF class of bug that's
 # bitten this project before). Strip it explicitly.
-JWT_SECRET=$(grep -E '^JWT_SECRET=' .env | cut -d= -f2- | tr -d '\r')
-SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SUPABASE_SERVICE_ROLE_KEY=' .env | cut -d= -f2- | tr -d '\r')
-DATABASE_URL_RAW=$(grep -E '^DATABASE_URL=' .env | cut -d= -f2- | tr -d '\r')
-DIRECT_URL_RAW=$(grep -E '^DIRECT_URL=' .env | cut -d= -f2- | tr -d '\r')
-SUPABASE_AUTH_URL_RAW=$(grep -E '^SUPABASE_AUTH_URL=' .env | cut -d= -f2- | tr -d '\r')
+# Values may also be wrapped in quotes (KEY="value", as the README shows):
+# strip one pair, or the quotes end up inside the JSON below and the write fails.
+env_value() {
+  grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | tr -d '\r' \
+    | sed -E 's/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/'
+}
+JWT_SECRET=$(env_value JWT_SECRET)
+SUPABASE_SERVICE_ROLE_KEY=$(env_value SUPABASE_SERVICE_ROLE_KEY)
+DATABASE_URL_RAW=$(env_value DATABASE_URL)
+DIRECT_URL_RAW=$(env_value DIRECT_URL)
+SUPABASE_AUTH_URL_RAW=$(env_value SUPABASE_AUTH_URL)
+# `make local` / `make local-security` (scripts/local-up.sh) point the stack at
+# local Supabase by exporting these. Use them over .env then, or a .env that
+# points at the cloud project would quietly connect a "local" run to it.
+if [ "$FT_LOCAL_SUPABASE" = "1" ]; then
+  echo "[vault-init] local Supabase: database, auth URL and service key from local-up.sh"
+  DATABASE_URL_RAW=$DATABASE_URL
+  DIRECT_URL_RAW=$DIRECT_URL
+  SUPABASE_AUTH_URL_RAW=$SUPABASE_AUTH_URL
+  SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+fi
+# Optional: Gmail App Password for the feedback form. Google shows it in
+# groups of four with spaces; strip those. Empty is fine (feedback then
+# answers 503 instead of sending).
+# Last non-empty line only: a duplicate or empty SMTP_PASS= line used to
+# turn this into a multi-line value, the JSON below became invalid, and the
+# Vault write failed silently, keeping the old (empty) secret.
+SMTP_PASS=$(env_value SMTP_PASS | tr -d ' "')
 # In LOCAL dev, Supabase/Postgres run on the HOST (127.0.0.1/localhost),
 # which inside the backend's Docker container means the container itself,
 # not the host — rewrite to host.docker.internal. See README "Running
@@ -50,9 +73,21 @@ DIRECT_URL_DOCKER=$(rewrite_loopback "$DIRECT_URL_RAW")
 SUPABASE_AUTH_URL_DOCKER=$(rewrite_loopback "$SUPABASE_AUTH_URL_RAW")
 
 echo "[vault-init] writing secret/data/family-tree/backend..."
-curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
-  -d "{\"data\":{\"JWT_SECRET\":\"$JWT_SECRET\",\"SUPABASE_SERVICE_ROLE_KEY\":\"$SUPABASE_SERVICE_ROLE_KEY\",\"DATABASE_URL\":\"$DATABASE_URL_DOCKER\",\"DIRECT_URL\":\"$DIRECT_URL_DOCKER\",\"SUPABASE_AUTH_URL\":\"$SUPABASE_AUTH_URL_DOCKER\"}}" \
-  "$VAULT_ADDR/v1/$SECRET_PATH" >/dev/null
+# JSON built by python3 (escapes any character), and the HTTP status checked:
+# a failed write used to pass silently and the backend then crashed on a 404.
+SECRET_JSON=$(JWT_SECRET="$JWT_SECRET" SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+  DATABASE_URL="$DATABASE_URL_DOCKER" DIRECT_URL="$DIRECT_URL_DOCKER" \
+  SUPABASE_AUTH_URL="$SUPABASE_AUTH_URL_DOCKER" SMTP_PASS="$SMTP_PASS" python3 -c '
+import json, os
+keys = ["JWT_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "DATABASE_URL", "DIRECT_URL", "SUPABASE_AUTH_URL", "SMTP_PASS"]
+print(json.dumps({"data": {k: os.environ[k] for k in keys}}))')
+WRITE_STATUS=$(printf '%s' "$SECRET_JSON" | curl -s -o /dev/null -w '%{http_code}' -X POST \
+  -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" --data @- \
+  "$VAULT_ADDR/v1/$SECRET_PATH")
+if [ "$WRITE_STATUS" != "200" ] && [ "$WRITE_STATUS" != "204" ]; then
+  echo "[vault-init] ERROR: writing the secrets to Vault failed (HTTP $WRITE_STATUS)." >&2
+  exit 1
+fi
 
 echo "[vault-init] enabling approle auth (ok if already enabled)..."
 curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
@@ -70,8 +105,22 @@ curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/j
 
 ROLE_ID=$(curl -s -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/role-id" \
   | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['role_id'])")
-SECRET_ID=$(curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id'])")
+SECRET_ID_JSON=$(curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id")
+SECRET_ID=$(echo "$SECRET_ID_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id'])")
+NEW_ACCESSOR=$(echo "$SECRET_ID_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['secret_id_accessor'])")
+
+# Revoke every older secret_id for this role. secret_id_ttl is 0 (they never
+# expire, so the backend can log in again after any restart), so without this
+# each run of this script left another valid credential behind (21 had piled up
+# by 2026-10-06). Only the one the backend is about to start with stays valid.
+echo "[vault-init] revoking older backend secret_ids..."
+for accessor in $(curl -s -X LIST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id" \
+  | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin).get('data', {}).get('keys', [])))" 2>/dev/null); do
+  [ "$accessor" = "$NEW_ACCESSOR" ] && continue
+  curl -s -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
+    -d "{\"secret_id_accessor\":\"$accessor\"}" \
+    "$VAULT_ADDR/v1/auth/approle/role/backend/secret-id-accessor/destroy" >/dev/null
+done
 
 # Overridable so a production deploy can add docker-compose.prod.yml — without this,
 # this restart would recreate `backend` using only the base + security files, silently

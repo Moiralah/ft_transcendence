@@ -1,7 +1,7 @@
 FROM node:22-alpine AS dev
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN npm install --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 COPY . .
 EXPOSE 4000
 CMD sh -c "rm -rf src/generated && npx prisma generate && npm run start:dev"
@@ -13,7 +13,7 @@ CMD sh -c "rm -rf src/generated && npx prisma generate && npm run start:dev"
 FROM node:22-alpine AS prod
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN npm install --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-timeout=120000
 COPY . .
 RUN rm -rf src/generated && npx prisma generate && npm run build
 EXPOSE 4000

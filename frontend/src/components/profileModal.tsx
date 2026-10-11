@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from './button';
+import { getToken } from '@/lib/auth';
 
 export interface Profile {
   id: number;
@@ -79,9 +80,13 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("ft_token");
+      const token = getToken();
       if (!token) {
         throw new Error("No token found. please log in");
+      }
+      // The profile didn't load (e.g. the network dropped); never save to "/profile/0".
+      if (!formData.id) {
+        throw new Error("Your profile hasn't loaded yet. Please reload the page and try again.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
