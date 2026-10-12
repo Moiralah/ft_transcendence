@@ -137,7 +137,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — local setup · updated 2026-10-11</p>
+  <p class="kicker">my simple family tree — local setup · updated 2026-10-12</p>
   <h1>Running it on one computer (e.g. a 42 machine)</h1>
   <p class="lede">
     Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
@@ -343,9 +343,10 @@
     fails quietly and login looks broken. Accept <code>:9443</code> too (step 4).
   </div></div>
   <div class="callout"><div class="ic">⚠️</div><div>
-    <strong>After the Vault switch (planned after 24 Oct).</strong> <code>make up</code> will fetch the dev secrets from the Vault on
-    solsys over WireGuard. Installing WireGuard needs admin rights, so on a 42 machine keep using
-    <code>make local</code> (local Vault, local Supabase), which needs neither.
+    <strong>After the Vault switch (part 2).</strong> With <code>VAULT_USER</code> set, a team member's <code>make up</code> fetches the
+    secrets from the Vault on solsys through their own SSH tunnel (no admin rights needed) and works on the production Supabase.
+    Evaluators and shared 42 machines don't set it: <code>make up</code> then reads <code>.env</code>, and <code>make local</code> stays the
+    safe choice there (local Vault, local Supabase).
   </div></div>
   <div class="callout ok"><div class="ic">✅</div><div>
     <strong>Evaluation note: one command.</strong> The subject asks for one command to run the project.
@@ -354,46 +355,48 @@
   </div></div>
 
 
-  <h2>2 · Planned: after the Vault switch (on <code>tching-cybersec</code>, not merged; after 24 Oct)</h2>
+  <h2>2 · Planned: after the Vault switch (on <code>tching-solsys</code>, on hold, not on branchsaurus)</h2>
   <p class="lede">
-    Same local stack as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file on the computer.
-    <code>make up</code> logs in to the <strong>Vault on solsys</strong> over WireGuard, reads the <strong>dev</strong> secrets into
-    memory for that one run, and starts the app locally. solsys only hands out secrets: the build, the database and the
-    running app stay on the computer, and production can't be reached from it.
+    For team members. Same <code>make up</code> as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file.
+    With <code>VAULT_USER</code> set, <code>make up</code> opens the person's <strong>own SSH tunnel</strong> through the GCP proxy
+    (public IP) to the <strong>Vault on solsys</strong> (the Vault server, HashiCorp Vault), reads the <strong>dev</strong> secrets into
+    memory for that one run, and starts the whole stack locally on the <strong>production Supabase</strong> (decided 12 Oct). solsys
+    only hands out secrets: the build and the running app stay on the computer, and the production stack can't be reached from it.
   </p>
 
   <div class="diagram-card">
     <svg viewBox="0 0 1010 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pTitle pDesc">
       <title id="pTitle">Planned local setup with Vault on solsys</title>
-      <desc id="pDesc">On the computer, make up checks Vault, logs in with the person's own Vault password and reads the dev secrets, over WireGuard through the GCP VM hub (10.8.0.2) to the Vault on solsys (10.8.0.1:8200). The secrets are held in memory only and passed to the local Docker stack and local Supabase, which run on https://localhost:3000, or :8443 with make up-security. On solsys, the dev-read policy only allows reading the dev path; production secrets, the production stack and the cloud Supabase project are not reachable from the computer. Every read is recorded in Vault's audit log.</desc>
+      <desc id="pDesc">On the computer, make up opens the person's own SSH tunnel to their restricted account on the GCP proxy, which forwards over WireGuard to the Vault on solsys (10.8.0.1:8200). It logs in with the person's own Vault password and reads the dev secrets into memory only: the production Supabase keys, a JWT secret of their own, no email password. The local Docker stack (both WAFs, frontend, backend, local Vault) starts with them on https://localhost:8443 and uses the production Supabase project in the cloud. The production stack on solsys is not reachable. Every read is recorded in Vault's audit log.</desc>
       <defs>
         <marker id="pB" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
         <marker id="pV" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
         <marker id="pW" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--waf)"/></marker>
         <marker id="pK" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--backend)"/></marker>
+        <marker id="pS" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--supabase)"/></marker>
       </defs>
 
       <!-- the computer -->
       <rect x="10" y="10" width="462" height="600" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
-      <text x="28" y="34" class="group-title" fill="var(--sub)">this computer · laptop or 42 machine</text>
+      <text x="28" y="34" class="group-title" fill="var(--sub)">this computer · a team member's laptop</text>
 
       <rect x="28" y="52" width="210" height="100" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.6"/>
       <text x="44" y="78" class="box-label" fill="var(--browser)">$ make up</text>
-      <text x="44" y="98" class="box-sub" fill="var(--ink)">a. is Vault reachable and open?</text>
+      <text x="44" y="98" class="box-sub" fill="var(--ink)">a. open own SSH tunnel</text>
       <text x="44" y="114" class="box-sub" fill="var(--ink)">b. log in: own password</text>
       <text x="44" y="130" class="box-sub" fill="var(--ink)">c. read the dev secrets</text>
-      <text x="44" y="145" class="box-sub" fill="var(--sub)">curl + python3, no Vault install</text>
+      <text x="44" y="145" class="box-sub" fill="var(--sub)">VAULT_USER set · curl + python3</text>
 
       <rect x="258" y="52" width="196" height="100" rx="12" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.4"/>
-      <text x="272" y="78" class="box-label" fill="var(--ink)">WireGuard</text>
-      <text x="272" y="98" class="box-sub" fill="var(--ink)">own key per person</text>
-      <text x="272" y="114" class="box-sub" fill="var(--ink)">encrypts everything to solsys</text>
-      <text x="272" y="130" class="box-sub" fill="var(--waf)">installing it needs admin</text>
-      <text x="272" y="145" class="box-sub" fill="var(--waf)">rights (42 machines: no)</text>
+      <text x="272" y="78" class="box-label" fill="var(--ink)">SSH tunnel</text>
+      <text x="272" y="98" class="box-sub" fill="var(--ink)">own key (~/.ssh/ft_vault)</text>
+      <text x="272" y="114" class="box-sub" fill="var(--ink)">127.0.0.1:18201 → Vault</text>
+      <text x="272" y="130" class="box-sub" fill="var(--ok-ink)">plain ssh: no admin rights,</text>
+      <text x="272" y="145" class="box-sub" fill="var(--ok-ink)">no VPN install</text>
 
       <rect x="28" y="182" width="210" height="96" rx="12" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.4"/>
       <text x="44" y="208" class="box-label" fill="var(--vault)">in memory only</text>
-      <text x="44" y="228" class="box-sub" fill="var(--ink)">dev secrets (today: JWT_SECRET)</text>
+      <text x="44" y="228" class="box-sub" fill="var(--ink)">prod Supabase keys, own JWT</text>
       <text x="44" y="244" class="box-sub" fill="var(--ink)">gone when the command ends</text>
       <text x="44" y="260" class="box-sub" fill="var(--sub)">no .env file with secrets</text>
 
@@ -404,41 +407,44 @@
       <text x="272" y="260" class="box-sub" fill="var(--sub)">password once a day</text>
 
       <rect x="28" y="310" width="426" height="236" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
-      <text x="438" y="537" text-anchor="end" class="group-title" fill="var(--sub)">docker + local supabase · same as part 1</text>
-      <rect x="44" y="326" width="186" height="96" rx="10" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.4"/>
+      <text x="438" y="537" text-anchor="end" class="group-title" fill="var(--sub)">docker · same stack as part 1</text>
+      <rect x="44" y="326" width="394" height="96" rx="10" fill="var(--backend-soft)" stroke="var(--backend)" stroke-width="1.4"/>
       <text x="58" y="350" class="box-label" fill="var(--backend)">our containers</text>
-      <text x="58" y="370" class="box-sub" fill="var(--ink)">frontend :3000</text>
-      <text x="58" y="386" class="box-sub" fill="var(--ink)">backend :4000</text>
-      <text x="58" y="402" class="box-sub" fill="var(--sub)">(+ local Vault: up-security)</text>
-      <rect x="250" y="326" width="188" height="96" rx="10" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.4"/>
-      <text x="264" y="350" class="box-label" fill="var(--supabase)">local Supabase</text>
-      <text x="264" y="370" class="box-sub" fill="var(--ink)">Auth · Realtime · Postgres</text>
-      <text x="264" y="386" class="box-sub" fill="var(--ink)">Mailpit · test data only</text>
-      <text x="264" y="402" class="box-sub" fill="var(--sub)">schema pushed by make</text>
+      <text x="58" y="370" class="box-sub" fill="var(--ink)">frontend · backend (not published: the WAFs are the only way in)</text>
+      <text x="58" y="386" class="box-sub" fill="var(--ink)">local Vault (dev mode), filled by vault-init.sh from memory</text>
+      <text x="58" y="402" class="box-sub" fill="var(--sub)">no local Supabase: the backend uses the cloud project →</text>
 
       <rect x="44" y="440" width="394" height="74" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
       <text x="58" y="464" class="box-label" fill="var(--waf)">WAFs · :8443 pages · :9443 API</text>
       <text x="58" y="482" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS, paranoia level 2, same rules as production</text>
-      <text x="58" y="498" class="box-sub" fill="var(--sub)">with make up-security; plain make up has none (Chrome → :3000)</text>
+      <text x="58" y="498" class="box-sub" fill="var(--sub)">started by every make up</text>
       <rect x="28" y="560" width="426" height="48" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.4"/>
       <text x="44" y="580" class="box-label" fill="var(--browser)">Chrome → https://localhost:8443</text>
-      <text x="44" y="598" class="box-sub" fill="var(--ink)">make up-security (or :3000 with plain make up)</text>
+      <text x="44" y="598" class="box-sub" fill="var(--ink)">signs in with the real Supabase accounts</text>
 
-      <!-- GCP hub -->
+      <!-- GCP proxy -->
       <rect x="500" y="52" width="190" height="100" rx="12" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.4"/>
-      <text x="514" y="78" class="box-label" fill="var(--ink)">GCP VM</text>
-      <text x="514" y="98" class="box-sub" fill="var(--ink)">WireGuard hub · 10.8.0.2</text>
-      <text x="514" y="114" class="box-sub" fill="var(--ink)">laptops and solsys meet here</text>
-      <text x="514" y="130" class="box-sub" fill="var(--sub)">(also the ft.natscho.my</text>
-      <text x="514" y="145" class="box-sub" fill="var(--sub)">proxy, not used here)</text>
+      <text x="514" y="78" class="box-label" fill="var(--ink)">GCP proxy</text>
+      <text x="514" y="98" class="box-sub" fill="var(--ink)">your own account there</text>
+      <text x="514" y="114" class="box-sub" fill="var(--ink)">only forwards to Vault;</text>
+      <text x="514" y="130" class="box-sub" fill="var(--ink)">no shell, no password</text>
+      <text x="514" y="145" class="box-sub" fill="var(--sub)">then WireGuard to solsys</text>
+
+      <!-- cloud Supabase -->
+      <rect x="500" y="372" width="190" height="112" rx="12" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.6"/>
+      <text x="514" y="398" class="box-label" fill="var(--supabase)">cloud Supabase</text>
+      <text x="514" y="418" class="box-sub" fill="var(--ink)">the production project</text>
+      <text x="514" y="434" class="box-sub" fill="var(--ink)">real users' data</text>
+      <text x="514" y="450" class="box-sub" fill="var(--waf)">same one ft.natscho.my uses:</text>
+      <text x="514" y="466" class="box-sub" fill="var(--waf)">test on your own trees</text>
 
       <!-- solsys -->
       <rect x="716" y="10" width="284" height="600" rx="18" fill="none" stroke="var(--line)" stroke-width="2"/>
-      <text x="734" y="34" class="group-title" fill="var(--sub)">solsys (home server)</text>
+      <text x="734" y="34" class="group-title" fill="var(--sub)">solsys (the Vault server)</text>
 
       <rect x="734" y="52" width="250" height="176" rx="12" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.8"/>
       <text x="750" y="78" class="box-label" fill="var(--vault)">Vault (server mode)</text>
-      <text x="750" y="97" class="box-sub" fill="var(--ink)">10.8.0.1:8200, WireGuard only</text>
+      <text x="750" y="97" class="box-sub" fill="var(--ink)">10.8.0.1:8200, tunnels only</text>
       <text x="750" y="117" class="box-sub" fill="var(--ink)">secret/family-tree/dev</text>
       <text x="750" y="132" class="box-sub" fill="var(--ok-ink)">  ← teammates: read only (dev-read)</text>
       <text x="750" y="152" class="box-sub" fill="var(--ink)">secret/family-tree/prod</text>
@@ -452,18 +458,12 @@
       <text x="750" y="314" class="box-sub" fill="var(--sub)">serves ft.natscho.my</text>
       <text x="750" y="330" class="box-sub" fill="var(--waf)">✗ not reachable from the laptop</text>
 
-      <rect x="734" y="372" width="250" height="96" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-dasharray="3 5"/>
-      <text x="750" y="398" class="box-label" fill="var(--sub)">cloud Supabase</text>
-      <text x="750" y="418" class="box-sub" fill="var(--sub)">production data (real users)</text>
-      <text x="750" y="434" class="box-sub" fill="var(--sub)">its keys: only in secret/…/prod</text>
-      <text x="750" y="450" class="box-sub" fill="var(--waf)">✗ laptops never connect to it</text>
-
       <!-- arrows -->
       <path d="M238,96 L256,96" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#pB)"/>
       <path d="M454,100 L498,100" stroke="var(--vault)" stroke-width="2" fill="none" marker-end="url(#pV)"/>
       <path d="M690,100 L732,100" stroke="var(--vault)" stroke-width="2" fill="none" marker-end="url(#pV)"/>
       <circle cx="476" cy="86" r="9" fill="var(--vault)"/><text x="476" y="90" text-anchor="middle" class="step-num" fill="#fff">1</text>
-      <text x="500" y="176" class="box-sub" fill="var(--vault)">1 · login + read dev (HTTP inside the tunnel)</text>
+      <text x="500" y="176" class="box-sub" fill="var(--vault)">1 · login + read dev (inside the tunnel)</text>
 
       <!-- secrets come back into memory -->
       <path d="M732,214 C640,250 330,330 240,262" stroke="var(--vault)" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#pV)"/>
@@ -474,6 +474,11 @@
       <path d="M133,278 L133,324" stroke="var(--backend)" stroke-width="2" fill="none" marker-end="url(#pK)"/>
       <circle cx="152" cy="298" r="9" fill="var(--backend)"/><text x="152" y="302" text-anchor="middle" class="step-num" fill="#fff">3</text>
 
+      <!-- containers + Chrome -> cloud Supabase -->
+      <path d="M438,396 C470,396 470,420 498,420" stroke="var(--supabase)" stroke-width="2" fill="none" marker-end="url(#pS)"/>
+      <path d="M454,584 C490,584 520,540 560,486" stroke="var(--supabase)" stroke-width="1.8" stroke-dasharray="5 4" fill="none" marker-end="url(#pS)"/>
+      <circle cx="476" cy="410" r="9" fill="var(--supabase)"/><text x="476" y="414" text-anchor="middle" class="step-num" fill="#fff">5</text>
+
       <!-- browser -> stack -->
       <path d="M137,560 L137,516" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#pB)"/>
       <path d="M137,440 L137,424" stroke="var(--waf)" stroke-width="2" fill="none" marker-end="url(#pW)"/>
@@ -482,13 +487,15 @@
   </div>
 
   <div class="steps">
-    <div class="step"><div class="n vault">1</div><p><code>make up</code> checks that Vault at <code>10.8.0.1:8200</code> answers and is unsealed, then logs in with the
-      person's <strong>own</strong> Vault password (once a day; the token is kept in <code>~/.vault-token</code>, owner-only) and reads
-      <code>secret/family-tree/dev</code>. All of it goes through WireGuard: laptop → GCP hub → solsys. Vault records the read in its audit log.</p></div>
-    <div class="step"><div class="n vault">2</div><p>The dev secrets come back <strong>into memory only</strong>, for this one command. No file is written; when the command ends they're gone.
+    <div class="step"><div class="n vault">1</div><p><code>make up</code> opens the person's own SSH tunnel (their account on the GCP proxy can only forward to
+      <code>10.8.0.1:8200</code>), checks Vault answers and is unsealed, then logs in with the person's <strong>own</strong> Vault password
+      (once a day; the token is kept in <code>~/.vault-token</code>, owner-only) and reads <code>secret/family-tree/dev</code>. Vault records the read in its audit log.</p></div>
+    <div class="step"><div class="n vault">2</div><p>The dev secrets come back <strong>into memory only</strong>, for this one command: the production Supabase URLs and
+      service key, a <code>JWT_SECRET</code> of their own (a laptop login isn't valid on ft.natscho.my) and no email password. No file is written.
       A teammate's login can't read <code>…/prod</code>: Vault answers 403.</p></div>
-    <div class="step"><div class="n">3</div><p>The same local stack as part 1 starts with them: our containers on the computer, local Supabase with test data, schema pushed automatically.</p></div>
-    <div class="step"><div class="n waf">4</div><p>With <code>make up-security</code>, Chrome opens <code>https://localhost:8443</code>: every page and API call goes through the local WAFs first (<code>:8443</code> pages, <code>:9443</code> API), the same ModSecurity rules as production. Plain <code>make up</code> has no WAF: Chrome talks to <code>:3000</code> directly. From here on, nothing touches solsys again.</p></div>
+    <div class="step"><div class="n">3</div><p>The same stack as part 1 starts with them: both WAFs, frontend, backend and a local dev-mode Vault, which <code>vault-init.sh</code> fills from memory.</p></div>
+    <div class="step"><div class="n waf">4</div><p>Chrome opens <code>https://localhost:8443</code>: every page and API call goes through the local WAFs first (<code>:8443</code> pages, <code>:9443</code> API), the same ModSecurity rules as production.</p></div>
+    <div class="step"><div class="n sb">5</div><p>The backend, and Chrome for sign-in and Realtime, use the <strong>production Supabase</strong>: the real accounts and the real users' data. Test on your own test trees and accounts.</p></div>
   </div>
 
   <div class="tablewrap">
@@ -497,11 +504,12 @@
       <tbody>
         <tr><td>Where secrets come from</td><td>a <code>.env</code> file on each computer</td><td>Vault on solsys, per person, logged</td></tr>
         <tr><td>Secrets on the computer's disk</td><td>yes (the <code>.env</code>)</td><td class="good">no (memory only, plus a 12 h login token)</td></tr>
-        <tr><td>Can a laptop hold production keys?</td><td class="bad">yes, if its <code>.env</code> has them</td><td class="good">no: dev-read only</td></tr>
-        <tr><td>Removing someone</td><td>change every secret they had</td><td>delete their Vault user; re-make the unseal shares</td></tr>
-        <tr><td>Needs solsys and the internet</td><td>no</td><td class="bad">yes, to start (then works offline until the next start)</td></tr>
-        <tr><td>Needs admin rights</td><td>no</td><td class="bad">yes, once, to install WireGuard</td></tr>
-        <tr><td>On a 42 machine</td><td><code>make local-security</code></td><td><code>make local-security</code> or <code>make up-env</code>: no WireGuard there</td></tr>
+        <tr><td>Database</td><td>whatever the <code>.env</code> points at</td><td class="bad">the production Supabase (real users), by decision</td></tr>
+        <tr><td>Can a laptop sign tokens valid on ft.natscho.my?</td><td class="bad">yes, if its <code>.env</code> has the production <code>JWT_SECRET</code></td><td class="good">no: its own <code>JWT_SECRET</code></td></tr>
+        <tr><td>Removing someone</td><td>change every secret they had</td><td>delete their Vault user and GCP account, rotate the database password and service key, re-make the unseal shares</td></tr>
+        <tr><td>Needs solsys and the internet</td><td>no</td><td class="bad">yes, to start (then works until the next start)</td></tr>
+        <tr><td>Needs admin rights</td><td>no</td><td class="good">no (plain ssh)</td></tr>
+        <tr><td>Evaluators, 42 machines</td><td><code>make up</code> or <code>make local</code></td><td><code>make up</code> without <code>VAULT_USER</code> (values from <code>.env</code>), or <code>make local</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -509,17 +517,17 @@
   <div class="callout"><div class="ic">⚠️</div><div>
     <strong>When the planned route can't be used</strong>
     <ul>
-      <li><strong>WireGuard off or not installed</strong> (e.g. a 42 machine): <code>make up</code> stops with “Can't reach Vault … Is WireGuard on?”.
-        Use <code>make local-security</code>, which needs no secrets from solsys (local Supabase keys come from <code>supabase status</code>).</li>
+      <li><strong>No key yet or tunnel refused</strong>: <code>make up</code> stops with “SSH tunnel failed. Has Tiara added your SSH key?”.
+        Unset <code>VAULT_USER</code> to run from <code>.env</code>, or use <code>make local</code> (local Supabase, test data).</li>
       <li><strong>solsys restarted</strong>: Vault is sealed until 2 of the 5 share holders run <code>make unseal</code> (solsys adds its own share by itself, so one teammate is enough).</li>
-      <li><strong>solsys, home internet or the GCP VM down</strong>: same fallback; the live site is down too in that case.</li>
-      <li><strong>Check before the switch:</strong> does WireGuard (UDP) get through the 42 campus network at all? If not, the planned route only works off campus.</li>
+      <li><strong>solsys, home internet or the GCP proxy down</strong>: same fallback; the live site is down too in that case.</li>
+      <li><strong>Check before the switch:</strong> that outgoing SSH (port 22) to ft.natscho.my works from the 42 campus network.</li>
     </ul>
   </div></div>
 
   <p class="foot">Sources: <code>Makefile</code>, <code>scripts/local-up.sh</code>, <code>docker-compose.yml</code>,
   <code>docker-compose-security.yml</code>, <code>supabase/config.toml</code>, README “Running Supabase Locally”, and the
-  8 Oct Vault decisions and the planned flow (<code>vault/README.md</code>, <code>scripts/vault/*.sh</code>, <code>diagram/vault-remote-env.html</code> on <code>tching-cybersec</code>). Production: see <code>architecture.html</code>.</p>
+  Vault decisions of 8, 11 and 12 Oct and the planned flow (<code>vault/README.md</code>, <code>scripts/vault/*.sh</code>, <code>diagram/vault-remote-env.html</code> on <code>tching-solsys</code>). Production: see <code>architecture.html</code>.</p>
 </div>
 </body>
 </html>

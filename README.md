@@ -15,7 +15,9 @@
 set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
 `~/.zshrc`). `make up`
 then opens your own SSH tunnel to the Vault on solsys, asks your Vault password
-(once a day), and keeps the dev secrets in memory only. One-time setup (your SSH
+(once a day), and keeps the dev secrets in memory only. It runs on the
+**production Supabase** (the real users' data: test on your own test trees and
+accounts), with its own JWT secret and no email password. One-time setup (your SSH
 key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
 together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html).
 

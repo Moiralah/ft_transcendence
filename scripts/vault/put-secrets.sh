@@ -4,10 +4,11 @@
 #
 #   VAULT_USER=tching scripts/vault/put-secrets.sh <dev|prod> <env-file> [KEY ...]
 #
-# Without KEYs, stores the backend's secret set (DEFAULT_KEYS below). Replaces
-# what is at secret/family-tree/<dev|prod> (Vault keeps the old version, see
-# `vault kv rollback`). Prints key names only, never values. Afterwards the
-# secret lines can be removed from that .env: the backend reads them from Vault.
+# Without KEYs, stores the backend's secret set (DEFAULT_KEYS below) and replaces
+# what is at secret/family-tree/<dev|prod>; with KEYs, only those change and the
+# rest is kept. Vault keeps the old version (see `vault kv rollback`). Prints key
+# names only, never values. Afterwards the secret lines can be removed from that
+# .env: the backend reads them from Vault.
 set -e
 ENVNAME=${1:?usage: put-secrets.sh <dev|prod> <env-file> [KEY ...]}
 FILE=${2:?usage: put-secrets.sh <dev|prod> <env-file> [KEY ...]}
@@ -49,6 +50,21 @@ PY
 )
 NAMES=$(printf '%s' "$BODY" | json "' '.join(d['data'])")
 [ -n "$NAMES" ] || { echo "[vault] nothing to store" >&2; exit 1; }
+# With KEYs (rotating one secret), keep the other keys already stored: a write
+# replaces the whole set, so without this the rest would be dropped.
+if [ $# -gt 0 ]; then
+	vault_api GET "secret/data/family-tree/$ENVNAME"
+	case "$HTTP_STATUS" in
+		200) BODY=$(OLD="$VAULT_BODY" NEW="$BODY" python3 -c '
+import json, os
+old = json.loads(os.environ["OLD"])["data"]["data"]
+old.update(json.loads(os.environ["NEW"])["data"])
+print(json.dumps({"data": old}))');;
+		404) ;;
+		*) echo "[vault] reading the current $ENVNAME secrets failed (HTTP $HTTP_STATUS)" >&2; exit 1;;
+	esac
+	VAULT_BODY=""
+fi
 vault_api POST "secret/data/family-tree/$ENVNAME" "$BODY"
 BODY=""
 case "$HTTP_STATUS" in

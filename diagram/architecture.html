@@ -125,7 +125,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-10</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-12</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
@@ -158,7 +158,7 @@
       <text x="52" y="304" class="box-sub" fill="var(--sub)">WireGuard tunnel to solsys</text>
       <text x="52" y="320" class="box-sub" fill="var(--ink)">rate limits · CrowdSec · fail2ban</text>
       <text x="52" y="336" class="box-sub" fill="var(--sub)">security headers + CSP · DNSSEC</text>
-      <text x="52" y="354" class="box-sub" fill="var(--ext)" font-style="italic">no Docker (removed), proxy only</text>
+      <text x="52" y="354" class="box-sub" fill="var(--ext)" font-style="italic">no Docker · 4 Vault tunnel accounts</text>
 
       <!-- solsys boundary: everything inside runs in Docker on the home server (prod) -->
       <path d="M266,140 L468,140 L468,184 L716,184 L716,534 L266,534 Z" fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-dasharray="7 5" opacity="0.55"/>
@@ -309,10 +309,10 @@
         <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional (OAuth sign-in, feedback email). <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
       <text x="30" y="588" class="box-sub" fill="var(--sub)">
-        In the <tspan class="mono" fill="var(--sub)">make up</tspan> stack, backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
+        <tspan class="mono" fill="var(--sub)">make up</tspan> starts the whole stack: backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
       </text>
       <text x="30" y="604" class="box-sub" fill="var(--sub)">
-        Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
+        Same in production on solsys. See callouts below.
       </text>
       <text x="30" y="628" class="box-sub" fill="var(--sub)">
         <tspan font-weight="600" fill="var(--ink)">Dashed outline</tspan> = solsys, the home server running the Docker stack in production (reached from the GCP VM over WireGuard). Locally there&apos;s no GCP hop.
@@ -407,7 +407,7 @@
       <code>docker-compose-security.yml</code> therefore sets <code>NEXT_PUBLIC_API_URL=https://localhost:9443/api</code>
       on the frontend and <code>CORS_ORIGIN=https://localhost:8443</code> on the backend, and Supabase's redirect
       allowlist includes <code>https://localhost:8443</code> for OAuth. Open the app on <code>:8443</code>; on
-      <code>:3000</code> its API calls fail CORS. <code>make up</code> and <code>.env</code> are unchanged.
+      <code>:3000</code> its API calls fail CORS. <code>make up</code> always uses this stack (since 11 Oct).
     </div>
   </div>
 
@@ -432,9 +432,12 @@
       <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
       all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch — seeded from <code>.env</code>, which is still required. A real
       deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead. <strong>That replacement is
-      built and rehearsed</strong> (branch <code>tching-cybersec</code>, <code>vault/README.md</code>): server mode with file
-      storage, 5 unseal shares of which any 2 open it, a login per teammate, an audit log, and no root token. It goes
-      live on solsys after the evaluations (after 24 Oct).
+      built and rehearsed</strong> (branch <code>tching-solsys</code>, on hold; <code>vault/README.md</code>,
+      <code>diagram/vault-remote-env.html</code>): server mode with file storage, 5 unseal shares of which any 2 open it, a
+      login per teammate, an audit log, and no root token. Each teammate reaches it through their own SSH tunnel: an account
+      on the GCP proxy (tching, huidris, lechan, yiwei; created 11 Oct) that can only forward to Vault, which then also
+      listens on <code>10.8.0.1:8200</code>. Laptops read a dev set with the production Supabase keys, their own JWT secret
+      and no email password (12 Oct). Switch day on solsys: not scheduled yet.
     </div>
   </div>
 
@@ -444,7 +447,7 @@
       <strong>WAF is the only way in (security stack):</strong> <code>:3000</code>/<code>:4000</code> are no longer
       published — <code>ports: !reset []</code> on <code>backend</code>/<code>frontend</code> in
       <code>docker-compose-security.yml</code>, so a WAF with a bypass path is no longer the situation. The WAFs still
-      reach them over the Docker network. Plain <code>make up</code> has no WAF and keeps publishing them. The
+      reach them over the Docker network. Since 11 Oct every <code>make up</code> uses this stack. The
       <code>!reset</code> tag needs Docker Compose 2.24 or newer.
     </div>
   </div>
@@ -485,7 +488,7 @@ SQLi payload via /api                              → 403 (solsys WAF blocking 
 https://ft.natscho.my:8443/login                   → 308 → https://ft.natscho.my/login
 backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
       Vault is still bound to loopback only (<code>127.0.0.1:8200</code>): its dev-mode root token is
-      hardcoded in this public repo. On solsys, start the stack with the extra local
+      hardcoded in this public repo (after switch day: server mode, also on <code>10.8.0.1:8200</code> for the teammates' tunnels). On solsys, start the stack with the extra local
       <code>docker-compose.home.yml</code>, not <code>make prod</code>, which would publish the WAFs on every
       interface.
     </div>
