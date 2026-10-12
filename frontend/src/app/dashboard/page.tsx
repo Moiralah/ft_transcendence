@@ -944,7 +944,7 @@ export default function TreePage() {
                         <span className="text-sm text-slate-500">
                           No account
                         </span>
-                      ) : status === 'NONE' ? (
+                      ) : status === 'NONE' || status === 'DECLINED' ? (
                         <button
                           type="button"
                           onClick={() => addFriend(profile.userId)}

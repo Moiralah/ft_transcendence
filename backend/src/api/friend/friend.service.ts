@@ -60,6 +60,29 @@ export class FriendService {
         );
       }
 
+      if (existing.status === 'DECLINED') {
+        return this.prisma.friendship.update({
+          where: { id: existing.id },
+          data: {
+            requesterId,
+            addresseeId,
+            status: 'PENDING',
+            respondedAt: null,
+          },
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            addressee: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+          },
+        });
+      }
+
       throw new ConflictException('A previous friend relationship exists');
     }
 
