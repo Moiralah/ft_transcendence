@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
 import { getToken } from '@/lib/auth';
 
-export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
+export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
 export interface TreeViewContext {
   viewType: TreeVisibility;

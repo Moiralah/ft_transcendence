@@ -191,7 +191,6 @@ export function NodeProfileModal({
     }
 
     if (onClaim) onClaim(updates);
-    //if (onClose) onClose();
     } catch (err: any) {
       console.error('Save error:', err.message);
     }
@@ -297,13 +296,8 @@ export function NodeProfileModal({
 
 	const isJoiner = viewerRole === 'JOINER';
 
-	const canEdit =
-	viewerRole === 'ADMIN' || viewerRole === 'MODERATOR';
-
-	const isMyClaimedNode =
-	viewerRole === 'MEMBER' && member.id === treeView.memberId;
-
-	const canAddOrSave = canEdit || isMyClaimedNode;
+	const canAddOrSave =
+	viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
 
 	// Do I already have a claim somewhere in this tree?
 	const iAlreadyHaveAClaim = treeView.linkId != null;

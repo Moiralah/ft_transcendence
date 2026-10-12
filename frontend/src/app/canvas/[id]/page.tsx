@@ -58,7 +58,7 @@ export default function Content() {
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
 
-  type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
+  type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
   interface treeView {
     viewType: TreeVisibility;
@@ -120,8 +120,8 @@ export default function Content() {
     viewType: treeType,
     viewId: myProfile?.id ?? null,
     memberId: myMembership?.id ?? null,
-	  linkId: myMembership?.linkId ?? null,
-	  rootMemberId: tree?.rootId ?? null,
+    linkId: myMembership?.linkId ?? null,
+    rootMemberId: tree?.rootId ?? null,
   }), [treeType, myProfile?.id, myMembership?.id, myMembership?.linkId, tree?.rootId]);
 
   useEffect(() => {
@@ -446,7 +446,7 @@ export default function Content() {
         throw new Error(`Failed to update profile: ${res.statusText}`);
       }
       const memberIdToRemove = member.profileId ?? member.id;
-      
+
       const updatedMembers = treesMember.filter(
         (m) => (m.profileId ?? m.id) !== memberIdToRemove
       );
@@ -526,7 +526,7 @@ export default function Content() {
             </button>
           </div>
         </div>
-        
+
         {/* approval notification */}
 		    <div className="sticky top-72 max-h-[50vh] overflow-y-auto z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
 		      {pending && pending.length > 0 && (
@@ -541,16 +541,16 @@ export default function Content() {
 					        {m.profile?.firstName} {m.profile?.lastName}
 				        </span>
                 <div className="flex lg:flex-row flex-col">
-				          <button 
-                    type="button" 
+				          <button
+                    type="button"
                     aria-label={'Approve Claim'}
                     className="flex h-full items-center px-3 text-xs font-semibold text-gray-800 rounded-lg bg-transparent hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
                     onClick={() => handleApproveClaim(m.id)}
                   >
 					        approve
 				         </button>
-				        <button 
-                  type="button" 
+				        <button
+                  type="button"
                   aria-label={'Reject Claim'}
                   className="flex h-full items-center px-3 text-xs font-semibold text-gray-800 rounded-lg bg-transparent hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
                   onClick={() => handleApproveUnclaim(m.id)}
@@ -640,7 +640,7 @@ export default function Content() {
                     </div>
                     {(treeView.viewType === 'ADMIN' && treeView.viewId !== member.profileId) && (
                     <div className="ml-auto">
-                      <span 
+                      <span
                         onClick={() => handleKickUser(member)}
                         className="flex w-12 h-12 shrink-0 rounded-full hover:bg-red-200 text-grey-200 font-bold items-center justify-center overflow-hidden"
                       >

@@ -69,22 +69,6 @@ export class TreeController {
 		);
 	}
 
-	@Put(':treeId/role/:targetProfileId')
-	@UseGuards(JwtAuthGuard)
-	async updateRole(
-		@Req() req,
-		@Param('treeId', ParseIntPipe) treeId: number,
-		@Param('targetProfileId', ParseIntPipe) targetProfileId: number,
-		@Body() body: UpdateMemberRoleDto,
-	) {
-		return this.treeService.updateMemberRole(
-			Number(treeId),
-			req.user.profileId,
-			Number(targetProfileId),
-			body.role,
-		);
-	}
-
 	@Post(':treeId/children/:parentId')
 	@UseGuards(JwtAuthGuard)
 	async addChildNode(

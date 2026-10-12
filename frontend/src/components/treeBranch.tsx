@@ -254,7 +254,7 @@ const renderAddChild = (BranchAddMember: Member) => {
   };
 
 	const canDelete =
-		treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR';
+		treeView.viewType === 'ADMIN' || treeView.viewType === 'MEMBER';
 
 	const isRoot = activeCurrentMember.id === treeView.rootMemberId;
 
@@ -276,7 +276,9 @@ const renderAddChild = (BranchAddMember: Member) => {
 		(spouse?.claim === 'EMPTY' || !spouse?.claim);
 
 	const canDeleteSpouse =
-		canDelete && spouseIsUnclaimedHolder && (spouse?.childrenIds?.length ?? 0) === 0;
+		canDelete &&
+		spouseIsUnclaimedHolder &&
+		(spouse?.childrenIds?.length ?? 0) === 0;
 
   return (
 
@@ -298,7 +300,7 @@ const renderAddChild = (BranchAddMember: Member) => {
           NodeRemove={(deletedId) => renderRemove(deletedId)}
 		  NodeUpdate={handleMemberUpdate}
           treeView={treeView}
-          showDeleteButton={children.length === 0 && !spouse}
+          showDeleteButton={canDeleteMain}
         />
         {/* Drop line from primary node */}
         {children.length > 0 && (
