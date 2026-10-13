@@ -96,7 +96,14 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        // Only the fields UpdateProfileDto accepts: the backend rejects any other field.
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          bio: formData.bio,
+        }),
         },
       );
       if (!res.ok) {
