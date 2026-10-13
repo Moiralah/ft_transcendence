@@ -266,7 +266,7 @@ export default function TreePage() {
         }
 
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'advanced search failed');
+        throw new Error(data.message || 'Search failed');
       }
 
       const data = await res.json();
@@ -629,7 +629,7 @@ export default function TreePage() {
             id="profile-search-heading"
             className="text-2xl font-bold text-slate-900 mb-4"
           >
-            Advanced Search
+            Search
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -957,7 +957,7 @@ export default function TreePage() {
                         <span className="text-sm text-slate-500">
                           No account
                         </span>
-                      ) : status === 'NONE' ? (
+                      ) : status === 'NONE' || status === 'DECLINED' ? (
                         <button
                           type="button"
                           onClick={() => addFriend(profile.userId)}

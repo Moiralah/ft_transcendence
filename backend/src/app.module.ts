@@ -4,6 +4,7 @@ import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './api/auth/auth.module';
 import { FriendModule } from './api/friend/friend.module';
 import { ProfileModule } from './api/profile/profile.module';
+import { PublicModule } from './api/public/public.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TreeModule } from './api/tree/tree.module';
@@ -22,6 +23,7 @@ import { FeedbackModule } from './api/feedback/feedback.module';
 		FriendModule,
 		ProfileModule,
 		TreeModule,
+		PublicModule,
 		UsersModule,
 		FeedbackModule,
 	],
