@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
 import { getToken } from '@/lib/auth';
 
-export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'JOINER';
+export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
 export interface TreeViewContext {
   viewType: TreeVisibility;
@@ -63,46 +63,10 @@ export function TreeNode({
 }: TreeNodeProp) {
   const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     setNodeMember(currentMember);
   }, [currentMember]);
-
-  useEffect(() => {
-    if (!nodeMember || !treeView) return;
-
-    // const isSelf =
-    // treeView.viewId === nodeMember.profileId;
-
-    // const isHolderAdmin =
-    //   (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
-    //   nodeMember.role === 'HOLDER';
-
-    // setShowProfileModal(Boolean(isSelf || isHolderAdmin));
-
-	const isSelf = treeView.viewId === nodeMember.profileId;
-    const isHolderAdmin =
-      (treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR') &&
-      nodeMember.role === 'HOLDER';
-
-    // NEW: the node's linkId points at ME
-	const isMyClaim = nodeMember.id === treeView.memberId;
-    // const isMyClaim =
-    //   nodeMember.linkId != null &&
-    //   treeView.viewId != null &&
-    //   treeView.viewId === nodeMember.profileId
-    //     ? true  // (this path won't trigger; keep the check below)
-    //     : false;
-
-    // Better: expose your TreeMember.id to the treeView context.
-    // Then: isMyClaim = nodeMember.linkId === treeView.memberId;
-	const isUnclaimedHolder =
-		nodeMember.role === 'HOLDER' &&
-		(nodeMember.claim === 'EMPTY' || !nodeMember.claim);
-    setShowProfileModal(Boolean(isSelf || isHolderAdmin || isMyClaim || isUnclaimedHolder));
-
-  }, [treeView, nodeMember]);
 
   if (!nodeMember) return null;
 
@@ -138,9 +102,7 @@ export function TreeNode({
   };
 
   const handleNodeClick = () => {
-    if (showProfileModal) {
-      setNodeProfileModal(true);
-    }
+	 setNodeProfileModal(true);
   };
 
   return (
@@ -154,7 +116,6 @@ export function TreeNode({
             'bg-red-200 border-red-600' :
           'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]
-          ${showProfileModal ? 'cursor-pointer hover:ring-2 hover:ring-amber-500' : 'cursor-default'}
         `}
       >
         {showDeleteButton ? (
@@ -187,7 +148,7 @@ export function TreeNode({
         </div>
 
         <div className="text-[10px] font-mono text-gray-500 mt-1">
-          {nodeMember.profileId} - {treeView.viewId} - {showProfileModal ? 'on' : 'off'}
+          {nodeMember.profileId} - {treeView.viewId}
         </div>
       </div>
 
@@ -199,27 +160,30 @@ export function TreeNode({
         <NodeProfileModal
           allMembers={members}
           member={nodeMember}
-		  treeView={treeView}
+		      treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
 
-          onClaim={(updatedMember: Member) => {
-            setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);
-            setNodeProfileModal(false);
+          onClaim={(updatedMember: Member[]) => {
+			if (updatedMember[0]) setNodeMember(updatedMember[0]);
+			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+			setNodeProfileModal(false);
           }}
-          onUnclaim={(updatedMember: Member) => {
-            setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);   // ← propagate
-            setNodeProfileModal(false);
+
+          onUnclaim={(updatedMember: Member[]) => {
+			if (updatedMember[0]) setNodeMember(updatedMember[0]);
+			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+			setNodeProfileModal(false);
           }}
+
           onSave={(updatedMember: Member) => {
             setNodeMember(updatedMember);
-			if (NodeUpdate) NodeUpdate(updatedMember);
             setNodeProfileModal(false);
           }}
+
           onAddChild={(newChildMember: Member) => {
             NodeAddChild(newChildMember);
           }}
+
           onAddSpouse={(newSpouseMember: Member) => {
             NodeAddSpouse(newSpouseMember);
           }}

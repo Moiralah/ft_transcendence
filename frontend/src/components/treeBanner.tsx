@@ -5,7 +5,7 @@ import { Typography } from './typograph';
 interface TreeBannerProp {
 	name: String;
 	description: String;
-	userRole: 'ADMIN' | 'MEMBER' | 'JOINER' | 'MODERATOR';
+	userRole: 'ADMIN' | 'MEMBER' | 'JOINER';
 	userCount: number;
 	owner: any;
 	themeMode?: 'light';

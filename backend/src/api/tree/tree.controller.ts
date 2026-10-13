@@ -69,35 +69,19 @@ export class TreeController {
 		);
 	}
 
-	@Put(':treeId/role/:targetProfileId')
+	@Post(':treeId/children/:parentId')
 	@UseGuards(JwtAuthGuard)
-	async updateRole(
+	async addChildNode(
 		@Req() req,
 		@Param('treeId', ParseIntPipe) treeId: number,
-		@Param('targetProfileId', ParseIntPipe) targetProfileId: number,
-		@Body() body: UpdateMemberRoleDto,
+		@Param('parentId', ParseIntPipe) parentId: number,
 	) {
-		return this.treeService.updateMemberRole(
+		return this.treeService.addChildNode(
 			Number(treeId),
 			req.user.profileId,
-			Number(targetProfileId),
-			body.role,
+			Number(parentId),
 		);
 	}
-
-	@Post(':treeId/children/:parentId')
-    @UseGuards(JwtAuthGuard)
-    async addChildNode(
-        @Req() req,
-        @Param('treeId', ParseIntPipe) treeId: number,
-        @Param('parentId', ParseIntPipe) parentId: number,
-    ) {
-        return this.treeService.addChildNode(
-            Number(treeId),
-            req.user.profileId,
-            Number(parentId),
-        );
-    }
 
 	@Post(':treeId/spouse/:partnerId')
 	@UseGuards(JwtAuthGuard)
@@ -180,6 +164,20 @@ export class TreeController {
 			Number(treeId),
 			req.user.profileId,
 			Number(holderMemberId),
+		);
+	}
+
+	@Delete(':treeId/members/:targetProfileId')
+	@UseGuards(JwtAuthGuard)
+	async kickUser(
+		@Req() req,
+		@Param('treeId') treeId: string,
+		@Param('targetProfileId') targetProfileId: string,
+	) {
+		return this.treeService.kickUser(
+			Number(treeId),
+			req.user.profileId,
+			Number(targetProfileId),
 		);
 	}
 
