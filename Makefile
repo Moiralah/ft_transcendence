@@ -75,6 +75,8 @@ certs:
 			openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/localhost-key.pem -out certs/localhost.pem -days 365 -subj "/CN=localhost"; \
 		fi \
 	fi
+	@# The WAFs' nginx runs as a non-root user and can't read mkcert's 0600 key.
+	@chmod 644 certs/localhost-key.pem
 
 # These always use both compose files: forgetting `-f docker-compose-security.yml`
 # would orphan `vault`/`waf-*`.
