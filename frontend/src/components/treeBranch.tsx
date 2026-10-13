@@ -58,12 +58,15 @@ export function TreeBranch({
     }
   };
 
-//   const getMember = (targetId?: number | null): Member | undefined => {
-//     if (!targetId) return undefined;
-//     return (localMembers ?? []).find(
-//       (m) => m.profileId === targetId
-//     );
-//   };
+  const handleMemberUpdate = (updated: Member) => {
+	setLocalMembers((prev) => {
+		const next = prev.map((m) =>
+		m.id === updated.id ? { ...m, ...updated } : m
+		);
+		if (onMembersChange) onMembersChange(next);
+		return next;
+	});
+	};
 
 	const {byProfileId, byId} = useMemo(() => {
 		const byProfileId = new Map<number, Member>();
@@ -110,7 +113,7 @@ export function TreeBranch({
 		// A claimant defers to the placeholder that links to them.
 		if (m.linkId != null) {
 			const holder = getMemberbyId(m.linkId);
-			if (holder && holder.role === 'HOLDER') return holder;
+			if (holder && holder.role === 'HOLDER' && holder.claim === 'ACCEPTED') return holder;
 		}
 		return m;
 	};
@@ -118,9 +121,6 @@ export function TreeBranch({
 	const holder = positionHolderOf(currentMember);
 	const activeCurrentMember = holder ? (byId.get(holder.id) ?? holder) : undefined;
 		if (!activeCurrentMember) return null;
-//   const activeCurrentMember = (localMembers ?? []).find(
-//     (m) => m.profileId === currentMember.profileId
-//   ) ?? currentMember;
 
   const { children, spouse } = getFamilyMembers(activeCurrentMember);
 
@@ -254,7 +254,7 @@ const renderAddChild = (BranchAddMember: Member) => {
   };
 
 	const canDelete =
-		treeView.viewType === 'ADMIN' || treeView.viewType === 'MODERATOR';
+		treeView.viewType === 'ADMIN' || treeView.viewType === 'MEMBER';
 
 	const isRoot = activeCurrentMember.id === treeView.rootMemberId;
 
@@ -276,7 +276,9 @@ const renderAddChild = (BranchAddMember: Member) => {
 		(spouse?.claim === 'EMPTY' || !spouse?.claim);
 
 	const canDeleteSpouse =
-		canDelete && spouseIsUnclaimedHolder && (spouse?.childrenIds?.length ?? 0) === 0;
+		canDelete &&
+		spouseIsUnclaimedHolder &&
+		(spouse?.childrenIds?.length ?? 0) === 0;
 
   return (
 
@@ -285,25 +287,37 @@ const renderAddChild = (BranchAddMember: Member) => {
     <div
       className={`relative flex flex-row items-center`}
     >
-      <TreeNode
-        members={localMembers}
-        currentMember={getLinkMember(activeCurrentMember.profileId)}
-        NodeAddChild={renderAddChild}
-        NodeAddSpouse={renderAddSpouse}
-        NodeRemove={(deletedId) => renderRemove(deletedId)}
-        treeView={treeView}
-        showDeleteButton={canDeleteMain}
-      />
+      <div className="flex flex-col items-center">
+        {/* Lift line from primary node */}
+        {children.length > 0 && (
+          <div className="absolute left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+        )}
+        <TreeNode
+          members={localMembers}
+          currentMember={getLinkMember(activeCurrentMember.profileId)}
+          NodeAddChild={renderAddChild}
+          NodeAddSpouse={renderAddSpouse}
+          NodeRemove={(deletedId) => renderRemove(deletedId)}
+		  NodeUpdate={handleMemberUpdate}
+          treeView={treeView}
+          showDeleteButton={canDeleteMain}
+        />
+        {/* Drop line from primary node */}
+        {children.length > 0 && (
+          <div className="absolute bottom-0 left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+        )}
+      </div>
 
       {spouse && (
         <div className="flex items-center">
-          <span className="h-20 w-0.5 bg-black"></span>
+          <span className="w-8 h-0.5 bg-black"></span>
           <TreeNode
             members={localMembers}
             currentMember={getLinkMember(spouse.profileId)}
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
+			NodeUpdate={handleMemberUpdate}
             treeView={treeView}
             showDeleteButton={canDeleteSpouse}
           />
@@ -313,27 +327,37 @@ const renderAddChild = (BranchAddMember: Member) => {
 
       {children.length > 0 && (
       <>
-        {/* Stem dropping straight down from parent center */}
-        <div className="h-6 w-0.5 bg-black"></div>
-
         {/* Children Row Container */}
         <div className="flex flex-row">
           {children.map((child, index) => {
             const isFirst = index === 0;
             const isLast = index === children.length - 1;
             const isOnly = children.length === 1;
+            const haveSpouse = Boolean(child.spouseId);
 
             return (
-              <div key={child.profileId ?? child.id} className="relative flex flex-col items-center px-4">
+              <div key={child.profileId ?? child.id} className={`relative flex flex-col items-center px-4`}>
                 {/* Horizontal & Vertical Connector Lines */}
-                {!isOnly && (
+                {!isOnly ? (
                   <div className="absolute top-0 left-0 right-0 h-6 flex">
-                    <div className={`w-1/2 border-t-2 border-black ${isFirst ? 'invisible' : ''}`} />
-                    <div className={`w-1/2 border-t-2 border-black ${isLast ? 'invisible' : ''}`} />
+                    <div className={`absolute left-0 right-[calc(50%+85px)] border-t-2 border-black ${isFirst? 'invisible' : ''}`} />
+                    <div className={`absolute left-[calc(50%-85px)] right-1/2 border-t-2 border-black ${((isLast && haveSpouse) || (isFirst && !haveSpouse))? 'invisible' : ''}`} />
+                    <div className={`absolute left-1/2 right-0 border-t-2 border-black ${(isLast)? 'invisible' : ''}`} />
+                  </div>
+                ) : (
+                  <div className="absolute top-0 left-0 right-0 h-6 flex">
+                    <div className={`absolute left-0 right-1/2 border-t-2 border-black ${haveSpouse? 'invisible' : ''}`} />
                   </div>
                 )}
                 {/* Drop line going directly into the child */}
-                <div className="h-6 w-0.5 bg-black z-10" />
+                { haveSpouse ?
+                (
+                <div className="h-6 w-0.5 -ml-[170px] -translate-x-1/2 bg-black z-10" />
+                ) : (
+                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />
+                )
+                }
+
                 <TreeBranch
                   allMembers={localMembers}
                   treeView={treeView}
