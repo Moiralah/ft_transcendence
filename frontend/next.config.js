@@ -42,7 +42,7 @@ const csp = [
 	"default-src 'self'",
 	scriptSrc,
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data:",
+	`img-src 'self' data: blob: ${supabaseOrigin}`,
 	"font-src 'self'",
 	`connect-src ${connectSrc}`,
 	"frame-ancestors 'none'",

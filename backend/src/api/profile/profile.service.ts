@@ -1,9 +1,22 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class ProfileService {
-	constructor(private readonly prisma: PrismaService) { }
+	private supabase: SupabaseClient;
+
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly config: ConfigService,
+	) {
+		const url = this.config.get<string>('SUPABASE_AUTH_URL');
+		const key = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+		if (!url || !key) throw new Error('Supabase credentials missing');
+		this.supabase = createClient(url, key);
+	}
 
 	// Who may change a profile (PATCH /profile/:id). Mirrors the canvas's own
 	// rule (nodeProfileBanner): your own profile; any profile in a tree where
@@ -36,25 +49,24 @@ export class ProfileService {
 	}
 
 	async findMe(Id: string) {
-    	const profile = await this.prisma.profile.findFirst({
-			where: { userId :Id},
-      		select: {
-        		id: true,
-        		firstName: true,
+		const profile = await this.prisma.profile.findFirst({
+			where: { userId: Id },
+			select: {
+				id: true,
+				firstName: true,
 				lastName: true,
 				gender: true,
-  				birthDate: true,
-  				deathDate: true,
-  				bio: true,
-  				photoUrl: true,
-      		},
-    	});
+				birthDate: true,
+				deathDate: true,
+				bio: true,
+				photoUrl: true,
+			},
+		});
 		// if (!profile)
-        // 	throw new NotFoundException(`User with ID "${userId}" not found`);
+		// 	throw new NotFoundException(`User with ID "${userId}" not found`);
 		return profile;
-  	}
+	}
 
-	// Add to ProfileService
 	async update(UserId: number, data: {
 		firstName?: string;
 		lastName?: string;
@@ -66,7 +78,7 @@ export class ProfileService {
 		bio?: string | null;
 	}) {
 		return this.prisma.profile.update({
-			where: { id : UserId},
+			where: { id: UserId },
 			data: {
 				firstName: data.firstName,
 				lastName: data.lastName,
@@ -97,8 +109,8 @@ export class ProfileService {
 			id: p.id,
 			name: [p.firstName, p.lastName].filter(Boolean).join(' '),
 			gender: p.gender,
-			birth_date: p.birthDate ? p.birthDate.toISOString().split('T')[0]: null,
-			death_date:  p.deathDate ? p.deathDate.toISOString().split('T')[0]: null,
+			birth_date: p.birthDate ? p.birthDate.toISOString().split('T')[0] : null,
+			death_date: p.deathDate ? p.deathDate.toISOString().split('T')[0] : null,
 			mother_name: p.mother ? [p.mother.firstName, p.mother.lastName].filter(Boolean).join(' ') : null,
 			father_name: p.father ? [p.father.firstName, p.father.lastName].filter(Boolean).join(' ') : null,
 		}));
@@ -108,7 +120,8 @@ export class ProfileService {
 		// Convert string id to number
 		const profileId = Number(id);
 		if (isNaN(profileId)) {
-			throw new NotFoundException('Invalid profile ID');}
+			throw new NotFoundException('Invalid profile ID');
+		}
 		const profile = await this.prisma.profile.findUnique({
 			where: { id: profileId },
 			include: {
@@ -160,191 +173,185 @@ export class ProfileService {
 		return this.prisma.profile.delete({ where: { id } });
 	}
 
-	async getTree(rootId: number, treeId?): Promise<any> {
-		// 1. Fetch all profiles in the same tree (to avoid multiple queries)
-		const root = await this.prisma.profile.findUnique({
-			where: { id: rootId },
-			include: { treeMembers: true },
-		});
-		if (!root) throw new NotFoundException('Person not found');
-		if (root.treeMembers.length === null) throw new NotFoundException('Person Profile is not in tree');
-		const streeId = treeId ?? root.treeMembers[0].treeId;
-		const allProfiles = await this.prisma.profile.findMany({
-			where: { treeMembers: { some: { treeId: streeId } }, },
-			select: {
-				id: true,
-				firstName: true,
-				lastName: true,
-				gender: true,
-				birthDate: true,
-				deathDate: true,
-				motherId: true,
-				fatherId: true,
+	async search(
+		userId: string,
+		firstName?: string,
+		lastName?: string,
+		birthDate?: string,
+		gender?: string,
+		sortBy: 'firstName' | 'lastName' = 'firstName',
+		order: 'asc' | 'desc' = 'asc',
+		page: number = 1,
+		limit: number = 10,
+	) {
+		const hasCriteria = Boolean(
+			firstName?.trim() || lastName?.trim() ||
+			birthDate?.trim() || gender?.trim()
+		);
+
+		if (!hasCriteria) {
+			throw new BadRequestException('need at least one criteria');
+		}
+
+		const where: any = {};
+
+		where.user = {
+			is: {
+				id: {
+					not: userId,
+				},
 			},
-		});
+		};
 
-		// 2. Build a map of id -> profile with children arrays
-		const profileMap: Record<number, any> = {};
-		allProfiles.forEach(p => {
-			profileMap[p.id] = { ...p, children: [] };
-		});
-
-		// 3. Populate children arrays
-		allProfiles.forEach(p => {
-			if (p.motherId) {
-				profileMap[p.motherId]?.children.push(p.id);
-			}
-			if (p.fatherId) {
-				profileMap[p.fatherId]?.children.push(p.id);
-			}
-		});
-
-		// 4. Recursive function to build tree from a root id
-		function buildNode(id: number): any {
-			const p = profileMap[id];
-			if (!p) return null;
-			return {
-				id: p.id,
-				firstName: p.firstName,
-				lastName: p.lastName,
-				gender: p.gender,
-				birthDate: p.birthDate,
-				deathDate: p.deathDate,
-				children: (p.children || []).map((childId: number) => buildNode(childId)).filter(Boolean),
+		if (firstName?.trim()) {
+			where.firstName = {
+				contains: firstName.trim(),
+				mode: 'insensitive',
 			};
 		}
 
-		return buildNode(rootId);
+		if (lastName?.trim()) {
+			where.lastName = {
+				contains: lastName.trim(),
+				mode: 'insensitive',
+			};
+		}
+
+		if (gender?.trim()) {
+			where.gender = gender.trim();
+		}
+
+		if (birthDate?.trim()) {
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+				throw new BadRequestException('invalid birth date.');
+			}
+
+			const birthDateTmp = new Date(`${birthDate}T00:00:00.000Z`);
+
+			if (
+				Number.isNaN(birthDateTmp.getTime()) ||
+				birthDateTmp.toISOString().slice(0, 10) !== birthDate
+			) {
+				throw new BadRequestException('invalid birth date.');
+			}
+
+			where.birthDate = birthDateTmp;
+		}
+
+		const pg = Number.isInteger(page) && page > 0 ? page : 1;
+		const lim = Number.isInteger(limit)
+			? Math.min(100, Math.max(1, limit)) : 10;
+
+		const orderBy = sortBy === 'lastName'
+			? [
+				{ lastName: order },
+				{ firstName: order },
+				{ id: 'asc' as const },
+			]
+			: [
+				{ firstName: order },
+				{ lastName: order },
+				{ id: 'asc' as const },
+			];
+
+		const [profiles, total] = await Promise.all([
+			this.prisma.profile.findMany({
+				where,
+				orderBy,
+				skip: (pg - 1) * lim,
+				take: lim,
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					gender: true,
+					birthDate: true,
+					deathDate: true,
+					user: {
+						select: {
+							id: true,
+						},
+					},
+				},
+			}),
+
+			this.prisma.profile.count({
+				where,
+			}),
+		]);
+
+		return {
+			data: profiles.map((profile) => ({
+				id: profile.id,
+				userId: profile.user?.id ?? null,
+				firstName: profile.firstName,
+				lastName: profile.lastName,
+				gender: profile.gender,
+				birthDate: profile.birthDate
+					? profile.birthDate.toISOString().split('T')[0]
+					: null,
+				deathDate: profile.deathDate
+					? profile.deathDate.toISOString().split('T')[0]
+					: null,
+			})),
+
+			pagination: {
+				page: pg,
+				limit: lim,
+				total,
+				totalPages: Math.ceil(total / lim),
+			},
+		};
 	}
 
-  async search(
-	  userId: string,
-      firstName?: string,
-      lastName?: string,
-      birthDate?: string,
-      gender?: string,
-      sortBy: 'firstName' | 'lastName' = 'firstName',
-      order: 'asc' | 'desc' = 'asc',
-      page: number = 1,
-      limit: number = 10,
-  ) {
-      const hasCriteria = Boolean(
-          firstName?.trim() || lastName?.trim() ||
-          birthDate?.trim() || gender?.trim()
-      );
+	async uploadPhoto(profileId: number, file: Express.Multer.File) {
+		if (!file) throw new BadRequestException('No file provided.');
+		if (file.size > 5 * 1024 * 1024) {
+			throw new BadRequestException('Photo must be under 5MB.');
+		}
+		const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+		if (!allowed.includes(file.mimetype)) {
+			throw new BadRequestException('Only JPEG, PNG, WebP, or GIF allowed.');
+		}
 
-      if (!hasCriteria) {
-          throw new BadRequestException('need at least one criteria');
-      }
+		const profile = await this.prisma.profile.findUnique({
+			where: { id: profileId },
+			select: { id: true, photoUrl: true },
+		});
+		if (!profile) throw new NotFoundException('Profile not found.');
 
-      const where: any = {};
+		// Path: avatars/<profileId>/<uuid>.<ext>
+		// The profileId folder makes it easy to bulk-delete a user's photos later.
+		const ext = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+		const path = `${profileId}/${randomUUID()}.${ext}`;
 
-      where.user = {
-          is: {
-              id: {
-                  not: userId,
-              },
-          },
-      };
+		const { error: uploadError } = await this.supabase.storage
+			.from('avatars')
+			.upload(path, file.buffer, {
+				contentType: file.mimetype,
+				upsert: false,
+			});
+		if (uploadError) {
+			throw new BadRequestException(`Upload failed: ${uploadError.message}`);
+		}
 
-      if (firstName?.trim()) {
-          where.firstName = {
-              contains: firstName.trim(),
-              mode: 'insensitive',
-          };
-      }
+		const { data: urlData } = this.supabase.storage
+			.from('avatars')
+			.getPublicUrl(path);
 
-      if (lastName?.trim()) {
-          where.lastName = {
-              contains: lastName.trim(),
-              mode: 'insensitive',
-          };
-      }
+		const updated = await this.prisma.profile.update({
+			where: { id: profileId },
+			data: { photoUrl: urlData.publicUrl },
+		});
 
-      if (gender?.trim()) {
-          where.gender = gender.trim();
-      }
+		// Optional: delete the old file so the bucket doesn't accumulate junk.
+		if (profile.photoUrl) {
+			const oldPath = profile.photoUrl.split('/avatars/')[1];
+			if (oldPath) {
+				await this.supabase.storage.from('avatars').remove([oldPath]);
+			}
+		}
 
-      if (birthDate?.trim()) {
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-              throw new BadRequestException('invalid birth date.');
-          }
-
-          const birthDateTmp = new Date(`${birthDate}T00:00:00.000Z`);
-
-          if (
-              Number.isNaN(birthDateTmp.getTime()) ||
-              birthDateTmp.toISOString().slice(0, 10) !== birthDate
-          ) {
-              throw new BadRequestException('invalid birth date.');
-          }
-
-          where.birthDate = birthDateTmp;
-      }
-
-      const pg = Number.isInteger(page) && page > 0 ? page : 1;
-      const lim = Number.isInteger(limit)
-        ? Math.min(100, Math.max(1, limit)) : 10;
-      
-	  const orderBy = sortBy === 'lastName'
-          ? [
-          { lastName: order },
-          { firstName: order },
-          { id: 'asc' as const },
-          ]
-          : [
-              { firstName: order },
-              { lastName: order },
-              { id: 'asc' as const },
-          ];
-
-      const [profiles, total] = await Promise.all([
-          this.prisma.profile.findMany({
-              where,
-              orderBy,
-              skip: (pg - 1) * lim,
-              take: lim,
-              select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  gender: true,
-                  birthDate: true,
-                  deathDate: true,
-				  user: {
-					select: {
-						id: true,
-					},
-				  },
-              },
-          }),
-
-          this.prisma.profile.count({
-              where,
-          }),
-      ]);
-
-      return {
-          data: profiles.map((profile) => ({
-              id: profile.id,
-			  userId: profile.user?.id ?? null,
-              firstName: profile.firstName,
-              lastName: profile.lastName,
-              gender: profile.gender,
-              birthDate: profile.birthDate
-                  ? profile.birthDate.toISOString().split('T')[0]
-                  : null,
-              deathDate: profile.deathDate
-                  ? profile.deathDate.toISOString().split('T')[0]
-                  : null,
-          })),
-
-          pagination: {
-              page: pg,
-              limit: lim,
-              total,
-              totalPages: Math.ceil(total / lim),
-          },
-      };
+		return updated;
 	}
 }

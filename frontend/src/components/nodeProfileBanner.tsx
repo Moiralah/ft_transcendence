@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { getToken } from '@/lib/auth';
 import type { TreeViewContext } from './treeNode';
+import { Avatar } from './Avatar';
 
 export interface Member {
   id: number;
@@ -34,6 +35,7 @@ interface NodeProfileModalProps {
   onSave: (updatedMember: Member) => void;
   onAddChild: (newChildMember: Member) => void;
   onAddSpouse: (newSpouseMember: Member) => void;
+  onPhotoUpdated?: (updatedMember: Member) => void;
 }
 
 export function NodeProfileModal({
@@ -46,6 +48,7 @@ export function NodeProfileModal({
   onSave,
   onAddChild,
   onAddSpouse,
+  onPhotoUpdated,
 }: NodeProfileModalProps) {
   const [formMember, setFormMember] = useState<Member | null>(member);
   const [editName, setEditName] = useState(false);
@@ -292,6 +295,50 @@ export function NodeProfileModal({
     setEditName(false);
   };
 
+const fileInputRef = useRef<HTMLInputElement>(null);
+const [uploading, setUploading] = useState(false);
+
+const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const token = getToken();
+  if (!token) return;
+
+  setUploading(true);
+  try {
+    const form = new FormData();
+    form.append('file', file);
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/profile/${member.profileId}/photo`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },   // ← no Content-Type!
+        body: form,
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Upload failed');
+    }
+
+    const updated = await res.json();
+    setFormMember((prev) => (prev ? { ...prev, photoUrl: updated.photoUrl } : prev));
+    onPhotoUpdated?.({
+		id: member.id,
+		profileId: member.profileId,
+		photoUrl: updated.photoUrl,
+		} as Member);
+  } catch (err: any) {
+    console.error('Photo upload error:', err.message);
+  } finally {
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';   // allow re-upload same file
+  }
+};
+
 	const viewerRole = treeView.viewType;
 
 	const isJoiner = viewerRole === 'JOINER';
@@ -459,6 +506,26 @@ export function NodeProfileModal({
           )
           }
         </div>
+
+		{/* Upload Photo */}
+		<div>
+		<Avatar
+		photoUrl={formMember?.photoUrl}
+		size={96}
+		className="outline outline-2 outline-offset-2 outline-indigo-600"
+		onClick={() => fileInputRef.current?.click()}
+		/>
+		
+		{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
+
+		<input
+			ref={fileInputRef}
+			type="file"
+			accept="image/*"
+			className="hidden"
+			onChange={handlePhotoUpload}
+		/>
+		</div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
