@@ -1,7 +1,8 @@
 import { IsDateString, IsInt, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
-// The canvas sends the whole member row; fields not listed here are dropped by
-// the global ValidationPipe (whitelist). Dates may be '' or null: "no change".
+// The global ValidationPipe rejects any field not listed here
+// (forbidNonWhitelisted), so the profile forms send only these. Dates may be
+// '' or null: "no change".
 const hasValue = (_: unknown, value: unknown) => value !== undefined && value !== null && value !== '';
 
 export class UpdateProfileDto {

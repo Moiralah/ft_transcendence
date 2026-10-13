@@ -254,7 +254,17 @@ export function NodeProfileModal({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formMember),
+        // Only the fields UpdateProfileDto accepts: the backend rejects any other field.
+        body: JSON.stringify({
+          firstName: formMember.firstName,
+          lastName: formMember.lastName,
+          gender: formMember.gender,
+          birthDate: formMember.birthDate,
+          deathDate: formMember.deathDate,
+          motherId: formMember.motherId,
+          fatherId: formMember.fatherId,
+          bio: formMember.bio,
+        }),
       });
       if (!res.ok) {
         if (res.status === 401) throw new Error('Session expired. Please log in again.');
