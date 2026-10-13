@@ -125,7 +125,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-12</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-13</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
@@ -233,8 +233,8 @@
       <!-- Vault -->
       <rect x="480" y="410" width="230" height="112" rx="14" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.5"/>
       <text x="502" y="440" class="box-label" fill="var(--vault)">Vault</text>
-      <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, dev mode</text>
-      <text x="502" y="476" class="box-sub mono" fill="var(--sub)">127.0.0.1:8200 · AppRole · 6 secrets</text>
+      <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, server mode</text>
+      <text x="502" y="476" class="box-sub mono" fill="var(--sub)">:8200 · AppRole · 2 of 5 shares</text>
       <text x="502" y="494" class="box-sub" fill="var(--vault)">boot-time only, not per-request</text>
       <text x="502" y="512" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
@@ -427,17 +427,15 @@
   <div class="callout">
     <div class="ic">⚠️</div>
     <div>
-      <strong>Vault is dev mode — resets on every restart:</strong> in-memory only, no storage backend, unsealed
-      automatically with a hardcoded root token. That's why <code>make up</code> runs
-      <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
-      all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch — seeded from <code>.env</code>, which is still required. A real
-      deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead. <strong>That replacement is
-      built and rehearsed</strong> (branch <code>tching-solsys</code>, on hold; <code>vault/README.md</code>,
-      <code>diagram/vault-remote-env.html</code>): server mode with file storage, 5 unseal shares of which any 2 open it, a
-      login per teammate, an audit log, and no root token. Each teammate reaches it through their own SSH tunnel: an account
-      on the GCP proxy (tching, huidris, lechan, yiwei; created 11 Oct) that can only forward to Vault, which then also
-      listens on <code>10.8.0.1:8200</code>. Laptops read a dev set with the production Supabase keys, their own JWT secret
-      and no email password (12 Oct). Switch day on solsys: not scheduled yet.
+      <strong>Two Vaults, two modes.</strong> <strong>Production (solsys) runs server mode since 13 Oct</strong>:
+      file storage that survives restarts, 5 unseal shares of which any 2 open it (solsys adds its own share every minute
+      after a restart), an audit log, a login per teammate, and no root token (revoked; the old public dev token is
+      refused). The backend logs in with its AppRole and reads <code>secret/family-tree/prod</code>; laptops and 42
+      machines read <code>secret/family-tree/dev</code> (production Supabase keys, their own JWT secret, no email password)
+      through their own SSH tunnel: an account on the GCP proxy (tching, huidris, lechan, yiwei) that can only forward to
+      Vault on <code>10.8.0.1:8200</code>. <strong>Each laptop's own stack still runs a local dev-mode Vault</strong>
+      (in memory, reset on every restart), which <code>scripts/vault-init.sh</code> fills on each <code>make up</code> from
+      the secrets just fetched. Details: <code>vault/README.md</code>, <code>diagram/vault-remote-env.html</code>.
     </div>
   </div>
 
@@ -486,11 +484,11 @@
 https://ft.natscho.my/api/trees/my-trees           → 401 (reaches the real app, unauth'd)
 SQLi payload via /api                              → 403 (solsys WAF blocking it)
 https://ft.natscho.my:8443/login                   → 308 → https://ft.natscho.my/login
-backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
-      Vault is still bound to loopback only (<code>127.0.0.1:8200</code>): its dev-mode root token is
-      hardcoded in this public repo (after switch day: server mode, also on <code>10.8.0.1:8200</code> for the teammates' tunnels). On solsys, start the stack with the extra local
-      <code>docker-compose.home.yml</code>, not <code>make prod</code>, which would publish the WAFs on every
-      interface.
+backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree/prod)</pre>
+      Since 13 Oct Vault runs in server mode on <code>127.0.0.1:8200</code> and <code>10.8.0.1:8200</code> (WireGuard
+      only, for the teammates' tunnels; not reachable from the internet). solsys has no <code>make</code>: start the stack
+      there with <code>./scripts/prod-up.sh</code>, which adds the local <code>docker-compose.home.yml</code> by itself (the WAFs
+      and Vault published on the WireGuard address only).
     </div>
   </div>
 
@@ -513,7 +511,9 @@ backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
       lockout for sudo; <code>auditd</code> (52 rules) and <code>AIDE</code> (daily file-integrity check); Docker logs
       capped at 10 MB × 3 with <code>live-restore</code>, so containers keep running when Docker itself restarts.
       <strong>Single point of failure:</strong> the home internet connection. On 2026-10-10 it dropped for about five
-      minutes (17:05–17:10) and the site timed out (504) until it came back; solsys itself never went down.
+      minutes (17:05–17:10) and the site timed out (504) until it came back; solsys itself never went down. On
+      2026-10-13 the link dropped three times in half an hour (about 21:59–22:03, 22:21 and 22:27, a few minutes each);
+      solsys stayed up (9 days uptime), and each time it came back on its own.
     </div>
   </div>
 

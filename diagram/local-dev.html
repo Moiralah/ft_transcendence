@@ -137,7 +137,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — local setup · updated 2026-10-12</p>
+  <p class="kicker">my simple family tree — local setup · updated 2026-10-13</p>
   <h1>Running it on one computer (e.g. a 42 machine)</h1>
   <p class="lede">
     Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
@@ -145,7 +145,7 @@
     Supabase CLI for a local copy of Supabase (Auth, Realtime, Postgres, a mail catcher). <strong>Nothing goes to solsys
     or ft.natscho.my</strong>, and with <code>make local</code> nothing touches production data either.
     The only things that can leave the machine are optional: Google sign-in, and the shared <code>.env</code>
-    route in red below. <strong>Part 2</strong> shows the planned setup after the Vault switch, where the secrets come from
+    route in red below. <strong>Part 2</strong> shows the setup since the Vault switch (13 Oct), where the secrets come from
     the Vault on solsys instead of a <code>.env</code> file.
   </p>
 
@@ -343,10 +343,11 @@
     fails quietly and login looks broken. Accept <code>:9443</code> too (step 4).
   </div></div>
   <div class="callout"><div class="ic">⚠️</div><div>
-    <strong>After the Vault switch (part 2).</strong> With <code>VAULT_USER</code> set, a team member's <code>make up</code> fetches the
+    <strong>Since the Vault switch (part 2, 13 Oct).</strong> With <code>VAULT_USER</code> set, a team member's <code>make up</code> fetches the
     secrets from the Vault on solsys through their own SSH tunnel (no admin rights needed) and works on the production Supabase.
-    Evaluators and shared 42 machines don't set it: <code>make up</code> then reads <code>.env</code>, and <code>make local</code> stays the
-    safe choice there (local Vault, local Supabase).
+    For the evaluations, Tiara runs it from a personal 42 session as <code>tching</code> (tested 13 Oct): the <code>.env</code> there holds only
+    public settings. Evaluators on their own don't set <code>VAULT_USER</code>: <code>make up</code> then reads <code>.env</code>, and
+    <code>make local</code> stays the safe choice (local Vault, local Supabase).
   </div></div>
   <div class="callout ok"><div class="ic">✅</div><div>
     <strong>Evaluation note: one command.</strong> The subject asks for one command to run the project.
@@ -355,7 +356,7 @@
   </div></div>
 
 
-  <h2>2 · Planned: after the Vault switch (on <code>tching-solsys</code>, on hold, not on branchsaurus)</h2>
+  <h2>2 · Since the Vault switch (13 Oct; on <code>tching-solsys</code>, not on branchsaurus yet)</h2>
   <p class="lede">
     For team members. Same <code>make up</code> as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file.
     With <code>VAULT_USER</code> set, <code>make up</code> opens the person's <strong>own SSH tunnel</strong> through the GCP proxy
@@ -509,25 +510,31 @@
         <tr><td>Removing someone</td><td>change every secret they had</td><td>delete their Vault user and GCP account, rotate the database password and service key, re-make the unseal shares</td></tr>
         <tr><td>Needs solsys and the internet</td><td>no</td><td class="bad">yes, to start (then works until the next start)</td></tr>
         <tr><td>Needs admin rights</td><td>no</td><td class="good">no (plain ssh)</td></tr>
-        <tr><td>Evaluators, 42 machines</td><td><code>make up</code> or <code>make local</code></td><td><code>make up</code> without <code>VAULT_USER</code> (values from <code>.env</code>), or <code>make local</code></td></tr>
+        <tr><td>Evaluators, 42 machines</td><td><code>make up</code> or <code>make local</code></td><td>Tiara's own 42 session: <code>make up</code> as <code>tching</code>; otherwise without <code>VAULT_USER</code> (values from <code>.env</code>), or <code>make local</code></td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout"><div class="ic">⚠️</div><div>
-    <strong>When the planned route can't be used</strong>
+    <strong>When the Vault route can't be used</strong>
     <ul>
       <li><strong>No key yet or tunnel refused</strong>: <code>make up</code> stops with “SSH tunnel failed. Has Tiara added your SSH key?”.
         Unset <code>VAULT_USER</code> to run from <code>.env</code>, or use <code>make local</code> (local Supabase, test data).</li>
       <li><strong>solsys restarted</strong>: Vault is sealed until 2 of the 5 share holders run <code>make unseal</code> (solsys adds its own share by itself, so one teammate is enough).</li>
       <li><strong>solsys, home internet or the GCP proxy down</strong>: same fallback; the live site is down too in that case.</li>
-      <li><strong>Check before the switch:</strong> that outgoing SSH (port 22) to ft.natscho.my works from the 42 campus network.</li>
+      <li><strong>Checked 13 Oct:</strong> outgoing SSH (port 22) to ft.natscho.my works from the 42 campus network (u80z04s04).
+        On a new machine the first connection asks to confirm the server's key: accept only <code>SHA256:teGq/ElfqZAFyQoJ04Q7Z6fZbKrYtYXOcgr10b077Bg</code>.</li>
+      <li><strong><code>make up</code> skips Vault</strong> (“from the environment: (none)”, then “JWT_SECRET is empty”): <code>VAULT_USER</code>
+        isn't set in that terminal. Run <code>VAULT_USER=&lt;login&gt; VAULT_SSH_KEY=~/.ssh/ft_vault make up</code>, or reload <code>~/.zshrc</code>.</li>
+      <li><strong>Found on the first 42 run, fixed 13 Oct:</strong> the WAFs crash-looped on the 0600 TLS key (<code>make certs</code> now makes it
+        readable, <code>c246fe4</code>), and the frontend WAF blocked the canvas page's chunk at paranoia level 2 (rule 932130 on
+        <code>[id]</code>; a narrow exclusion under <code>/_next/static/</code>, <code>fda4dbf</code>).</li>
     </ul>
   </div></div>
 
   <p class="foot">Sources: <code>Makefile</code>, <code>scripts/local-up.sh</code>, <code>docker-compose.yml</code>,
   <code>docker-compose-security.yml</code>, <code>supabase/config.toml</code>, README “Running Supabase Locally”, and the
-  Vault decisions of 8, 11 and 12 Oct and the planned flow (<code>vault/README.md</code>, <code>scripts/vault/*.sh</code>, <code>diagram/vault-remote-env.html</code> on <code>tching-solsys</code>). Production: see <code>architecture.html</code>.</p>
+  Vault decisions of 8, 11 and 12 Oct, switch day on 13 Oct, and the flow (<code>vault/README.md</code>, <code>scripts/vault/*.sh</code>, <code>diagram/vault-remote-env.html</code> on <code>tching-solsys</code>). Production: see <code>architecture.html</code>.</p>
 </div>
 </body>
 </html>
