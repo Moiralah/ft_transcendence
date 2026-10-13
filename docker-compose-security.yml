@@ -35,6 +35,7 @@ services:
     volumes:
       - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
       - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+      - ./waf/frontend-exclusions.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
     depends_on:
       - frontend
 
