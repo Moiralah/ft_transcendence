@@ -59,4 +59,12 @@ export class PublicController {
 	) {
 		return this.publicService.updatePublicTree(treeId, dto);
 	}
+
+    @Delete('trees/:treeId')
+    @ApiOperation({ summary: 'Delete a public tree'})
+    deletePublicTree(
+        @Param('treeId', ParseIntPipe) treeId: number,
+    ) {
+        return this.publicService.deletePublicTree(treeId);
+    }
 }
