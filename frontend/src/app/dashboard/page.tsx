@@ -1018,6 +1018,7 @@ export default function TreePage() {
                     userRole={tree.profileRole}
                     userCount={tree.userCount}
                     owner={tree.owner}
+                    code={tree.code}
                   />
                 </Link>
               ))}

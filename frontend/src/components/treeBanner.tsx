@@ -8,10 +8,12 @@ interface TreeBannerProp {
 	userRole: 'ADMIN' | 'MEMBER' | 'JOINER';
 	userCount: number;
 	owner: any;
+	// Join code: the API only sends it to tree admins, so others never see it.
+	code?: string | null;
 	themeMode?: 'light';
 }
 
-export function TreeBanner({ name, description, userRole, userCount, owner, themeMode }: TreeBannerProp) {
+export function TreeBanner({ name, description, userRole, userCount, owner, code, themeMode }: TreeBannerProp) {
 
 	const token = componentTokens.TreeBanner(themeMode);
 
@@ -57,6 +59,15 @@ export function TreeBanner({ name, description, userRole, userCount, owner, them
 				>
 					<b>Owner: {ownerName}</b>
 				</Typography>
+
+				{code && (
+					<Typography
+						as='p'
+						variant='caption'
+					>
+						Join code: <b style={{ color: token.textRole }}>{code}</b>
+					</Typography>
+				)}
 
 			</div>
 		</div>

@@ -149,7 +149,14 @@ export class TreeService {
 		if (typeof name !== 'string' || typeof code !== 'string' || !name || !code) {
 			throw new BadRequestException('Tree name and code are required.');
 		}
-		const tree = await this.prisma.tree.findFirst({ where: { name, code } });
+		// Typed by hand from the tree banner: forgive spaces, a lowercase code and
+		// the name's case. Codes are unique and always uppercase.
+		const tree = await this.prisma.tree.findFirst({
+			where: {
+				name: { equals: name.trim(), mode: 'insensitive' },
+				code: code.trim().toUpperCase(),
+			},
+		});
 		if (!tree) {
 			throw new NotFoundException('Tree not found. Check name and code.');
 		}
