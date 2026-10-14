@@ -674,11 +674,8 @@ export default function TreePage() {
 				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200"
 				>
 				<p className="font-semibold text-slate-900">
-                {([friend.user.profile?.firstName, friend.user.profile?.lastName]
-                .filter((name) => name?.trim())
-                .join(' ') || friend.user.username)}
+                  {friend.user.username}
 				</p>
-				{/* <div className="flex items-center justify-end gap-2"> */}
 				<Button
 					variant="secondary"
 					className="rounded-md border border-slate-300 px-3 py-2 text-sm
