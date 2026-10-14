@@ -11,6 +11,8 @@ interface NavbarProps {
   btnText2?: React.ReactNode;
   btnHref2?: string;
   btnOnClick2?: () => void;
+  btnText3?: React.ReactNode;
+  btnOnClick3?: () => void;
   themeMode?: 'light';
 }
 
@@ -22,6 +24,8 @@ export function Navbar({
   btnText2 ,
   btnHref2 ,
   btnOnClick2,
+  btnText3,
+  btnOnClick3,
   themeMode = 'light',
   } : NavbarProps) {
 
@@ -67,6 +71,14 @@ export function Navbar({
               variant="secondary"
             >
               {btnText2}
+            </Button>
+          )}
+          {btnText3 && (
+            <Button
+              onClick={btnOnClick3}
+              variant="ghost"
+            >
+              {btnText3}
             </Button>
           )}
         </div>

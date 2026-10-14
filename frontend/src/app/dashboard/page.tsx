@@ -611,6 +611,8 @@ export default function TreePage() {
             </span>
           }
           btnOnClick2={() => setShowJoinModal(true)}
+          btnText3="Logout"
+          btnOnClick3={handleLogout}
         />
       </header>
 
@@ -646,9 +648,6 @@ export default function TreePage() {
                     {role === 'ADMIN' ? 'Admin Panel' : 'Moderation'}
                   </Button>
                 )}
-                <Button onClick={handleLogout} variant="secondary">
-                  Logout
-                </Button>
               </div>
             </div>
           </div>
