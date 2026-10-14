@@ -13,6 +13,7 @@ import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
+import { Avatar } from '@/components/Avatar';
 
 export default function TreePage() {
   const router = useRouter();
@@ -550,17 +551,11 @@ export default function TreePage() {
         {/* Profile Showcase */}
         <section aria-label="User Profile" className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200">
           <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
-            <div className="flex items-center justify-center w-40 h-40 shrink-0 bg-slate-900 text-white rounded-full object-cover outline outline-4 outline-offset-2 outline-indigo-600">
-              {myProfile?.photoUrl ? (
-                <img
-                  src={myProfile.photoUrl}
-                  alt={`${myProfile.firstName}'s avatar`}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-sm text-slate-300">No Photo</span>
-              )}
-            </div>
+            <Avatar
+              photoUrl={myProfile?.photoUrl}
+              size={160}
+              className="outline outline-4 outline-offset-2 outline-indigo-600"
+            />
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>

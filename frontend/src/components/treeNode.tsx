@@ -160,18 +160,18 @@ export function TreeNode({
         <NodeProfileModal
           allMembers={members}
           member={nodeMember}
-		      treeView={treeView}
+	      treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
 
-          onClaim={(updatedMember: Member[]) => {
-			if (updatedMember[0]) setNodeMember(updatedMember[0]);
-			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+          onClaim={(updatedMembers: Member[]) => {
+			if (updatedMembers[0]) setNodeMember(updatedMembers[0]);
+			updatedMembers.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
 			setNodeProfileModal(false);
           }}
 
-          onUnclaim={(updatedMember: Member[]) => {
-			if (updatedMember[0]) setNodeMember(updatedMember[0]);
-			updatedMember.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
+          onUnclaim={(updatedMembers: Member[]) => {
+			if (updatedMembers[0]) setNodeMember(updatedMembers[0]);
+			updatedMembers.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
 			setNodeProfileModal(false);
           }}
 
@@ -179,6 +179,12 @@ export function TreeNode({
             setNodeMember(updatedMember);
             setNodeProfileModal(false);
           }}
+
+		  	onPhotoUpdated={(updatedMember: Member) => {
+			setNodeMember(updatedMember);
+			if (NodeUpdate) NodeUpdate(updatedMember);
+			// modal stays open — user can keep editing
+			}}
 
           onAddChild={(newChildMember: Member) => {
             NodeAddChild(newChildMember);

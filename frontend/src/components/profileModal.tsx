@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Button } from './button';
 import { getToken } from '@/lib/auth';
+import { Avatar } from './Avatar';
+
 
 export interface Profile {
   id: number;
@@ -50,6 +52,55 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
   ];
 
   const [editingField, setEditingField] = useState<string | null>(null);
+
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [uploading, setUploading] = useState(false);
+
+const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+	const file = e.target.files?.[0];
+	if (!file) return;
+
+	const token = getToken();
+	if (!token) return;
+
+	if (!formData.id) {
+		console.error('Profile not loaded yet');
+		return;
+	}
+
+	setUploading(true);
+	try {
+		const form = new FormData();
+		form.append('file', file);
+
+		const res = await fetch(
+		`${process.env.NEXT_PUBLIC_API_URL}/profile/${formData.id}/photo`,
+		{
+			method: 'POST',
+			headers: { Authorization: `Bearer ${token}` },   // no Content-Type
+			body: form,
+		},
+		);
+
+		if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		throw new Error(err.message || 'Upload failed');
+		}
+
+		const updated = await res.json();
+
+		// Compute next state OUTSIDE the updater, then fire the two setters separately.
+		const next = { ...formData, photoUrl: updated.photoUrl };
+
+		setFormData(next);        // local — updates the Avatar in the modal
+		onSave?.(next);           // propagate — parent updates myProfile + refetches trees
+		} catch (err: any) {
+			console.error('Photo upload error:', err.message);
+		} finally {
+			setUploading(false);
+			if (fileInputRef.current) fileInputRef.current.value = '';
+		}
+	};
 
   useEffect(() => {
     if (existingProfile) {
@@ -135,7 +186,33 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
     <div className="fixed inset-0 z-50 flex items-center justify-center  bg-black/50 p-4">
       { /* form fill section */}
       <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 ">
-        {/* field map render each field row */}
+		{/* Photo */}
+		<div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-200">
+		<Avatar
+			photoUrl={formData.photoUrl}
+			size={160}
+			className="outline outline-4 outline-offset-2 outline-indigo-600"
+			onClick={() => fileInputRef.current?.click()}
+		/>
+
+		<Button
+			type="button"
+			onClick={() => fileInputRef.current?.click()}
+			disabled={uploading}
+		>
+			{uploading ? 'Uploading…' : 'Change photo'}
+		</Button>
+
+		<input
+			ref={fileInputRef}
+			type="file"
+			accept="image/*"
+			className="hidden"
+			onChange={handlePhotoUpload}
+		/>
+		</div>
+
+		{/* field map render each field row */}
         { fields.map(({ key, label, type }) => (
         <div key={key} className="flex items-center gap-2">
           <span className="w-40 text-xl p-5">
