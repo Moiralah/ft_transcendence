@@ -12,7 +12,8 @@ export interface PresenceUser {
 }
 
 // `channelName` is the tree's realtimeChannel from GET /trees/slug/:slug (members
-// only), so outsiders can't see or join who's online; see
+// only), so outsiders can't see or join who's online (presence joins
+// `<channelName>-presence`); see
 // backend/src/api/tree/tree-realtime.ts.
 export function useTreePresence(channelName: string | null, me: PresenceUser | null) {
 	const [onlineProfiles, setOnlineProfileIds] = useState<PresenceUser[]>([]);
@@ -20,7 +21,11 @@ export function useTreePresence(channelName: string | null, me: PresenceUser | n
 	useEffect(() => {
 		if (!channelName || !me?.profileId) return;
 
-		const channel = supabase.channel(channelName, {
+		// Its own channel, not the notifications one: supabase.channel() returns
+		// the already-subscribed channel for a name in use, and adding presence
+		// callbacks to it throws, which crashed the whole canvas page. The suffix
+		// keeps the secret HMAC part of the name.
+		const channel = supabase.channel(`${channelName}-presence`, {
 			config: { presence: { key: String(me.profileId) } },
 		});
 

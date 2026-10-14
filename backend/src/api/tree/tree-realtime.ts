@@ -4,7 +4,8 @@ import { createHmac } from 'crypto';
 const logger = new Logger('TreeRealtime');
 
 // The Supabase Realtime channel for one tree: live audit notifications and
-// who's online (frontend hooks/notification.ts and hooks/useTreePresence.ts).
+// who's online (frontend hooks/notification.ts; hooks/useTreePresence.ts joins
+// `<this name>-presence`, since one channel can't take both).
 //
 // The browser has no Supabase login (the backend issues its own JWT), so these
 // are public channels: anyone with the anon key, which ships in the frontend,
