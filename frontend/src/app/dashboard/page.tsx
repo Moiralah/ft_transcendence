@@ -56,13 +56,15 @@ export default function TreePage() {
   const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
   const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
   const [profileResults, setProfileResults] = useState<any[]>([]);
-  const [friendStatuses, setFriendStatuses] = useState<Record<string, {
-    status: string;
-    friendId: number | null;
-  }>>({});
+  const [friendStatuses, setFriendStatuses] = useState<Record<string, { status: string; friendId: number | null;}>>({});  
+  const [friends, setFriends] = useState<{id: number;createdAt:string;user:{id:string;username:string;profileId:number|null;profile?:{firstName:string|null;lastName:string|null;}|null;};}[]>([]);
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
+  const [inRequests, setInRequests] = useState<any[]>([]);
+  const [outRequests, setOutRequests] = useState<any[]>([]); 
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState<string | null>(null); 
   const [isProfileSearching, setIsProfileSearching] = useState(false);
   const [showProfileSearch, setShowProfileSearch] = useState(false);
 
@@ -73,6 +75,8 @@ export default function TreePage() {
     }
     fetchMyTrees(token);
     fetchMyProfile(token);
+	fetchRequests(token);
+	fetchFriends(token);
   }, [token]);
 
   // Handle ESC key to close search modal
@@ -134,6 +138,67 @@ export default function TreePage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRequests = async (authToken: string) => {
+    setRequestsLoading(true);
+    setRequestsError(null);
+  
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  
+      const [inRes, outRes] = await Promise.all([
+        fetch(`${apiUrl}/friend/requests/in`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }),
+        fetch(`${apiUrl}/friend/requests/out`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`
+          }
+        })
+      ]);
+  
+      if (!inRes.ok || !outRes.ok) {
+        throw new Error('Failed to load friend requests');
+      }
+  
+      const [inData, outData] = await Promise.all([
+        inRes.json(),
+        outRes.json()
+      ]);
+  
+      setInRequests(inData);
+      setOutRequests(outData);
+    } catch (err) {
+      console.error('Error retrieving friend requests:', err);
+      setRequestsError('Unable to load friend requests.');
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const fetchFriends = async (authToken: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+  
+      if (!res.ok) {
+        throw new Error('Failed to load friends');
+      }
+  
+      const data = await res.json();
+      setFriends(data);
+    } catch (err) {
+      console.error('Error fetching friends:', err);
     }
   };
 
@@ -365,6 +430,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchRequests(token);
   };
 
   const acceptFriend = async (friendId: number, userId: string) => {
@@ -398,6 +464,8 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchFriends(token);
+	await fetchRequests(token);
   };
 
   const declineFriend = async (friendId: number, userId: string) => {
@@ -431,6 +499,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchRequests(token);
   };
 
   const cancelFriend = async (friendId: number, userId: string) => {
@@ -464,6 +533,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchRequests(token);
   };
 
   const unfriend = async (friendId: number, userId: string) => {
@@ -497,6 +567,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchFriends(token);
   };
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -589,7 +660,178 @@ export default function TreePage() {
             </p>
           </div>
         </section>
+		<section
+		aria-labelledby="current-friends-heading"
+		className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200 space-y-4"
+		>
+		<h2
+			id="current-friends-heading"
+			className="text-2xl font-bold text-slate-900"
+		>
+			Current Friends ({friends.length})
+		</h2>
+		{friends.length === 0 ? (
+			<p className="text-slate-600">
+			You have no friends yet.
+			</p>
+		) : (
+			<div className="space-y-3">
+			{friends.map((friend) => (
+			  <div
+				key={friend.id}
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200"
+				>
+				<p className="font-semibold text-slate-900">
+                {([friend.user.profile?.firstName, friend.user.profile?.lastName]
+                .filter((name) => name?.trim())
+                .join(' ') || friend.user.username)}
+				</p>
+				{/* <div className="flex items-center justify-end gap-2"> */}
+				<Button
+					variant="secondary"
+					className="rounded-md border border-slate-300 px-3 py-2 text-sm
+                               hover:bg-slate-100 disabled:cursor-not-allowed w-auto
+                               disabled:opacity-50"
+					onClick={() =>
+					unfriend(friend.id, friend.user.id)
+					}
+				>
+					Unfriend
+				</Button>
+			  </div>
+			))}
+			</div>
+		)}
+		</section>
+		<section
+		aria-labelledby="friend-requests-heading"
+		className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200 space-y-6"
+		>
+		<h2
+			id="friend-requests-heading"
+			className="text-2xl font-bold text-slate-900"
+		>
+			Friend Requests
+		</h2>
+		{requestsLoading ? (
+			<p className="text-slate-600" aria-live="polite">
+			Loading friend requests...
+			</p>
+		) : requestsError ? (
+			<div>
+			<p className="text-red-700" role="alert">
+				{requestsError}
+			</p>
+			<Button
+				variant="secondary"
+				onClick={() => token && fetchRequests(token)}
+			>
+				Try Again
+			</Button>
+			</div>
+		) : (
+			<>
+			<div className="space-y-3">
+				<h3 className="text-lg font-semibold text-slate-800">
+				Received Requests ({inRequests.length})
+				</h3>
 
+				{inRequests.length === 0 ? (
+				<p className="text-slate-600">
+					You have no requests.
+				</p>
+				) : (
+				<div className="space-y-3">
+					{inRequests.map((request) => (
+					<div
+						key={request.id}
+						className="flex flex-col sm:flex-row sm:items-center
+						justify-between gap-3 p-4 rounded-lg
+						border border-slate-200"
+					>
+						<div>
+						<p className="font-semibold text-slate-900">
+							{request.requester.username}
+						</p>
+						<p className="text-sm text-slate-600">
+							Received: {formatDate(request.createdAt)}
+						</p>
+						</div>
+
+						<div className="flex gap-2">
+						<Button
+							variant="primary"
+							onClick={() =>
+							acceptFriend(
+								request.id,
+								request.requester.id
+							)
+							}
+						>
+							Accept
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={() =>
+							declineFriend(
+								request.id,
+								request.requester.id
+							)
+							}
+						>
+							Reject
+						</Button>
+						</div>
+					</div>
+					))}
+				</div>
+				)}
+			</div>
+			<div className="space-y-3 pt-5 border-t border-slate-200">
+				<h3 className="text-lg font-semibold text-slate-800">
+				Sent Requests ({outRequests.length})
+				</h3>
+				{outRequests.length === 0 ? (
+				<p className="text-slate-600">
+					You have no sent requests.
+				</p>
+				) : (
+				<div className="space-y-3">
+					{outRequests.map((request) => (
+					<div
+						key={request.id}
+						className="flex flex-col sm:flex-row sm:items-center
+						justify-between gap-3 p-4 rounded-lg
+						border border-slate-200"
+					>
+						<div>
+						<p className="font-semibold text-slate-900">
+							{request.addressee.username}
+						</p>
+						<p className="text-sm text-slate-600">
+							Sent: {formatDate(request.createdAt)}
+						</p>
+						</div>
+						<Button
+						variant="secondary"
+						className="rounded-md px-3 w-auto"
+						onClick={() =>
+							cancelFriend(
+							request.id,
+							request.addressee.id
+							)
+						}
+						>
+						Cancel Request
+						</Button>
+					</div>
+					))}
+				</div>
+				)}
+			</div>
+			</>
+		)}
+		</section>
         {/* Search Bar */}
         <section aria-label="Search Trees and Profiles" className="flex w-full gap-2 items-center">
           <div className="flex-1 flex flex-col">
@@ -963,7 +1205,7 @@ export default function TreePage() {
                       ) : status === 'PENDING_OUT' ? (
 						<button
 							type="button"
-							className="..."
+							className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
 							onClick={() => {
 							const friendId = friendStatus?.friendId;
 
