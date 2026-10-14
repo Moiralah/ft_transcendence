@@ -6,6 +6,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TreeService } from '../tree/tree.service';
+import { MailService, malaysiaTime } from '../../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
 		private readonly jwt: JwtService,
 		private readonly config: ConfigService,
 		private readonly trees: TreeService,
+		private readonly mail: MailService,
 	) {
 		const supabaseUrl = this.config.get<string>('SUPABASE_AUTH_URL');
 		const supabaseKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
@@ -300,9 +302,10 @@ export class AuthService {
 			}
 		}
 
-		const photoUrl = profileId
-			? (await this.prisma.profile.findUnique({ where: { id: profileId }, select: { photoUrl: true } }))?.photoUrl
+		const profile = profileId
+			? await this.prisma.profile.findUnique({ where: { id: profileId }, select: { photoUrl: true, firstName: true } })
 			: null;
+		const photoUrl = profile?.photoUrl;
 
 		await this.prisma.$transaction(async (tx) => {
 			if (profileId) {
@@ -364,6 +367,28 @@ export class AuthService {
 			this.logger.warn(`Account ${userId} deleted but its Supabase login was not removed: ${error.message}`);
 		}
 		this.logger.log(`Account ${userId} deleted by its owner; ${deletedTrees} owned trees removed`);
+
+		// Goodbye note, read from the row loaded before the delete. Quietly: the
+		// account is gone whether or not the mail goes out.
+		const site = (this.config.get<string>('CORS_ORIGIN') || '').split(',')[0].trim();
+		void this.mail.sendQuietly({
+			to: user.email,
+			subject: 'Your My Simple Family Tree account has been deleted',
+			text: [
+				`Hi ${profile?.firstName || user.username},`,
+				'',
+				'Your account on My Simple Family Tree has been deleted, as you asked. We\'re sad to see you go.',
+				`When: ${malaysiaTime()}`,
+				'',
+				deletedTrees
+					? `Your login, profile, photos and friends list are gone, along with the ${deletedTrees === 1 ? 'family tree' : `${deletedTrees} family trees`} you owned.`
+					: 'Your login, profile, photos and friends list are gone.',
+				'You can sign up again with this email at any time; you\'ll start with a fresh, empty account.',
+				...(site ? ['', site] : []),
+				'',
+				'If you didn\'t do this, someone had your password: sign up again and contact us through the feedback page.',
+			].join('\n'),
+		}, 'Account deletion');
 		return { message: 'Account deleted.', deletedTrees };
 	}
 }

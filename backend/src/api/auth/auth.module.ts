@@ -9,12 +9,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TwoFactorController } from './two-factor/two-factor.controller';
 import { TwoFactorService } from './two-factor/two-factor.service';
 import { TreeModule } from '../tree/tree.module';
+import { MailModule } from '../../mail/mail.module';
 
 @Module({
 	imports: [
 		PassportModule,
 		ConfigModule,
 		TreeModule,
+		MailModule,
 		JwtModule.registerAsync({
 			inject: [ConfigService],
 			useFactory: (config: ConfigService) => ({
