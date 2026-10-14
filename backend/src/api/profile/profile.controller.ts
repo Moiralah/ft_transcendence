@@ -97,6 +97,7 @@ export class ProfileController {
 			throw new BadRequestException('Invalid profile id.');
 		}
 		await this.profile.assertCanEdit(req.user.id, req.user.profileId ?? null, profileId);
+		await this.profile.assertParentsAllowed(profileId, body.motherId, body.fatherId);
 		return this.profile.update(profileId, body);
 	}
 

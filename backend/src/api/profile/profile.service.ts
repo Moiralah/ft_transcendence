@@ -48,6 +48,40 @@ export class ProfileService {
 		throw new ForbiddenException('You do not have permission to edit this profile.');
 	}
 
+	// A new mother/father must be someone in a tree this profile is in, and
+	// not the profile itself. Without this, anyone allowed to edit one person
+	// could hang them under a profile in a stranger's tree, which then can't
+	// be deleted there ("still has children"). Unchanged ids pass, since the
+	// person panel sends the current parents back with every save.
+	async assertParentsAllowed(targetId: number, motherId?: number | null, fatherId?: number | null) {
+		const current = await this.prisma.profile.findUnique({
+			where: { id: targetId },
+			select: { motherId: true, fatherId: true },
+		});
+		const changed = [
+			motherId !== current?.motherId ? motherId : null,
+			fatherId !== current?.fatherId ? fatherId : null,
+		].filter((id): id is number => typeof id === 'number');
+		if (changed.length === 0) return;
+		if (changed.includes(targetId)) {
+			throw new BadRequestException('A person cannot be their own parent.');
+		}
+
+		const trees = await this.prisma.treeMember.findMany({
+			where: { profileId: targetId, treeId: { not: null } },
+			select: { treeId: true },
+		});
+		const treeIds = trees.map((t) => t.treeId!);
+		for (const parentId of changed) {
+			const shared = await this.prisma.treeMember.count({
+				where: { profileId: parentId, treeId: { in: treeIds } },
+			});
+			if (shared === 0) {
+				throw new BadRequestException('A parent must be someone in the same tree.');
+			}
+		}
+	}
+
 	async findMe(Id: string) {
 		const profile = await this.prisma.profile.findFirst({
 			where: { userId: Id },

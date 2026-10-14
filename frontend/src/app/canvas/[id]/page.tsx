@@ -464,7 +464,7 @@ export default function Content() {
         <Navbar />
       </header>
 
-	  <PresenceFacepile users={onlineProfiles}/>
+	  <PresenceFacepile users={onlineProfiles} meId={myProfile?.id ?? null} />
       <main
         id="main-content"
         tabIndex={-1}

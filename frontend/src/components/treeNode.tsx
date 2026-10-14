@@ -146,10 +146,6 @@ export function TreeNode({
             <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
           </div>
         </div>
-
-        <div className="text-[10px] font-mono text-gray-500 mt-1">
-          {nodeMember.profileId} - {treeView.viewId}
-        </div>
       </div>
 
       <div className="flex gap-8 relative pt-6">
