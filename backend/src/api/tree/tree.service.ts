@@ -1,6 +1,6 @@
 import {
 	Injectable, Logger, NotFoundException, ForbiddenException,
-	BadRequestException,
+	BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -66,7 +66,18 @@ export class TreeService {
 		return `${base}-${suffix}`;
 	}
 
+	// Tree.name is unique across the whole site (schema.prisma), so a name
+	// another family already uses used to crash Prisma with a raw 500.
+	private async assertNameFree(name: string, exceptTreeId?: number) {
+		const taken = await this.prisma.tree.findUnique({ where: { name }, select: { id: true } });
+		if (taken && taken.id !== exceptTreeId) {
+			throw new ConflictException('A tree with this name already exists. Please choose another name.');
+		}
+	}
+
 	async createTree(profileId: number, name: string, description?: string) {
+		await this.assertNameFree(name);
+
 		let code: string;
 		do {
 			code = this.generateTreeCode();
@@ -356,6 +367,10 @@ export class TreeService {
 			throw new ForbiddenException(
 				'Only the tree owner can update tree details.',
 			);
+		}
+
+		if (data.name !== undefined && data.name !== tree.name) {
+			await this.assertNameFree(data.name, treeId);
 		}
 
 		const updatedTree = await this.prisma.tree.update({
