@@ -643,7 +643,7 @@ export default function TreePage() {
 
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button href="/settings/2fa" variant="secondary">
-                  Security &amp; Password
+                  Settings
                 </Button>
                 {(role === 'ADMIN' || role === 'MODERATOR') && (
                   <Button href="/admin/users" variant="secondary">
