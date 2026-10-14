@@ -7,12 +7,19 @@
 1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
    comments in that file say where each value comes from), then run `make` to
    start the environment.
-2. **Approve backend cert** open new tab 'https://localhost:4000
-3. **Approve frontend cert** open new tab 'https://localhost:3000
+   `make` (same as `make up`) starts everything: the app, both WAFs and Vault.
+2. **Approve backend cert** open new tab 'https://localhost:9443
+3. **Approve frontend cert** open new tab 'https://localhost:8443, and use the app there.
 
-Running the security stack (`make security`, see below) instead? Ports `3000`
-and `4000` are not published there. Approve `https://localhost:9443` (API) and
-`https://localhost:8443` (the app) instead, and open the app on `:8443`.
+**Team members with a Vault login** leave the secret lines in `.env` empty and
+set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
+`~/.zshrc`). `make up`
+then opens your own SSH tunnel to the Vault on solsys, asks your Vault password
+(once a day), and keeps the dev secrets in memory only. It runs on the
+**production Supabase** (the real users' data: test on your own test trees and
+accounts), with its own JWT secret and no email password. One-time setup (your SSH
+key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
+together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html).
 
 
 ## 🧪 Running Supabase Locally
@@ -21,9 +28,8 @@ For testing/schema changes without touching the shared dev Supabase
 project. All of this is optional — the shared `.env` values still work
 fine if you don't need this.
 
-**Shortcut:** `make local` (plain stack) or `make local-security` (WAF+Vault
-stack) run `supabase start` if it isn't already, read its keys automatically,
-and bring the stack up pointed at it — handles the `host.docker.internal`
+**Shortcut:** `make local` runs `supabase start` if it isn't already, reads
+its keys automatically, and brings the whole stack (`make up`) up pointed at it — handles the `host.docker.internal`
 override and key copy-pasting below for you. The steps below are what that
 script is actually doing, useful if something goes wrong or you want to do
 it by hand.
@@ -58,7 +64,7 @@ publishable one: the publishable key is enough to sign people in, but not for
 admin actions such as removing a deleted user's Supabase login.)
 
 ### 3. Push the schema
-`make local` / `make local-security` do this for you after the containers start
+`make local` does this for you after the containers start
 (`npx prisma db push` inside the backend container, so the host needs no Node; a
 re-run with no schema change does nothing). By hand:
 ```bash
@@ -124,42 +130,43 @@ Restore your original `.env` values and you're back on the shared project
 ## 🛡️ Cybersecurity module (WAF + Vault)
 
 ModSecurity + the OWASP Core Rule Set, fronting both `frontend` and
-`backend` — kept in a **separate** compose file
-(`docker-compose-security.yml`) so the rest of the team's `make up` /
-`docker compose up` doesn't need to pull that image or care about this
-module at all. See `diagram/architecture.html` for the full request-flow
+`backend`, plus Vault. They live in their own compose file
+(`docker-compose-security.yml`) and are part of `make up`. See `diagram/architecture.html` for the full request-flow
 diagram (open it directly in a browser, no server needed).
 
 ```bash
-make security          # brings up the WAF alongside the base stack
-make security-down     # tears it down
+make up                # the app, both WAFs and Vault
+make down              # tears it all down
 ```
 
 In this stack the WAF is the **only** way in: `:3000` and `:4000` are not
 published to your machine (`ports: !reset []` in
 `docker-compose-security.yml`, which needs Docker Compose 2.24 or newer). The
-WAFs still reach the frontend and backend over the Docker network. The plain
-`make up` stack, which has no WAF, still publishes them.
+WAFs still reach the frontend and backend over the Docker network.
 - `https://localhost:8443` → frontend, inspected — **open the app here**
 - `https://localhost:9443` → backend API, inspected (the app's browser calls go here)
 
-To see a request that the WAF blocks reach the app unfiltered, run the plain
-`make up` stack and send it to `:4000`.
+To see a request that the WAF blocks reach the app unfiltered, start the app
+without the security file (`docker compose up -d`, which publishes `:3000` and
+`:4000`) and send it to `:4000`.
 
 **Dependency note:** the WAFs depend on the containers behind them. Their
 nginx looks up `backend`'s and `frontend`'s addresses once, when it starts, so
 whenever `backend` or `frontend` is recreated while the WAF is running, restart
 the WAFs (`docker restart transpeed-waf-backend-1 transpeed-waf-frontend-1`),
-or they answer `502`. `scripts/prod-up.sh` does this by itself; after a plain
-`make security` re-run with the WAFs already up, restart them by hand.
+or they answer `502`. `make up`, `make backend`, `make frontend` and
+`scripts/prod-up.sh` do this by themselves.
 
 ### Vault (secrets management)
 
-`make security` also starts a HashiCorp Vault (dev mode) and runs
+`make up` also starts a HashiCorp Vault (dev mode) and runs
 `scripts/vault-init.sh`, which:
 1. Writes `JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
    `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` into Vault's KV v2
-   store at `secret/data/family-tree/backend`.
+   store at `secret/data/family-tree/backend`. Each value is taken from the
+   environment when it is set there (`make up` with `VAULT_USER` set gets them
+   from the solsys Vault; `local-up.sh` sets the local Supabase ones), otherwise from
+   `.env`. It stops with an error if a required one is empty.
 2. Sets up **AppRole** auth with a policy scoped to read-only on exactly
    that one path — not the root token. (`vault-init.sh` itself still uses
    the root token, since something has to bootstrap the AppRole in the
@@ -171,14 +178,14 @@ or they answer `502`. `scripts/prod-up.sh` does this by itself; after a plain
 anything else runs) and injects them into `process.env`, so every
 existing `ConfigService.get()`/`process.env` read elsewhere in the app is
 unchanged — it doesn't know or care whether a value came from Vault or
-`.env`. If `VAULT_ADDR` isn't set (i.e. you're running `make up` without
-`make security`), it's a no-op and everything falls back to `.env`
+`.env`. If `VAULT_ADDR` isn't set (i.e. the backend was started with a plain
+`docker compose up`, without `vault-init.sh`), it's a no-op and everything falls back to `.env`
 exactly like before Vault existed.
 
 **Why this resets every time**: Vault here runs in **dev mode** — no
 storage backend, everything in-memory, auto-unsealed with a hardcoded
 root token. That's why `vault-init.sh` isn't a one-time setup script, it
-re-bootstraps the secret + AppRole on every `make security`, because the
+re-bootstraps the secret + AppRole on every `make up`, because the
 previous run's data is gone the moment the `vault` container restarts.
 This is explicitly not production-ready, same caveat the subject itself
 calls out — a real deployment needs a persistent storage backend (file or
@@ -187,7 +194,24 @@ Raft), TLS, and proper unsealing instead of a baked-in root token.
 **To verify it yourself**: `docker logs transpeed-backend-1 | grep vault`
 should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
-`backend` was started without going through `make security`/`vault-init.sh`.
+`backend` was started without going through `make up`/`vault-init.sh`.
+
+### Vault on solsys: secrets kept remotely (built, not switched on yet)
+
+The dev-mode setup above is what production runs today. Its replacement is
+built and was rehearsed on 2026-10-08; it goes live on solsys on switch day
+([vault/README.md](vault/README.md)):
+
+- **One server-mode Vault on solsys**: encrypted on disk, keeps its data
+  across restarts, sealed after every restart until 2 of 5 unseal shares are
+  entered (`make unseal`, from any share holder's laptop through their SSH tunnel).
+- **Two paths**: `secret/family-tree/prod`, read only by the production
+  backend's AppRole, and `secret/family-tree/dev`, read by everyone's
+  `make up`. Each person has their own Vault login; there is no root token.
+  Every request goes to the audit log.
+- **`make deploy`** (laptop with SSH to solsys) pulls `branchsaurus` there and
+  runs `make prod`, which uses this Vault once the backend's login file
+  (`vault/backend-approle.env`) exists.
 
 ---
 
@@ -237,7 +261,7 @@ Statuses checked against the code on `branchsaurus` on 2026-10-10.
 | **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | 🔄 Partial | Skip link, landmarks, labelled forms, ARIA attributes. Still needed: a full WCAG 2.1 AA audit (axe/Lighthouse, keyboard-only, screen reader), especially the tree canvas |
 | **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ✅ Done | Tested by Jon. Still to add here: the browsers tested and any known limitations (the subject asks for them to be documented) |
 | **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
-| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets, AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, `make security`. Direct `:3000`/`:4000` access is closed in this stack, so the WAF is the only way in |
+| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets (server mode with 5 unseal shares, per-person logins reached through each person's own SSH tunnel, and an audit log; see `vault/README.md`), AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, started by `make up`. Direct `:3000`/`:4000` access is closed, so the WAF is the only way in |
 
 ### Points
 Claimed modules: 7 Majors (14 pts) + 10 Minors (10 pts) = **24 points**, 10 above the required **14**,

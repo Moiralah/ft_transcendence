@@ -23,38 +23,55 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
-echo "[vault-init] reading secret values from .env..."
+echo "[vault-init] reading secret values..."
+# Each value comes from the environment when it is set there, otherwise from
+# .env. `make up` runs this under scripts/vault/with-secrets.sh, which
+# exports the dev secrets from the solsys Vault and leaves no secrets in .env
+# (there may be no .env at all); local-up.sh exports the local Supabase
+# database, auth URL and service key, so a .env that points at the cloud
+# project can't quietly connect a "local" run to it. On the server nothing is
+# exported and .env is used, as before.
 # .env has CRLF line endings — cut leaves the trailing \r in the value,
 # which breaks Vault's JSON parsing later (same CRLF class of bug that's
 # bitten this project before). Strip it explicitly.
 # Values may also be wrapped in quotes (KEY="value", as the README shows):
 # strip one pair, or the quotes end up inside the JSON below and the write fails.
 env_value() {
+  [ -f .env ] || return 0
   grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | tr -d '\r' \
     | sed -E 's/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/'
 }
-JWT_SECRET=$(env_value JWT_SECRET)
-SUPABASE_SERVICE_ROLE_KEY=$(env_value SUPABASE_SERVICE_ROLE_KEY)
-DATABASE_URL_RAW=$(env_value DATABASE_URL)
-DIRECT_URL_RAW=$(env_value DIRECT_URL)
-SUPABASE_AUTH_URL_RAW=$(env_value SUPABASE_AUTH_URL)
-# `make local` / `make local-security` (scripts/local-up.sh) point the stack at
-# local Supabase by exporting these. Use them over .env then, or a .env that
-# points at the cloud project would quietly connect a "local" run to it.
-if [ "$FT_LOCAL_SUPABASE" = "1" ]; then
-  echo "[vault-init] local Supabase: database, auth URL and service key from local-up.sh"
-  DATABASE_URL_RAW=$DATABASE_URL
-  DIRECT_URL_RAW=$DIRECT_URL
-  SUPABASE_AUTH_URL_RAW=$SUPABASE_AUTH_URL
-  SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
-fi
+secret_value() {
+  eval "_v=\${$1:-}"
+  if [ -n "$_v" ]; then printf '%s' "$_v"; else env_value "$1"; fi
+}
+# Names only, never values.
+FROM_ENVIRONMENT=""
+for name in JWT_SECRET SUPABASE_SERVICE_ROLE_KEY DATABASE_URL DIRECT_URL SUPABASE_AUTH_URL SMTP_PASS; do
+  eval "_v=\${$name:-}"
+  [ -n "$_v" ] && FROM_ENVIRONMENT="$FROM_ENVIRONMENT $name"
+done
+echo "[vault-init] from the environment:${FROM_ENVIRONMENT:- (none)}; the rest from .env"
+JWT_SECRET=$(secret_value JWT_SECRET)
+SUPABASE_SERVICE_ROLE_KEY=$(secret_value SUPABASE_SERVICE_ROLE_KEY)
+DATABASE_URL_RAW=$(secret_value DATABASE_URL)
+DIRECT_URL_RAW=$(secret_value DIRECT_URL)
+SUPABASE_AUTH_URL_RAW=$(secret_value SUPABASE_AUTH_URL)
 # Optional: Gmail App Password for the feedback form. Google shows it in
 # groups of four with spaces; strip those. Empty is fine (feedback then
 # answers 503 instead of sending).
 # Last non-empty line only: a duplicate or empty SMTP_PASS= line used to
 # turn this into a multi-line value, the JSON below became invalid, and the
 # Vault write failed silently, keeping the old (empty) secret.
-SMTP_PASS=$(env_value SMTP_PASS | tr -d ' "')
+SMTP_PASS=$(secret_value SMTP_PASS | tr -d ' "')
+# Stop here rather than start a backend that can't sign tokens or reach the DB.
+for name in JWT_SECRET SUPABASE_SERVICE_ROLE_KEY DATABASE_URL_RAW DIRECT_URL_RAW SUPABASE_AUTH_URL_RAW; do
+  eval "_v=\${$name:-}"
+  if [ -z "$_v" ]; then
+    echo "[vault-init] ERROR: ${name%_RAW} is empty (not in the environment or .env)." >&2
+    exit 1
+  fi
+done
 # In LOCAL dev, Supabase/Postgres run on the HOST (127.0.0.1/localhost),
 # which inside the backend's Docker container means the container itself,
 # not the host — rewrite to host.docker.internal. See README "Running

@@ -12,7 +12,9 @@
 // same key, since dotenv's config() (called after this, in main.ts)
 // does not overwrite already-set process.env vars.
 
-const VAULT_SECRET_PATH = 'secret/data/family-tree/backend';
+// Dev-mode Vault (vault-init.sh) keeps everything at .../backend; the server-mode
+// Vault (docker-compose.vault-server.yml) sets VAULT_SECRET_PATH to .../prod.
+const VAULT_SECRET_PATH = process.env.VAULT_SECRET_PATH || 'secret/data/family-tree/backend';
 
 export async function loadSecretsFromVault(): Promise<void> {
 	const vaultAddr = process.env.VAULT_ADDR;

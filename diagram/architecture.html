@@ -125,13 +125,13 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-10</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-13</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. It also keeps one more direct line
     to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree and live change notices. Everything else is
-    one path: browser → WAF → our backend → Postgres (when run with <code>make security</code>, at <code>https://localhost:8443</code>; plain <code>make up</code> has no WAF). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code>, at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -145,7 +145,7 @@
       <rect x="30" y="46" width="220" height="150" rx="14" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.5"/>
       <text x="52" y="80" class="box-label" fill="var(--browser)">Browser</text>
       <text x="52" y="98" class="box-sub" fill="var(--ink)">Next.js frontend</text>
-      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make security)</text>
+      <text x="52" y="116" class="box-sub" fill="var(--sub)">:8443 via WAF (make up)</text>
       <rect x="52" y="134" width="176" height="42" rx="8" fill="var(--panel)" stroke="var(--line)"/>
       <text x="64" y="152" class="box-sub" fill="var(--ink)" font-weight="600">sessionStorage</text>
       <text x="64" y="168" class="box-sub mono" fill="var(--sub)">ft_token · ft_role</text>
@@ -158,7 +158,7 @@
       <text x="52" y="304" class="box-sub" fill="var(--sub)">WireGuard tunnel to solsys</text>
       <text x="52" y="320" class="box-sub" fill="var(--ink)">rate limits · CrowdSec · fail2ban</text>
       <text x="52" y="336" class="box-sub" fill="var(--sub)">security headers + CSP · DNSSEC</text>
-      <text x="52" y="354" class="box-sub" fill="var(--ext)" font-style="italic">no Docker (removed), proxy only</text>
+      <text x="52" y="354" class="box-sub" fill="var(--ext)" font-style="italic">no Docker · 4 Vault tunnel accounts</text>
 
       <!-- solsys boundary: everything inside runs in Docker on the home server (prod) -->
       <path d="M266,140 L468,140 L468,184 L716,184 L716,534 L266,534 Z" fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-dasharray="7 5" opacity="0.55"/>
@@ -233,8 +233,8 @@
       <!-- Vault -->
       <rect x="480" y="410" width="230" height="112" rx="14" fill="var(--vault-soft)" stroke="var(--vault)" stroke-width="1.5"/>
       <text x="502" y="440" class="box-label" fill="var(--vault)">Vault</text>
-      <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, dev mode</text>
-      <text x="502" y="476" class="box-sub mono" fill="var(--sub)">127.0.0.1:8200 · AppRole · 6 secrets</text>
+      <text x="502" y="458" class="box-sub" fill="var(--ink)">HashiCorp Vault, server mode</text>
+      <text x="502" y="476" class="box-sub mono" fill="var(--sub)">:8200 · AppRole · 2 of 5 shares</text>
       <text x="502" y="494" class="box-sub" fill="var(--vault)">boot-time only, not per-request</text>
       <text x="502" y="512" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
@@ -309,10 +309,10 @@
         <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional (OAuth sign-in, feedback email). <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
       <text x="30" y="588" class="box-sub" fill="var(--sub)">
-        In the <tspan class="mono" fill="var(--sub)">make security</tspan> stack, backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
+        <tspan class="mono" fill="var(--sub)">make up</tspan> starts the whole stack: backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
       </text>
       <text x="30" y="604" class="box-sub" fill="var(--sub)">
-        Plain <tspan class="mono" fill="var(--sub)">make up</tspan> has no WAF and still publishes them. See callouts below.
+        Same in production on solsys. See callouts below.
       </text>
       <text x="30" y="628" class="box-sub" fill="var(--sub)">
         <tspan font-weight="600" fill="var(--ink)">Dashed outline</tspan> = solsys, the home server running the Docker stack in production (reached from the GCP VM over WireGuard). Locally there&apos;s no GCP hop.
@@ -407,7 +407,7 @@
       <code>docker-compose-security.yml</code> therefore sets <code>NEXT_PUBLIC_API_URL=https://localhost:9443/api</code>
       on the frontend and <code>CORS_ORIGIN=https://localhost:8443</code> on the backend, and Supabase's redirect
       allowlist includes <code>https://localhost:8443</code> for OAuth. Open the app on <code>:8443</code>; on
-      <code>:3000</code> its API calls fail CORS. <code>make up</code> and <code>.env</code> are unchanged.
+      <code>:3000</code> its API calls fail CORS. <code>make up</code> always uses this stack (since 11 Oct).
     </div>
   </div>
 
@@ -427,14 +427,15 @@
   <div class="callout">
     <div class="ic">⚠️</div>
     <div>
-      <strong>Vault is dev mode — resets on every restart:</strong> in-memory only, no storage backend, unsealed
-      automatically with a hardcoded root token. That's why <code>make security</code> runs
-      <code>scripts/vault-init.sh</code> every time rather than once — the secret, the AppRole, and its policy are
-      all gone the moment the <code>vault</code> container restarts, and get rebuilt from scratch — seeded from <code>.env</code>, which is still required. A real
-      deployment needs persistent storage (file/Raft), TLS, and proper unsealing instead. <strong>That replacement is
-      built and rehearsed</strong> (branch <code>tching-cybersec</code>, <code>vault/README.md</code>): server mode with file
-      storage, 5 unseal shares of which any 2 open it, a login per teammate, an audit log, and no root token. It goes
-      live on solsys after the evaluations (after 24 Oct).
+      <strong>Two Vaults, two modes.</strong> <strong>Production (solsys) runs server mode since 13 Oct</strong>:
+      file storage that survives restarts, 5 unseal shares of which any 2 open it (solsys adds its own share every minute
+      after a restart), an audit log, a login per teammate, and no root token (revoked; the old public dev token is
+      refused). The backend logs in with its AppRole and reads <code>secret/family-tree/prod</code>; laptops and 42
+      machines read <code>secret/family-tree/dev</code> (production Supabase keys, their own JWT secret, no email password)
+      through their own SSH tunnel: an account on the GCP proxy (tching, huidris, lechan, yiwei) that can only forward to
+      Vault on <code>10.8.0.1:8200</code>. <strong>Each laptop's own stack still runs a local dev-mode Vault</strong>
+      (in memory, reset on every restart), which <code>scripts/vault-init.sh</code> fills on each <code>make up</code> from
+      the secrets just fetched. Details: <code>vault/README.md</code>, <code>diagram/vault-remote-env.html</code>.
     </div>
   </div>
 
@@ -444,7 +445,7 @@
       <strong>WAF is the only way in (security stack):</strong> <code>:3000</code>/<code>:4000</code> are no longer
       published — <code>ports: !reset []</code> on <code>backend</code>/<code>frontend</code> in
       <code>docker-compose-security.yml</code>, so a WAF with a bypass path is no longer the situation. The WAFs still
-      reach them over the Docker network. Plain <code>make up</code> has no WAF and keeps publishing them. The
+      reach them over the Docker network. Since 11 Oct every <code>make up</code> uses this stack. The
       <code>!reset</code> tag needs Docker Compose 2.24 or newer.
     </div>
   </div>
@@ -483,11 +484,11 @@
 https://ft.natscho.my/api/trees/my-trees           → 401 (reaches the real app, unauth'd)
 SQLi payload via /api                              → 403 (solsys WAF blocking it)
 https://ft.natscho.my:8443/login                   → 308 → https://ft.natscho.my/login
-backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
-      Vault is still bound to loopback only (<code>127.0.0.1:8200</code>): its dev-mode root token is
-      hardcoded in this public repo. On solsys, start the stack with the extra local
-      <code>docker-compose.home.yml</code>, not <code>make prod</code>, which would publish the WAFs on every
-      interface.
+backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree/prod)</pre>
+      Since 13 Oct Vault runs in server mode on <code>127.0.0.1:8200</code> and <code>10.8.0.1:8200</code> (WireGuard
+      only, for the teammates' tunnels; not reachable from the internet). solsys has no <code>make</code>: start the stack
+      there with <code>./scripts/prod-up.sh</code>, which adds the local <code>docker-compose.home.yml</code> by itself (the WAFs
+      and Vault published on the WireGuard address only).
     </div>
   </div>
 
@@ -510,7 +511,9 @@ backend log: [vault] loaded 6 secrets from secret/data/family-tree/backend</pre>
       lockout for sudo; <code>auditd</code> (52 rules) and <code>AIDE</code> (daily file-integrity check); Docker logs
       capped at 10 MB × 3 with <code>live-restore</code>, so containers keep running when Docker itself restarts.
       <strong>Single point of failure:</strong> the home internet connection. On 2026-10-10 it dropped for about five
-      minutes (17:05–17:10) and the site timed out (504) until it came back; solsys itself never went down.
+      minutes (17:05–17:10) and the site timed out (504) until it came back; solsys itself never went down. On
+      2026-10-13 the link dropped three times in half an hour (about 21:59–22:03, 22:21 and 22:27, a few minutes each);
+      solsys stayed up (9 days uptime), and each time it came back on its own.
     </div>
   </div>
 

@@ -6,7 +6,7 @@ COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
-# Production target — not used by local `make up`/`make security` (docker-compose.yml
+# Production target — not used by local `make up` (docker-compose.yml
 # pins `target: dev` explicitly and bind-mounts source over this anyway). Used by
 # docker-compose.prod.yml.
 #

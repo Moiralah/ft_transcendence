@@ -6,7 +6,7 @@ services:
       context: ./backend
       # Pinned explicitly (not relying on "last stage in the Dockerfile" being the
       # default) so adding docker-compose.prod.yml's `prod` stage can never silently
-      # change what local `make up`/`make security` build.
+      # change what local `make up` builds.
       target: dev
       args:
         DATABASE_URL: ${DATABASE_URL}
@@ -58,6 +58,5 @@ services:
       - ./certs:/app/certs
 
 # WAF (ModSecurity + OWASP CRS, IV.5 Cybersecurity module) lives in
-# docker-compose-security.yml — kept separate so the base stack doesn't
-# need that image. Bring it up with `make security` or
-# `docker compose -f docker-compose.yml -f docker-compose-security.yml up -d`.
+# docker-compose-security.yml, layered on this file. `make up` starts both;
+# see the Makefile for the start order.
