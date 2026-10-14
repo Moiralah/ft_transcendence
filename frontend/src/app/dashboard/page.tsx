@@ -624,11 +624,16 @@ export default function TreePage() {
         {/* Profile Showcase */}
         <section aria-label="User Profile" className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200">
           <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
-            <Avatar
-              photoUrl={myProfile?.photoUrl}
-              size={160}
-              className="outline outline-4 outline-offset-2 outline-indigo-600"
-            />
+            <div className="flex flex-col items-center gap-4">
+              <Avatar
+                photoUrl={myProfile?.photoUrl}
+                size={160}
+                className="outline outline-4 outline-offset-2 outline-indigo-600"
+              />
+              <Button onClick={() => setShowProfileModal(true)} variant="primary">
+                Edit Profile
+              </Button>
+            </div>
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">
               <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
@@ -637,9 +642,6 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span>{formatDate(myProfile?.birthDate) || ' —'}</span></div>
 
               <div className="mt-2 flex flex-wrap gap-2">
-                <Button onClick={() => setShowProfileModal(true)} variant="primary">
-                  Edit Profile
-                </Button>
                 <Button href="/settings/2fa" variant="secondary">
                   Security &amp; Password
                 </Button>
