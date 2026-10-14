@@ -107,13 +107,16 @@ export class ProfileController {
 		return this.profile.remove(id);
 	}
 
+	// Same rule as saving the profile (PATCH above): 403 unless you may edit it.
 	@Post(':id/photo')
 	@UseGuards(JwtAuthGuard)
 	@UseInterceptors(FileInterceptor('file'))
 	async uploadPhoto(
+		@Req() req: AuthenticatedRequest,
 		@Param('id', ParseIntPipe) id: number,
 		@UploadedFile() file: Express.Multer.File,
 	) {
+		await this.profile.assertCanEdit(req.user.id, req.user.profileId ?? null, id);
 		return this.profile.uploadPhoto(id, file);
 	}
 }

@@ -322,7 +322,8 @@ export class ProfileService {
 
 		// Path: avatars/<profileId>/<uuid>.<ext>
 		// The profileId folder makes it easy to bulk-delete a user's photos later.
-		const ext = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+		// The extension follows the checked type, not the uploaded file's name.
+		const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' }[file.mimetype];
 		const path = `${profileId}/${randomUUID()}.${ext}`;
 
 		const { error: uploadError } = await this.supabase.storage
