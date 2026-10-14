@@ -93,7 +93,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">ft_transcendence · updated 2026-10-13 · branch tching-solsys (production runs it since switch day; not on branchsaurus yet) · switched on solsys 13 Oct</p>
+  <p class="kicker">ft_transcendence · updated 2026-10-14 · switched on solsys 13 Oct · merged into branchsaurus 14 Oct</p>
   <h1>Secrets in Vault: how it all ties together</h1>
   <p class="lede"><strong>Every secret lives only in Vault on solsys (the Vault server, HashiCorp Vault).</strong> Each teammate
   reaches it through <strong>their own SSH tunnel via the GCP proxy (public IP)</strong>, then builds and runs the app on their own
@@ -106,8 +106,9 @@
     for laptops is at <code>secret/family-tree/dev</code>. The root token is revoked, and the old public dev token
     (<code>dev-only-root-token</code>) is refused. Tested the same evening: a full <code>make up</code> on a 42 machine
     through the <code>tching</code> tunnel, and the tunnel limits from a laptop. Still open: the clean-up in section 6.
-    Until <code>tching-solsys</code> is merged, <strong>don't run <code>make deploy</code></strong>: it pulls <code>branchsaurus</code>,
-    which has no server-mode Vault. solsys has no <code>make</code>; there, run <code>./scripts/prod-up.sh</code> and
+    Since 14 Oct <code>tching-solsys</code> is merged into <code>branchsaurus</code> (<code>15f0f8c</code>), so
+    <code>make deploy</code>, which pulls <code>branchsaurus</code>, deploys the server-mode setup. solsys has no <code>make</code>;
+    <code>make deploy</code> runs <code>./scripts/prod-up.sh</code> there for you, and on solsys itself you run it and
     <code>scripts/vault/unseal.sh</code> directly.
   </div></div>
 
@@ -206,7 +207,7 @@
     <text x="838" y="381" class="sub" fill="var(--backend)" font-weight="600">backend</text>
     <text x="838" y="397" class="tiny" fill="var(--sub)">NestJS</text>
     <text x="690" y="432" class="tiny" fill="var(--sub)">built from the code on GitHub</text>
-    <text x="690" y="448" class="tiny" fill="var(--sub)">by make prod (what make deploy runs)</text>
+    <text x="690" y="448" class="tiny" fill="var(--sub)">by prod-up.sh (what make deploy runs)</text>
     <text x="690" y="470" class="tiny" fill="var(--ink)">.env here: non-secret settings only</text>
     <text x="690" y="486" class="tiny" fill="var(--ink)">+ backend's Vault login file</text>
     <rect x="674" y="528" width="292" height="56" rx="12" fill="var(--git-soft)" stroke="var(--git)"/>
@@ -229,7 +230,7 @@
     <!-- make deploy: laptop -> hub -> solsys -->
     <path d="M294,352 C330,352 330,262 362,262" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
     <path d="M610,262 C642,262 644,292 674,292" stroke="var(--backend)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#mp)"/>
-    <text x="34" y="414" class="tiny" fill="var(--backend)">make deploy = ssh solsys: git pull + make prod</text>
+    <text x="34" y="414" class="tiny" fill="var(--backend)">make deploy = ssh solsys: git pull + prod-up.sh</text>
     <!-- vault -> prod backend -->
     <path d="M888,256 L888,358" stroke="var(--vault)" stroke-width="2.4" marker-end="url(#mv)"/>
     <text x="896" y="274" class="tiny" fill="var(--vault)" font-weight="600">read at</text>
@@ -279,7 +280,7 @@
       <p class="name">make deploy</p>
       <ol>
         <li>Connects to solsys (<code>ssh solsys</code>) and pulls the latest <code>branchsaurus</code></li>
-        <li>Runs <code>make prod</code> there: builds, adds solsys's share if Vault is sealed, and <strong>stops without
+        <li>Runs <code>scripts/prod-up.sh</code> there (what <code>make prod</code> runs; solsys has no <code>make</code>): builds, adds solsys's share if Vault is sealed, and <strong>stops without
           touching the live site</strong> if it is still sealed</li>
         <li>Starts the production stack (the backend logs in to Vault with its AppRole), restarts the WAFs</li>
         <li>Checks it: pages 200, API 401</li>
@@ -402,7 +403,7 @@
       <tr><td>3</td><td><code>make deploy</code>, <code>make unseal</code>, production on server-mode Vault</td><td class="yes">built, rehearsed (<code>ede2d9f</code>)</td></tr>
       <tr><td>4</td><td>One SSH tunnel account per person on the GCP proxy (tching, huidris, lechan, yiwei)</td><td class="yes">done, tested (<code>4f6154e</code>, 11 Oct)</td></tr>
       <tr><td>5</td><td>Each teammate sends their <code>.pub</code> key; Tiara adds it (<code>tunnel-key.sh add</code>)</td><td>tching ✓ (Mac + a 42 machine, 13 Oct); huidris, lechan, yiwei to do</td></tr>
-      <tr><td>6</td><td>Merge <code>tching-solsys</code> → <code>branchsaurus</code> (teammates review)</td><td>on hold (Tiara); production runs <code>tching-solsys</code> since 13 Oct</td></tr>
+      <tr><td>6</td><td>Merge <code>tching-solsys</code> → <code>branchsaurus</code> (teammates review)</td><td class="yes">merged 14 Oct (<code>15f0f8c</code>)</td></tr>
       <tr><td>7</td><td>Switch day on solsys, with Tiara: Vault also on <code>10.8.0.1:8200</code>, steps in <code>vault/README.md</code>, then hand out shares and passwords in person</td><td class="yes">switched evening of 13 Oct: server mode, unsealed, prod + dev sets, backend on its AppRole</td></tr>
       <tr><td>8</td><td>Clean-up: hand out the 4 other shares and the initial passwords in person; delete <code>~/vault-init.json</code> and <code>~/vault-passwords.txt</code> on solsys; remove the secret lines from solsys's <code>.env</code></td><td>to do (only <code>tching</code> in use so far)</td></tr>
     </tbody>

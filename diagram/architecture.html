@@ -125,7 +125,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-13</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-14</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
@@ -138,7 +138,7 @@
   <div class="diagram-card">
     <svg viewBox="0 0 1010 672" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
-      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Postgres via Prisma, to Gmail SMTP for feedback emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
+      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Supabase Realtime and Storage with its service key (live tree events, profile photos), to Postgres via Prisma, to Gmail SMTP for feedback emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
 
       <!-- ===== Group: Client ===== -->
       <text x="40" y="34" class="group-title" fill="var(--sub)">Client</text>
@@ -174,7 +174,7 @@
       <text x="298" y="214" class="box-sub mono" fill="var(--sub)">:9443 → backend</text>
       <text x="298" y="230" class="box-sub mono" fill="var(--sub)">:8443 → frontend</text>
       <text x="298" y="248" class="box-sub" fill="var(--waf)">paranoia 2 · blocking (403)</text>
-      <text x="298" y="264" class="box-sub" fill="var(--sub)">API: JSON only · ≤ 1 MB</text>
+      <text x="298" y="264" class="box-sub" fill="var(--sub)">API: JSON (+ photo upload)</text>
       <text x="298" y="282" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
 
       <!-- ===== Group: Application services ===== -->
@@ -182,8 +182,8 @@
 
       <!-- Supabase Auth -->
       <rect x="480" y="46" width="230" height="112" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.5"/>
-      <text x="502" y="76" class="box-label" fill="var(--supabase)">Supabase Auth + Realtime</text>
-      <text x="502" y="94" class="box-sub" fill="var(--ink)">login (GoTrue) · live WebSocket</text>
+      <text x="502" y="76" class="box-label" fill="var(--supabase)">Supabase</text>
+      <text x="502" y="94" class="box-sub" fill="var(--ink)">Auth (GoTrue) · Realtime · Storage</text>
       <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
       <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
       <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
@@ -201,6 +201,7 @@
         <text x="610" y="308">/trees</text>
         <text x="610" y="326">/friend</text>
         <text x="502" y="344">/feedback</text>
+        <text x="610" y="344">/public</text>
       </g>
       <text x="502" y="360" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
       <text x="502" y="374" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
@@ -277,6 +278,11 @@
       <circle cx="622" cy="182" r="10" fill="var(--panel)" stroke="var(--sub)"/>
       <text x="622" y="186" class="step-num" fill="var(--sub)" text-anchor="middle">4</text>
 
+      <!-- B: Backend -> Supabase Realtime + Storage (service key: audit broadcast, profile photos) -->
+      <path d="M680,200 L680,160" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
+      <circle cx="680" cy="181" r="10" fill="var(--panel)" stroke="var(--sub)"/>
+      <text x="680" y="185" class="step-num" fill="var(--sub)" text-anchor="middle">B</text>
+
       <!-- 5: Backend <-> Postgres -->
       <path d="M710,254 L740,254" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
       <path d="M740,272 L710,272" fill="none" stroke="var(--sub)" stroke-width="1.6" marker-end="url(#arrow)"/>
@@ -318,7 +324,7 @@
         <tspan font-weight="600" fill="var(--ink)">Dashed outline</tspan> = solsys, the home server running the Docker stack in production (reached from the GCP VM over WireGuard). Locally there&apos;s no GCP hop.
       </text>
       <text x="30" y="650" class="box-sub" fill="var(--sub)">
-        <tspan font-weight="600" fill="var(--supabase)">Dotted green (R)</tspan> = Supabase Realtime WebSocket, browser ↔ Supabase directly: presence on the tree canvas and live change notices. Not behind our WAF.
+        <tspan font-weight="600" fill="var(--supabase)">Dotted green (R)</tspan> = Supabase Realtime WebSocket, browser ↔ Supabase directly, on each tree&apos;s private channel: presence and live change notices. Not behind our WAF.
       </text>
     </svg>
   </div>
@@ -327,7 +333,7 @@
     <span><i class="swatch" style="background:var(--browser)"></i>Browser</span>
     <span><i class="swatch" style="background:var(--waf)"></i>WAF (ModSecurity)</span>
     <span><i class="swatch" style="background:var(--vault)"></i>Vault (secrets)</span>
-    <span><i class="swatch" style="background:var(--supabase)"></i>Supabase (Auth + Realtime)</span>
+    <span><i class="swatch" style="background:var(--supabase)"></i>Supabase (Auth, Realtime, Storage)</span>
     <span><i class="swatch" style="background:var(--backend)"></i>Backend (NestJS)</span>
     <span><i class="swatch" style="background:var(--db)"></i>Postgres</span>
     <span><i class="swatch" style="background:var(--ext)"></i>External: Google OAuth, Gmail SMTP</span>
@@ -336,7 +342,7 @@
   <div class="steps">
     <div class="step">
       <div class="n vault">0</div>
-      <p><strong>Backend → Vault</strong> — at boot, before it accepts any requests: logs in via AppRole (<code>VAULT_ROLE_ID</code>/<code>VAULT_SECRET_ID</code>), reads <code>secret/data/family-tree/backend</code>, injects its 6 secrets (<code>JWT_SECRET</code>, <code>DATABASE_URL</code>, <code>SMTP_PASS</code>…) into its own <code>process.env</code>. They are not in the container&apos;s environment at all. One-time, not part of the request flow — everything below still works the same either way.<span class="tag">boot only</span></p>
+      <p><strong>Backend → Vault</strong> — at boot, before it accepts any requests: logs in via AppRole (<code>VAULT_ROLE_ID</code>/<code>VAULT_SECRET_ID</code>), reads its secrets (production: <code>secret/data/family-tree/prod</code> on solsys; a laptop: <code>secret/data/family-tree/backend</code> in its local dev Vault), injects its 6 secrets (<code>JWT_SECRET</code>, <code>DATABASE_URL</code>, <code>SMTP_PASS</code>…) into its own <code>process.env</code>. They are not in the container&apos;s environment at all. One-time, not part of the request flow — everything below still works the same either way.<span class="tag">boot only</span></p>
     </div>
     <div class="step">
       <div class="n">1</div>
@@ -368,11 +374,15 @@
     </div>
     <div class="step">
       <div class="n waf">7</div>
-      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, admin actions, 2FA settings, feedback — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore.<span class="tag">ongoing</span></p>
+      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, admin actions, 2FA settings, feedback and profile photo uploads (the one <code>multipart/form-data</code> route, <code>POST /api/profile/:id/photo</code>) — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore. Programs outside the app use <code>/api/public/*</code> the same way, with an <code>X-API-Key</code> header instead of a JWT (Yiwei&apos;s public API, merged but not counted toward the modules).<span class="tag">ongoing</span></p>
     </div>
     <div class="step">
       <div class="n opt">R</div>
-      <p><strong>Browser ↔ Supabase Realtime</strong> — a WebSocket straight from the frontend to Supabase (<code>useTreePresence</code>: who&apos;s on the same tree canvas; <code>notification.ts</code>: toasts on new <code>AuditLog</code> rows). Not through the GCP proxy or our WAF; the page&apos;s CSP allows it explicitly.<span class="tag">while a tree is open</span></p>
+      <p><strong>Browser ↔ Supabase Realtime</strong> — a WebSocket straight from the frontend to Supabase, on the tree&apos;s own channel <code>tree-&lt;id&gt;-&lt;HMAC&gt;</code>, whose name the backend hands out only with the members-only tree response (<code>useTreePresence</code>: who&apos;s on the same tree canvas; <code>notification.ts</code>: toasts for the events from step B). Not through the GCP proxy or our WAF; the page&apos;s CSP allows it explicitly.<span class="tag">while a tree is open</span></p>
+    </div>
+    <div class="step">
+      <div class="n">B</div>
+      <p><strong>Backend → Supabase Realtime + Storage</strong> — with the service role key from Vault. Every <code>AuditLog</code> row the backend writes is also sent to that tree&apos;s channel (Realtime&apos;s REST broadcast, <code>tree-realtime.ts</code>; a failed send never fails the action). Profile photos go to the Storage bucket <code>avatars</code>; the browser then loads them from their public URL on Supabase (CSP <code>img-src</code> allows it).<span class="tag">tree edits · photo uploads</span></p>
     </div>
     <div class="step">
       <div class="n opt">F</div>
@@ -391,11 +401,14 @@
                         200, i.e. reached NestJS unfiltered, before it was closed)</pre>
       Since 2026-10-06 both WAFs run OWASP CRS at <strong>paranoia level 2 in blocking mode</strong> (one day in
       detection mode first, checked with <code>waf/pl2-report.sh</code>). The API WAF only accepts
-      <code>application/json</code>, with bodies up to 1 MB. Tuning, backend WAF only, in
-      <code>waf/backend-exclusions.conf</code>: <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> allowed (rule 911100),
-      the JSON field <code>profileId</code> (rule 930120), and rule 1000030, which skips 942440 (a plain <code>--</code>) and
-      932236 (a person called "Local") on free-text fields only. Values are still inspected and every other rule
-      still applies; <code>waf/test-waf.sh</code> checks 21 cases.
+      <code>application/json</code>, with bodies up to 128 KB; the one exception is the profile photo upload, which may
+      send <code>multipart/form-data</code> up to 6 MB (since 2026-10-14). Tuning, backend WAF only, in
+      <code>waf/backend-exclusions.conf</code>: <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> allowed (rule 911100,
+      set in <code>docker-compose-security.yml</code>), the JSON field <code>profileId</code> (rule 930120), the two password
+      fields on <code>change-email</code>/<code>change-password</code> (rule 1000020), rule 1000030, which skips 942440 (a plain
+      <code>--</code>) and 932236 (a person called "Local") on free-text fields only, and rule 1000040, multipart on
+      <code>POST /api/profile/:id/photo</code> only. Values are still inspected and every other rule
+      still applies; <code>waf/test-waf.sh</code> checks 24 cases.
     </div>
   </div>
 
@@ -415,7 +428,7 @@
     <div class="ic">🔐</div>
     <div>
       <strong>Vault proven working too:</strong> <code>docker logs transpeed-backend-1 | grep vault</code> shows
-      <code>[vault] loaded 6 secrets from secret/data/family-tree/backend</code>, and a real login (which needs the
+      <code>[vault] loaded 6 secrets from secret/data/family-tree/backend</code> (a laptop; production logs <code>.../prod</code>), and a real login (which needs the
       Vault-sourced <code>DATABASE_URL</code> and <code>SUPABASE_AUTH_URL</code> to work) succeeds — not just that
       the values loaded, that the app actually functions on them. AppRole token confirmed scoped to read-only on
       that one path (denied on <code>sys/mounts</code>). Since 2026-10-06 the secrets reach the backend
@@ -497,9 +510,12 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
     <div>
       <strong>Realtime is a second direct path to Supabase (step R):</strong> the canvas&apos;s presence and the live
       notifications use a Supabase Realtime WebSocket from the browser, with the public anon key. It doesn&apos;t pass
-      the GCP proxy or our WAF, so its protection is Supabase&apos;s own (the anon key plus the database&apos;s row-level
-      security policies on the tables it streams, such as <code>AuditLog</code>). Worth checking that those policies stop
-      a logged-in user from receiving other trees&apos; changes.
+      the GCP proxy or our WAF. The browser has no Supabase login of its own (the backend issues our JWT), so anyone with
+      the anon key can join a channel whose name they know: the name therefore ends in an HMAC of <code>JWT_SECRET</code>,
+      and only tree members get it. Before 2026-10-14 the browser listened to <code>AuditLog</code> inserts directly, so
+      every visitor received every tree&apos;s audit rows, and the presence channel <code>tree-presence-&lt;id&gt;</code> was
+      guessable. Row-level security on the public tables (turned on 14 Oct) cut that feed off, and the private
+      channels (<code>da7cd9c</code>) replace it. No RLS policy on <code>AuditLog</code> should bring the old feed back.
     </div>
   </div>
 
@@ -549,11 +565,15 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Still open (as of 2026-10-10, evening):</strong> the <code>spouse_id</code> unique-constraint crash in the
+      <strong>Still open (as of 2026-10-14):</strong> large photos probably still get a <code>413</code> in production from the
+      GCP nginx, which refuses a 2 MB body (<code>waf/test-waf.sh</code>); likely nginx&apos;s default
+      <code>client_max_body_size</code> of 1 MB, while the WAF and the backend allow 6 MB and 5 MB. To check and raise on GCP. The <code>spouse_id</code> unique-constraint crash in the
       add-spouse flow (2026-09-25) is believed fixed but hasn&apos;t been re-tested on production. Product question for the
       trees module: a tree MODERATOR may edit any member&apos;s profile in that tree, including a real user&apos;s own profile
-      (the canvas&apos;s existing behaviour, kept for now). The Realtime row-level-security check above (step R).
-      Resolved since this list was first written: <strong>profile permissions</strong>: <code>PATCH /api/profile/:id</code>
+      (the canvas&apos;s existing behaviour, kept for now).
+      Resolved since this list was first written: <strong>Realtime</strong> on private per-tree channels, no more
+      audit feed for everyone (2026-10-14, <code>da7cd9c</code>); <strong>photo upload</strong> needs edit permission on the
+      profile (<code>40bef86</code>) and gets through the WAF (<code>fe8465c</code>), both 2026-10-14; <strong>profile permissions</strong>: <code>PATCH /api/profile/:id</code>
       now needs your own profile, ADMIN/MODERATOR in that tree, or (as MEMBER) your claimed node (403 otherwise, 404 for an
       unknown id), and <code>DELETE</code>, <code>POST</code>, <code>GET /</code>, <code>GET /:id</code> are site-admin only
       (2026-10-10, <code>56df851</code>); the <strong>dashboard hydration error</strong> for admins and moderators is gone

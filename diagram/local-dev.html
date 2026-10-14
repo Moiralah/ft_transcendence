@@ -137,12 +137,12 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — local setup · updated 2026-10-13</p>
+  <p class="kicker">my simple family tree — local setup · updated 2026-10-14</p>
   <h1>Running it on one computer (e.g. a 42 machine)</h1>
   <p class="lede">
     Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
     the one computer: Docker for our four containers (WAF ×2, frontend, backend) plus a dev-mode Vault, and the
-    Supabase CLI for a local copy of Supabase (Auth, Realtime, Postgres, a mail catcher). <strong>Nothing goes to solsys
+    Supabase CLI for a local copy of Supabase (Auth, Realtime, Storage, Postgres, a mail catcher). <strong>Nothing goes to solsys
     or ft.natscho.my</strong>, and with <code>make local</code> nothing touches production data either.
     The only things that can leave the machine are optional: Google sign-in, and the shared <code>.env</code>
     route in red below. <strong>Part 2</strong> shows the setup since the Vault switch (13 Oct), where the secrets come from
@@ -356,7 +356,7 @@
   </div></div>
 
 
-  <h2>2 · Since the Vault switch (13 Oct; on <code>tching-solsys</code>, not on branchsaurus yet)</h2>
+  <h2>2 · Since the Vault switch (13 Oct; on <code>branchsaurus</code> since 14 Oct)</h2>
   <p class="lede">
     For team members. Same <code>make up</code> as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file.
     With <code>VAULT_USER</code> set, <code>make up</code> opens the person's <strong>own SSH tunnel</strong> through the GCP proxy
