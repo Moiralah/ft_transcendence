@@ -50,6 +50,7 @@ export default function TreePage() {
   const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
   const [profileResults, setProfileResults] = useState<any[]>([]);
   const [friendStatuses, setFriendStatuses] = useState<Record<string, { status: string; friendId: number | null;}>>({});  
+  const [friends, setFriends] = useState<{id: number;createdAt:string;user:{id:string;username:string;profileId:number|null;profile?:{firstName:string|null;lastName:string|null;}|null;};}[]>([]);
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
@@ -68,6 +69,7 @@ export default function TreePage() {
     fetchMyTrees(token);
     fetchMyProfile(token);
 	fetchRequests(token);
+	fetchFriends(token);
   }, [token]);
 
   // Handle ESC key to close search modal
@@ -164,6 +166,28 @@ export default function TreePage() {
       setRequestsError('Unable to load friend requests.');
     } finally {
       setRequestsLoading(false);
+    }
+  };
+
+  const fetchFriends = async (authToken: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/friend`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+  
+      if (!res.ok) {
+        throw new Error('Failed to load friends');
+      }
+  
+      const data = await res.json();
+      setFriends(data);
+    } catch (err) {
+      console.error('Error fetching friends:', err);
     }
   };
 
@@ -428,6 +452,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchFriends(token);
 	await fetchRequests(token);
   };
 
@@ -530,6 +555,7 @@ export default function TreePage() {
       console.error(err);
       alert(err.message);
     }
+	await fetchFriends(token);
   };
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
@@ -629,6 +655,49 @@ export default function TreePage() {
             </p>
           </div>
         </section>
+		<section
+		aria-labelledby="current-friends-heading"
+		className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200 space-y-4"
+		>
+		<h2
+			id="current-friends-heading"
+			className="text-2xl font-bold text-slate-900"
+		>
+			Current Friends ({friends.length})
+		</h2>
+		{friends.length === 0 ? (
+			<p className="text-slate-600">
+			You have no friends yet.
+			</p>
+		) : (
+			<div className="space-y-3">
+			{friends.map((friend) => (
+			  <div
+				key={friend.id}
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200"
+				>
+				<p className="font-semibold text-slate-900">
+                {([friend.user.profile?.firstName, friend.user.profile?.lastName]
+                .filter((name) => name?.trim())
+                .join(' ') || friend.user.username)}
+				</p>
+				{/* <div className="flex items-center justify-end gap-2"> */}
+				<Button
+					variant="secondary"
+					className="rounded-md border border-slate-300 px-3 py-2 text-sm
+                               hover:bg-slate-100 disabled:cursor-not-allowed w-auto
+                               disabled:opacity-50"
+					onClick={() =>
+					unfriend(friend.id, friend.user.id)
+					}
+				>
+					Unfriend
+				</Button>
+			  </div>
+			))}
+			</div>
+		)}
+		</section>
 		<section
 		aria-labelledby="friend-requests-heading"
 		className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200 space-y-6"
