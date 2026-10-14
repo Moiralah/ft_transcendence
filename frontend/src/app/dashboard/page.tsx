@@ -57,7 +57,6 @@ export default function TreePage() {
   const [inRequests, setInRequests] = useState<any[]>([]);
   const [outRequests, setOutRequests] = useState<any[]>([]); 
   const [requestsLoading, setRequestsLoading] = useState(true);
-  const [requestsError, setRequestsError] = useState<string | null>(null); 
   const [isProfileSearching, setIsProfileSearching] = useState(false);
   const [showProfileSearch, setShowProfileSearch] = useState(false);
 
@@ -132,7 +131,6 @@ export default function TreePage() {
 
   const fetchRequests = async (authToken: string) => {
     setRequestsLoading(true);
-    setRequestsError(null);
   
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -163,7 +161,6 @@ export default function TreePage() {
       setOutRequests(outData);
     } catch (err) {
       console.error('Error retrieving friend requests:', err);
-      setRequestsError('Unable to load friend requests.');
     } finally {
       setRequestsLoading(false);
     }
@@ -712,19 +709,7 @@ export default function TreePage() {
 			<p className="text-slate-600" aria-live="polite">
 			Loading friend requests...
 			</p>
-		) : requestsError ? (
-			<div>
-			<p className="text-red-700" role="alert">
-				{requestsError}
-			</p>
-			<Button
-				variant="secondary"
-				onClick={() => token && fetchRequests(token)}
-			>
-				Try Again
-			</Button>
-			</div>
-		) : (
+		  ) : (
 			<>
 			<div className="space-y-3">
 				<h3 className="text-lg font-semibold text-slate-800">
