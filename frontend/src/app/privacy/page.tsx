@@ -113,14 +113,18 @@ export default function PrivacyPolicyPage() {
 				<Section title="7. Your Rights and Choices">
 					<p>You can view and edit your own profile at any time, and you can leave a tree
 					you belong to. Tree admins and moderators can delete placeholder (made-up)
-					profiles that nobody has claimed. Site administrators can delete accounts
-					(including yours) if needed.</p>
-					<p>Deleting an account removes your login and your account details — your email
-					address, username, and any two-factor settings and recovery codes — but it does
-					not automatically delete the family tree records tied to you. Your profile (for
-					example your name and dates) stays in the trees it belongs to as an unclaimed
-					entry, because other relatives may be linked to it. If you want that information
-					fully removed as well, contact a project admin.</p>
+					profiles that nobody has claimed.</p>
+					<p>You can delete your own account under Settings. That removes your login, your
+					account details (email address, username, two-factor settings and recovery
+					codes), your friends list, your photos and your profile details. Family trees you
+					own are deleted with it, for everyone in them. You leave the trees you joined, and a
+					person you had claimed there goes back to the made-up entry it was before. If a
+					tree&apos;s history still mentions you, it shows &quot;Deleted user&quot; instead of
+					your name.</p>
+					<p>Site administrators can also delete accounts if needed. In that case your profile
+					stays in the trees it belongs to as an unclaimed entry, because other relatives may
+					be linked to it; to have it fully removed, delete your account yourself or contact a
+					project admin.</p>
 				</Section>
 
 				<Section title="8. Changes to This Policy">

@@ -1,19 +1,22 @@
 
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TreeService } from '../tree/tree.service';
 
 @Injectable()
 export class AuthService {
+	private readonly logger = new Logger(AuthService.name);
 	private supabase: SupabaseClient;
 
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly jwt: JwtService,
 		private readonly config: ConfigService,
+		private readonly trees: TreeService,
 	) {
 		const supabaseUrl = this.config.get<string>('SUPABASE_AUTH_URL');
 		const supabaseKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
@@ -254,5 +257,113 @@ export class AuthService {
 		// password-reset session. App JWTs are stateless and run until expiry.
 		await client.auth.signOut({ scope: 'global' });
 		return { ok: true };
+	}
+
+	// --- Deleting your own account ----------------------------------------
+	// What goes: the login, the user row, friendships, 2FA codes, invitations
+	// sent, every tree they own (with its made-up people) and their photos.
+	// Trees they only joined are left like "Leave tree" does it, so a node they
+	// claimed shows its made-up person again. Their profile is deleted, or, if
+	// another tree's history still points at it, kept as an empty "Deleted
+	// user" so the log stays readable without their details.
+	async deleteOwnAccount(userId: string, currentPassword?: string, confirm?: string) {
+		if (confirm !== 'DELETE') {
+			throw new BadRequestException('Type DELETE to confirm');
+		}
+		const user = await this.prisma.user.findUnique({ where: { id: userId } });
+		if (!user) {
+			throw new NotFoundException('Account not found');
+		}
+		// The admin panel can't delete its own account either: a site with no
+		// admin left has nobody to manage it.
+		if (user.role === 'ADMIN') {
+			throw new ForbiddenException('Site admins cannot delete their own account. Ask another admin to remove your admin role first.');
+		}
+		// Accounts with a password prove it's them; Google-only accounts have
+		// nothing to check beyond the typed confirmation.
+		const account = await this.getAccount(userId);
+		if (account.hasPassword) {
+			const { client } = await this.signInAsUser(userId, currentPassword ?? '');
+			await client.auth.signOut({ scope: 'local' });
+		}
+
+		const profileId = user.profileId;
+		let deletedTrees = 0;
+		if (profileId) {
+			// Own trees first, through the normal tree delete, which also removes
+			// their made-up people. Their own profile still has its userId here,
+			// so that delete never takes it along.
+			const owned = await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } });
+			for (const t of owned) {
+				await this.trees.deleteTree(t.id, profileId);
+				deletedTrees++;
+			}
+		}
+
+		const photoUrl = profileId
+			? (await this.prisma.profile.findUnique({ where: { id: profileId }, select: { photoUrl: true } }))?.photoUrl
+			: null;
+
+		await this.prisma.$transaction(async (tx) => {
+			if (profileId) {
+				const memberships = await tx.treeMember.findMany({ where: { profileId } });
+				for (const m of memberships) {
+					// Same as leaveTree: unlink the node they claimed.
+					await tx.treeMember.updateMany({ where: { linkId: m.id }, data: { linkId: null, claim: 'EMPTY' } });
+					await tx.treeMember.delete({ where: { id: m.id } });
+					if (m.treeId) {
+						await tx.auditLog.create({
+							data: { treeId: m.treeId, profileId, action: 'LEAVE_TREE', details: 'Deleted their account' },
+						});
+					}
+				}
+			}
+			await tx.invitation.deleteMany({ where: { inviterId: userId } });
+			// Cascades friendships and recovery codes.
+			await tx.user.delete({ where: { id: userId } });
+
+			if (profileId) {
+				// Nobody's parent or spouse any more.
+				await tx.profile.updateMany({ where: { motherId: profileId }, data: { motherId: null } });
+				await tx.profile.updateMany({ where: { fatherId: profileId }, data: { fatherId: null } });
+				await tx.profile.updateMany({ where: { spouseId: profileId }, data: { spouseId: null } });
+				const logged = await tx.auditLog.count({ where: { profileId } });
+				if (logged === 0) {
+					await tx.profile.delete({ where: { id: profileId } }); // events cascade
+				} else {
+					await tx.event.deleteMany({ where: { profileId } });
+					await tx.profile.update({
+						where: { id: profileId },
+						data: {
+							firstName: 'Deleted user', lastName: null, gender: null, birthDate: null, deathDate: null,
+							bio: null, photoUrl: null, verified: false, userId: null,
+							motherId: null, fatherId: null, spouseId: null,
+						},
+					});
+				}
+			}
+		});
+
+		// Photos live under avatars/<profileId>/. Best effort: the account is
+		// already gone, a leftover file only takes space.
+		if (profileId) {
+			const { data: files } = await this.supabase.storage.from('avatars').list(String(profileId));
+			const paths = (files ?? []).map((f) => `${profileId}/${f.name}`);
+			const current = photoUrl?.split('/avatars/')[1];
+			if (current && !paths.includes(current)) paths.push(current);
+			if (paths.length) {
+				const { error } = await this.supabase.storage.from('avatars').remove(paths);
+				if (error) this.logger.warn(`Account ${userId} deleted but its photos were not removed: ${error.message}`);
+			}
+		}
+
+		// Last, so a Supabase hiccup can't leave a user row nobody can log in
+		// to. If it fails, signing in again would make a fresh empty account.
+		const { error } = await this.supabase.auth.admin.deleteUser(userId);
+		if (error) {
+			this.logger.warn(`Account ${userId} deleted but its Supabase login was not removed: ${error.message}`);
+		}
+		this.logger.log(`Account ${userId} deleted by its owner; ${deletedTrees} owned trees removed`);
+		return { message: 'Account deleted.', deletedTrees };
 	}
 }

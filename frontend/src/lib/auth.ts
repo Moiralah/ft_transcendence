@@ -204,11 +204,11 @@ export interface AccountInfo {
 
 export class SessionExpiredError extends Error {}
 
-async function accountRequest<T>(path: string, body?: unknown): Promise<T> {
+async function accountRequest<T>(path: string, body?: unknown, method?: 'DELETE'): Promise<T> {
 	const token = getToken();
 	if (!token) throw new SessionExpiredError('Not logged in');
 	const res = await fetch(`${apiUrl()}/auth/${path}`, {
-		method: body === undefined ? 'GET' : 'POST',
+		method: method ?? (body === undefined ? 'GET' : 'POST'),
 		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
 		body: body === undefined ? undefined : JSON.stringify(body),
 	});
@@ -230,6 +230,10 @@ export const changeEmail = (currentPassword: string, newEmail: string) =>
 
 export const changePassword = (currentPassword: string, newPassword: string) =>
 	accountRequest<{ ok: true }>('change-password', { currentPassword, newPassword });
+
+// currentPassword is ignored for accounts without one (Google-only).
+export const deleteAccount = (currentPassword: string, confirm: string) =>
+	accountRequest<{ message: string; deletedTrees: number }>('account', { currentPassword, confirm }, 'DELETE');
 
 // For accounts with no password yet (signed up with Google): emails the same
 // link as "Forgot password". Setting a password there adds an email + password

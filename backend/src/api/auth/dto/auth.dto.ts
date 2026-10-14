@@ -30,3 +30,15 @@ export class ChangePasswordDto {
 	@MaxLength(200)
 	newPassword: string;
 }
+
+export class DeleteAccountDto {
+	@IsOptional()
+	@IsString()
+	@MaxLength(200)
+	currentPassword?: string;
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(20)
+	confirm?: string;
+}

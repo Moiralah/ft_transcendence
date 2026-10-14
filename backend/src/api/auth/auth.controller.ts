@@ -1,8 +1,8 @@
 
-import { Controller, Post, Get, Body, Req, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Req, HttpCode, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { ChangeEmailDto, ChangePasswordDto, LoginDto } from './dto/auth.dto';
+import { ChangeEmailDto, ChangePasswordDto, DeleteAccountDto, LoginDto } from './dto/auth.dto';
 
 @Controller(`auth`) // Base route path prefix: /auth
 export class AuthController {
@@ -33,5 +33,12 @@ export class AuthController {
 	@HttpCode(200)
 	async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
 		return this.auth.changePassword(req.user.id, body?.currentPassword, body?.newPassword);
+	}
+
+	// The user deleting their own account (admins delete others via /users/:id).
+	@Delete('account')
+	@UseGuards(JwtAuthGuard)
+	async deleteAccount(@Req() req, @Body() body: DeleteAccountDto) {
+		return this.auth.deleteOwnAccount(req.user.id, body?.currentPassword, body?.confirm);
 	}
 }

@@ -9,6 +9,7 @@ import { Footer } from '@/components/footer';
 import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
+import { DeleteAccountForm } from '@/components/deleteAccountForm';
 import { getToken } from '@/lib/auth';
 
 export default function TwoFactorSettingsPage() {
@@ -223,6 +224,7 @@ export default function TwoFactorSettingsPage() {
 
 				{!loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
 				{!loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
+				{!loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
