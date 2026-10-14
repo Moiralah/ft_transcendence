@@ -11,13 +11,16 @@ export interface PresenceUser {
 	onlineAt: string;
 }
 
-export function useTreePresence(treeId: number | null, me: PresenceUser | null) {
+// `channelName` is the tree's realtimeChannel from GET /trees/slug/:slug (members
+// only), so outsiders can't see or join who's online; see
+// backend/src/api/tree/tree-realtime.ts.
+export function useTreePresence(channelName: string | null, me: PresenceUser | null) {
 	const [onlineProfiles, setOnlineProfileIds] = useState<PresenceUser[]>([]);
 
 	useEffect(() => {
-		if (!treeId || !me?.profileId) return;
+		if (!channelName || !me?.profileId) return;
 
-		const channel = supabase.channel(`tree-presence-${treeId}`, {
+		const channel = supabase.channel(channelName, {
 			config: { presence: { key: String(me.profileId) } },
 		});
 
@@ -42,7 +45,7 @@ export function useTreePresence(treeId: number | null, me: PresenceUser | null) 
 		// Only re-subscribe if the tree or the actual profileId changes, not on
 		// every render where `me` is a fresh object literal.
 
-	}, [treeId, me?.profileId]);
+	}, [channelName, me?.profileId]);
 
 	const onlineProfileIds = new Set(onlineProfiles.map((u) => u.profileId));
 

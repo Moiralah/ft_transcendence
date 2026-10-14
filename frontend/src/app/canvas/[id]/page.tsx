@@ -135,7 +135,7 @@ export default function Content() {
   };
 
 	// Pops a toast whenever an AuditLog row is inserted for this tree.
-  useTreeNotifications(Number(treeId), treesMember);
+  useTreeNotifications(tree?.realtimeChannel ?? null, treesMember);
 
   const fetchTree = async (authToken: string) => {
     try {
@@ -413,7 +413,7 @@ export default function Content() {
   });
 
 	const {onlineProfiles} = useTreePresence(
-	  Number(treeId),
+	  tree?.realtimeChannel ?? null,
     myProfile? {
           profileId: myProfile.id,
           firstName: myProfile.firstName,

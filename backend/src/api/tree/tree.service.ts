@@ -5,6 +5,7 @@ import {
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
+import { broadcastAudit, treeChannel } from './tree-realtime';
 
 const ASSIGNABLE_ROLES = ['ADMIN', 'MEMBER', 'JOINER'] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
@@ -37,6 +38,18 @@ export class TreeService {
 	// AuditLog.profileId is enough on its own — User.profileId is one-to-one,
 	// so it always resolves back to the acting user without a separate
 	// userId column.
+
+	// Every audit row goes through here so it also reaches the tree's live
+	// notifications (see tree-realtime.ts). `db` is this.prisma or a
+	// transaction; the row is always the last write in its transaction.
+	private async logAudit(
+		db: Pick<PrismaService, 'auditLog'>,
+		args: { data: { treeId: number; profileId: number; action: string; details?: string } },
+	) {
+		const log = await db.auditLog.create(args);
+		broadcastAudit(log);
+		return log;
+	}
 
 	private generateTreeCode(): string {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -98,7 +111,7 @@ export class TreeService {
 				data: { profileId, treeId: tree.id, role: 'ADMIN' },
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId: tree.id,
 					profileId,
@@ -143,7 +156,7 @@ export class TreeService {
 			include: { profile: true, tree: { select: { id: true, name: true, slug: true } } },
 		});
 
-		await this.prisma.auditLog.create({
+		await this.logAudit(this.prisma, {
 			data: {
 				treeId: tree.id,
 				profileId,
@@ -262,7 +275,12 @@ export class TreeService {
 		if (!tree) {
 			throw new NotFoundException('Tree not found.');
 		}
-		return { ...this.codeForAdminsOnly(tree, member.role), userRole: member.role };
+		return {
+			...this.codeForAdminsOnly(tree, member.role),
+			userRole: member.role,
+			// Members only, like the rest of this response: see tree-realtime.ts.
+			realtimeChannel: treeChannel(tree.id),
+		};
 	}
 
 	async getTreeBySlug(slug: string, profileId: number) {
@@ -300,7 +318,12 @@ export class TreeService {
 		if (!fulltree) {
 			throw new NotFoundException('Tree not found.');
 		}
-		return { ...this.codeForAdminsOnly(fulltree, member.role), userRole: member.role };
+		return {
+			...this.codeForAdminsOnly(fulltree, member.role),
+			userRole: member.role,
+			// Members only, like the rest of this response: see tree-realtime.ts.
+			realtimeChannel: treeChannel(fulltree.id),
+		};
 	}
 
 	// The join code is for the people who invite: tree admins (the owner is
@@ -344,7 +367,7 @@ export class TreeService {
 			},
 		});
 
-		await this.prisma.auditLog.create({
+		await this.logAudit(this.prisma, {
 			data: {
 				treeId,
 				profileId: requesterProfileId,
@@ -483,7 +506,7 @@ export class TreeService {
 				},
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -555,7 +578,7 @@ export class TreeService {
 				},
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -640,7 +663,7 @@ export class TreeService {
 			await tx.treeMember.delete({ where: { id: targetMemberId } });
 			await tx.profile.delete({ where: { id: target.profileId! } });
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -697,7 +720,7 @@ export class TreeService {
 				include: { profile: true, link: { include: { profile: true } } },
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -742,7 +765,7 @@ export class TreeService {
 				include: { profile: true, link: { include: { profile: true } } },
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: approverProfileId,
@@ -785,7 +808,7 @@ export class TreeService {
 				data: { linkId: null, claim: 'EMPTY' },
 			});
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: approverProfileId,
@@ -866,7 +889,7 @@ export class TreeService {
 			});
 
 			// 6. Audit log.
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -934,7 +957,7 @@ export class TreeService {
 			await tx.treeMember.delete({ where: { id: target.id } });
 
 			// 7. Audit log.
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
@@ -983,7 +1006,7 @@ export class TreeService {
 
 			await tx.treeMember.delete({ where: { id: member.id } });
 
-			await tx.auditLog.create({
+			await this.logAudit(tx, {
 				data: {
 					treeId,
 					profileId,

@@ -18,44 +18,36 @@ interface MemberLike {
 	lastName?: string;
 }
 
-export function useTreeNotifications(treeId: number | null, members: MemberLike[] = []) {
+// `channel` is the tree's realtimeChannel from GET /trees/slug/:slug (members
+// only). The backend broadcasts every audit row there; see
+// backend/src/api/tree/tree-realtime.ts for why it isn't a table subscription.
+export function useTreeNotifications(channel: string | null, members: MemberLike[] = []) {
 	const membersRef = useRef(members);
 	useEffect(() => {
 		membersRef.current = members;
 	}, [members]);
 
 	useEffect(() => {
-		if (!treeId || !Number.isFinite(treeId)) return;
+		if (!channel) return;
 
-		const channelName = `auditlog:tree:${treeId}:${crypto.randomUUID()}`;
-
-		const channel = supabase
-			.channel(channelName)
-			.on(
-				'postgres_changes',
-				{
-					event: 'INSERT',
-					schema: 'public',
-					table: 'AuditLog',
-				},
-				(payload) => {
-					const log = payload.new as AuditLog;
-					if (Number(log.treeId) !== Number(treeId)) return;
-					// Show a toast notification
-					const message = formatNotification(log, membersRef.current);
-					toast.success(message, {
-						duration: 7000,
-						position: 'bottom-right',
-					});
-				}
-			)
+		const sub = supabase
+			.channel(channel)
+			.on('broadcast', { event: 'audit' }, ({ payload }) => {
+				const log = payload as AuditLog;
+				// Show a toast notification
+				const message = formatNotification(log, membersRef.current);
+				toast.success(message, {
+					duration: 7000,
+					position: 'bottom-right',
+				});
+			})
 			.subscribe((status, err) => {
 				console.log('[useTreeNotifications]', status, err ?? '');});
 
 		return () => {
-			supabase.removeChannel(channel);
+			supabase.removeChannel(sub);
 		};
-	}, [treeId]);
+	}, [channel]);
 }
 
 function actorName(profileId: number, members: MemberLike[]): string {
