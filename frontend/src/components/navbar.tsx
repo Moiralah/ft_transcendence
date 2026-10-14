@@ -39,7 +39,7 @@ export function Navbar({
         className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center"
       >
         <Link
-          href="/"
+          href="/dashboard"
           className="grid grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1 rounded-md font-bold text-lg sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
           aria-label={`${brandName} Home`}
           style={{

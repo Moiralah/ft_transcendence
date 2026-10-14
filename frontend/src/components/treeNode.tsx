@@ -139,6 +139,7 @@ export function TreeNode({
           'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]
           ${showProfileModal ? 'cursor-pointer hover:ring-2 hover:ring-amber-500' : 'cursor-default'}
+          
         `}
       >
         {showDeleteButton ? (
