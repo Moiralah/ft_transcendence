@@ -194,4 +194,23 @@ export class PublicService {
 
 		return;
 	}
+
+    async deletePublicTree(treeId: number) {
+        const tree = await this.prisma.tree.findFirst({
+            where: {
+                id: treeId,
+                isPublic: true,
+            },
+            select: {
+                id: true,
+                ownerId: true
+            },
+        });
+    
+        if (!tree) {
+            throw new NotFoundException('Public tree not found.');
+        }
+    
+        return this.treeService.deleteTree(treeId, tree.ownerId);
+    }
 }
