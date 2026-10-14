@@ -12,6 +12,7 @@
 PAGES=${1:-https://ft.natscho.my}
 API=${2:-https://ft.natscho.my/api}
 pass=0; fail=0
+PHOTO=$(mktemp); head -c 300000 /dev/urandom > "$PHOTO"; trap 'rm -f "$PHOTO"' EXIT
 
 check() { # description, expected status regex, curl args...
 	local desc=$1 want=$2; shift 2
@@ -34,6 +35,7 @@ echo "== Normal free text must pass the WAF (401/200 = reached the app, 403 = WA
 check "name 'Local' in a profile edit"            401 -X PATCH -H 'Content-Type: application/json' -d '{"firstName":"Local","lastName":"Email Signup"}' "$API/profile/1"
 check "bio with '--' and apostrophes"              401 -X PATCH -H 'Content-Type: application/json' -d "{\"bio\":\"Born 1950 -- died 2001. O'Brien family, Mary-Jane & Tom.\"}" "$API/profile/1"
 check "search with '--' in it"                     401 "$API/trees/search?q=born%201950%20--%20died%202001"
+check "photo upload (multipart, 300 KB) on its route" 401 -X POST -F "file=@$PHOTO;type=image/png" "$API/profile/1/photo"
 check "feedback text with '--' (spam-trap, not sent)" 200 -X POST -H 'Content-Type: application/json' -d '{"category":"other","message":"Grandpa -- a carpenter -- loved O'"'"'Brien stories","website":"test"}' "$API/feedback"
 
 echo "== Attacks must be blocked (403)"
@@ -49,8 +51,11 @@ check "Known scanner user agent (sqlmap)"          403 -A 'sqlmap/1.7' "$API/tre
 echo "== Protocol hardening (API)"
 check "Method not allowed (PROPFIND)"              '403|405' -X PROPFIND "$API/trees/my-trees"
 check "Non-JSON content type (XML)"                403 -X POST -H 'Content-Type: application/xml' -d '<a>1</a>' "$API/auth/login"
-# 413 from the GCP nginx in production; locally ModSecurity rejects it itself (403).
-check "Body over 1 MB"                             '413|403' -X POST -H 'Content-Type: application/json' --data-binary @<(head -c 2000000 /dev/zero | tr '\0' 'a' | sed 's/^/{"a":"/;s/$/"}/') "$API/feedback"
+check "Multipart on any other route"               403 -X POST -F "file=@$PHOTO;type=image/png" "$API/feedback"
+# A JSON body over 128 KB: locally the WAF's own nginx refuses it (400, ModSecurity's
+# no-files limit); in production the GCP nginx may refuse it first (413).
+check "JSON body over 128 KB"                      '413|403|400' -X POST -H 'Content-Type: application/json' --data-binary @<(head -c 200000 /dev/zero | tr '\0' 'a' | sed 's/^/{"a":"/;s/$/"}/') "$API/feedback"
+check "Body over 1 MB"                             '413|403|400' -X POST -H 'Content-Type: application/json' --data-binary @<(head -c 2000000 /dev/zero | tr '\0' 'a' | sed 's/^/{"a":"/;s/$/"}/') "$API/feedback"
 
 echo "== No way around the WAF"
 check "Backend port 4000 not reachable"            000 --connect-timeout 5 "${PAGES%/}:4000/"

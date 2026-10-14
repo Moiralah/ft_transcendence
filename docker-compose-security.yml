@@ -57,11 +57,14 @@ services:
       # waf/backend-exclusions.conf (rule 1000030).
       BLOCKING_PARANOIA: "2"
       DETECTION_PARANOIA: "2"
-      # The API only ever receives JSON and has no file uploads, so anything
-      # else is refused (CRS rule 920420), and bodies are capped at 1 MB
-      # (default was 13 MB) / 128 KB without files; over the limit -> 413.
+      # The API receives JSON only, so anything else is refused (CRS rule
+      # 920420); the one exception is the profile photo upload, which may send
+      # multipart/form-data (waf/backend-exclusions.conf, rule 1000040).
+      # Bodies without files are capped at 128 KB, so every JSON request
+      # still is; with a file at 6 MB (default was 13 MB), room for the
+      # backend's own 5 MB photo limit. Over the limit -> 413.
       ALLOWED_REQUEST_CONTENT_TYPE: "|application/json|"
-      MODSEC_REQ_BODY_LIMIT: "1048576"
+      MODSEC_REQ_BODY_LIMIT: "6291456"
       MODSEC_REQ_BODY_NOFILES_LIMIT: "131072"
       MODSEC_REQ_BODY_LIMIT_ACTION: "Reject"
     ports:
