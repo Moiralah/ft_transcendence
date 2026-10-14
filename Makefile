@@ -50,16 +50,17 @@ prod:
 	./scripts/prod-up.sh
 
 # From your laptop: update and restart https://ft.natscho.my in one command.
-# Pulls DEPLOY_BRANCH on the server, then runs `make prod` there. Needs SSH
+# Pulls DEPLOY_BRANCH on the server, then runs scripts/prod-up.sh there (what
+# `make prod` runs; solsys has no make installed). Needs SSH
 # access to the server (`solsys` in ~/.ssh/config, jumping through GCP).
 DEPLOY_HOST ?= solsys
 DEPLOY_DIR ?= ft_transcendence
 DEPLOY_BRANCH ?= branchsaurus
 deploy:
-	ssh $(DEPLOY_HOST) 'set -e; cd $(DEPLOY_DIR); git fetch -q origin; git checkout -q $(DEPLOY_BRANCH); git pull -q --ff-only origin $(DEPLOY_BRANCH); echo "[deploy] $$(hostname) now at $$(git log --oneline -1)"; make prod'
+	ssh $(DEPLOY_HOST) 'set -e; cd $(DEPLOY_DIR); git fetch -q origin; git checkout -q $(DEPLOY_BRANCH); git pull -q --ff-only origin $(DEPLOY_BRANCH); echo "[deploy] $$(hostname) now at $$(git log --oneline -1)"; ./scripts/prod-up.sh'
 
 # Share holders: unseal Vault after solsys restarts (2 of 5 shares; solsys's
-# own share is applied by `make prod`). Goes through your SSH tunnel (lib.sh).
+# own share is applied by scripts/prod-up.sh). Goes through your SSH tunnel (lib.sh).
 unseal:
 	./scripts/vault/unseal.sh
 
