@@ -161,6 +161,24 @@ export class UsersService {
 				'This user has related data (audit logs or invitations) and cannot be deleted.',
 			);
 		}
+		this.logger.log(`User ${id} deleted by admin ${requesterId}`);
+
+		// The account is gone whether or not the mail goes out.
+		if (user.email) {
+			void this.mail.sendQuietly({
+				to: user.email,
+				subject: 'Your My Simple Family Tree account has been deleted',
+				text: [
+					`Hi ${user.username},`,
+					'',
+					'Your account on My Simple Family Tree has been deleted by the admins and moderators of My Simple Family Tree.',
+					'You may have violated our terms, which would have led to your account being rescinded.',
+					`When: ${malaysiaTime()}`,
+					'',
+					'If you think this is a mistake, contact us through the feedback form on the site.',
+				].join('\n'),
+			}, 'Admin account deletion');
+		}
 
 		// Also remove the Supabase login. Without this the person can still sign
 		// in (email or OAuth) and the backend silently creates a brand-new user.
