@@ -11,6 +11,7 @@ interface modalBannerProps {
     setName: (val: string) => void;
     description?: string;
     setDescription?: (val: string) => void;
+    descriptionPlaceholder?: string;
 }
 
 export function ModalBanner({
@@ -21,6 +22,7 @@ export function ModalBanner({
   setName,
   description = '',
   setDescription,
+  descriptionPlaceholder = 'Description',
 } : modalBannerProps) {
 
   return (
@@ -38,7 +40,7 @@ export function ModalBanner({
                 />
                 <input
                   type="text"
-                  placeholder="Description"
+                  placeholder={descriptionPlaceholder}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full border rounded px-4 py-2 mb-3"

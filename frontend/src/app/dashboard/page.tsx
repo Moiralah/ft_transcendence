@@ -1053,6 +1053,7 @@ export default function TreePage() {
           setName={setJoinName}
           description={joinCode}
           setDescription={setJoinCode}
+          descriptionPlaceholder="Join Code"
         />
       )}
 
