@@ -343,8 +343,16 @@ export class ProfileService {
 		if (file.size > 1_000_000) {
 			throw new BadRequestException('Photo must be 1 MB or smaller.');
 		}
-		const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-		if (!allowed.includes(file.mimetype)) {
+		// The mimetype is only what the client claims, so check the file's
+		// first bytes too: both must name the same allowed image type.
+		const b = file.buffer;
+		const sniffed =
+			b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff ? 'image/jpeg' :
+			b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ? 'image/png' :
+			b.subarray(0, 4).toString('latin1') === 'GIF8' ? 'image/gif' :
+			b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' ? 'image/webp' :
+			null;
+		if (!sniffed || sniffed !== file.mimetype) {
 			throw new BadRequestException('Only JPEG, PNG, WebP, or GIF allowed.');
 		}
 
@@ -367,7 +375,7 @@ export class ProfileService {
 				upsert: false,
 			});
 		if (uploadError) {
-			throw new BadRequestException(`Upload failed: ${uploadError.message}`);
+			throw new BadRequestException('Upload failed.');
 		}
 
 		const { data: urlData } = this.supabase.storage

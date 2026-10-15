@@ -61,8 +61,8 @@ services:
       # 920420); the one exception is the profile photo upload, which may send
       # multipart/form-data (waf/backend-exclusions.conf, rule 1000040).
       # Bodies without files are capped at 128 KB, so every JSON request
-      # still is; with a file at 6 MB (default was 13 MB), room for the
-      # backend's own 5 MB photo limit. Over the limit -> 413.
+      # still is; with a file at 6 MB (default was 13 MB), headroom above the
+      # 1 MB photo limit (GCP nginx and the backend). Over the limit -> 413.
       ALLOWED_REQUEST_CONTENT_TYPE: "|application/json|"
       MODSEC_REQ_BODY_LIMIT: "6291456"
       MODSEC_REQ_BODY_NOFILES_LIMIT: "131072"

@@ -111,7 +111,8 @@ export class ProfileController {
 	// Same rule as saving the profile (PATCH above): 403 unless you may edit it.
 	@Post(':id/photo')
 	@UseGuards(JwtAuthGuard)
-	@UseInterceptors(FileInterceptor('file'))
+	// Multer stops reading past 1 MB (the service's limit) instead of buffering it all.
+	@UseInterceptors(FileInterceptor('file', { limits: { fileSize: 1_000_000, files: 1 } }))
 	async uploadPhoto(
 		@Req() req: AuthenticatedRequest,
 		@Param('id', ParseIntPipe) id: number,
