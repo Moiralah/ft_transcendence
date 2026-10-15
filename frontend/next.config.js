@@ -26,7 +26,7 @@ const connectSrc = ["'self'", apiOrigin, supabaseOrigin, supabaseWs].filter(Bool
 // it's a bigger change this hasn't been tested against. CSP is enforced
 // client-side only, so this can't be verified by curl/build — check the
 // browser console for CSP violation errors after deploying, particularly on
-// /settings/2fa (renders a data: URI QR code image) and any page making API
+// /settings (renders a data: URI QR code image for 2FA) and any page making API
 // calls, and loosen/tighten specific directives based on what's actually
 // reported, not assumed.
 // 'unsafe-eval' is dev-only: `next dev`'s webpack Fast Refresh/HMR runtime
@@ -92,6 +92,12 @@ const nextConfig = {
 				source: '/(.*)',
 				headers: securityHeaders,
 			},
+		];
+	},
+	// The settings page used to live at /settings/2fa; keep old links working.
+	async redirects() {
+		return [
+			{ source: '/settings/2fa', destination: '/settings', permanent: true },
 		];
 	},
 };

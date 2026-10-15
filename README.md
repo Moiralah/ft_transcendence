@@ -260,7 +260,7 @@ Statuses checked against the code on `branchsaurus` on 2026-10-10.
 | **Advanced search** with filters, sorting, pagination | Yiwei | Minor | 1 | 🔄 Built, demo check | `GET /profile/search`: filters (name, birth date, gender), sorting (`sortBy`, `order`), pagination (`page`, `limit`) with the total count |
 | **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | 🔄 Partial | Skip link, landmarks, labelled forms, ARIA attributes. Still needed: a full WCAG 2.1 AA audit (axe/Lighthouse, keyboard-only, screen reader), especially the tree canvas |
 | **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ✅ Done | Tested by Jon. Still to add here: the browsers tested and any known limitations (the subject asks for them to be documented) |
-| **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings/2fa`, login challenge on `/2fa/login-verify` |
+| **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings`, login challenge on `/2fa/login-verify` |
 | **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets (server mode with 5 unseal shares, per-person logins reached through each person's own SSH tunnel, and an audit log; see `vault/README.md`), AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, started by `make up`. Direct `:3000`/`:4000` access is closed, so the WAF is the only way in |
 
 ### Points
@@ -338,7 +338,7 @@ Who owns which module (shared modules list every owner). Effort per module in po
   role management, links to Security & Password and (role-gated) Admin Panel
 - `/app/consent` – OAuth callback handler, also handles the 2FA challenge
   for OAuth logins
-- `/app/settings/2fa` – enable/disable 2FA, QR enrollment, recovery codes
+- `/app/settings` – 2FA (enable/disable, QR enrollment, recovery codes), change password, change email, delete account
 - `/app/admin/users` – admin-only user list, role changes, delete
 - Design system: components (`Button`, `Navbar`, `Footer`, `Banner`, `FeatureCard`, `FeaturesGrid`, `SectionHeader`, `Typography`, `Icon`, `SkipLink`)
 

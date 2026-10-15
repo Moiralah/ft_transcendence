@@ -12,7 +12,7 @@ import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
 import { getToken } from '@/lib/auth';
 
-export default function TwoFactorSettingsPage() {
+export default function SettingsPage() {
 	const router = useRouter();
 	const token = getToken();
 
@@ -127,7 +127,7 @@ export default function TwoFactorSettingsPage() {
 						&larr; Back to dashboard
 					</Button>
 				</div>
-				<h1 className="text-2xl font-bold text-slate-900">Two-Factor Authentication</h1>
+				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>
 
 				{loading ? (
 					<p aria-live="polite">Loading...</p>
