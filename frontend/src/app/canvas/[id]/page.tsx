@@ -147,6 +147,7 @@ export default function Content() {
 	if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
 	refetchTimerRef.current = setTimeout(() => {
 		fetchTreeMember(token, treeId);
+    handlePending();
 	}, 400);
 	}, [token, treeId]);
 	// Pops a toast whenever an AuditLog row is inserted for this tree.
