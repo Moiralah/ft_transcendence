@@ -646,7 +646,7 @@ export default function TreePage() {
               <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span>{formatDate(myProfile?.birthDate) || ' —'}</span></div>
 
               <div className="mt-2 flex flex-wrap gap-2">
-                <Button href="/settings/2fa" variant="secondary">
+                <Button href="/settings" variant="secondary">
                   Settings
                 </Button>
                 {(role === 'ADMIN' || role === 'MODERATOR') && (
