@@ -125,7 +125,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-14</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-15</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
@@ -138,7 +138,7 @@
   <div class="diagram-card">
     <svg viewBox="0 0 1010 672" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
-      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Supabase Realtime and Storage with its service key (live tree events, profile photos), to Postgres via Prisma, to Gmail SMTP for feedback emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
+      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Supabase Realtime and Storage with its service key (live tree events, profile photos), to Postgres via Prisma, to Gmail SMTP for feedback and account emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
 
       <!-- ===== Group: Client ===== -->
       <text x="40" y="34" class="group-title" fill="var(--sub)">Client</text>
@@ -224,10 +224,10 @@
       <text x="762" y="284" class="box-sub" fill="var(--sub)">User · Tree · Profile · Friendship…</text>
       <text x="762" y="302" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
-      <!-- Gmail SMTP: feedback form emails -->
+      <!-- Gmail SMTP: feedback form and account notice emails -->
       <rect x="740" y="340" width="230" height="86" rx="14" fill="var(--ext-soft)" stroke="var(--ext)" stroke-width="1.5" stroke-dasharray="5 4"/>
       <text x="762" y="368" class="box-label" fill="var(--ext)">Gmail SMTP</text>
-      <text x="762" y="386" class="box-sub" fill="var(--sub)">feedback emails · STARTTLS :587</text>
+      <text x="762" y="386" class="box-sub" fill="var(--sub)">feedback + notices · STARTTLS :587</text>
       <text x="762" y="404" class="box-sub" fill="var(--sub)">password from Vault</text>
       <text x="762" y="418" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
@@ -299,7 +299,7 @@
       <circle cx="430" cy="95" r="10" fill="var(--panel)" stroke="var(--supabase)"/>
       <text x="430" y="99" class="step-num" fill="var(--supabase)" text-anchor="middle">R</text>
 
-      <!-- F: Backend -> Gmail SMTP (feedback form only) -->
+      <!-- F: Backend -> Gmail SMTP (feedback form, account notices) -->
       <path d="M710,362 L740,372" fill="none" stroke="var(--ext)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
       <circle cx="725" cy="350" r="9" fill="var(--panel)" stroke="var(--ext)"/>
       <text x="725" y="354" class="step-num" fill="var(--ext)" text-anchor="middle">F</text>
@@ -312,7 +312,7 @@
       <!-- Bottom labels row -->
       <rect x="30" y="545" width="940" height="1" fill="var(--line)"/>
       <text x="30" y="568" class="box-sub" fill="var(--sub)">
-        <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional (OAuth sign-in, feedback email). <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
+        <tspan font-weight="600" fill="var(--waf)">Crimson</tspan> = through the WAF, inspected. <tspan font-weight="600" fill="var(--sub)">Grey</tspan> = direct, not behind our WAF. <tspan font-weight="600" fill="var(--ext)">Dashed grey (right)</tspan> = optional (OAuth sign-in, email). <tspan font-weight="600" fill="var(--vault)">Dashed gold</tspan> = once, at backend boot.
       </text>
       <text x="30" y="588" class="box-sub" fill="var(--sub)">
         <tspan class="mono" fill="var(--sub)">make up</tspan> starts the whole stack: backend&apos;s <tspan class="mono" fill="var(--sub)">:4000</tspan> and frontend&apos;s <tspan class="mono" fill="var(--sub)">:3000</tspan> are not published — the WAF is the only way in.
@@ -362,7 +362,7 @@
     </div>
     <div class="step">
       <div class="n">4</div>
-      <p><strong>Backend → Supabase Auth</strong> — <code>supabase.auth.getUser(accessToken)</code> to verify the token is real before trusting it.<span class="tag">login only</span></p>
+      <p><strong>Backend → Supabase Auth</strong> — <code>supabase.auth.getUser(accessToken)</code> to verify the token is real before trusting it. Outside login, the backend also uses Supabase Auth's admin API with the service key: <code>getUserById</code> for the account settings and to recognise someone signing up again after their login was deleted, and <code>deleteUser</code> when someone deletes their own account or a site admin deletes it (their photos in <code>avatars</code> are removed too).<span class="tag">login · account delete</span></p>
     </div>
     <div class="step">
       <div class="n">5</div>
@@ -386,7 +386,7 @@
     </div>
     <div class="step">
       <div class="n opt">F</div>
-      <p><strong>Backend → Gmail SMTP</strong> — the public <code>/feedback</code> form (honeypot + rate limit) is emailed to the team over STARTTLS on <code>:587</code>, with the app password from Vault.<span class="tag">feedback only</span></p>
+      <p><strong>Backend → Gmail SMTP</strong> — the public <code>/feedback</code> form (honeypot + rate limit) is emailed to the team over STARTTLS on <code>:587</code>, with the app password from Vault. The same route sends short notices to users: a site admin changed their role, suspended or unsuspended them, deleted their tree or their account, and a goodbye note when they delete their own account. A failed email never fails the action.<span class="tag">feedback · notices</span></p>
     </div>
   </div>
 

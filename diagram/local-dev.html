@@ -137,7 +137,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — local setup · updated 2026-10-14</p>
+  <p class="kicker">my simple family tree — local setup · updated 2026-10-15</p>
   <h1>Running it on one computer (e.g. a 42 machine)</h1>
   <p class="lede">
     Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
@@ -306,7 +306,7 @@
     <div class="step"><div class="n">4</div><p>The backend checks that Supabase token with local Supabase Auth, through <code>host.docker.internal:54321</code>
       (inside a container, <code>127.0.0.1</code> is the container itself).</p></div>
     <div class="step"><div class="n">5</div><p>All data goes to the <strong>local Postgres</strong> on <code>host.docker.internal:54322</code>: test data only, gone when you run <code>supabase stop --no-backup</code>.</p></div>
-    <div class="step"><div class="n">6</div><p>Emails (feedback, role and suspension notices, tree deleted) land in <strong>Mailpit</strong>: open <code>http://127.0.0.1:54324</code> to read them.</p></div>
+    <div class="step"><div class="n">6</div><p>Emails (feedback, role and suspension notices, tree deleted, account deleted) land in <strong>Mailpit</strong>: open <code>http://127.0.0.1:54324</code> to read them.</p></div>
   </div>
 
   <h2>Two ways to start it</h2>
