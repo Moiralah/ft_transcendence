@@ -474,7 +474,7 @@ export default function Content() {
         <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-2">
-            <div className="h-12 flex flex-1 items-center">
+            <div className="min-h-12 min-w-0 flex flex-1 items-center">
               {editTreeName ? (
                 <input
                   type="text"
@@ -484,7 +484,7 @@ export default function Content() {
                   onBlur={handleNameBlur}
                   autoFocus
                   aria-label="Edit tree name"
-                  className="w-full h-full px-3 text-lg font-semibold text-gray-800 border-2 border-amber-600 rounded-lg outline-none focus:ring-amber-600 box-border"
+                  className="w-full h-12 px-3 text-lg font-semibold text-gray-800 border-2 border-amber-600 rounded-lg outline-none focus:ring-amber-600 box-border"
                 />
               ) : (
                 <div
@@ -493,7 +493,7 @@ export default function Content() {
                   aria-label={`${name || "my tree"}`}
                   onKeyDown={handleNameStaticKeyDown}
                   onClick={() => setEditTreeName(true)}
-                  className="flex h-full items-center px-3 text-lg font-semibold text-gray-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+                  className="flex min-h-12 min-w-0 items-center px-3 py-2 text-lg font-semibold text-gray-800 [overflow-wrap:anywhere] rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
                 >
                   {name || "my tree"}
                 </div>
@@ -533,11 +533,11 @@ export default function Content() {
 			      <div className="mb-4 space-y-2 bg-transparent">
 			      {pending.map((m: any) => (
 				      <div key={m.id} className="flex items-center gap-2 py-2 mx-2">
-				        <span className="font-medium">
+				        <span className="font-medium min-w-0 [overflow-wrap:anywhere]">
 					        {m.link?.profile?.firstName} {m.link?.profile?.lastName}
 				        </span>
 				        <span className="text-gray-500 text-xs"> claim </span>
-				        <span className="font-semibold">
+				        <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">
 					        {m.profile?.firstName} {m.profile?.lastName}
 				        </span>
                 <div className="flex lg:flex-row flex-col">

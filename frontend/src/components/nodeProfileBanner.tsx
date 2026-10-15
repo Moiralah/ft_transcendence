@@ -426,8 +426,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 />
               </div>
             ) : (
-              <div className="flex flex-row font-bold justify-between items-center w-full">
-                <div className="flex text-2xl">
+              <div className="flex flex-row font-bold justify-between items-center gap-2 w-full">
+                <div className="min-w-0 text-2xl [overflow-wrap:anywhere]">
                   {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
                 </div>
 					{canEditFields && (
@@ -444,7 +444,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Birth Date */}
           <div className="flex flex-row text-xl font-normal items-center">
-            <div className="flex w-40 text-gray-500">Born</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Born</div>
             <div className="flex-1">
               {editingField === 'birthDate' ? (
                 <input
@@ -458,27 +458,27 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-			<span
-				onClick={() => canEditFields && setEditingField('birthDate')}
-				className={`rounded text-xl px-2 py-1 ${
-					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
-				}`}
-				>
-				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
-				</span>
+			          <span
+				          onClick={() => canEditFields && setEditingField('birthDate')}
+				          className={`rounded text-xl px-2 py-1 ${
+					          canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				          }`}
+				        >
+				          {formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				        </span>
               )}
             </div>
           </div>
 
           {/* Gender */}
           <div className="flex flex-row text-xl font-normal">
-            <div className="flex w-40 text-gray-500">Gender</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Gender</div>
             <div>
               <select
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -489,25 +489,25 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Status */}
           <div className="flex flex-row text-xl font-normal items-center">
-            <div className="flex w-40 text-gray-500">Status</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Status</div>
             <div className="flex border bg-gray-200 rounded-xl p-1">
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  alive ? 'bg-black shadow-sm' : 'bg-gray-200'
                 }`}
                 onClick={() => setAlive(true)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Alive
               </button>
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  !alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  !alive ? 'bg-black' : 'bg-gray-200' 
                 }`}
                 onClick={() => setAlive(false)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Deceased
               </button>
@@ -516,7 +516,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {!alive ? (
             <div className="flex flex-row text-xl font-normal">
-              <div className="flex w-40 text-gray-500">Died</div>
+              <div className="flex w-40 shrink-0 text-gray-500">Died</div>
               <div>{formMember?.deathDate || 'Not specified'}</div>
             </div>
           ) : (
@@ -598,16 +598,16 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="flex flex-col gap-2 border-t pt-4">
           <div className="font-bold text-2xl">Immediate Family</div>
           <div className="flex flex-row text-xl font-normal">
-            <div className="flex w-40 text-gray-500">Spouse</div>
-            <div>{getMemberNameById(member.spouseId) || 'None'}</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Spouse</div>
+            <div className="min-w-0 [overflow-wrap:anywhere]">{getMemberNameById(member.spouseId) || 'None'}</div>
           </div>
           <div className="flex flex-row text-xl font-normal">
-            <div className="flex w-40 text-gray-500">Parents</div>
-            <div>{parentNames || 'None'}</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Parents</div>
+            <div className="min-w-0 [overflow-wrap:anywhere]">{parentNames || 'None'}</div>
           </div>
           <div className="flex flex-row text-xl font-normal">
-            <div className="flex w-40 text-gray-500">Children</div>
-            <div>{childNames || 'None'}</div>
+            <div className="flex w-40 shrink-0 text-gray-500">Children</div>
+            <div className="min-w-0 [overflow-wrap:anywhere]">{childNames || 'None'}</div>
           </div>
         </div>
 
