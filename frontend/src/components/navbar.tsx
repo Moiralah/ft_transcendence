@@ -40,11 +40,11 @@ export function Navbar({
     >
       <nav
         aria-label="Main navigation"
-        className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center"
+        className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex justify-between items-center gap-2"
       >
         <Link
           href="/dashboard"
-          className="grid grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1 rounded-md font-bold text-lg sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
+          className="min-w-0 grid grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1 leading-tight whitespace-nowrap rounded-md font-bold text-sm min-[360px]:text-base sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
           aria-label={`${brandName} Home`}
           style={{
             ['--tw-ring-color' as string]: tokens.focusRing,
@@ -54,12 +54,13 @@ export function Navbar({
           <span style={{color: tokens.brand1 }}>My Simple</span>
           <span style={{color: tokens.brand2 }}> Family Tree</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 min-[360px]:gap-2 sm:gap-3">
           {btnText1 && (
             <Button
               href={btnHref1}
               onClick={btnOnClick1}
               variant="primary"
+              className="max-sm:px-3 max-sm:py-2 max-[359px]:px-2 max-[359px]:text-sm"
             >
               {btnText1}
             </Button>
@@ -69,6 +70,7 @@ export function Navbar({
               href={btnHref2}
               onClick={btnOnClick2}
               variant="secondary"
+              className="max-sm:px-3 max-sm:py-2 max-[359px]:px-2 max-[359px]:text-sm"
             >
               {btnText2}
             </Button>
@@ -77,6 +79,7 @@ export function Navbar({
             <Button
               onClick={btnOnClick3}
               variant="ghost"
+              className="max-sm:w-auto max-sm:h-auto max-sm:px-2 max-sm:py-2 max-[359px]:text-sm"
             >
               {btnText3}
             </Button>
