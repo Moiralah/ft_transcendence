@@ -248,7 +248,7 @@ Statuses checked against the code on `branchsaurus` on 2026-10-10.
 | Use a frontend framework (React/Next.js) | Jon | Minor | 1 | ✅ Done | Next.js 14 |
 | Use a backend framework (NestJS) | Moira | Minor | 1 | ✅ Done | NestJS 10 |
 | Use an ORM (Prisma) | Moira | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
-| Custom design system with ≥10 reusable components | Jon | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, FeatureCard, FeaturesGrid, SectionHeader, Typography, Icon, SkipLink |
+| Custom design system with ≥10 reusable components | Jon | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, TreeBanner, ModalBanner, Typography, Avatar, PresenceFacepile, SkipLink |
 | **Remote authentication with OAuth 2.0 (Google)** | Tiara | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
 | **Standard user management and authentication** | Moira & Jon (profile, avatar, profile page); Yiwei (friends, online status) | Major | 2 | 🔄 Partial | Done: sign up/login, profile update; avatar upload (JPEG/PNG/WebP/GIF, max 1 MB) with a default avatar; friends (send, accept, reject, cancel, unfriend) from the search results. Still needed: a friends list and incoming-requests view (the API already has `GET /friend`, `/friend/requests/in`, `/requests/out`), friends' online status, a profile page |
 | **Advanced permissions system** (global roles) | Tiara | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users`; moderators can suspend/unsuspend users (suspension blocks login and ends active sessions immediately) |
@@ -340,7 +340,7 @@ Who owns which module (shared modules list every owner). Effort per module in po
   for OAuth logins
 - `/app/settings` – 2FA (enable/disable, QR enrollment, recovery codes), change password, change email, delete account
 - `/app/admin/users` – admin-only user list, role changes, delete
-- Design system: components (`Button`, `Navbar`, `Footer`, `Banner`, `FeatureCard`, `FeaturesGrid`, `SectionHeader`, `Typography`, `Icon`, `SkipLink`)
+- Design system: components (`Button`, `Navbar`, `Footer`, `Banner`, `TreeBanner`, `ModalBanner`, `Typography`, `Avatar`, `PresenceFacepile`, `SkipLink`)
 
 ### Backend (NestJS)
 - `src/api/auth` – Supabase OAuth + JWT, global `RolesGuard`
