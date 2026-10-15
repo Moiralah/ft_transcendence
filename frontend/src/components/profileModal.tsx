@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from './button';
 import { getToken } from '@/lib/auth';
-import { Avatar } from './Avatar';
+import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 
 
 export interface Profile {
@@ -55,10 +55,18 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [uploading, setUploading] = useState(false);
+	const [photoError, setPhotoError] = useState<string | null>(null);
 
 const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 	const file = e.target.files?.[0];
 	if (!file) return;
+
+	const badFile = photoFileError(file);
+	setPhotoError(badFile);
+	if (badFile) {
+		if (fileInputRef.current) fileInputRef.current.value = '';
+		return;
+	}
 
 	const token = getToken();
 	if (!token) return;
@@ -83,8 +91,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		);
 
 		if (!res.ok) {
-		const err = await res.json().catch(() => ({}));
-		throw new Error(err.message || 'Upload failed');
+		throw new Error(await photoUploadError(res));
 		}
 
 		const updated = await res.json();
@@ -96,6 +103,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		onSave?.(next);           // propagate — parent updates myProfile + refetches trees
 		} catch (err: any) {
 			console.error('Photo upload error:', err.message);
+			setPhotoError(err.message);
 		} finally {
 			setUploading(false);
 			if (fileInputRef.current) fileInputRef.current.value = '';
@@ -202,11 +210,13 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		>
 			{uploading ? 'Uploading…' : 'Change photo'}
 		</Button>
+		<p className="text-sm text-gray-500">{PHOTO_HINT}</p>
+		{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
 
 		<input
 			ref={fileInputRef}
 			type="file"
-			accept="image/*"
+			accept={PHOTO_TYPES}
 			className="hidden"
 			onChange={handlePhotoUpload}
 		/>
