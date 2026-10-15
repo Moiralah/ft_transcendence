@@ -636,7 +636,11 @@ export default function TreePage() {
             </div>
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">
-              <div><strong className="inline-block w-28 font-semibold">First Name:</strong><span>{myProfile?.firstName || ' —'}</span></div>
+              <div><strong className="inline-block w-28 font-semibold">First Name:</strong>
+                <span className="truncate" title={myProfile?.firstName || ''}>
+                  {myProfile?.firstName || ' —'}
+                </span>
+              </div>
               <div><strong className="inline-block w-28 font-semibold">Last Name:</strong><span>{myProfile?.lastName || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Gender:</strong><span>{myProfile?.gender || ' —'}</span></div>
               <div><strong className="inline-block w-28 font-semibold">Birth Date:</strong><span>{formatDate(myProfile?.birthDate) || ' —'}</span></div>
@@ -1016,10 +1020,12 @@ export default function TreePage() {
                   <TreeBanner
                     name={tree.name}
                     description={tree.description}
+                    treeId={tree.id}
                     userRole={tree.profileRole}
                     userCount={tree.userCount}
                     owner={tree.owner}
                     code={tree.code}
+                    RenderTreeMap={() => fetchMyTrees(token)}
                   />
                 </Link>
               ))}
