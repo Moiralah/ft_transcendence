@@ -91,8 +91,8 @@ export function TreeBanner({
   	};
 
 	return (
-		<div className="flex justify-between items-center">
-			<div>
+		<div className="flex justify-between items-center gap-4">
+			<div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
 				<Typography
 					as='h3'
 					variant='h3'
@@ -122,7 +122,7 @@ export function TreeBanner({
 				</Typography>
 
 			</div>
-			<div>
+			<div className="min-w-0 max-w-[40%] [overflow-wrap:anywhere]">
 				<Typography
 					as='p'
 					variant='caption'
