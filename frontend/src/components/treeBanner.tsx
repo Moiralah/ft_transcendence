@@ -35,6 +35,7 @@ export function TreeBanner({
 		owner?.user?.username || 'Unknown';
 
 	const handleDeleteTree = async (treeId: number) => {
+		if (!confirm(`Delete "${name}" for everyone? This cannot be undone.`)) return;
 	    try {
 			const token = getToken();
 			if (!token) {
@@ -52,15 +53,17 @@ export function TreeBanner({
 	        if (res.status === 401) {
     	  		throw new Error("Session expired. Please log in again.");
     		}
-        	throw new Error(`Failed to update profile: ${res.statusText}`);
+        	const body = await res.json().catch(() => ({}));
+        	throw new Error(body.message || `Could not delete tree: ${res.statusText}`);
       	}
       	RenderTreeMap();
     	} catch (err: any) {
-      		console.error("Save error:", err.message);
+      		alert(err.message);
     	}
   	};
 	
 	const handleLeaveTree = async (treeId: number) => {
+		if (!confirm(`Leave "${name}"?`)) return;
 	    try {
 			const token = getToken();
 			if (!token) {
@@ -78,11 +81,12 @@ export function TreeBanner({
 	        if (res.status === 401) {
     	  		throw new Error("Session expired. Please log in again.");
     		}
-        	throw new Error(`Failed to update profile: ${res.statusText}`);
+        	const body = await res.json().catch(() => ({}));
+        	throw new Error(body.message || `Could not leave tree: ${res.statusText}`);
       	}
       	RenderTreeMap();
     	} catch (err: any) {
-      		console.error("Save error:", err.message);
+      		alert(err.message);
     	}
   	};
 
