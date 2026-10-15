@@ -115,13 +115,13 @@ export function TreeNode({
           nodeMember.gender === 'female' ?
             'bg-red-200 border-red-600' :
           'bg-amber-100 border-amber-600'}
-          border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]
+          border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px]          
         `}
       >
         {showDeleteButton ? (
           <button
             type="button"
-            className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 bg-transparent rounded-lg transition-colors"
+            className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 bg-transparent hover:bg-red-200 rounded-lg"
             onClick={handleDeleteNode}
           >
             ✕

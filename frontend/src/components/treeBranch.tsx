@@ -317,7 +317,7 @@ const renderAddChild = (BranchAddMember: Member) => {
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
-			NodeUpdate={handleMemberUpdate}
+			      NodeUpdate={handleMemberUpdate}
             treeView={treeView}
             showDeleteButton={canDeleteSpouse}
           />

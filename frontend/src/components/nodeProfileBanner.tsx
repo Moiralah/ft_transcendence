@@ -441,14 +441,14 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-			<span
-				onClick={() => canEditFields && setEditingField('birthDate')}
-				className={`rounded text-xl px-2 py-1 ${
-					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
-				}`}
-				>
-				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
-				</span>
+			          <span
+				          onClick={() => canEditFields && setEditingField('birthDate')}
+				          className={`rounded text-xl px-2 py-1 ${
+					          canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				          }`}
+				        >
+				          {formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				        </span>
               )}
             </div>
           </div>
@@ -461,7 +461,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -476,21 +476,21 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <div className="flex border bg-gray-200 rounded-xl p-1">
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  alive ? 'bg-black shadow-sm' : 'bg-gray-200'
                 }`}
                 onClick={() => setAlive(true)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Alive
               </button>
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  !alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  !alive ? 'bg-black' : 'bg-gray-200' 
                 }`}
                 onClick={() => setAlive(false)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Deceased
               </button>

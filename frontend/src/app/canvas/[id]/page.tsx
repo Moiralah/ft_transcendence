@@ -489,7 +489,7 @@ export default function Content() {
         <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-2">
-            <div className="h-12 flex flex-1 items-center">
+            <div className="h-12 min-w-0 flex flex-1 items-center">
               {editTreeName ? (
                 <input
                   type="text"
