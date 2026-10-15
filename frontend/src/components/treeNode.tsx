@@ -121,7 +121,7 @@ export function TreeNode({
         {showDeleteButton ? (
           <button
             type="button"
-            className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 bg-transparent rounded-lg transition-colors"
+            className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 bg-transparent hover:bg-red-200 rounded-lg"
             onClick={handleDeleteNode}
           >
             ✕
