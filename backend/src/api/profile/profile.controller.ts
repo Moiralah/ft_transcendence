@@ -1,6 +1,7 @@
 import {
 	Controller, Body, Delete, Get, Param, Query, Req,
-	Patch, Post, UseGuards, BadRequestException, ParseIntPipe
+	Patch, Post, UseGuards, BadRequestException, ParseIntPipe,
+	UseInterceptors, UploadedFile
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,6 +10,8 @@ import { Roles } from '../auth/roles.decorator';
 import { Profile } from '../../generated/browser';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 
 // Query values are strings, or arrays when a key is repeated (?a=1&a=2).
 // Anything but a string counts as not given.
@@ -47,27 +50,27 @@ export class ProfileController {
 	@Get('search')
 	@UseGuards(JwtAuthGuard)
 	search(
-			@Req() req: AuthenticatedRequest,
-			@Query('firstName') firstName?: string,
-			@Query('lastName') lastName?: string,
-			@Query('birthDate') birthDate?: string,
-			@Query('gender') gender?: string,
-			@Query('sortBy') sortBy?: 'firstName' | 'lastName',
-			@Query('order') order?: 'asc' | 'desc',
-			@Query('page') page?: string,
-			@Query('limit') limit?: string,
+		@Req() req: AuthenticatedRequest,
+		@Query('firstName') firstName?: string,
+		@Query('lastName') lastName?: string,
+		@Query('birthDate') birthDate?: string,
+		@Query('gender') gender?: string,
+		@Query('sortBy') sortBy?: 'firstName' | 'lastName',
+		@Query('order') order?: 'asc' | 'desc',
+		@Query('page') page?: string,
+		@Query('limit') limit?: string,
 	) {
-			return this.profile.search(
-					req.user.id,
-					queryText(firstName),
-					queryText(lastName),
-					queryText(birthDate),
-					queryText(gender),
-					sortBy === 'lastName' ? 'lastName' : 'firstName',
-					order === 'desc' ? 'desc' : 'asc',
-					page ? Number(page) : 1,
-					limit ? Number(limit) : 10,
-			);
+		return this.profile.search(
+			req.user.id,
+			queryText(firstName),
+			queryText(lastName),
+			queryText(birthDate),
+			queryText(gender),
+			sortBy === 'lastName' ? 'lastName' : 'firstName',
+			order === 'desc' ? 'desc' : 'asc',
+			page ? Number(page) : 1,
+			limit ? Number(limit) : 10,
+		);
 	}
 
 	@Get(':id')
@@ -104,10 +107,13 @@ export class ProfileController {
 		return this.profile.remove(id);
 	}
 
-	@Get('tree/:rootId')
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles('ADMIN') // not used by the app; site admins only
-	async getTree(@Param('rootId', ParseIntPipe) rootId: number) {
-		return this.profile.getTree(rootId);
+	@Post(':id/photo')
+	@UseGuards(JwtAuthGuard)
+	@UseInterceptors(FileInterceptor('file'))
+	async uploadPhoto(
+		@Param('id', ParseIntPipe) id: number,
+		@UploadedFile() file: Express.Multer.File,
+	) {
+		return this.profile.uploadPhoto(id, file);
 	}
 }

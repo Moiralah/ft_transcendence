@@ -20,7 +20,7 @@ export function Navbar({
   btnHref1 ,
   btnOnClick1,
   btnText2 ,
-  btnHref2 ,  
+  btnHref2 ,
   btnOnClick2,
   themeMode = 'light',
   } : NavbarProps) {
@@ -52,14 +52,14 @@ export function Navbar({
         </Link>
         <div className="flex items-center gap-3">
           {btnText1 && (
-            <Button 
-              href={btnHref1} 
+            <Button
+              href={btnHref1}
               onClick={btnOnClick1}
               variant="primary"
             >
               {btnText1}
             </Button>
-          )}          
+          )}
           {btnText2 && (
             <Button
               href={btnHref2}

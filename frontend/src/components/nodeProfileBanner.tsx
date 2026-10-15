@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { getToken } from '@/lib/auth';
 import type { TreeViewContext } from './treeNode';
+import { Avatar } from './Avatar';
 
 export interface Member {
   id: number;
@@ -29,11 +30,12 @@ interface NodeProfileModalProps {
   member: Member;
   treeView: TreeViewContext;
   onClose: () => void;
-  onClaim: (updatedMember: Member) => void;
-  onUnclaim: (updatedMember: Member) => void;
+  onClaim: (updatedMember: Member[]) => void;
+  onUnclaim: (updatedMember: Member[]) => void;
   onSave: (updatedMember: Member) => void;
   onAddChild: (newChildMember: Member) => void;
   onAddSpouse: (newSpouseMember: Member) => void;
+  onPhotoUpdated?: (updatedMember: Member) => void;
 }
 
 export function NodeProfileModal({
@@ -46,6 +48,7 @@ export function NodeProfileModal({
   onSave,
   onAddChild,
   onAddSpouse,
+  onPhotoUpdated,
 }: NodeProfileModalProps) {
   const [formMember, setFormMember] = useState<Member | null>(member);
   const [editName, setEditName] = useState(false);
@@ -180,11 +183,17 @@ export function NodeProfileModal({
 
       const updatedMember: Member = {
         ...member,
-        linkId: member.profileId,
+        linkId: treeView.memberId,
         claim: 'PENDING',
       };
 
-      if (onClaim) onClaim(updatedMember);
+	const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
+    const updates: Member[] = [updatedMember];
+    if (requesterRow) {
+      updates.push({ ...requesterRow, linkId: member.id });
+    }
+
+    if (onClaim) onClaim(updates);
     } catch (err: any) {
       console.error('Save error:', err.message);
     }
@@ -213,9 +222,20 @@ export function NodeProfileModal({
     const updatedMember: Member = {
       ...member,
       linkId: null,
+	  claim: 'EMPTY',
     };
 
-    if (onUnclaim) onUnclaim(updatedMember);
+    const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
+    const updates: Member[] = [updatedMember];
+    if (requesterRow) {
+      updates.push({
+        ...requesterRow,
+        linkId: null,
+        role: requesterRow.role === 'MEMBER' ? 'JOINER' : requesterRow.role,
+      });
+    }
+
+    if (onUnclaim) onUnclaim(updates);
   } catch (err: any) {
     console.error('Save error:', err.message);
   }
@@ -275,17 +295,56 @@ export function NodeProfileModal({
     setEditName(false);
   };
 
+const fileInputRef = useRef<HTMLInputElement>(null);
+const [uploading, setUploading] = useState(false);
+
+const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const token = getToken();
+  if (!token) return;
+
+  setUploading(true);
+  try {
+    const form = new FormData();
+    form.append('file', file);
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/profile/${member.profileId}/photo`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },   // ← no Content-Type!
+        body: form,
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Upload failed');
+    }
+
+    const updated = await res.json();
+    setFormMember((prev) => (prev ? { ...prev, photoUrl: updated.photoUrl } : prev));
+    onPhotoUpdated?.({
+		id: member.id,
+		profileId: member.profileId,
+		photoUrl: updated.photoUrl,
+		} as Member);
+  } catch (err: any) {
+    console.error('Photo upload error:', err.message);
+  } finally {
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';   // allow re-upload same file
+  }
+};
+
 	const viewerRole = treeView.viewType;
 
 	const isJoiner = viewerRole === 'JOINER';
 
-	const canEdit =
-	viewerRole === 'ADMIN' || viewerRole === 'MODERATOR';
-
-	const isMyClaimedNode =
-	viewerRole === 'MEMBER' && member.id === treeView.memberId;
-
-	const canAddOrSave = canEdit || isMyClaimedNode;
+	const canAddOrSave =
+	viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
 
 	// Do I already have a claim somewhere in this tree?
 	const iAlreadyHaveAClaim = treeView.linkId != null;
@@ -381,14 +440,14 @@ export function NodeProfileModal({
                   className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
-			<span
-				onClick={() => canEditFields && setEditingField('birthDate')}
-				className={`rounded text-xl px-2 py-1 ${
-					canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
-				}`}
-				>
-				{formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
-				</span>
+			          <span
+				          onClick={() => canEditFields && setEditingField('birthDate')}
+				          className={`rounded text-xl px-2 py-1 ${
+					          canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
+				          }`}
+				        >
+				          {formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
+				        </span>
               )}
             </div>
           </div>
@@ -401,7 +460,7 @@ export function NodeProfileModal({
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
                 className="border border-gray-300 rounded px-2 py-1 outline-none"
               >
                 <option value="male">Male</option>
@@ -416,21 +475,21 @@ export function NodeProfileModal({
             <div className="flex border bg-gray-200 rounded-xl p-1">
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  alive ? 'bg-black shadow-sm' : 'bg-gray-200'
                 }`}
                 onClick={() => setAlive(true)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Alive
               </button>
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  !alive ? 'bg-white shadow-sm' : ''
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
+                  !alive ? 'bg-black' : 'bg-gray-200' 
                 }`}
                 onClick={() => setAlive(false)}
-				disabled={!canEditFields}
+				        disabled={!canEditFields}
               >
                 Deceased
               </button>
@@ -447,6 +506,26 @@ export function NodeProfileModal({
           )
           }
         </div>
+
+		{/* Upload Photo */}
+		<div>
+		<Avatar
+		photoUrl={formMember?.photoUrl}
+		size={96}
+		className="outline outline-2 outline-offset-2 outline-indigo-600"
+		onClick={() => fileInputRef.current?.click()}
+		/>
+		
+		{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
+
+		<input
+			ref={fileInputRef}
+			type="file"
+			accept="image/*"
+			className="hidden"
+			onChange={handlePhotoUpload}
+		/>
+		</div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
