@@ -359,8 +359,6 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
 	const viewerRole = treeView.viewType;
 
-	const isRealUser = viewerRole === 'JOINER' || viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
-
 	const canAddOrSave =
 	viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
 
@@ -383,8 +381,9 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		member.role === 'HOLDER' &&
 		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
 
-	// Fields (name, birth date, gender) can only be edited on unclaimed rows.
-	const canEditFields = !isClaimedNode && !isRealUser;
+	// Fields (name, birth date, gender, photo) can only be edited on unclaimed
+	// rows, and only by ADMIN/MEMBER (JOINER is read-only).
+	const canEditFields = !isClaimedNode && canAddOrSave;
 
   if (!mounted) return null;
 
