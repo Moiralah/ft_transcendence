@@ -311,13 +311,15 @@ export class FriendService {
         requester: {
           select: {
             id: true,
-            username: true
+            username: true,
+			profileId: true
           },
         },
         addressee: {
           select: {
             id: true,
-            username: true
+            username: true,
+			profileId: true
           },
         },
       },

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
+import { usePresence } from "../../hooks/usePresence";
 import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
@@ -521,6 +522,8 @@ export default function TreePage() {
 	await fetchRequests(token);
   };
 
+  const ids = usePresence(myProfile?.id);
+
   const unfriend = async (friendId: number, userId: string) => {
     if (!token) return;
   
@@ -673,9 +676,16 @@ export default function TreePage() {
 				key={friend.id}
 				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-slate-200"
 				>
-				<p className="font-semibold text-slate-900">
-                  {friend.user.username}
-				</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${
+                      ids.has(friend.user.profileId) ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                  />
+                  <p className="font-semibold text-slate-900">
+                    {friend.user.username}
+                  </p>
+                </div>
 				<Button
 					variant="secondary"
 					className="rounded-md border border-slate-300 px-3 py-2 text-sm
