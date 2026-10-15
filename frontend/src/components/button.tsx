@@ -7,7 +7,7 @@ interface ButtonProps {
   href?: string;
   variant?: 'primary' | 'secondary' | 'ghost';
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
   type?: 'button' | 'submit';
   disabled?: boolean;
   'aria-label'?: string;
