@@ -11,7 +11,8 @@
 # comment on the vault service for what a real deployment needs instead.
 set -e
 
-VAULT_ADDR="http://127.0.0.1:8200"
+# Host port of the local Vault (docker-compose-security.yml), 8200 unless VAULT_PORT is set.
+VAULT_ADDR="http://127.0.0.1:${VAULT_PORT:-8200}"
 VAULT_TOKEN="dev-only-root-token"
 SECRET_PATH="secret/data/family-tree/backend"
 
