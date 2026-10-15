@@ -402,7 +402,7 @@
       Since 2026-10-06 both WAFs run OWASP CRS at <strong>paranoia level 2 in blocking mode</strong> (one day in
       detection mode first, checked with <code>waf/pl2-report.sh</code>). The API WAF only accepts
       <code>application/json</code>, with bodies up to 128 KB; the one exception is the profile photo upload, which may
-      send <code>multipart/form-data</code> up to 6 MB (since 2026-10-14). Tuning, backend WAF only, in
+      send <code>multipart/form-data</code> (since 2026-10-14). The WAF lets that through up to 6 MB, but the photo itself is limited to 1 MB by the GCP nginx and the backend. Tuning, backend WAF only, in
       <code>waf/backend-exclusions.conf</code>: <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> allowed (rule 911100,
       set in <code>docker-compose-security.yml</code>), the JSON field <code>profileId</code> (rule 930120), the two password
       fields on <code>change-email</code>/<code>change-password</code> (rule 1000020), rule 1000030, which skips 942440 (a plain
@@ -565,9 +565,7 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
   <div class="callout">
     <div class="ic">🚧</div>
     <div>
-      <strong>Still open (as of 2026-10-14):</strong> large photos probably still get a <code>413</code> in production from the
-      GCP nginx, which refuses a 2 MB body (<code>waf/test-waf.sh</code>); likely nginx&apos;s default
-      <code>client_max_body_size</code> of 1 MB, while the WAF and the backend allow 6 MB and 5 MB. To check and raise on GCP. The <code>spouse_id</code> unique-constraint crash in the
+      <strong>Still open (as of 2026-10-15):</strong> the <code>spouse_id</code> unique-constraint crash in the
       add-spouse flow (2026-09-25) is believed fixed but hasn&apos;t been re-tested on production. Product question for the
       trees module: a tree MODERATOR may edit any member&apos;s profile in that tree, including a real user&apos;s own profile
       (the canvas&apos;s existing behaviour, kept for now).
