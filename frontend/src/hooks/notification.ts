@@ -1,4 +1,3 @@
-
 import { useEffect , useRef} from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -21,11 +20,21 @@ interface MemberLike {
 // `channel` is the tree's realtimeChannel from GET /trees/slug/:slug (members
 // only). The backend broadcasts every audit row there; see
 // backend/src/api/tree/tree-realtime.ts for why it isn't a table subscription.
-export function useTreeNotifications(channel: string | null, members: MemberLike[] = []) {
+export function useTreeNotifications(
+	channel: string | null,
+	members: MemberLike[] = [],
+	onTreeChange?: () => void,
+) {
 	const membersRef = useRef(members);
+	const onTreeChangeRef = useRef(onTreeChange);
+
 	useEffect(() => {
 		membersRef.current = members;
 	}, [members]);
+
+	useEffect(() => {
+		onTreeChangeRef.current = onTreeChange;
+	}, [onTreeChange]);
 
 	useEffect(() => {
 		if (!channel) return;
@@ -40,6 +49,7 @@ export function useTreeNotifications(channel: string | null, members: MemberLike
 					duration: 7000,
 					position: 'bottom-right',
 				});
+				onTreeChangeRef.current?.();
 			})
 			.subscribe((status, err) => {
 				console.log('[useTreeNotifications]', status, err ?? '');});

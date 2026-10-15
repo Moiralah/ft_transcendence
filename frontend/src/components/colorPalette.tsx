@@ -1,4 +1,3 @@
-import { FeaturesGrid } from "./featureGrid";
 import { TreeBanner } from "./treeBanner";
 
 export const primitives = {

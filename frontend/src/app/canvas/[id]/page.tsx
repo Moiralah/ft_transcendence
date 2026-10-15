@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast'
 
@@ -50,6 +50,7 @@ export default function Content() {
   const router = useRouter();
   const slug = params.id as unknown as string;
   const token = getToken();
+  const isEditingRef = useRef(false);
 
   const [rootMember, setRootMember] = useState<any>();
   const [treeId, setTreeId] = useState<number | null>(null);
@@ -134,8 +135,22 @@ export default function Content() {
     setTreesMember(updatedMembers);
   };
 
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const isAnyModalOpen = () =>
+	typeof document !== 'undefined' &&
+	document.querySelector('[data-modal-open]') !== null;
+
+	const refetchAll = useCallback(() => {
+	if (isAnyModalOpen()) return;
+	if (!token || !treeId) return;
+
+	if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+	refetchTimerRef.current = setTimeout(() => {
+		fetchTreeMember(token, treeId);
+	}, 400);
+	}, [token, treeId]);
 	// Pops a toast whenever an AuditLog row is inserted for this tree.
-  useTreeNotifications(tree?.realtimeChannel ?? null, treesMember);
+  useTreeNotifications(tree?.realtimeChannel ?? null, treesMember, refetchAll);
 
   const fetchTree = async (authToken: string) => {
     try {
@@ -596,7 +611,10 @@ export default function Content() {
 
       {/* Tree member modal */}
       {treeMemberModal && (
-        <div className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4">
+        <div
+		data-modal-open
+		className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4"
+		>
           <div className="flex flex-col bg-white rounded-xl w-full max-w-xl gap-4 p-8 shadow-2xl">
             <div className="flex text-2xl font-bold">
               {`Tree member (${treesMember.filter((member: any) => member.role !== 'HOLDER').length})`}
