@@ -341,7 +341,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
 	const viewerRole = treeView.viewType;
 
-	const isJoiner = viewerRole === 'JOINER';
+	const isRealUser = viewerRole === 'JOINER' || viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
 
 	const canAddOrSave =
 	viewerRole === 'ADMIN' || viewerRole === 'MEMBER';
@@ -366,12 +366,13 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
 
 	// Fields (name, birth date, gender) can only be edited on unclaimed rows.
-	const canEditFields = !isClaimedNode && !isJoiner;
+	const canEditFields = !isClaimedNode && !isRealUser;
 
   if (!mounted) return null;
 
   return ReactDOM.createPortal(
     <div
+	  data-modal-open
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto"
       onClick={(e) => {
         e.stopPropagation();
@@ -515,7 +516,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		className="outline outline-2 outline-offset-2 outline-indigo-600"
 		onClick={() => fileInputRef.current?.click()}
 		/>
-		
+
 		{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
 
 		<input

@@ -1,4 +1,3 @@
-
 import { useEffect , useRef} from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -18,11 +17,22 @@ interface MemberLike {
 	lastName?: string;
 }
 
-export function useTreeNotifications(treeId: number | null, members: MemberLike[] = []) {
+export function useTreeNotifications(
+	treeId: number | null,
+	members: MemberLike[] = [],
+	onTreeChange?: () => void,
+) {
 	const membersRef = useRef(members);
+	const onTreeChangeRef = useRef(onTreeChange);
+
 	useEffect(() => {
 		membersRef.current = members;
 	}, [members]);
+
+	useEffect(() => {
+		onTreeChangeRef.current = onTreeChange;
+	}, [onTreeChange]);
+
 
 	useEffect(() => {
 		if (!treeId || !Number.isFinite(treeId)) return;
@@ -41,12 +51,14 @@ export function useTreeNotifications(treeId: number | null, members: MemberLike[
 				(payload) => {
 					const log = payload.new as AuditLog;
 					if (Number(log.treeId) !== Number(treeId)) return;
+
 					// Show a toast notification
 					const message = formatNotification(log, membersRef.current);
 					toast.success(message, {
 						duration: 7000,
 						position: 'bottom-right',
 					});
+					onTreeChangeRef.current?.();
 				}
 			)
 			.subscribe((status, err) => {
