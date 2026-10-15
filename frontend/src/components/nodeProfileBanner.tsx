@@ -513,8 +513,12 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		<Avatar
 		photoUrl={formMember?.photoUrl}
 		size={96}
-		className="outline outline-2 outline-offset-2 outline-indigo-600"
-		onClick={() => fileInputRef.current?.click()}
+		className={`outline outline-2 outline-offset-2 outline-indigo-600 ${
+			canEditFields ? '' : 'opacity-60'
+		}`}
+		onClick={() => {
+			if (canEditFields) fileInputRef.current?.click();
+		}}
 		/>
 
 		{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
@@ -524,6 +528,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 			type="file"
 			accept="image/*"
 			className="hidden"
+			disabled={!canEditFields}
 			onChange={handlePhotoUpload}
 		/>
 		</div>
