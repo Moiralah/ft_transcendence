@@ -4,6 +4,15 @@
 # (two WAFs and Vault, docker-compose-security.yml).
 STACK = -f docker-compose.yml -f docker-compose-security.yml
 
+# Host port of the local Vault. On Windows (WSL), Hyper-V reserves blocks of
+# ports that often cover 8200 (`netsh interface ipv4 show excludedportrange
+# protocol=tcp`), and Docker then fails with "ports are not available", so WSL
+# gets 28200, well clear of those blocks. Set VAULT_PORT yourself to use another.
+ifeq ($(origin VAULT_PORT),undefined)
+  VAULT_PORT := $(if $(shell grep -qi microsoft /proc/version 2>/dev/null && echo wsl),28200,8200)
+endif
+export VAULT_PORT
+
 # The one command: app + WAFs + Vault. Open the app at https://localhost:8443.
 #
 # Teammates with a Vault login set VAULT_USER (e.g. in ~/.zshrc): the dev
