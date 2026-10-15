@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { getToken } from '@/lib/auth';
 import type { TreeViewContext } from './treeNode';
-import { Avatar } from './Avatar';
+import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 
 export interface Member {
   id: number;
@@ -307,10 +307,18 @@ export function NodeProfileModal({
 
 const fileInputRef = useRef<HTMLInputElement>(null);
 const [uploading, setUploading] = useState(false);
+const [photoError, setPhotoError] = useState<string | null>(null);
 
 const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
+
+  const badFile = photoFileError(file);
+  setPhotoError(badFile);
+  if (badFile) {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    return;
+  }
 
   const token = getToken();
   if (!token) return;
@@ -330,8 +338,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     );
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Upload failed');
+      throw new Error(await photoUploadError(res));
     }
 
     const updated = await res.json();
@@ -343,6 +350,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		} as Member);
   } catch (err: any) {
     console.error('Photo upload error:', err.message);
+    setPhotoError(err.message);
   } finally {
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';   // allow re-upload same file
@@ -527,11 +535,13 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		/>
 		
 		{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
+		<p className="text-sm text-gray-500">{PHOTO_HINT}</p>
+		{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
 
 		<input
 			ref={fileInputRef}
 			type="file"
-			accept="image/*"
+			accept={PHOTO_TYPES}
 			className="hidden"
 			onChange={handlePhotoUpload}
 		/>

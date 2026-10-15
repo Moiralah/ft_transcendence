@@ -340,8 +340,8 @@ export class ProfileService {
 
 	async uploadPhoto(profileId: number, file: Express.Multer.File) {
 		if (!file) throw new BadRequestException('No file provided.');
-		if (file.size > 5 * 1024 * 1024) {
-			throw new BadRequestException('Photo must be under 5MB.');
+		if (file.size > 1_000_000) {
+			throw new BadRequestException('Photo must be 1 MB or smaller.');
 		}
 		const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 		if (!allowed.includes(file.mimetype)) {
