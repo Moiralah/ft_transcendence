@@ -2,25 +2,311 @@
 
 # 👨‍👩‍👧‍👦 Family Tree – ft_transcendence
 
-## 🚀 How to run
+## 📍 Description
+
+A **private, shared family tree** for one family at a time. Every family has
+one person who keeps the family history: in their head, in group-chat photos,
+or in a chart drawn years ago. When they stop, it stops. Big sites
+(Ancestry, MyHeritage) are paid research tools, and Geni is one huge public
+tree. We wanted a tree per family that the whole family edits together: you
+**join with a code, claim the person who is you, and add your own branch**.
+
+It is a full web application: Next.js frontend, NestJS backend, PostgreSQL
+(hosted by Supabase) through Prisma, all in Docker and started with one
+command. It runs live at **https://ft.natscho.my**.
+
+Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
+
+---
+
+## 🚀 Instructions
+
+**Prerequisites:** Docker with Docker Compose **2.24 or newer**, `make`,
+`openssl` (for the local self-signed certificates). Node is not needed on the
+host.
 
 1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
-   comments in that file say where each value comes from), then run `make` to
-   start the environment.
+   comments in that file say where each value comes from), then run `make`.
    `make` (same as `make up`) starts everything: the app, both WAFs and Vault.
-2. **Approve backend cert** open new tab 'https://localhost:9443
-3. **Approve frontend cert** open new tab 'https://localhost:8443, and use the app there.
+2. **Approve the backend certificate:** open https://localhost:9443 in a new tab
+   and accept the self-signed certificate.
+3. **Approve the frontend certificate:** open https://localhost:8443, accept it,
+   and use the app there.
+
+`make down` stops everything. Other targets: `make logs`, `make ps`,
+`make build`, `make backend` / `make frontend` (rebuild one side),
+`make local` (run against a local Supabase, below).
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
 set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
 `~/.zshrc`). `make up`
-then opens your own SSH tunnel to the Vault on solsys, asks your Vault password
-(once a day), and keeps the dev secrets in memory only. It runs on the
+then opens your own SSH tunnel to the Vault on solsys (the Vault server,
+HashiCorp Vault), asks your Vault password (once a day), and keeps the dev
+secrets in memory only. It runs on the
 **production Supabase** (the real users' data: test on your own test trees and
 accounts), with its own JWT secret and no email password. One-time setup (your SSH
 key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
 together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html).
 
+**Production** runs on solsys (the Vault server, HashiCorp Vault), a home
+server, behind a GCP machine that holds the public IP: browser → GCP nginx
+proxy (Let's Encrypt TLS) → WireGuard → solsys → WAF → Next.js / NestJS,
+with the backend's secrets read from Vault at boot. `make deploy` (from a
+laptop with SSH to solsys) pulls `branchsaurus` there and runs
+`scripts/prod-up.sh`. Full picture: [diagram/architecture.html](diagram/architecture.html).
+
+---
+
+## 👥 Team information
+
+| Member | Intra login | Role | Main areas |
+|--------|-------------|------|------------|
+| **Moira** | huidris | Product Owner, Technical Lead | backend, trees as organizations, real-time, profiles |
+| **Tiara** | tching | Project Manager / Scrum Master | auth (Google, 2FA), site roles and admin panel, security (WAF + Vault), deployment |
+| **Jon** | lechan | Technical Lead / Architect | frontend, design system, tree canvas, browsers, accessibility |
+| **Yiwei** | yiwei | Developer | search, friends and online status, public API |
+
+| Role | Who | Responsibilities |
+|------|-----|------------------|
+| **Product Owner (PO)** | Moira | Product vision, feature priorities and backlog; validates completed work; speaks for the team to evaluators and peers |
+| **Project Manager (PM) / Scrum Master** | Tiara | Organises meetings and planning, tracks progress and deadlines, keeps communication going, manages risks and blockers |
+| **Technical Lead / Architect** | Moira & Jon | Technical architecture and stack decisions, code quality and best practices, reviews of critical changes |
+| **Developers** | Moira, Jon, Yiwei, Tiara | Build their assigned modules (below), review each other's code, test and document their work |
+
+---
+
+## 🗂️ Project management
+
+- **Work split:** by module (see [Modules](#-modules)); each module has an
+  owner who builds it, demos it and answers for it.
+- **Branches:** everyone works on their own branches (`jon3`, `mai3`, `yi5`,
+  `tching-solsys`, …). They are merged into **`branchsaurus`** after a merge
+  check (trial merge + TypeScript type-check of both apps), then
+  `branchsaurus` is fast-forwarded to `main`. Production deploys
+  `branchsaurus`.
+- **Tracking:** a shared progress tracker page (from 9 Oct) with what is
+  outstanding per person, module status, branch picture and risks; plus a
+  progress log of decisions and their reasons.
+- **Communication:** a team group chat for day-to-day coordination, GitHub
+  for code review, and in person for anything secret (certificates, Vault
+  unseal shares and passwords are only handed over face to face).
+- **Timeline:** feature freeze Tue 13 Oct, code and README final Thu 15 Oct,
+  submission Sat 17 Oct.
+
+---
+
+## 🛠️ Technical stack
+
+| Layer | Choice | Why |
+|-------|--------|-----|
+| Frontend | **Next.js 14** (App Router), React 18, TypeScript, **Tailwind CSS 3** | File-based routing, one framework for pages and client code; Tailwind keeps the design system in one place |
+| Backend | **NestJS 10**, TypeScript | Modules, guards and DTO validation out of the box: fits role checks and a growing API |
+| Database | **PostgreSQL** hosted by **Supabase** | Managed Postgres plus auth, storage and realtime from the same project |
+| ORM | **Prisma 7** (`PrismaPg` driver adapter) | Typed queries generated from one schema file |
+| Auth | Supabase Auth (email/password, Google OAuth 2.0) + our own JWT, custom TOTP 2FA (`otplib`) | |
+| Real-time | Supabase Realtime (broadcast + presence) over WebSocket | |
+| Storage | Supabase Storage (`avatars` bucket) for profile photos | |
+| Security | ModSecurity + OWASP Core Rule Set (WAF), **HashiCorp Vault** (secrets), AppRole auth | |
+| Email | Gmail SMTP (account notices, feedback form) | |
+| Deployment | Docker / Docker Compose, `make`; GCP nginx proxy + WireGuard to solsys | |
+
+---
+
+## 🗄️ Database schema
+
+Prisma schema: [backend/src/prisma/schema.prisma](backend/src/prisma/schema.prisma).
+
+| Model | What it holds | Key relations |
+|-------|---------------|---------------|
+| `User` | site account: username, email, site `role` (ADMIN / MODERATOR / USER), `suspended`, 2FA fields | one `Profile` (the person who is you); friendships; invitations sent |
+| `RecoveryCode` | bcrypt-hashed 2FA recovery codes | → `User` (cascade) |
+| `Tree` | a family tree: name, slug, join `code`, `isPublic` | owner → `Profile`; root → `TreeMember` |
+| `TreeMember` | a person's place in a tree: tree `role` (ADMIN / MEMBER / JOINER / HOLDER), claim status | → `Tree`, → `Profile` |
+| `Profile` | a person: names, gender, birth/death dates, photo | `mother`, `father`, `spouse` (self-relations); optional `User` |
+| `Friendship` | friend request and its status | requester / addressee → `User` |
+| `Invitation` | invitation to a tree with a role | → `Tree`, inviter → `User` |
+| `Event` | life events on a person | → `Profile` |
+| `AuditLog` | every change made in a tree (source of the live notifications) | → `Tree`, → `Profile` |
+
+Row Level Security is on for every table in Supabase's `public` schema with no
+policies, so the public anon key reads nothing; only the backend (table owner)
+touches the data.
+
+---
+
+## ✨ Features
+
+| Feature | Where | Who |
+|---------|-------|-----|
+| Sign up / log in with email and password | `/signup`, `/login` | Moira, Jon, Tiara |
+| Forgot / reset password | `/forgot-password`, `/reset-password` | Tiara |
+| Log in with Google (OAuth 2.0) | `/login` → `/consent` | Tiara |
+| Two-factor authentication: QR enrollment, 8 recovery codes, login challenge | `/settings` | Tiara |
+| Settings: change password, change email, delete my account (goodbye email) | `/settings` | Tiara |
+| Dashboard: my trees, create a tree, join with a code, delete / leave a tree | `/dashboard` | Jon, Moira |
+| Profile: edit, photo upload (JPEG/PNG/WebP/GIF, max 1 MB, checked by content) | dashboard, canvas | Moira, Jon, Tiara |
+| Tree canvas: draw the family, add parents / children / spouse, claim yourself, approve claims, remove a member | `/canvas/[id]` | Jon, Moira |
+| Who is in the tree right now (presence) and live notifications of changes | canvas | Moira, Tiara |
+| Search people with filters, sorting and pages | dashboard | Yiwei |
+| Friends: send / accept / reject / cancel / unfriend, list with online status | dashboard | Yiwei |
+| Admin panel: list users, change site roles, suspend, delete (with an email to the user) | `/admin/users` | Tiara |
+| Feedback form, Privacy Policy, Terms of Service | `/feedback`, `/privacy`, `/terms` | Tiara |
+| WAF in front of both apps, secrets from Vault | `docker-compose-security.yml`, `vault/` | Tiara |
+
+---
+
+## 🧩 Modules
+
+We claim **14 points**: 3 Majors (6 pts) + 8 Minors (8 pts). Modules we built
+parts of but do not claim, because a part the subject asks for is missing, are
+listed after the table.
+
+| # | Module | Type | Pts | Owner | What it shows |
+|---|--------|------|-----|-------|---------------|
+| 1 | Use a frontend framework (Next.js) | Minor | 1 | Jon | Next.js 14, App Router |
+| 2 | Use a backend framework (NestJS) | Minor | 1 | Moira | NestJS 10, global `/api` prefix, guards, DTO validation |
+| 3 | Use an ORM (Prisma) | Minor | 1 | Moira | one schema → generated client, transactions for multi-row changes |
+| 4 | Custom design system, ≥10 reusable components | Minor | 1 | Jon | palette, typography, icons; Button, Navbar, Footer, Banner, TreeBanner, ModalBanner, Typography, Avatar, PresenceFacepile, SkipLink |
+| 5 | Support for additional browsers | Minor | 1 | Jon | Firefox, Safari, Edge (see [Browsers](#-browser-support)) |
+| 6 | Remote authentication with OAuth 2.0 (Google) | Minor | 1 | Tiara | Google sign-in through Supabase, checked end to end on production |
+| 7 | Two-factor authentication (2FA) | Minor | 1 | Tiara | TOTP, QR enrollment, 8 bcrypt-hashed recovery codes, login challenge |
+| 8 | Advanced search (filters, sorting, pagination) | Minor | 1 | Yiwei | `GET /api/profile/search`: name, birth date, gender; `sortBy`, `order`; `page`, `limit` with the total |
+| 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin panel, suspend |
+| 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
+| 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
+| | **Total** | | **14** | | |
+
+### Why each module
+
+- **Frameworks and ORM (1–3).** A family tree is a lot of related rows
+  (people, parents, spouses, memberships). Prisma gives typed queries and
+  transactions over that graph; NestJS gives guards and validation for every
+  route; Next.js gives the pages and the interactive canvas in one codebase.
+- **Design system (4).** Many screens share the same banners, buttons and
+  avatars; one palette and set of components keeps them consistent and
+  accessible (the skip link, labelled controls).
+- **Additional browsers (5).** Families use whatever browser they have, often
+  Safari on a phone. Testing found real differences (below).
+- **OAuth (6) and 2FA (7).** Most relatives won't make a new password; Google
+  sign-in removes that step. The tree holds living people's birth dates, so
+  accounts get a second factor. 2FA is our own TOTP (not Supabase's MFA), so we
+  control enrollment, recovery codes and the challenge on both login paths
+  (password and Google).
+- **Advanced search (8).** Finding a relative across a large tree needs
+  filters and pages, not a scroll.
+- **Advanced permissions (9), Major.** A site with personal data needs people
+  who can act on abuse: moderators can suspend (which ends that user's sessions
+  at once), admins can change roles and delete accounts; self-demotion is
+  blocked so the site can't lose its last admin. Every rule is enforced on the
+  server by a guard, and the UI changes per role. It spans the database,
+  every protected route and a whole admin UI, which is why it is a Major.
+- **Organization system (10), Major.** The tree *is* the organization: an
+  owner creates it, people join with a code, each member has a role (admin,
+  member, joiner) that decides what they can do inside, members can be
+  removed, people can leave, and the owner can delete it. This is the core of
+  the product, with its own permission model separate from the site roles.
+- **WAF + Vault (11), Major.** The data is personal, and the site is public
+  on the internet. ModSecurity with the OWASP CRS (paranoia level 2, blocking)
+  sits in front of both the frontend and the API, and is the only way in
+  (`:3000`/`:4000` are not published). Secrets are not in `.env` on the
+  server: the backend logs in to Vault with an AppRole and reads only its own
+  path. Production's Vault runs in server mode on solsys: encrypted on disk,
+  sealed after a restart until 2 of 5 unseal shares are given, one login per
+  person, no root token, every request in the audit log. It took a real
+  infrastructure change (and a rehearsal) beyond writing app code.
+
+### Built but not claimed
+
+| Module | What exists | What is missing for the module |
+|--------|-------------|-------------------------------|
+| Real-time features (Major) | Supabase Realtime: presence in a tree, live notifications of tree changes, on private per-tree channels | reconnection handling shown, every view updating live |
+| Standard user management (Major) | profile edit, photo upload with a default avatar, friends with requests, online status | a profile page for other users |
+| Notification system (Minor) | live notifications from the tree audit log, pending claims | notifications for every create/update/delete action |
+| Real-time collaboration (Minor) | shared tree canvas with live presence | other people's edits drawn live on the canvas |
+| Accessibility, WCAG 2.1 AA (Major) | skip link, landmarks, labelled forms, ARIA attributes | a full audit, especially the canvas |
+| Public API (Major) | `X-API-Key` guard, rate limit, Swagger, endpoints on public trees (Yiwei) | dropped on 13 Oct: not ready for evaluation |
+
+SSR and the user activity analytics dashboard were dropped on 10 Oct.
+
+---
+
+## 🌐 Browser support
+
+Tested with the same flows (sign up, log in, Google, 2FA, dashboard, open a
+tree, claim, add a person, settings) in **Google Chrome** (required),
+**Firefox**, **Safari** and **Microsoft Edge**, latest stable versions.
+
+Differences we found:
+- **Firefox** blocked the realtime WebSocket until the Content Security
+  Policy listed Supabase's `wss://` address (Chrome lets `https://` cover it).
+  Fixed in `50823fd`; the tree page works the same in both now.
+- **Safari**, locally only: each self-signed certificate is accepted
+  separately per port, so open both https://localhost:9443 and
+  https://localhost:8443 once. The live site has a real certificate, so this
+  doesn't apply there.
+- **Edge** behaves like Chrome (same engine); nothing specific.
+
+---
+
+## 🙋 Individual contributions
+
+### Moira (huidris)
+- Backend framework (NestJS) and ORM (Prisma): the schema and the services.
+- Organization system: trees, join codes, member roles, claims, remove a
+  member, delete a tree; the tree roles decision (admin / member / joiner).
+- Real-time presence and notifications (with Tiara); profile photos on the
+  dashboard and the tree; landing page; skip link.
+
+### Jon (lechan)
+- Frontend framework (Next.js) and the design system components.
+- The tree canvas: nodes, connector lines, spouses; Delete / Leave Tree
+  buttons; alive / deceased toggle.
+- Browser testing; accessibility groundwork (landmarks, labels, ARIA).
+
+### Yiwei (yiwei)
+- Advanced search with filters, sorting and pagination.
+- Friends: requests, current friends, online status on the dashboard.
+- Public API (built, not claimed).
+
+### Tiara (tching)
+- Google OAuth, 2FA, site roles with the admin panel and suspension.
+- Cybersecurity: WAF (ModSecurity + OWASP CRS) and HashiCorp Vault, in
+  server mode on solsys with per-person logins through SSH tunnels.
+- Deployment (GCP proxy, WireGuard, solsys), Supabase RLS fix and private
+  realtime channels, account settings (change email / password, delete
+  account), account emails, privacy policy and terms.
+- Project management: tracker, merges into `branchsaurus`, deadlines.
+
+---
+
+## 📚 Resources
+
+- [Next.js docs](https://nextjs.org/docs), [React docs](https://react.dev)
+- [NestJS docs](https://docs.nestjs.com)
+- [Prisma docs](https://www.prisma.io/docs)
+- [Supabase docs](https://supabase.com/docs) (Auth, Realtime, Storage, RLS)
+- [Tailwind CSS docs](https://tailwindcss.com/docs)
+- [OWASP Core Rule Set](https://coreruleset.org/docs/) and
+  [ModSecurity](https://github.com/owasp-modsecurity/ModSecurity)
+- [HashiCorp Vault docs](https://developer.hashicorp.com/vault/docs) (AppRole, KV v2, seal/unseal)
+- [RFC 6238 (TOTP)](https://datatracker.ietf.org/doc/html/rfc6238), [otplib](https://github.com/yeojz/otplib)
+- [WCAG 2.1](https://www.w3.org/TR/WCAG21/)
+- [Docker Compose docs](https://docs.docker.com/compose/)
+
+### How AI was used
+
+Our rule: **only keep code you can explain line by line.** AI suggestions
+were read, tested and often rewritten before being committed.
+
+- **Tiara** used Claude Code as a pair programmer for her modules and the
+  deployment. She set the plan and the rules (for example, schema pushes to
+  the shared database were run by her, never by the tool), tested every change
+  herself, and kept a progress log of every session, so each decision has a
+  written reason.
+- An early `copilot/setup-docker-environment` branch (June, generated by
+  GitHub's Copilot agent) was never merged.
+
+---
 
 ## 🧪 Running Supabase Locally
 
@@ -196,169 +482,61 @@ should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
 `backend` was started without going through `make up`/`vault-init.sh`.
 
-### Vault on solsys: secrets kept remotely (built, not switched on yet)
 
-The dev-mode setup above is what production runs today. Its replacement is
-built and was rehearsed on 2026-10-08; it goes live on solsys on switch day
+### Vault on solsys (production)
+
+Production does **not** use the dev-mode Vault above. Since 13 Oct it runs a
+server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 ([vault/README.md](vault/README.md)):
 
-- **One server-mode Vault on solsys**: encrypted on disk, keeps its data
-  across restarts, sealed after every restart until 2 of 5 unseal shares are
-  entered (`make unseal`, from any share holder's laptop through their SSH tunnel).
+- **Server mode**: encrypted on disk, keeps its data across restarts, sealed
+  after every restart until 2 of 5 unseal shares are entered (`make unseal`,
+  from any share holder's laptop through their SSH tunnel; solsys applies its
+  own share automatically).
 - **Two paths**: `secret/family-tree/prod`, read only by the production
   backend's AppRole, and `secret/family-tree/dev`, read by everyone's
   `make up`. Each person has their own Vault login; there is no root token.
   Every request goes to the audit log.
 - **`make deploy`** (laptop with SSH to solsys) pulls `branchsaurus` there and
-  runs `make prod`, which uses this Vault once the backend's login file
-  (`vault/backend-approle.env`) exists.
+  runs `scripts/prod-up.sh`, which uses this Vault through the backend's login
+  file (`vault/backend-approle.env`).
 
 ---
 
-## 📍 Summary
+## 🗃️ Codebase overview
 
-We are building a **family tree & collaboration platform** using **Next.js (frontend)**, **NestJS (backend)**, **Prisma (ORM)**, **Supabase (auth)**, **PostgreSQL**, and **Tailwind CSS**.
+### Frontend (Next.js, `frontend/src`)
+- `app/page.tsx` – landing page
+- `app/login`, `app/signup`, `app/forgot-password`, `app/reset-password` – email/password
+  auth and Google; a 2FA code prompt appears inline when a login needs it
+- `app/consent` – OAuth callback, also handles the 2FA challenge for Google logins
+- `app/dashboard` – my trees (create, join with a code, delete / leave), profile and
+  photo, search, friends, links to Settings and (role-gated) the admin panel
+- `app/canvas/[id]` – the tree canvas: people, claims, members, presence, notifications
+- `app/settings` – 2FA, change password, change email, delete account
+  (old `/settings/2fa` links redirect here)
+- `app/admin/users` – user list, role changes, suspend, delete
+- `app/feedback`, `app/privacy`, `app/terms`
+- `components/` – the design system (`Button`, `Navbar`, `Footer`, `Banner`,
+  `TreeBanner`, `ModalBanner`, `Typography`, `Avatar`, `PresenceFacepile`,
+  `SkipLink`) and the canvas pieces (`treeNode`, `treeBranch`, `profileModal`, …)
 
-Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
+### Backend (NestJS, `backend/src`, every route under `/api`)
+- `api/auth` – Supabase login + our JWT, global `RolesGuard`, account changes and deletion
+- `api/auth/two-factor` – TOTP setup / enable / disable / login-verify
+- `api/users` – user list (admin and moderator), role change and delete (admin), suspend (admin and moderator)
+- `api/profile` – people: CRUD, photo upload, search
+- `api/tree` – trees: create, join, members, roles, claims, delete, leave; audit log + realtime broadcast
+- `api/friend` – friend requests, friends list, online status
+- `api/feedback` – feedback form (email)
+- `api/public` – public API (not claimed)
+- `prisma/` – schema and the Prisma client (`PrismaPg` adapter)
+- `vault/load-secrets.ts` – reads the secrets from Vault at boot
 
-The current codebase already provides:
-
-- User authentication with **Supabase** (email/password + Google OAuth)
-- JWT token handling
-- Basic **tree** and **profile** management
-- Role‑based permissions within trees (ADMIN, MODERATOR, MEMBER, JOINER, HOLDER)
-- Global user roles (ADMIN/MODERATOR/USER) with an admin panel to manage them
-- Two‑factor authentication (TOTP + recovery codes)
-- A custom design system with a colour palette, typography, and reusable components (10+ components)
-- Containerised deployment with Docker / docker‑compose
-
-All services run with a single `make` command.
-
----
-
-## 🧩 Modules – Progress & To‑Do
-
-We have chosen the following modules.
-**Completed** ✅ are already functional; **In‑progress** 🔄 need finishing; **Not started** ❌ need implementation.
-
-Statuses checked against the code on `branchsaurus` on 2026-10-10.
-
-| Module | Owner | Type | Points | Status | Notes |
-|--------|-------|------|--------|--------|-------|
-| Use a frontend framework (React/Next.js) | Jon | Minor | 1 | ✅ Done | Next.js 14 |
-| Use a backend framework (NestJS) | Moira | Minor | 1 | ✅ Done | NestJS 10 |
-| Use an ORM (Prisma) | Moira | Minor | 1 | ✅ Done | Prisma with Supabase Postgres |
-| Custom design system with ≥10 reusable components | Jon | Minor | 1 | ✅ Done | Components: Button, Navbar, Footer, Banner, TreeBanner, ModalBanner, Typography, Avatar, PresenceFacepile, SkipLink |
-| **Remote authentication with OAuth 2.0 (Google)** | Tiara | Minor | 1 | ✅ Done | Supabase OAuth integrated; fixed a redirect bug (was pointing at a nonexistent route); verified Google login end-to-end against production (`ft.natscho.my`) — real Supabase project, real domain, not just local. GitHub was also built and tested working, then deliberately dropped — didn't fit the app's theme, Google alone covers the module requirement |
-| **Standard user management and authentication** | Moira & Jon (profile, avatar, profile page); Yiwei (friends, online status) | Major | 2 | 🔄 Partial | Done: sign up/login, profile update; avatar upload (JPEG/PNG/WebP/GIF, max 1 MB) with a default avatar; friends (send, accept, reject, cancel, unfriend) from the search results. Still needed: a friends list and incoming-requests view (the API already has `GET /friend`, `/friend/requests/in`, `/requests/out`), friends' online status, a profile page |
-| **Advanced permissions system** (global roles) | Tiara | Major | 2 | ✅ Done | Global `role` on `User` (ADMIN/MODERATOR/USER), `RolesGuard`, `/api/users` CRUD (list/change role/delete, self-demotion blocked), admin panel at `/admin/users`; moderators can suspend/unsuspend users (suspension blocks login and ends active sessions immediately) |
-| **Organization system** (trees as orgs) | Moira | Major | 2 | 🔄 Partial | Done: create a tree, join by code, edit, member roles, remove a member, leave, claims. Still needed: delete a tree |
-| **Real‑time features** (Supabase Realtime) | Moira | Major | 2 | 🔄 Partial | Supabase Realtime over WebSocket: who is online in a tree (presence), live notifications of tree changes. Still to show: reconnecting after a dropped connection, updates reaching every open client |
-| **Public API** with secured API key, rate limiting, docs, ≥5 endpoints | Yiwei | Major | 2 | 🔄 In progress | Branch `yi5`: `X-API-Key` guard, rate limit (60/min), Swagger docs, 4 endpoints (list, get, create, update public trees). Still needed: a DELETE endpoint (5th), passing `PUBLIC_API_KEY` to the container, docs under `/api/docs` so they're reachable on the deployed site |
-| **Complete notification system** for CRUD actions | Moira & Tiara | Minor | 1 | 🔄 Partial | Live notifications from the tree audit log; pending-claims panel. Still needed: friend requests and the other create/update/delete actions, a list of past notifications (email for friend requests: Yiwei looking into it) |
-| **Real‑time collaborative features** (shared workspaces, live editing) | Moira & Jon | Minor | 1 | 🔄 Partial | Shared tree canvas with live presence. Still needed: other people's edits appearing live on the canvas |
-| **Advanced search** with filters, sorting, pagination | Yiwei | Minor | 1 | 🔄 Built, demo check | `GET /profile/search`: filters (name, birth date, gender), sorting (`sortBy`, `order`), pagination (`page`, `limit`) with the total count |
-| **Complete accessibility compliance** (WCAG 2.1 AA) | Jon | Major | 2 | 🔄 Partial | Skip link, landmarks, labelled forms, ARIA attributes. Still needed: a full WCAG 2.1 AA audit (axe/Lighthouse, keyboard-only, screen reader), especially the tree canvas |
-| **Support for additional browsers** (Firefox, Safari, Edge) | Jon | Minor | 1 | ✅ Done | Tested by Jon. Still to add here: the browsers tested and any known limitations (the subject asks for them to be documented) |
-| **2FA (Two‑Factor Authentication)** | Tiara | Minor | 1 | ✅ Done | Custom TOTP (not Supabase native MFA) via `otplib`/`qrcode`, 8 bcrypt-hashed recovery codes, enroll/verify/disable flow at `/settings`, login challenge on `/2fa/login-verify` |
-| **Cybersecurity** (WAF + secrets manager) | Tiara | Major | 2 | ✅ Done | ModSecurity + OWASP CRS (paranoia level 2, blocking) in front of both frontend and backend, proven blocking real SQLi/XSS with a `403`. HashiCorp Vault storing the backend's secrets (server mode with 5 unseal shares, per-person logins reached through each person's own SSH tunnel, and an audit log; see `vault/README.md`), AppRole auth (not the root token), loaded at boot by `backend/src/vault/load-secrets.ts`. `docker-compose-security.yml`, started by `make up`. Direct `:3000`/`:4000` access is closed, so the WAF is the only way in |
-
-### Points
-Claimed modules: 7 Majors (14 pts) + 10 Minors (10 pts) = **24 points**, 10 above the required **14**,
-which leaves a margin in case a module isn't validated at evaluation. SSR and the user activity analytics
-dashboard were dropped (2026-10-10). Status on 2026-10-10: **11 points done**, 1 built and waiting for a
-demo check (advanced search), 12 in progress (see the table above).
-
----
-
-## 📋 Roles and module ownership
-
-### Team roles
-
-| Role | Who | Responsibilities |
-|------|-----|------------------|
-| **Product Owner (PO)** | Moira | Product vision, feature priorities and backlog; validates completed work; speaks for the team to evaluators and peers |
-| **Project Manager (PM) / Scrum Master** | Tiara | Organises meetings and planning, tracks progress and deadlines, keeps communication going, manages risks and blockers |
-| **Technical Lead / Architect** | Moira & Jon | Technical architecture and stack decisions, code quality and best practices, reviews of critical changes |
-| **Developers** | Moira, Jon, Yiwei, Tiara | Build their assigned modules (below), review each other's code, test and document their work |
-
-### Module ownership
-
-Who owns which module (shared modules list every owner). Effort per module in points.
-
-### 👤 Moira
-- **Backend framework (NestJS)** – Minor, 1 pt
-- **ORM (Prisma)** – Minor, 1 pt
-- **Organization system (trees as orgs)** – Major, 2 pts
-  - Create, edit and delete trees; add and remove members; actions per member role
-- **Real‑time features** – Major, 2 pts
-  - Real-time updates across clients, connection/disconnection handling, efficient broadcasting
-- **Notification system** for create/update/delete actions – Minor, 1 pt *(with Tiara)*
-- **Real‑time collaborative features** – Minor, 1 pt *(with Jon)*
-- **Standard user management** – Major, 2 pts *(with Jon; Yiwei does friends and online status)*
-  - Update profile information, avatar upload with a default, profile page
-
-### 👤 Jon
-- **Frontend framework (Next.js)** – Minor, 1 pt
-- **Custom design system** (≥10 reusable components) – Minor, 1 pt
-- **Accessibility (WCAG 2.1 AA)** – Major, 2 pts
-  - Screen reader support, keyboard navigation, assistive technologies
-- **Support for additional browsers** – Minor, 1 pt ✅ Done
-- **Real‑time collaborative features** – Minor *(with Moira)*
-- **Standard user management** – Major *(with Moira)*: profile update, avatar, profile page
-
-### 👤 Yiwei
-- **Public API** – Major, 2 pts
-  - Secured API key, rate limiting, documentation, at least 5 endpoints
-- **Advanced search** with filters, sorting and pagination – Minor, 1 pt
-- **Standard user management** – Major *(friends and online status part)*
-
-### 👤 Tiara
-- **Remote authentication with OAuth 2.0 (Google)** – Minor, 1 pt ✅ Done
-- **Advanced permissions (global roles)** – Major, 2 pts ✅ Done
-  - Global `role` on `User` (admin, moderator, user), enforced by `RolesGuard`
-  - User management UI: list, change roles, suspend, delete; moderators get a reduced view
-- **2FA** – Minor, 1 pt ✅ Done
-  - TOTP setup, verification, recovery codes
-- **Cybersecurity: WAF/ModSecurity + HashiCorp Vault** – Major, 2 pts ✅ Done
-- **Notification system** – Minor *(with Moira)*
-
----
-
-## 🗃️ Codebase Overview (What’s Already Done)
-
-### Frontend (Next.js)
-- `/app/page.tsx` – landing page with design system components
-- `/app/login` – login with email/password and OAuth buttons; renders a 2FA
-  code prompt inline when a login requires it
-- `/app/signup` – signup with validation
-- `/app/tree` – list of user’s trees, create/join/search modals ⚠️ stale
-  dead code, not the live landing page (see `/app/dashboard`)
-- `/app/dashboard` – the actual "my trees" landing page: members, profiles,
-  role management, links to Security & Password and (role-gated) Admin Panel
-- `/app/consent` – OAuth callback handler, also handles the 2FA challenge
-  for OAuth logins
-- `/app/settings` – 2FA (enable/disable, QR enrollment, recovery codes), change password, change email, delete account
-- `/app/admin/users` – admin-only user list, role changes, delete
-- Design system: components (`Button`, `Navbar`, `Footer`, `Banner`, `TreeBanner`, `ModalBanner`, `Typography`, `Avatar`, `PresenceFacepile`, `SkipLink`)
-
-### Backend (NestJS)
-- `src/api/auth` – Supabase OAuth + JWT, global `RolesGuard`
-- `src/api/auth/two-factor` – TOTP setup/enable/disable/login-verify
-- `src/api/users` – user list (admin and moderator), role change and delete (admin only), suspend/unsuspend (admin and moderator)
-- `src/api/profile` – CRUD for persons (renamed `Profile`)
-- `src/api/tree` – tree creation, joining, search, members, roles
-- `src/prisma` – Prisma client with `PrismaPg` driver adapter
-- `src/supabase` – Supabase client module
-- Database schema (Prisma) with `User` (incl. global `role`, 2FA fields),
-  `RecoveryCode`, `Tree`, `TreeMember`, `Invitation`, `Profile`,
-  `ProfileSpouse`, `Event`, `AuditLog`
-- Global prefix `/api` – routes are `/api/auth/login`, `/api/trees/...`, etc.
-
-### Deployment
-- Docker & docker‑compose with development volumes
-- `make` starts all services
-- Backend uses HTTPS with self‑signed certificate (mounted from `./certs`)
-- Frontend uses `next dev --experimental-https`
-
-
+### Infrastructure
+- `docker-compose.yml` (app), `docker-compose-security.yml` (WAFs + Vault),
+  `docker-compose.prod.yml`, `docker-compose.vault-server.yml`
+- `waf/` – ModSecurity + CRS config and `test-waf.sh`
+- `vault/` – server-mode Vault scripts and setup guide
+- `scripts/` – `vault-init.sh`, `local-up.sh`, `prod-up.sh`, …
+- `diagram/` – architecture and Vault diagrams (open in a browser)
