@@ -222,6 +222,11 @@ export default function TreePage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      // A 403 with no JSON body comes from the WAF, not the API: names that
+      // look like SQL (e.g. "1=1") are blocked before they reach the backend.
+      if (res.status === 403 && !data.message) {
+        throw new Error('That name or description was blocked by our security filter. Please try different wording.');
+      }
       if (!res.ok) {
         throw new Error(data.message || `Server responded with status ${res.status}`);
       }
