@@ -133,7 +133,7 @@ export default function AdminUsersPage() {
 				<Navbar />
 			</header>
 
-			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-5xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
+			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-6xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
 				<div className="flex items-center justify-between">
 					<h1 className="text-2xl font-bold text-slate-900">User Management</h1>
 					<Button href="/dashboard" variant="secondary">
@@ -199,25 +199,27 @@ export default function AdminUsersPage() {
 											</td>
 											<td className="px-4 py-3">{u.twoFactorEnabled ? 'Enabled' : '—'}</td>
 											<td className="px-4 py-3">{new Date(u.createdAt).toLocaleDateString()}</td>
-											<td className="px-4 py-3 flex gap-2">
-												{canSuspend && (
-													<Button
-														variant="ghost"
-														onClick={() => toggleSuspended(u.id, u.username, !u.suspended)}
-														aria-label={`${u.suspended ? 'Unsuspend' : 'Suspend'} user ${u.username}`}
-													>
-														{u.suspended ? 'Unsuspend' : 'Suspend'}
-													</Button>
-												)}
-												{isAdmin && (
-													<Button
-														variant="ghost"
-														onClick={() => deleteUser(u.id, u.username)}
-														aria-label={`Delete user ${u.username}`}
-													>
-														Delete
-													</Button>
-												)}
+											<td className="px-4 py-3">
+												<div className="flex gap-2 whitespace-nowrap">
+													{canSuspend && (
+														<Button
+															variant="ghost"
+															onClick={() => toggleSuspended(u.id, u.username, !u.suspended)}
+															aria-label={`${u.suspended ? 'Unsuspend' : 'Suspend'} user ${u.username}`}
+														>
+															{u.suspended ? 'Unsuspend' : 'Suspend'}
+														</Button>
+													)}
+													{isAdmin && (
+														<Button
+															variant="ghost"
+															onClick={() => deleteUser(u.id, u.username)}
+															aria-label={`Delete user ${u.username}`}
+														>
+															Delete
+														</Button>
+													)}
+												</div>
 											</td>
 										</tr>
 									);
