@@ -5,6 +5,7 @@ import { Button } from './button';
 import { getToken } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
+import { useDialog } from '@/hooks/useDialog';
 
 
 export interface Profile {
@@ -53,6 +54,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
   ];
 
   const [editingField, setEditingField] = useState<string | null>(null);
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [uploading, setUploading] = useState(false);
@@ -134,7 +136,12 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Escape") {
+      // Escape here only stops editing the field; it doesn't close the dialog.
+      e.preventDefault();
+      const field = editingField;
       setEditingField(null);
+      // Put focus back on the field's button instead of losing it to the page.
+      setTimeout(() => document.getElementById(`profile-${field}-value`)?.focus());
     }
   };
 
@@ -194,7 +201,14 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center  bg-black/50 p-4">
       { /* form fill section */}
-      <div className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 ">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit your profile"
+        tabIndex={-1}
+        className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 focus:outline-none"
+      >
 		{/* Photo */}
 		<div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-200">
 		<Avatar
@@ -226,7 +240,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		{/* field map render each field row */}
         { fields.map(({ key, label, type }) => (
         <div key={key} className="flex items-center gap-2">
-          <span className="w-40 text-xl p-5">
+          <span id={`profile-${key}-label`} className="w-40 text-xl p-5">
             { label } :
           </span>
           <div className="">
@@ -238,7 +252,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     onChange={handleChange}
                     onBlur={() => setEditingField(null)}
                     autoFocus
-                    className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white"
+                    aria-labelledby={`profile-${key}-label`}
+                    className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white focus:ring-2 focus:ring-amber-600"
                   >
                   <option value="male">male</option>
                   <option value="female">female</option>
@@ -254,15 +269,19 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               onKeyDown={handleKeyDown}
               onBlur={() => setEditingField(null)}
               autoFocus
-              className="text-xl outline-none border border-none w-full"
+              aria-labelledby={`profile-${key}-label`}
+              className="text-xl outline-none border border-none w-full focus:ring-2 focus:ring-amber-600 rounded"
             />
             ) : (
-            <span
+            <button
+              type="button"
+              id={`profile-${key}-value`}
               onClick={() => setEditingField(key)}
-              className="cursor-pointer hover:bg-gray-100 rounded text-xl "
+              aria-labelledby={`profile-${key}-label profile-${key}-value`}
+              className="cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
             >
               {formData[key] || 'Click to add '+label}
-            </span>
+            </button>
             )}
           </div>
         </div>

@@ -42,10 +42,10 @@ export default function AuthCallback() {
 	return (
 		<div className="flex flex-col min-h-screen text-slate-800 font-sans">
 			<SkipLink />
-			<header>
+			<header id="navbar" tabIndex={-1} className="focus:outline-none">
 				<Navbar />
 			</header>
-			<main className="flex flex-1 items-center justify-center p-6">
+			<main id="main-content" tabIndex={-1} className="flex flex-1 items-center justify-center p-6 focus:outline-none">
 				<div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 shadow-lg p-8 flex flex-col items-center gap-4 text-center">
 					{challengeToken ? (
 						<>
@@ -66,7 +66,9 @@ export default function AuthCallback() {
 					)}
 				</div>
 			</main>
-			<Footer />
+			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
+				<Footer />
+			</footer>
 		</div>
 	);
 }

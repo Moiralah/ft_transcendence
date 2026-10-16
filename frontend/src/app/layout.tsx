@@ -5,7 +5,8 @@ import { AppPresence } from '@/hooks/usePresence';
 import './globals.css';
 
 export const metadata: Metadata = {
-	title: 'Family Tree',
+	// Each route sets its own title (WCAG 2.4.2); "%s" is that title.
+	title: { default: 'Family Tree', template: '%s · Family Tree' },
 	description: 'A minimalist family tree starter',
 };
 
