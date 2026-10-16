@@ -537,7 +537,7 @@ export default function TreePage() {
 	await fetchRequests(token);
   };
 
-  const ids = usePresence(myProfile?.id);
+  const ids = usePresence();
 
   const unfriend = async (friendId: number, userId: string) => {
     if (!token) return;
