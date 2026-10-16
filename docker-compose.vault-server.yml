@@ -36,6 +36,10 @@ services:
       # backend-prod policy allows reading exactly that path, nothing else).
       VAULT_SECRET_PATH: "secret/data/family-tree/prod"
 
+# Pinned to the names they got before the project was named familytree
+# (2026-10-16): renaming them would start Vault on an empty volume.
 volumes:
   vault-file:
+    name: ft_transcendence_vault-file
   vault-logs:
+    name: ft_transcendence_vault-logs

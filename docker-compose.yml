@@ -1,3 +1,6 @@
+# Containers, network and volumes are named familytree-* on every machine,
+# whatever the checkout folder is called (transpeed, ft_transcendence, ...).
+name: familytree
 
 services:
 

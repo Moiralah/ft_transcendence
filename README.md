@@ -379,7 +379,7 @@ docker compose up -d backend
 **Any later `docker compose up --build` (even for a different service like
 `frontend`) can silently recreate the backend container and reset it back
 to the plain `.env` values.** If login suddenly breaks after touching
-Docker, check `docker exec transpeed-backend-1 sh -c 'echo $DATABASE_URL
+Docker, check `docker exec familytree-backend-1 sh -c 'echo $DATABASE_URL
 $SUPABASE_AUTH_URL'` before anything else — both need
 `host.docker.internal`, not `127.0.0.1`.
 
@@ -439,7 +439,7 @@ without the security file (`docker compose up -d`, which publishes `:3000` and
 **Dependency note:** the WAFs depend on the containers behind them. Their
 nginx looks up `backend`'s and `frontend`'s addresses once, when it starts, so
 whenever `backend` or `frontend` is recreated while the WAF is running, restart
-the WAFs (`docker restart transpeed-waf-backend-1 transpeed-waf-frontend-1`),
+the WAFs (`docker restart familytree-waf-backend-1 familytree-waf-frontend-1`),
 or they answer `502`. `make up`, `make backend`, `make frontend` and
 `scripts/prod-up.sh` do this by themselves.
 
@@ -477,7 +477,7 @@ This is explicitly not production-ready, same caveat the subject itself
 calls out — a real deployment needs a persistent storage backend (file or
 Raft), TLS, and proper unsealing instead of a baked-in root token.
 
-**To verify it yourself**: `docker logs transpeed-backend-1 | grep vault`
+**To verify it yourself**: `docker logs familytree-backend-1 | grep vault`
 should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
 `backend` was started without going through `make up`/`vault-init.sh`.
