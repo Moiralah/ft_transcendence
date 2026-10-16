@@ -23,6 +23,7 @@ export const MIN_PASSWORD_LENGTH = 8;
 export function storeSession(result: LoginSuccess) {
 	localStorage.setItem('ft_token', result.accessToken);
 	localStorage.setItem('ft_role', result.user.role);
+	window.dispatchEvent(new Event("app-login"));
 }
 
 export function clearSession() {

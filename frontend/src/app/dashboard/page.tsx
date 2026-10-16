@@ -7,10 +7,10 @@ import Link from 'next/link';
 import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
 import { Footer } from '../../components/footer';
-import { usePresence } from "../../hooks/usePresence";
 import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
+import { status } from "../../components/statusSegment";
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession } from '@/lib/auth';
@@ -522,7 +522,7 @@ export default function TreePage() {
 	await fetchRequests(token);
   };
 
-  const ids = usePresence(myProfile?.id);
+  const ids = status();
 
   const unfriend = async (friendId: number, userId: string) => {
     if (!token) return;
