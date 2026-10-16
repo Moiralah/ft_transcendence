@@ -38,6 +38,9 @@ export DIRECT_URL="$DATABASE_URL"
 export SUPABASE_AUTH_URL="http://host.docker.internal:54321"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 export NEXT_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"
+# Photo links the backend stores must be loadable by the browser, which can't
+# resolve host.docker.internal (profile.service.ts uploadPhoto).
+export SUPABASE_PUBLIC_URL="$NEXT_PUBLIC_SUPABASE_URL"
 export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
 # vault-init.sh takes each value from the environment before .env, so these
 # win over a .env (or Vault dev secrets) that point at the cloud project.

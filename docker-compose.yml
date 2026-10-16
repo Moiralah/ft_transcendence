@@ -21,6 +21,9 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       CORS_ORIGIN: ${CORS_ORIGIN}
       SUPABASE_AUTH_URL: ${SUPABASE_AUTH_URL}
+      # Browser-facing Supabase address for stored photo links; only `make local`
+      # sets it (see scripts/local-up.sh). Empty elsewhere = use SUPABASE_AUTH_URL.
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       DIRECT_URL: ${DIRECT_URL}
       DATABASE_URL: ${DATABASE_URL}
