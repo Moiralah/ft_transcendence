@@ -4,6 +4,7 @@ import { getToken } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import type { TreeViewContext } from './treeNode';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
+import { useDialog } from '@/hooks/useDialog';
 
 export interface Member {
   id: number;
@@ -58,6 +59,8 @@ export function NodeProfileModal({
 
   // Hydration state to prevent Next.js / SSR errors when using document.body
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useDialog<HTMLDivElement>(onClose, mounted);
+  const titleId = `node-profile-title-${member.id}`;
 
   useEffect(() => {
     setMounted(true);
@@ -297,8 +300,13 @@ export function NodeProfileModal({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === 'Escape') {
+      // Escape here only stops editing the field; it doesn't close the dialog.
+      e.preventDefault();
+      const target = editName ? 'node-edit-name' : `node-${editingField}-value`;
       setEditingField(null);
       setEditName(false);
+      // Put focus back on the button that started the edit.
+      setTimeout(() => document.getElementById(target)?.focus());
     }
   };
 
@@ -398,7 +406,12 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       }}
     >
       <div
-        className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Form Section */}
@@ -412,6 +425,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   value={formMember?.firstName || ''}
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}
+                  autoFocus
                   aria-label="Edit First Name"
                   className="min-w-48 flex flex-row border rounded px-2 py-1 text-base outline-none border-blue-500"
                 />
@@ -428,16 +442,18 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             ) : (
               <div className="flex flex-row font-bold justify-between items-center gap-2 w-full">
-                <div className="min-w-0 text-2xl [overflow-wrap:anywhere]">
+                <h2 id={titleId} className="min-w-0 text-2xl [overflow-wrap:anywhere]">
                   {`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
-                </div>
+                </h2>
 					{canEditFields && (
-					<div
-						className="flex px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal"
+					<button
+						type="button"
+						id="node-edit-name"
+						className="flex w-auto shrink-0 px-3 py-1 text-sm text-gray-900 bg-transparent border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal focus:outline-none focus:ring-2 focus:ring-amber-600"
 						onClick={() => setEditName(true)}
 					>
 						Edit Name
-					</div>
+					</button>
 					)}
               </div>
             )}
@@ -445,7 +461,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Birth Date */}
           <div className="flex flex-row text-xl font-normal items-center">
-            <div className="flex w-40 shrink-0 text-gray-500">Born</div>
+            <div id="node-birthDate-label" className="flex w-40 shrink-0 text-gray-600">Born</div>
             <div className="flex-1">
               {editingField === 'birthDate' ? (
                 <input
@@ -458,26 +474,35 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   onKeyDown={handleKeyDown}
                   onBlur={() => setEditingField(null)}
                   autoFocus
-                  className="text-xl outline-none border border-gray-300 rounded px-2 py-1"
+                  aria-labelledby="node-birthDate-label"
+                  className="text-xl outline-none border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-amber-600"
                 />
               ) : (
-			          <span
-				          onClick={() => canEditFields && setEditingField('birthDate')}
-				          className={`rounded text-xl px-2 py-1 ${
-					          canEditFields ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default text-gray-500'
-				          }`}
-				        >
-				          {formMember?.birthDate || (canEditFields ? 'Click to add birth date' : 'Not specified')}
-				        </span>
+			          canEditFields ? (
+				          <button
+					          type="button"
+					          id="node-birthDate-value"
+					          onClick={() => setEditingField('birthDate')}
+					          aria-labelledby="node-birthDate-label node-birthDate-value"
+					          className="w-auto rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600"
+				          >
+					          {formMember?.birthDate || 'Click to add birth date'}
+				          </button>
+			          ) : (
+				          <span className="rounded text-xl px-2 py-1 cursor-default text-gray-600">
+					          {formMember?.birthDate || 'Not specified'}
+				          </span>
+			          )
               )}
             </div>
           </div>
 
           {/* Gender */}
           <div className="flex flex-row text-xl font-normal">
-            <div className="flex w-40 shrink-0 text-gray-500">Gender</div>
+            <label htmlFor={`node-gender-${member.id}`} className="flex w-40 shrink-0 text-gray-600">Gender</label>
             <div>
               <select
+                id={`node-gender-${member.id}`}
                 name="gender"
                 value={formMember?.gender || 'male'}
                 onChange={handleChange}
@@ -492,12 +517,13 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
           {/* Status */}
           <div className="flex flex-row text-xl font-normal items-center">
-            <div className="flex w-40 shrink-0 text-gray-500">Status</div>
-            <div className="flex border bg-gray-200 rounded-xl p-1">
+            <div id="node-status-label" className="flex w-40 shrink-0 text-gray-600">Status</div>
+            <div role="group" aria-labelledby="node-status-label" className="flex border bg-gray-200 rounded-xl p-1">
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
-                  alive ? 'bg-black shadow-sm' : 'bg-gray-200'
+                aria-pressed={alive}
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-600 ${
+                  alive ? 'bg-black text-white shadow-sm' : 'bg-gray-200 text-gray-900'
                 }`}
                 onClick={() => setAlive(true)}
 				        disabled={!canEditFields}
@@ -506,8 +532,9 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               </button>
               <button
                 type="button"
-                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 ${
-                  !alive ? 'bg-black' : 'bg-gray-200' 
+                aria-pressed={!alive}
+                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-600 ${
+                  !alive ? 'bg-black text-white' : 'bg-gray-200 text-gray-900'
                 }`}
                 onClick={() => setAlive(false)}
 				        disabled={!canEditFields}
@@ -536,6 +563,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		className={`outline outline-2 outline-offset-2 outline-indigo-600 ${
 			canEditFields ? '' : 'opacity-60'
 		}`}
+		label={`Change photo of ${`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'this person'}`}
+		disabled={!canEditFields}
 		onClick={() => {
 			if (canEditFields) fileInputRef.current?.click();
 		}}

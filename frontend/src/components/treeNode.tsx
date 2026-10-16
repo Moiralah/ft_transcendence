@@ -105,6 +105,12 @@ export function TreeNode({
 	 setNodeProfileModal(true);
   };
 
+  const fullName = `${nodeMember.firstName || ''} ${nodeMember.lastName || ''}`.trim() || 'Unknown';
+  // Gender is also shown as text, not only by the box colour (WCAG 1.4.1).
+  const genderText =
+    nodeMember.gender === 'male' ? 'Male' : nodeMember.gender === 'female' ? 'Female' : 'Gender not set';
+  const genderSymbol = nodeMember.gender === 'male' ? '♂ ' : nodeMember.gender === 'female' ? '♀ ' : '';
+
   return (
     <div className="flex flex-col items-center relative z-10">
       <div
@@ -121,31 +127,36 @@ export function TreeNode({
         {showDeleteButton ? (
           <button
             type="button"
-            className="flex items-center justify-center w-full h-4 text-xs text-gray-400 hover:text-red-600 hover:bg-red-200 bg-transparent rounded-lg transition-colors"
+            aria-label={`Remove ${fullName} from the tree`}
+            className="flex items-center justify-center w-full h-4 p-0 text-xs text-gray-700 hover:text-red-700 hover:bg-red-200 bg-transparent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
             onClick={handleDeleteNode}
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         ) : (
           <div className="h-4" />
         )}
 
-        <div>
-          {nodeMember.firstName || nodeMember.lastName ? (
-            <span>{`${nodeMember.firstName || ''} ${nodeMember.lastName || ''}`}</span>
-          ) : (
-            <span>Unknown</span>
-          )}
-        </div>
+        {/* The keyboard way in (Tab, then Enter or Space). It has no onClick of its
+            own: its click bubbles to the box above, which opens the profile. */}
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          className="block w-full p-0 bg-transparent hover:bg-transparent text-sm font-bold text-gray-800 text-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+        >
+          <span className="sr-only">Open profile of </span>
+          <span className="block">{fullName}</span>
 
-        <div className="text-xs font-normal flex flex-col py-1">
-          <div>
-            <span>b.</span> {nodeMember.birthDate ? formatDate(nodeMember.birthDate) : 'not available'}
-          </div>
-          <div>
-            <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
-          </div>
-        </div>
+          <span className="text-xs font-normal flex flex-col py-1">
+            <span><span aria-hidden="true">{genderSymbol}</span>{genderText}</span>
+            <span>
+              <span>b.</span> {nodeMember.birthDate ? formatDate(nodeMember.birthDate) : 'not available'}
+            </span>
+            <span>
+              <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
+            </span>
+          </span>
+        </button>
       </div>
 
       <div className="flex gap-8 relative pt-6">

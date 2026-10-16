@@ -12,6 +12,7 @@ import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
 import { clearSession, getToken, loginPathAfter401 } from '@/lib/auth';
+import { useDialog } from '@/hooks/useDialog';
 
 
 interface PendingClaim {
@@ -252,6 +253,50 @@ export default function Content() {
 
   const handleMouseUp = () => setIsDragging(false);
 
+  // Keyboard: arrow keys move the view, + and - zoom, 0 resets (WCAG 2.1.1).
+  const PAN_STEP = 60;
+  const handleWorkspaceKeyDown = (e: React.KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, select, textarea, [role="dialog"]')) return;
+    const moves: Record<string, { x: number; y: number }> = {
+      ArrowLeft: { x: PAN_STEP, y: 0 },
+      ArrowRight: { x: -PAN_STEP, y: 0 },
+      ArrowUp: { x: 0, y: PAN_STEP },
+      ArrowDown: { x: 0, y: -PAN_STEP },
+    };
+    if (moves[e.key]) {
+      e.preventDefault();
+      setPan((p) => ({ x: p.x + moves[e.key].x, y: p.y + moves[e.key].y }));
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      setScale((s) => Math.min(s * 1.1, 2.5));
+    } else if (e.key === '-') {
+      e.preventDefault();
+      setScale((s) => Math.max(s * 0.9, 0.3));
+    } else if (e.key === '0') {
+      e.preventDefault();
+      setScale(1);
+      setPan({ x: 0, y: 0 });
+    }
+  };
+
+  // Tabbing to a person off screen moves the view so the person is visible (WCAG 2.4.7).
+  const handleWorkspaceFocus = (e: React.FocusEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[role="dialog"]')) return;
+    const box = target.getBoundingClientRect();
+    const margin = 40;
+    let dx = 0;
+    let dy = 0;
+    if (box.left < margin || box.right > window.innerWidth - margin) {
+      dx = window.innerWidth / 2 - (box.left + box.width / 2);
+    }
+    if (box.top < margin || box.bottom > window.innerHeight - margin) {
+      dy = window.innerHeight / 2 - (box.top + box.height / 2);
+    }
+    if (dx || dy) setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+  };
+
   // Scroll Wheel Handler for Zooming
   const handleWheel = (e: React.WheelEvent) => {
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -263,7 +308,13 @@ export default function Content() {
   };
 
   const [treeMemberModal, setTreeMemberModal] = useState(false);
+  const memberDialogRef = useDialog<HTMLDivElement>(() => setTreeMemberModal(false), treeMemberModal);
   const [name, setName] = useState("my tree");
+
+  // Each tree gets its own tab title (WCAG 2.4.2); the layout's is only a fallback.
+  useEffect(() => {
+    if (tree?.name) document.title = `${name || tree.name} · Family Tree`;
+  }, [name, tree]);
   const [editTreeName, setEditTreeName] = useState(false);
 
   const handleSaveTreeName = async () => {
@@ -486,6 +537,7 @@ export default function Content() {
         tabIndex={-1}
         className="focus:outline-none max-w-8xl w-full mx-auto px-4 flex-1 pt-20"
       >
+        <h1 className="sr-only">{`Family tree: ${name || 'my tree'}`}</h1>
         {/* Tree member card */}
         <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
           {/* Top Row: Editable Title + Home Button */}
@@ -582,11 +634,15 @@ export default function Content() {
 
         {/* Interactive Workspace */}
         <div
+          role="region"
+          aria-label="Family tree. Tab moves between people; arrow keys move the view; plus and minus zoom; 0 resets."
           className="flex-1 relative cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onWheel={handleWheel}
+          onKeyDown={handleWorkspaceKeyDown}
+          onFocus={handleWorkspaceFocus}
         >
           {/* Transform Layer */}
           <div
@@ -616,16 +672,24 @@ export default function Content() {
 		data-modal-open
 		className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4"
 		>
-          <div className="flex flex-col bg-white rounded-xl w-full max-w-xl gap-4 p-8 shadow-2xl">
-            <div className="flex text-2xl font-bold">
+          <div
+            ref={memberDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tree-member-title"
+            tabIndex={-1}
+            className="flex flex-col bg-white rounded-xl w-full max-w-xl gap-4 p-8 shadow-2xl focus:outline-none"
+          >
+            <h2 id="tree-member-title" className="flex text-2xl font-bold">
               {`Tree member (${treesMember.filter((member: any) => member.role !== 'HOLDER').length})`}
-            </div>
+            </h2>
 
             {/* Search Bar */}
             <div className="border border-gray-300 rounded-lg p-1 focus-within:ring-2 focus-within:ring-amber-600 focus-within:ring-offset-2">
               <input
                 type="text"
                 placeholder="Search members by name..."
+                aria-label="Search members by name"
                 value={searchMember}
                 onChange={(e) => setSearchMember(e.target.value)}
                 className="border-none text-xl w-full px-3 outline-none text-gray-700 bg-transparent"
@@ -633,43 +697,46 @@ export default function Content() {
             </div>
 
             <div className="grid max-h-80 overflow-y-auto">
-              {filteredMembers.map((member: any) => (
+              {filteredMembers.map((member: any) => {
+                const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unnamed member';
+                return (
                 <div
                   key={member.id}
-                  onClick={() => {
-                    if (member) {
-                      handleRootMember(member);
-                    }
-                  }}
-                  className="cursor-pointer"
+                  className="flex flex-row w-full items-center border-t border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <div className="flex flex-row w-full items-center border-t border-b border-gray-200 p-4 gap-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-600">
-                    <div className="flex w-12 h-12 shrink-0 rounded-full bg-black text-white items-center justify-center overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => handleRootMember(member)}
+                    aria-label={`Show the tree from ${memberName}`}
+                    className="flex flex-1 min-w-0 flex-row items-center p-4 gap-4 text-left text-gray-900 bg-transparent hover:bg-transparent rounded-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+                  >
+                    <span className="flex w-12 h-12 shrink-0 rounded-full bg-black text-white items-center justify-center overflow-hidden">
                       {member.photoUrl ? (
                         <img src={member.photoUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <span>{member.firstName?.[0] || 'M'}</span>
+                        <span aria-hidden="true">{member.firstName?.[0] || 'M'}</span>
                       )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{`${member.firstName || ''} ${member.lastName || ''}`}</span>
-                      <span className="font-light text-sm text-gray-500">
+                    </span>
+                    <span className="flex flex-col">
+                      <span className="font-medium">{memberName}</span>
+                      <span className="font-light text-sm text-gray-600">
                         {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`}
                       </span>
-                    </div>
-                    {(treeView.viewType === 'ADMIN' && treeView.viewId !== member.profileId) && (
-                    <div className="ml-auto">
-                      <span
-                        onClick={() => handleKickUser(member)}
-                        className="flex w-12 h-12 shrink-0 rounded-full hover:bg-red-200 text-grey-200 font-bold items-center justify-center overflow-hidden"
-                      >
-                        X
-                      </span>
-                    </div>
-                    )}
-                  </div>
+                    </span>
+                  </button>
+                  {(treeView.viewType === 'ADMIN' && treeView.viewId !== member.profileId) && (
+                    <button
+                      type="button"
+                      onClick={() => handleKickUser(member)}
+                      aria-label={`Remove ${memberName} from the tree`}
+                      className="flex w-12 h-12 shrink-0 mr-4 p-0 rounded-full bg-transparent hover:bg-red-200 text-gray-800 font-bold items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+                    >
+                      <span aria-hidden="true">X</span>
+                    </button>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex justify-end mt-4">

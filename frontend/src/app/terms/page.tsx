@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 
 import { SkipLink } from '../../components/SkipLink';
 import { Navbar } from '../../components/navbar';
@@ -17,6 +18,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 		</section>
 	);
 }
+
+export const metadata: Metadata = { title: 'Terms of Service' };
 
 export default function TermsOfServicePage() {
 	return (

@@ -630,6 +630,7 @@ export default function TreePage() {
         tabIndex={-1}
         className="focus:outline-none max-w-4xl w-full mx-auto p-6 flex-1 pt-24 space-y-8"
       >
+        <h1 className="sr-only">Dashboard</h1>
         {/* Profile Showcase */}
         <section aria-label="User Profile" className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200">
           <div className="flex flex-col sm:flex-row items-center justify-around gap-6">

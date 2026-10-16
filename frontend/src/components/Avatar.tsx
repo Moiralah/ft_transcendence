@@ -28,34 +28,58 @@ interface AvatarProps {
 	size?: number;
 	className?: string;
 	onClick?: () => void;
+	/** Accessible name when clickable, e.g. "Change photo". */
+	label?: string;
+	disabled?: boolean;
 }
 
 /**
  * Circular avatar. Uses `photoUrl` if set, otherwise the default
- * placeholder at /public/default-avatar.png.
+ * placeholder at /public/default-avatar.png. With `onClick` it is a real
+ * button, so it can be reached and used from the keyboard.
  */
 export function Avatar({
 	photoUrl,
 	size = 160,
 	className = '',
 	onClick,
+	label = 'Change photo',
+	disabled,
 }: AvatarProps) {
-	return (
-		<div
-			onClick={onClick}
-			style={{ width: size, height: size }}
-			className={[
-				'rounded-full overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center',
-				onClick ? 'cursor-pointer' : '',
-				className,
-			].join(' ')}
-		>
+	const classes = [
+		'rounded-full overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center',
+		onClick && !disabled ? 'cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-600' : '',
+		className,
+	].join(' ');
+	const image = (
+		<>
 			{/* eslint-disable-next-line @next/next/no-img-element */}
 			<img
 				src={photoUrl || '/default-avatar.png'}
 				alt=""
 				className="w-full h-full object-cover"
 			/>
+		</>
+	);
+
+	if (onClick) {
+		return (
+			<button
+				type="button"
+				onClick={onClick}
+				disabled={disabled}
+				aria-label={label}
+				style={{ width: size, height: size }}
+				className={`p-0 border-0 ${classes}`}
+			>
+				{image}
+			</button>
+		);
+	}
+
+	return (
+		<div style={{ width: size, height: size }} className={classes}>
+			{image}
 		</div>
 	);
 }
