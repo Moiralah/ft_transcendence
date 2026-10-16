@@ -4,6 +4,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
+import { imageEnd } from './image-end';
 
 @Injectable()
 export class ProfileService {
@@ -344,9 +345,12 @@ export class ProfileService {
 		if (file.size > 1_000_000) {
 			throw new BadRequestException('Photo must be 1 MB or smaller.');
 		}
-		// Photo payload guard (two steps): a cheap check of the file's first
-		// bytes, then a decode and re-encode so only the pixels are stored.
-		// Added after an avatar was uploaded with a payload hidden inside it.
+		// Photo payload guard (three steps): a cheap check of the file's first
+		// bytes, then the whole file is read to the image's real end and any
+		// bytes after it refuse the upload, then a decode and re-encode so only
+		// the pixels are stored (that also drops a payload hidden inside the
+		// image's own data, such as a metadata chunk).
+		// Added after an avatar was uploaded with a payload after the PNG data.
 
 		// The mimetype is only what the client claims, so check the file's
 		// first bytes too: both must name the same allowed image type.
@@ -361,9 +365,15 @@ export class ProfileService {
 			throw new BadRequestException('Only JPEG, PNG, WebP, or GIF allowed.');
 		}
 
+		// A decoder stops at the image's end marker and never sees what comes
+		// after it, so check the bytes after it ourselves: none are allowed.
+		if (imageEnd(b, sniffed) !== b.length) {
+			throw new BadRequestException('Photo has extra data after the image.');
+		}
+
 		// The first bytes alone pass a polyglot: a real image header with a
-		// script or HTML hidden in metadata, comments, or after the end of the
-		// image. So decode the pixels and store a freshly encoded WebP instead:
+		// script or HTML hidden in metadata or comments. So decode the pixels
+		// and store a freshly encoded WebP instead:
 		// nothing of the uploaded file but its pixels survives (no EXIF, no
 		// comments, no trailing bytes, first frame only for GIFs).
 		// limitInputPixels stops a tiny file that unpacks into a huge image.
