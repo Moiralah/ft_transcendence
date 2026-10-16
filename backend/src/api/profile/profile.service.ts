@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
+import sharp from 'sharp';
 
 @Injectable()
 export class ProfileService {
@@ -343,6 +344,10 @@ export class ProfileService {
 		if (file.size > 1_000_000) {
 			throw new BadRequestException('Photo must be 1 MB or smaller.');
 		}
+		// Photo payload guard (two steps): a cheap check of the file's first
+		// bytes, then a decode and re-encode so only the pixels are stored.
+		// Added after an avatar was uploaded with a payload hidden inside it.
+
 		// The mimetype is only what the client claims, so check the file's
 		// first bytes too: both must name the same allowed image type.
 		const b = file.buffer;
@@ -356,6 +361,28 @@ export class ProfileService {
 			throw new BadRequestException('Only JPEG, PNG, WebP, or GIF allowed.');
 		}
 
+		// The first bytes alone pass a polyglot: a real image header with a
+		// script or HTML hidden in metadata, comments, or after the end of the
+		// image. So decode the pixels and store a freshly encoded WebP instead:
+		// nothing of the uploaded file but its pixels survives (no EXIF, no
+		// comments, no trailing bytes, first frame only for GIFs).
+		// limitInputPixels stops a tiny file that unpacks into a huge image.
+		let photo: Buffer;
+		try {
+			const image = sharp(file.buffer, { limitInputPixels: 4096 * 4096, failOn: 'error' });
+			const { format } = await image.metadata();
+			if ({ jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' }[format ?? ''] !== sniffed) {
+				throw new Error('decoded format differs from the sniffed one');
+			}
+			photo = await image
+				.rotate() // apply the EXIF orientation before the metadata goes
+				.resize(512, 512, { fit: 'inside', withoutEnlargement: true })
+				.webp({ quality: 85 })
+				.toBuffer();
+		} catch {
+			throw new BadRequestException('Not a valid image.');
+		}
+
 		const profile = await this.prisma.profile.findUnique({
 			where: { id: profileId },
 			select: { id: true, photoUrl: true },
@@ -364,14 +391,13 @@ export class ProfileService {
 
 		// Path: avatars/<profileId>/<uuid>.<ext>
 		// The profileId folder makes it easy to bulk-delete a user's photos later.
-		// The extension follows the checked type, not the uploaded file's name.
-		const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' }[file.mimetype];
-		const path = `${profileId}/${randomUUID()}.${ext}`;
+		// Always .webp: the stored file is the re-encoded one, whatever was uploaded.
+		const path = `${profileId}/${randomUUID()}.webp`;
 
 		const { error: uploadError } = await this.supabase.storage
 			.from('avatars')
-			.upload(path, file.buffer, {
-				contentType: file.mimetype,
+			.upload(path, photo, {
+				contentType: 'image/webp',
 				upsert: false,
 			});
 		if (uploadError) {
