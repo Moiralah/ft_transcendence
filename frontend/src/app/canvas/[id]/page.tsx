@@ -524,6 +524,9 @@ export default function Content() {
     setTreeMemberModal(false);
   }
 
+  // People who joined the tree; HOLDER rows are the drawn placeholder nodes.
+  const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
+
   return (
     <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
       <SkipLink />
@@ -589,15 +592,15 @@ export default function Content() {
               onClick={() => setTreeMemberModal(true)}
               className="flex h-12 items-center justify-center rounded-lg text-lg font-medium text-gray-600 px-3 bg-transparent hover:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
             >
-              <span>{treesMember.filter((member: any) => member.role !== 'HOLDER').length}</span>
-              <span className="ml-2 hidden lg:inline">People</span>
+              <span>{memberCount}</span>
+              <span className="ml-2 hidden lg:inline">{memberCount === 1 ? 'member' : 'members'}</span>
             </button>
           </div>
         </div>
 
         {/* approval notification */}
+		    {pending && pending.length > 0 && (
 		    <div className="sticky top-72 max-h-[50vh] overflow-y-auto z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
-		      {pending && pending.length > 0 && (
 			      <div className="mb-4 space-y-2 bg-transparent">
 			      {pending.map((m: any) => (
 				      <div key={m.id} className="flex items-center gap-2 py-2 mx-2">
@@ -629,8 +632,8 @@ export default function Content() {
 				    </div>
 			      ))}
 			    </div>
-		      )}
 		    </div>
+		    )}
 
         {/* Interactive Workspace */}
         <div
