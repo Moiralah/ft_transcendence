@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from './button';
 import { getToken } from '@/lib/auth';
+import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 
 
@@ -246,6 +247,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <input
               type={ type }
               name= {key}
+              min={type === "date" ? MIN_PROFILE_DATE : undefined}
+              max={type === "date" ? todayDate() : undefined}
               value={formData[key] || "" }
               onChange={handleChange}
               onKeyDown={handleKeyDown}

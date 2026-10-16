@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { getToken } from '@/lib/auth';
+import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import type { TreeViewContext } from './treeNode';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 
@@ -450,6 +451,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 <input
                   type="date"
                   name="birthDate"
+                  min={MIN_PROFILE_DATE}
+                  max={todayDate()}
                   value={formMember?.birthDate || ''}
                   onChange={handleChange}
                   onKeyDown={handleKeyDown}

@@ -14,6 +14,7 @@ import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
+import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar } from '@/components/Avatar';
 
 export default function TreePage() {
@@ -928,6 +929,8 @@ export default function TreePage() {
                 id="profile-birth-date"
                 type="date"
                 value={profileBirthDate}
+                min={MIN_PROFILE_DATE}
+                max={todayDate()}
                 onChange={(e) => setProfileBirthDate(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg h-10 px-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />

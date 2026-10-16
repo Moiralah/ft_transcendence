@@ -1,4 +1,5 @@
 import { IsDateString, IsInt, IsNumberString, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsProfileDate } from './date-range';
 
 const hasValue = (_: unknown, value: unknown) => value !== undefined && value !== null && value !== '';
 
@@ -23,6 +24,7 @@ export class CreateProfileDto {
 
 	@ValidateIf(hasValue)
 	@IsDateString()
+	@IsProfileDate()
 	birth_date?: string;
 
 	@IsOptional()

@@ -113,6 +113,18 @@ export class ProfileService {
 		fatherId?: number | null;
 		bio?: string | null;
 	}) {
+		// The DTO checks each date's range; here, death must not come before
+		// birth. A date left out of the request keeps its stored value.
+		if (data.birthDate || data.deathDate) {
+			const current = await this.prisma.profile.findUnique({
+				where: { id: UserId },
+				select: { birthDate: true, deathDate: true },
+			});
+			const birth = data.birthDate ? new Date(data.birthDate) : current?.birthDate;
+			const death = data.deathDate ? new Date(data.deathDate) : current?.deathDate;
+			if (birth && death && death < birth)
+				throw new BadRequestException('Death date cannot be before birth date.');
+		}
 		return this.prisma.profile.update({
 			where: { id: UserId },
 			data: {

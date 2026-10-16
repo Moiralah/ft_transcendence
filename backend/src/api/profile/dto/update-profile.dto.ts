@@ -1,4 +1,5 @@
 import { IsDateString, IsInt, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsProfileDate } from './date-range';
 
 // The global ValidationPipe rejects any field not listed here
 // (forbidNonWhitelisted), so the profile forms send only these. Dates may be
@@ -23,10 +24,12 @@ export class UpdateProfileDto {
 
 	@ValidateIf(hasValue)
 	@IsDateString()
+	@IsProfileDate()
 	birthDate?: string | null;
 
 	@ValidateIf(hasValue)
 	@IsDateString()
+	@IsProfileDate()
 	deathDate?: string | null;
 
 	@IsOptional()
