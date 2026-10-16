@@ -2,14 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Defaults from the first login page, before Tailwind. In the base layer they
+   still beat Tailwind's reset but lose to any class. The hover rule uses
+   :where() so it is no stronger than plain `button`: a button with its own
+   bg- class keeps that colour on hover instead of turning blue. */
+@layer base {
+	* { box-sizing: border-box; }
+	body { margin: 0; font-family: system-ui, sans-serif; background: #f7f7f9; color: #1a1a1a; }
+	input { display: block; width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+	button { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+	button:where(:hover) { background: #1d4ed8; }
+	ul { padding-left: 20px; }
+}
 
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; background: #f7f7f9; color: #1a1a1a; }
-.card { max-width: 360px; margin: 80px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-input { display: block; width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-button { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
-button:hover { background: #1d4ed8; }
-.error { color: #dc2626; font-size: 13px; margin-top: 8px; }
-ul { padding-left: 20px; }
-.success { color: #16a34a; font-size: 13px; margin-top: 8px; }
-
+@layer components {
+	.card { max-width: 360px; margin: 80px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+	.error { color: #dc2626; font-size: 13px; margin-top: 8px; }
+	.success { color: #16a34a; font-size: 13px; margin-top: 8px; }
+}
