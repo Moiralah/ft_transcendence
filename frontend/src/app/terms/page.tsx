@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
 		<div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans">
 			<SkipLink />
 			<header id="navbar" tabIndex={-1} className="focus:outline-none">
-				<Navbar btnText1="Get Started" btnHref1="/signup" btnText2="Login" btnHref2="/login" />
+				<Navbar />
 			</header>
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none flex-1 max-w-3xl mx-auto px-6 pt-28 pb-16 w-full">
