@@ -76,6 +76,11 @@ export default function TreePage() {
       router.replace('/login');
       return;
     }
+    // Site admins aren't members: their home is the admin console.
+    if (getRole() === 'ADMIN') {
+      router.replace('/admin');
+      return;
+    }
     fetchMyTrees(token);
     fetchMyProfile(token);
 	fetchRequests(token);

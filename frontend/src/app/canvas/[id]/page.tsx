@@ -12,7 +12,7 @@ import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
-import { clearSession, getToken, loginPathAfter401 } from '@/lib/auth';
+import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
 import { useDialog } from '@/hooks/useDialog';
 
 
@@ -76,6 +76,11 @@ export default function Content() {
   useEffect(() => {
     if (!token) {
       router.replace('/login');
+      return;
+    }
+    // Site admins look at trees read-only in the admin console.
+    if (getRole() === 'ADMIN') {
+      router.replace('/admin/trees');
       return;
     }
     fetchTree(token);

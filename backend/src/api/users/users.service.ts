@@ -8,7 +8,7 @@ import { MailService, malaysiaTime } from '../../mail/mail.service';
 
 const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User', GUEST: 'Guest' };
 const ROLE_RIGHTS: Record<string, string> = {
-	ADMIN: 'You can now open the Admin Panel from your dashboard: see all users, change their roles, suspend and delete accounts.',
+	ADMIN: 'You are now a site admin. Sign in through "Sign in as staff" (email and password) to open the admin console: manage all users and trees. Admin accounts don\'t make trees or friends.',
 	MODERATOR: 'You can now open Moderation from your dashboard: see all users and suspend or reactivate accounts.',
 	USER: 'You no longer have access to the Admin Panel or Moderation.',
 };

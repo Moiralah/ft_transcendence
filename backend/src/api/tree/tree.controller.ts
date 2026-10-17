@@ -5,6 +5,7 @@ import {
 import { TreeService } from './tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotGuestGuard } from '../auth/not-guest.guard';
+import { NotSiteAdminGuard } from '../auth/not-site-admin.guard';
 import { CreateTreeDto } from './dto/create-tree.dto';
 import { JoinTreeDto } from './dto/join-tree.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
@@ -15,19 +16,19 @@ export class TreeController {
 	constructor(private readonly treeService: TreeService) { }
 
 	@Post('create')
-	@UseGuards(JwtAuthGuard, NotGuestGuard) // the guest gets its demo tree only; sign up for more
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard, NotGuestGuard) // the guest gets its demo tree only; sign up for more
 	async createTree(@Req() req, @Body() body: CreateTreeDto) {
 		return this.treeService.createTree(req.user.profileId, body.name, body.description);
 	}
 
 	@Post('join')
-	@UseGuards(JwtAuthGuard, NotGuestGuard) // keeps the shared guest login out of real people's trees
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard, NotGuestGuard) // keeps the shared guest login out of real people's trees
 	async joinTree(@Req() req, @Body() body: JoinTreeDto) {
 		return this.treeService.joinTree(req.user.profileId, body.name, body.code);
 	}
 
 	@Get('search')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard)
 	async searchTree(@Query('q') query: string) {
 		// ?q=a&q=b arrives as an array, which Prisma would reject with a 500.
 		if (typeof query !== 'string' || query.length > 200) {
@@ -37,7 +38,7 @@ export class TreeController {
 	}
 
 	@Get('my-trees')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard)
 	async getUserTrees(@Req() req) {
 		return this.treeService.getUserTrees(req.user.profileId);
 	}
@@ -113,7 +114,7 @@ export class TreeController {
 	}
 
 	@Post(':treeId/claims/:holderMemberId')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard)
 	async requestClaim(
 		@Req() req,
 		@Param('treeId', ParseIntPipe) treeId: number,
@@ -183,7 +184,7 @@ export class TreeController {
 	}
 
 	@Post(':treeId/leave')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotSiteAdminGuard)
 	async leaveTree(@Req() req, @Param('treeId', ParseIntPipe) treeId: number) {
 		return this.treeService.leaveTree(req.user.profileId, Number(treeId));
 	}

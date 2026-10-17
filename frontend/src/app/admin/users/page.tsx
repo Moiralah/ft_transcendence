@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
-import { SkipLink } from '@/components/SkipLink';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { AdminShell } from '@/components/adminShell';
 import { Button } from '@/components/button';
 import { getRole, getToken } from '@/lib/auth';
 
@@ -49,14 +47,8 @@ export default function AdminUsersPage() {
 	const isModerator = role === 'MODERATOR';
 
 	useEffect(() => {
-		if (!token) {
-			router.replace('/login');
-			return;
-		}
-		if (!isAdmin && !isModerator) {
-			router.replace('/dashboard');
-			return;
-		}
+		// AdminShell sends everyone else away.
+		if (!token || (!isAdmin && !isModerator)) return;
 		fetchUsers();
 	}, [token, role]);
 
@@ -77,7 +69,10 @@ export default function AdminUsersPage() {
 	};
 
 	const changeRole = async (id: string, username: string, newRole: AdminUser['role']) => {
-		if (!confirm(`Change ${username}'s role to ${newRole}?`)) return;
+		const question = newRole === 'ADMIN'
+			? `Make ${username} a site admin? Admin accounts sign in only through "Sign in as staff" with email and password, and can't use trees or friends: ${username} loses access to their own trees.`
+			: `Change ${username}'s role to ${newRole}?`;
+		if (!confirm(question)) return;
 		setError(null);
 		try {
 			const res = await authedFetch(`/users/${id}/role`, {
@@ -128,26 +123,13 @@ export default function AdminUsersPage() {
 	};
 
 	return (
-		<div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
-			<SkipLink />
-			<header id="navbar" tabIndex={-1} className="focus:outline-none">
-				<Navbar />
-			</header>
-
-			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-6xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
-				<div className="flex items-center justify-between">
-					<h1 className="text-2xl font-bold text-slate-900">User Management</h1>
-					<Button href="/dashboard" variant="secondary">
-						&larr; Back to Dashboard
-					</Button>
-				</div>
-
+		<AdminShell title="User management" allowModerator>
 				{error && <div role="alert" className="text-red-700 font-semibold">{error}</div>}
 
 				{loading ? (
 					<p aria-live="polite">Loading users...</p>
 				) : (
-					<div className="overflow-x-auto bg-white rounded-lg border border-slate-200">
+					<div className="relative overflow-x-auto bg-white rounded-lg border border-slate-200">
 						<table className="w-full text-sm text-left">
 							<caption className="sr-only">All registered users</caption>
 							<thead className="bg-slate-100 text-slate-700">
@@ -229,11 +211,6 @@ export default function AdminUsersPage() {
 						</table>
 					</div>
 				)}
-			</main>
-
-			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
-				<Footer />
-			</footer>
-		</div>
+		</AdminShell>
 	);
 }

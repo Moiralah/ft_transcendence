@@ -10,7 +10,7 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { clearSession, getToken, isGuest } from '@/lib/auth';
+import { clearSession, getRole, getToken, isGuest } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
@@ -20,6 +20,9 @@ export default function SettingsPage() {
 	// Read after mount: the role lives in sessionStorage, which the server render can't see.
 	const [guest, setGuest] = useState(false);
 	useEffect(() => setGuest(isGuest()), []);
+	// Site admins come here from the admin console, not a dashboard.
+	const [siteAdmin, setSiteAdmin] = useState(false);
+	useEffect(() => setSiteAdmin(getRole() === 'ADMIN'), []);
 	const [enabled, setEnabled] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -126,8 +129,8 @@ export default function SettingsPage() {
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
 				<div>
-					<Button href="/dashboard" variant="secondary">
-						&larr; Back to dashboard
+					<Button href={siteAdmin ? '/admin' : '/dashboard'} variant="secondary">
+						&larr; {siteAdmin ? 'Back to admin console' : 'Back to dashboard'}
 					</Button>
 				</div>
 				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>

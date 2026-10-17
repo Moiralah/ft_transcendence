@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotGuestGuard } from '../auth/not-guest.guard';
+import { NotSiteAdminGuard } from '../auth/not-site-admin.guard';
 import { FriendService } from './friend.service';
 import { FriendStatusDto } from './dto/friend-status.dto';
 
@@ -14,7 +15,7 @@ interface Request {
 }
 
 @Controller('friend')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotSiteAdminGuard) // site admins (staff) have no friends list
 export class FriendController {
   constructor(private readonly friendService: FriendService) {}
 

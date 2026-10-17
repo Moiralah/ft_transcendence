@@ -10,6 +10,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { TreeModule } from './api/tree/tree.module';
 import { UsersModule } from './api/users/users.module';
 import { FeedbackModule } from './api/feedback/feedback.module';
+import { AdminModule } from './api/admin/admin.module';
 
 @Module({
 	imports: [
@@ -26,6 +27,7 @@ import { FeedbackModule } from './api/feedback/feedback.module';
 		PublicModule,
 		UsersModule,
 		FeedbackModule,
+		AdminModule,
 	],
 	providers:[PrismaService],
 })

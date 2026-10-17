@@ -191,8 +191,9 @@ export const portalPath = (portal: Portal) => (portal === 'staff' ? '/staff' : '
 // Where /consent sends a Google sign-in the backend refused for the wrong page.
 export const wrongPortalPath = (portal: Portal) => (portal === 'staff' ? '/staff?error=NotStaff' : '/login?error=StaffOnly');
 
-// Where a fresh session lands: admins go straight to the admin panel.
-export const homeFor = (role: string | null) => (role === 'ADMIN' ? '/admin/users' : '/dashboard');
+// Where a session lands: site admins have the admin console instead of the
+// member dashboard (they don't make trees or friends).
+export const homeFor = (role: string | null) => (role === 'ADMIN' ? '/admin' : '/dashboard');
 
 // After a 401 on an API call: back to /login, saying why if the account was suspended.
 export async function loginPathAfter401(res: Response): Promise<string> {
