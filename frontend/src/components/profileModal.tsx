@@ -167,7 +167,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
-          gender: formData.gender,
+          gender: formData.gender || null, // Not Specified
           birthDate: formData.birthDate,
           bio: formData.bio,
         }),
@@ -248,15 +248,17 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               type ==="select" && key==="gender") ? (
                 <select
                     name="gender"
-                    value={formData.gender ?? ""}
+                    // Stored as male/female or MALE/FEMALE (the demo tree); empty is Not Specified.
+                    value={formData.gender?.toLowerCase() ?? ""}
                     onChange={handleChange}
                     onBlur={() => setEditingField(null)}
                     autoFocus
                     aria-labelledby={`profile-${key}-label`}
                     className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white focus:ring-2 focus:ring-amber-600"
                   >
-                  <option value="male">male</option>
-                  <option value="female">female</option>
+                  <option value="">Not Specified</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
                 </select>
               ) : (
             <input
@@ -280,7 +282,9 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               aria-labelledby={`profile-${key}-label profile-${key}-value`}
               className="max-w-full cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 [overflow-wrap:anywhere] bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
             >
-              {formData[key] || 'Click to add '+label}
+              {key === 'gender'
+                ? ({ male: 'Male', female: 'Female' } as Record<string, string>)[formData.gender?.toLowerCase() ?? ''] ?? 'Not Specified'
+                : formData[key] || 'Click to add '+label}
             </button>
             )}
           </div>

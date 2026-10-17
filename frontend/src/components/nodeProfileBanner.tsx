@@ -291,7 +291,7 @@ export function NodeProfileModal({
 				body: JSON.stringify({
 					firstName: formMember.firstName,
 					lastName: formMember.lastName,
-					gender: formMember.gender,
+					gender: formMember.gender || null, // Not Specified
 					birthDate: formMember.birthDate,
 					deathDate: formMember.deathDate,
 					motherId: formMember.motherId,
@@ -540,11 +540,13 @@ export function NodeProfileModal({
 							<select
 								id={`node-gender-${member.id}`}
 								name="gender"
-								value={formMember?.gender || 'male'}
+								// Stored as male/female or MALE/FEMALE (the demo tree); empty is Not Specified.
+								value={formMember?.gender?.toLowerCase() ?? ''}
 								onChange={handleChange}
 								disabled={!canEditFields}
 								className="border border-gray-300 rounded px-2 py-1 outline-none"
 							>
+								<option value="">Not Specified</option>
 								<option value="male">Male</option>
 								<option value="female">Female</option>
 							</select>
