@@ -158,8 +158,41 @@ export function loginErrorMessage(code: string | null): string | null {
 	if (code === 'ApiUnreachable') return apiUnreachableMessage();
 	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
 	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
+	if (code === 'StaffOnly') return 'Staff accounts sign in through "Sign in as staff", with email and password.';
+	if (code === 'NotStaff') return 'This is not a staff account. Sign in on the normal login page.';
 	return null;
 }
+
+// --- Two sign-in pages, like 42's "Sign in as staff" ------------------------
+// /login is for users and moderators, /staff for admins; the backend refuses
+// an account on the wrong one (403 mentioning "staff").
+export type Portal = 'member' | 'staff';
+const PORTAL_KEY = 'ft_portal';
+
+export function isWrongPortal(err: unknown): boolean {
+	return err instanceof LoginError && err.status === 403 && /staff/i.test(err.message);
+}
+
+// Google sign-in leaves the site and comes back on /consent; this remembers
+// which page it started from (a query string on the redirect URL would have
+// to be added to Supabase's allow list).
+export function rememberPortal(portal: Portal) {
+	sessionStorage.setItem(PORTAL_KEY, portal);
+}
+
+export function takePortal(): Portal {
+	const portal = sessionStorage.getItem(PORTAL_KEY) === 'staff' ? 'staff' : 'member';
+	sessionStorage.removeItem(PORTAL_KEY);
+	return portal;
+}
+
+export const portalPath = (portal: Portal) => (portal === 'staff' ? '/staff' : '/login');
+
+// Where /consent sends a Google sign-in the backend refused for the wrong page.
+export const wrongPortalPath = (portal: Portal) => (portal === 'staff' ? '/staff?error=NotStaff' : '/login?error=StaffOnly');
+
+// Where a fresh session lands: admins go straight to the admin panel.
+export const homeFor = (role: string | null) => (role === 'ADMIN' ? '/admin/users' : '/dashboard');
 
 // After a 401 on an API call: back to /login, saying why if the account was suspended.
 export async function loginPathAfter401(res: Response): Promise<string> {
@@ -172,12 +205,12 @@ export async function loginPathAfter401(res: Response): Promise<string> {
 	return '/login';
 }
 
-export async function exchangeSupabaseToken(accessToken: string): Promise<LoginResult> {
+export async function exchangeSupabaseToken(accessToken: string, portal: Portal = 'member'): Promise<LoginResult> {
 	try {
 		const res = await fetch(`${apiUrl()}/auth/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ accessToken }),
+			body: JSON.stringify(portal === 'staff' ? { accessToken, portal } : { accessToken }),
 		}).catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });
 		const data = await res.json().catch(() => ({}));
 		if (!res.ok) {

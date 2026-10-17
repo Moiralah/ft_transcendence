@@ -11,7 +11,7 @@ export class AuthController {
 
 	@Post('login') // Handles POST /auth/login
 	async login(@Body() body: LoginDto) {
-		return this.auth.loginWithSupabaseToken(body.accessToken);
+		return this.auth.loginWithSupabaseToken(body.accessToken, body.portal);
 	}
 
 	// "Try as guest" on the front page: a session on the shared guest account,

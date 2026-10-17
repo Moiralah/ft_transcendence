@@ -8,6 +8,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TreeService } from '../tree/tree.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
 
+// Login refusals for the wrong sign-in page. The frontend matches on "staff".
+const NOT_STAFF = 'This is not a staff account. Sign in on the normal login page.';
+const STAFF_ONLY = 'Staff accounts sign in through "Sign in as staff", with email and password.';
+const STAFF_PASSWORD_ONLY = 'Staff sign in with email and password, not Google.';
+
 @Injectable()
 export class AuthService {
 	private readonly logger = new Logger(AuthService.name);
@@ -28,7 +33,7 @@ export class AuthService {
 		this.supabase = createClient(supabaseUrl, supabaseKey);
 	}
 
-	async loginWithSupabaseToken(accessToken: string) {
+	async loginWithSupabaseToken(accessToken: string, portal?: 'staff') {
 		// 1. Verify the token with Supabase
 		const { data, error } = await this.supabase.auth.getUser(accessToken);
 		if (error || !data.user) {
@@ -36,6 +41,11 @@ export class AuthService {
 		}
 
 		const supabaseUser = data.user;
+
+		// Staff sign in with email + password only, never Google.
+		if (portal === 'staff' && !this.signedInWithPassword(accessToken)) {
+			throw new ForbiddenException(STAFF_PASSWORD_ONLY);
+		}
 
 		// 2. Find or create user in local database (using Prisma).
 		// Looked up by Supabase's own stable UUID, not email — email can
@@ -46,6 +56,13 @@ export class AuthService {
 		let user = await this.prisma.user.findUnique({
 			where: { id: supabaseUser.id },
 		});
+
+		// The staff page never creates accounts: someone new is not staff, and
+		// nobody signs up as an admin (new accounts are USER; only an admin can
+		// change a role, PATCH /users/:id/role).
+		if (!user && portal === 'staff') {
+			throw new ForbiddenException(NOT_STAFF);
+		}
 
 		if (!user) {
 			user = await this.findOrphanedAccount(supabaseUser.id, supabaseUser.email)
@@ -63,6 +80,13 @@ export class AuthService {
 			throw new ForbiddenException('Your account has been suspended.');
 		}
 
+		// Admins sign in on the staff page only, everyone else on the normal
+		// login (like 42's "Sign in as staff"). Checked before MFA, so the wrong
+		// page doesn't even get as far as asking for a code.
+		if ((portal === 'staff') !== (user.role === 'ADMIN')) {
+			throw new ForbiddenException(portal === 'staff' ? NOT_STAFF : STAFF_ONLY);
+		}
+
 		// 3. If this user has 2FA enabled, don't issue the real JWT yet — hand
 		// back a short-lived challenge token the frontend must exchange for a
 		// real session via /auth/2fa/login-verify.
@@ -75,6 +99,18 @@ export class AuthService {
 		}
 
 		return this.issueSession(user);
+	}
+
+	// How the Supabase session was made: its access token lists the sign-in
+	// methods in `amr` ("password", "oauth", ...). Only read after getUser()
+	// above has checked the token, so the payload can be trusted.
+	private signedInWithPassword(accessToken: string): boolean {
+		try {
+			const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
+			return Array.isArray(payload.amr) && payload.amr.some((a: any) => a?.method === 'password');
+		} catch {
+			return false;
+		}
 	}
 
 	// Same email, different Supabase id: the person's Supabase login was deleted

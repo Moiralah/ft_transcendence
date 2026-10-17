@@ -1,137 +1,24 @@
-
 'use client';
-
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
-import { borrowSessionFromOtherTab, exchangeSupabaseToken, isSuspended, isTwoFactorRequired, loginErrorMessage, storeSession, getToken, SUSPENDED_MESSAGE } from '@/lib/auth';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { TwoFactorPrompt } from '@/components/twoFactorPrompt';
+import { SignInCard } from '@/components/signInCard';
 
+// Users and moderators. Admins use /staff ("Sign in as staff").
 export default function LoginPage() {
-	const router = useRouter();
-	const [error, setError] = useState<string | null>(null);
-	const [challengeToken, setChallengeToken] = useState<string | null>(null);
-	const [notice, setNotice] = useState<string | null>(null);
-
-	// The reset-password page sends people back here with ?reset=1; Google
-	// sign-in (/consent) and the app's pages send ?error=<code> on failures.
-	useEffect(() => {
-		const params = new URLSearchParams(window.location.search);
-		if (params.get('reset')) {
-			setNotice('Password updated. Please sign in with your new password.');
-		}
-		const message = loginErrorMessage(params.get('error'));
-		if (message) setError(message);
-	}, []);
-
-	// Already signed in — in this tab, or in another open tab that hands its
-	// session over — no reason to show the login form again.
-	useEffect(() => {
-		if (getToken()) {
-			router.replace('/dashboard');
-			return;
-		}
-		borrowSessionFromOtherTab().then((ok) => {
-			if (ok) router.replace('/dashboard');
-		});
-	}, [router]);
-
-	const handleOAuthLogin = async (provider: 'google') => {
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider,
-			options: {
-				redirectTo: `${window.location.origin}/consent`,
-			},
-		});
-		if (error) setError(error.message);
-	};
-
-	// Also allow email/password for development (optional)
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-
-	const handleEmailLogin = async (e: React.FormEvent) => {
-		e.preventDefault();
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
-		if (error) setError(error.message);
-		else {
-			// After successful login, send token to backend
-			await sendTokenToBackend(data.session.access_token);
-		}
-	};
-
-	const sendTokenToBackend = async (accessToken: string) => {
-		try {
-			const result = await exchangeSupabaseToken(accessToken);
-			if (isTwoFactorRequired(result)) {
-				setChallengeToken(result.challengeToken);
-				return;
-			}
-			storeSession(result);
-			router.replace('/dashboard');
-		} catch (err: any) {
-			setError(isSuspended(err) ? SUSPENDED_MESSAGE : err.message || 'Login failed');
-		}
-	};
-
 	return (
-	    <div className="flex flex-col min-h-screen text-slate-800 font-sans">
-      		<SkipLink />
-    		<header id="navbar" tabIndex={-1} className="focus:outline-none">
-      			<Navbar />
-    		</header>
-    		<main id="main-content" tabIndex={-1} className="flex flex-1  focus:outline-none">
-				<div className="card">
-					<h1>Login</h1>
-					<hr />
-					{challengeToken ? (
-						<TwoFactorPrompt
-							challengeToken={challengeToken}
-							onVerified={() => router.replace('/dashboard')}
-						/>
-					) : (
-						<>
-							<form onSubmit={handleEmailLogin} className="mb-3">
-								{/* suppressHydrationWarning: browser extensions (password managers,
-								    Grammarly, etc.) inject class/style onto these after load, which
-								    otherwise trips React's hydration diff on a false positive. */}
-								<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" suppressHydrationWarning />
-								<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" suppressHydrationWarning />
-								<button type="submit">Sign in with email</button>
-							</form>
-							{notice && <div className="success" role="status">{notice}</div>}
-							{error && (
-								<div className="error" role="alert">
-									{error}
-									{error === SUSPENDED_MESSAGE && (
-										<> <Link href="/feedback" className="underline">Go to the feedback page</Link>.</>
-									)}
-								</div>
-							)}
-							<p className="text-sm mb-3">
-								<Link href="/forgot-password" className="underline">Forgot password?</Link>
-							</p>
-							<div  className="flex flex-col gap-3 ">
-								<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
-							</div>
-							<p className="text-sm text-slate-600">
-								Just looking? <Link href="/guest" className="underline">Try it as a guest</Link>.
-							</p>
-						</>
-					)}
-				</div>
-		    </main>
-      		<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
-        		<Footer/>
-      		</footer>
-    	</div>
+		<div className="flex flex-col min-h-screen text-slate-800 font-sans">
+			<SkipLink />
+			<header id="navbar" tabIndex={-1} className="focus:outline-none">
+				<Navbar />
+			</header>
+			<main id="main-content" tabIndex={-1} className="flex flex-1 px-4 focus:outline-none">
+				<SignInCard portal="member" />
+			</main>
+			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
+				<Footer />
+			</footer>
+		</div>
 	);
 }

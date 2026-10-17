@@ -1,10 +1,16 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class LoginDto {
 	@IsString({ message: 'Missing access token' })
 	@IsNotEmpty({ message: 'Missing access token' })
 	@MaxLength(8192)
 	accessToken: string;
+
+	// 'staff' = the "Sign in as staff" page (admins only); left out = the
+	// normal login (users and moderators).
+	@IsOptional()
+	@IsIn(['staff'], { message: 'Unknown sign-in page' })
+	portal?: 'staff';
 }
 
 // The service gives the friendly messages (wrong password, invalid email, too

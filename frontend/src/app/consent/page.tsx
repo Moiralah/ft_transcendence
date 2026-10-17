@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isApiUnreachable, isSuspended, isTwoFactorRequired, storeSession } from '@/lib/auth';
+import { exchangeSupabaseToken, homeFor, isApiUnreachable, isSuspended, isTwoFactorRequired, isWrongPortal, portalPath, storeSession, takePortal, wrongPortalPath } from '@/lib/auth';
 import { TwoFactorPrompt } from '@/components/twoFactorPrompt';
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -19,6 +19,9 @@ export default function AuthCallback() {
 	useEffect(() => {
 		if (started.current) return;
 		started.current = true;
+		// Which page the Google sign-in started from: /login or /staff.
+		const portal = takePortal();
+		const back = portalPath(portal);
 		const handleCallback = async () => {
 			const { data, error } = await supabase.auth.getSession();
 			// No session at all (cancelled at Google, or the browser couldn't
@@ -26,22 +29,23 @@ export default function AuthCallback() {
 			// https site): say so instead of spinning forever.
 			if (error || !data.session) {
 				if (error) console.error(error);
-				router.replace('/login?error=SessionError');
+				router.replace(`${back}?error=SessionError`);
 				return;
 			}
 			try {
-				const result = await exchangeSupabaseToken(data.session.access_token);
+				const result = await exchangeSupabaseToken(data.session.access_token, portal);
 				if (isTwoFactorRequired(result)) {
 					setChallengeToken(result.challengeToken);
 					return;
 				}
 				storeSession(result);
-				router.replace('/dashboard');
+				router.replace(homeFor(result.user.role));
 			} catch (err) {
 				// Say why on the login page instead of a generic "BackendError".
-				router.replace(isSuspended(err) ? '/login?error=suspended'
-					: isApiUnreachable(err) ? '/login?error=ApiUnreachable'
-					: '/login?error=BackendError');
+				router.replace(isSuspended(err) ? `${back}?error=suspended`
+					: isWrongPortal(err) ? wrongPortalPath(portal)
+					: isApiUnreachable(err) ? `${back}?error=ApiUnreachable`
+					: `${back}?error=BackendError`);
 			}
 		};
 		handleCallback();
@@ -60,7 +64,7 @@ export default function AuthCallback() {
 							<h1 className="text-xl font-bold text-slate-900">Verify it&apos;s you</h1>
 							<TwoFactorPrompt
 								challengeToken={challengeToken}
-								onVerified={() => router.replace('/dashboard')}
+								onVerified={(result) => router.replace(homeFor(result.user.role))}
 							/>
 						</>
 					) : (
