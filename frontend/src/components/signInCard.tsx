@@ -140,11 +140,9 @@ export function SignInCard({ portal }: { portal: Portal }) {
 						) : (
 							<>
 								<li><Link href="/signup" className="underline">No account yet? Sign up</Link></li>
-								<li><Link href="/guest" className="underline">Just looking? Try it as a guest</Link></li>
 								<li><Link href="/staff" className="underline">Sign in as staff</Link></li>
 							</>
 						)}
-						<li><Link href="/terms" className="underline">Read our terms and conditions</Link></li>
 					</ul>
 				</>
 			)}
