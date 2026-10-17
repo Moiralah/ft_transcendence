@@ -10,7 +10,7 @@ export default function main() {
 
     const token = componentTokens;
     return (
-        <div 
+        <div
             className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans"
         >
             <SkipLink />
@@ -28,7 +28,7 @@ export default function main() {
                     headingLevel="h1"
                     emphasis="high"
                     title="My Simple Family Tree Builder"
-                    highlightText="Free, Private & No Sign-Up Required."
+                    highlightText="Free & Private"
                     description="My Simple Family Tree is 100% free, private, and simple. Build your tree directly in your browser."
                     actions={[
                         { label: 'Start Building Your Tree', href: '/signup', variant: 'primary', showArrow: true },
