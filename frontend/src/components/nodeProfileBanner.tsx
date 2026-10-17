@@ -29,59 +29,59 @@ export interface Member {
 }
 
 interface NodeProfileModalProps {
-  allMembers: Member[];
-  member: Member;
-  treeView: TreeViewContext;
-  onClose: () => void;
-  onClaim: (updatedMember: Member[]) => void;
-  onUnclaim: (updatedMember: Member[]) => void;
-  onSave: (updatedMember: Member) => void;
-  onAddChild: (newChildMember: Member) => void;
-  onAddSpouse: (newSpouseMember: Member) => void;
-  onPhotoUpdated?: (updatedMember: Member) => void;
-  // Present only when the viewer may remove this person from the tree.
-  onDelete?: () => Promise<void>;
+	allMembers: Member[];
+	member: Member;
+	treeView: TreeViewContext;
+	onClose: () => void;
+	onClaim: (updatedMember: Member[]) => void;
+	onUnclaim: (updatedMember: Member[]) => void;
+	onSave: (updatedMember: Member) => void;
+	onAddChild: (newChildMember: Member) => void;
+	onAddSpouse: (newSpouseMember: Member) => void;
+	onPhotoUpdated?: (updatedMember: Member) => void;
+	// Present only when the viewer may remove this person from the tree.
+	onDelete?: () => Promise<void>;
 }
 
 export function NodeProfileModal({
-  allMembers,
-  member,
-  treeView,
-  onClose,
-  onClaim,
-  onUnclaim,
-  onSave,
-  onAddChild,
-  onAddSpouse,
-  onPhotoUpdated,
-  onDelete,
+	allMembers,
+	member,
+	treeView,
+	onClose,
+	onClaim,
+	onUnclaim,
+	onSave,
+	onAddChild,
+	onAddSpouse,
+	onPhotoUpdated,
+	onDelete,
 }: NodeProfileModalProps) {
-  const [formMember, setFormMember] = useState<Member | null>(member);
-  const [editName, setEditName] = useState(false);
-  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
-  const [editingField, setEditingField] = useState<string | null>(null);
-  // Removing someone takes two clicks: the first arms the button.
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [formMember, setFormMember] = useState<Member | null>(member);
+	const [editName, setEditName] = useState(false);
+	const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
+	const [editingField, setEditingField] = useState<string | null>(null);
+	// Removing someone takes two clicks: the first arms the button.
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const handleDelete = async () => {
-    if (!onDelete) return;
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      await onDelete();
-    } catch (err: any) {
-      setDeleteError(err.message);
-      setConfirmDelete(false);
-    } finally {
-      setDeleting(false);
-    }
-  };
+	const handleDelete = async () => {
+		if (!onDelete) return;
+		if (!confirmDelete) {
+			setConfirmDelete(true);
+			return;
+		}
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			await onDelete();
+		} catch (err: any) {
+			setDeleteError(err.message);
+			setConfirmDelete(false);
+		} finally {
+			setDeleting(false);
+		}
+	};
 
 	// Hydration state to prevent Next.js / SSR errors when using document.body
 	const [mounted, setMounted] = useState(false);
@@ -424,11 +424,14 @@ export function NodeProfileModal({
 		member.role === 'HOLDER' &&
 		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
 
+	const isUnclaimedHolder =
+		member.role === 'HOLDER' &&
+		(member.claim === 'EMPTY' || !member.claim);
+
 	// Fields (name, birth date, gender, photo) can only be edited on unclaimed
 	// rows, and only by ADMIN/MEMBER (JOINER is read-only). A MEMBER can't edit
 	// another real user's row; the server refuses that too.
-	const canEditFields = !isClaimedNode && canAddOrSave &&
-		(viewerRole === 'ADMIN' || member.role === 'HOLDER' || member.id === treeView.memberId);
+	const canEditFields = isUnclaimedHolder && canAddOrSave;
 
 	if (!mounted) return null;
 
@@ -477,7 +480,7 @@ export function NodeProfileModal({
 								/>
 							</div>
 						) : (
-							<div className="flex flex-row font-bold justify-between items-center gap-2 w-full">
+							<div className="flex flex-row font-bold justify-between items-center gap-2 h-12 w-full">
 								<h2 id={titleId} className="min-w-0 text-2xl [overflow-wrap:anywhere]">
 									{`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
 								</h2>
@@ -485,7 +488,7 @@ export function NodeProfileModal({
 									<button
 										type="button"
 										id="node-edit-name"
-										className="flex w-auto shrink-0 px-3 py-1 text-sm text-gray-900 bg-transparent border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal focus:outline-none focus:ring-2 focus:ring-amber-600"
+										className="flex w-auto shrink-0 px-3 py-1 text-sm text-gray-900 bg-gray-100 border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal focus:outline-none focus:ring-2 focus:ring-amber-600"
 										onClick={() => setEditName(true)}
 									>
 										Edit Name
@@ -551,7 +554,7 @@ export function NodeProfileModal({
 						</div>
 					</div>
 
-          {/* Alive/Deceased status and death date hidden (not needed for now). The
+					{/* Alive/Deceased status and death date hidden (not needed for now). The
               data is untouched; uncomment to bring them back.
           <div className="flex flex-row text-xl font-normal items-center">
             <div id="node-status-label" className="flex w-40 shrink-0 text-gray-600">Status</div>
@@ -591,14 +594,14 @@ export function NodeProfileModal({
           )
           }
           */}
-        </div>
+				</div>
 
 				{/* Upload Photo */}
-				<div className="flex justify-center items-center">
+				<div className="flex flex-col justify-center items-center gap-2 ">
 					<Avatar
 						photoUrl={formMember?.photoUrl}
 						size={96}
-						className={`outline outline-2 outline-offset-2 p-2 outline-indigo-600 ${canEditFields ? '' : 'opacity-60'
+						className={`outline outline-2 outline-offset-2 outline-indigo-600 ${canEditFields ? '' : 'opacity-80'
 							}`}
 						label={`Change photo of ${`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'this person'}`}
 						disabled={!canEditFields}
@@ -607,9 +610,9 @@ export function NodeProfileModal({
 						}}
 					/>
 
-					{uploading && <span className="text-sm text-gray-500">Uploading…</span>}
+					{uploading && <div className="flex text-sm text-gray-500">Uploading…</div>}
 
-					<p className="text-sm text-gray-500">{PHOTO_HINT}</p>
+					<p className="flex text-xs text-gray-500 text-center">{PHOTO_HINT}</p>
 					{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
 
 					<input
@@ -622,26 +625,25 @@ export function NodeProfileModal({
 					/>
 				</div>
 
-        {/* Action Buttons */}
-        {deleteError && <p role="alert" className="text-sm text-red-600 -mb-4">{deleteError}</p>}
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+				{/* Action Buttons */}
+				{deleteError && <p role="alert" className="text-sm text-red-600 -mb-4">{deleteError}</p>}
+				<div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
 
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              onBlur={() => setConfirmDelete(false)}
-              disabled={deleting}
-              className={`sm:mr-auto px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-600 disabled:opacity-50 ${
-                confirmDelete ? 'text-white bg-red-700 hover:bg-red-800' : 'text-red-700 bg-red-50 hover:bg-red-100'
-              }`}
-            >
-              {deleting ? 'Removing…' : confirmDelete ? 'Click again to remove' : 'Remove from tree'}
-            </button>
-          )}
+					{onDelete && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleDelete();
+							}}
+							onBlur={() => setConfirmDelete(false)}
+							disabled={deleting}
+							className={`sm:mr-auto px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-600 disabled:opacity-50 ${confirmDelete ? 'text-white bg-red-700 hover:bg-red-800' : 'text-red-700 bg-red-50 hover:bg-red-100'
+								}`}
+						>
+							{deleting ? 'Removing…' : confirmDelete ? 'Click again to remove' : 'Remove from tree'}
+						</button>
+					)}
 
 					{/* cancel button */}
 					<button
