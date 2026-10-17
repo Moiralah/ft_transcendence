@@ -9,6 +9,9 @@ import {
 	loginErrorMessage, rememberPortal, storeSession, SUSPENDED_MESSAGE, type Portal,
 } from '@/lib/auth';
 import { TwoFactorPrompt } from './twoFactorPrompt';
+// Imported, not /icon.png: that URL is cached for a year, so a new logo
+// would never show. The import gets a content-hashed URL.
+import logo from '@/app/icon.png';
 
 // The sign-in card for both pages, laid out like the 42 intra login: logo,
 // title, the form, then the small links (forgot password, the other sign-in
@@ -82,7 +85,7 @@ export function SignInCard({ portal }: { portal: Portal }) {
 		<div className={`w-full max-w-md mx-auto mt-24 mb-12 self-start bg-white rounded-xl shadow-lg p-8 border-t-4 ${staff ? 'border-slate-800' : 'border-amber-700'}`}>
 			<div className="flex flex-col items-center gap-2 mb-6 text-center">
 				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img src="/icon.png" alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
+				<img src={logo.src} alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
 				{staff && (
 					<p className="text-xs font-semibold uppercase tracking-widest text-slate-600">Staff</p>
 				)}

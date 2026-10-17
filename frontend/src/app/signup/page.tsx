@@ -7,6 +7,9 @@ import Link from 'next/link';
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
+// Imported, not /icon.png: that URL is cached for a year, so a new logo
+// would never show. The import gets a content-hashed URL.
+import logo from '@/app/icon.png';
 import { supabase } from '@/lib/supabaseClient';
 import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken } from '@/lib/auth';
 
@@ -126,7 +129,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md mx-auto mt-24 mb-12 self-start bg-white rounded-xl shadow-lg p-8 border-t-4 border-amber-700">
         <div className="flex flex-col items-center gap-2 mb-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.png" alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
+          <img src={logo.src} alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
           <h1 className="text-2xl font-bold text-slate-900">Create an account</h1>
         </div>
 
