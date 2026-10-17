@@ -56,7 +56,11 @@ export function NodeProfileModal({
   onPhotoUpdated,
   onDelete,
 }: NodeProfileModalProps) {
-  const [formMember, setFormMember] = useState<Member | null>(member);
+  // Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
+  // edits (<input type="date">) and saves just the day.
+  const withDays = (m: Member | null): Member | null =>
+    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
+  const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
   const [editName, setEditName] = useState(false);
   const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -91,7 +95,7 @@ export function NodeProfileModal({
 	useEffect(() => {
 		setMounted(true);
 		if (member) {
-			setFormMember(member);
+			setFormMember(withDays(member));
 			setAlive(!member.deathDate);
 		}
 	}, [member]);
