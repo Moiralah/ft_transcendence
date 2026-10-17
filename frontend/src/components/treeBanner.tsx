@@ -6,8 +6,8 @@ import { getToken } from '@/lib/auth';
 import { truncateName } from '@/lib/names';
 
 interface TreeBannerProp {
-	name: String;
-	description: String;
+	name: string;
+	description: string;
 	treeId: number;
 	userRole: 'ADMIN' | 'MEMBER' | 'JOINER';
 	userCount: number;
