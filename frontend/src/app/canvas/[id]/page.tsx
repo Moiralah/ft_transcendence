@@ -397,6 +397,12 @@ export default function Content() {
           Authorization: `Bearer ${token}`,
         },
       });
+      // Only tree ADMIN/MEMBER may see pending claims; a JOINER gets 403.
+      // That's expected, not an error, so no toast.
+      if (res.status === 403) {
+        setPending([]);
+        return;
+      }
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("Session expired. Please log in again.");
