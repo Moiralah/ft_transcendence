@@ -771,8 +771,8 @@ export default function TreePage() {
 						justify-between gap-3 p-4 rounded-lg
 						border border-slate-200"
 					>
-						<div>
-						<p className="font-semibold text-slate-900">
+						<div className="min-w-0">
+						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
 							{request.requester.username}
 						</p>
 						<p className="text-sm text-slate-600">
@@ -780,7 +780,7 @@ export default function TreePage() {
 						</p>
 						</div>
 
-						<div className="flex gap-2">
+						<div className="flex shrink-0 gap-2">
 						<Button
 							variant="primary"
 							onClick={() =>
@@ -826,8 +826,8 @@ export default function TreePage() {
 						justify-between gap-3 p-4 rounded-lg
 						border border-slate-200"
 					>
-						<div>
-						<p className="font-semibold text-slate-900">
+						<div className="min-w-0">
+						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
 							{request.addressee.username}
 						</p>
 						<p className="text-sm text-slate-600">
@@ -836,7 +836,7 @@ export default function TreePage() {
 						</div>
 						<Button
 						variant="secondary"
-						className="rounded-md px-3 w-auto"
+						className="rounded-md px-3 w-auto shrink-0"
 						onClick={() =>
 							cancelFriend(
 							request.id,
