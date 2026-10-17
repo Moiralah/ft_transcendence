@@ -2,7 +2,7 @@ import React from 'react';
 import { componentTokens } from './colorPalette';
 import { Typography } from './typograph';
 import { Button } from './button';
-import { getToken } from '@/lib/auth';
+import { getToken, isGuest } from '@/lib/auth';
 import { truncateName } from '@/lib/names';
 
 interface TreeBannerProp {
@@ -34,6 +34,10 @@ export function TreeBanner({
 
 	const ownerName = [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') ||
 		owner?.user?.username || 'Unknown';
+
+	// The guest's demo tree is reset on each guest login, not deleted or left.
+	const [guest, setGuest] = React.useState(false);
+	React.useEffect(() => setGuest(isGuest()), []);
 
 	const handleDeleteTree = async (treeId: number) => {
 		if (!confirm(`Delete "${name}" for everyone? This cannot be undone.`)) return;
@@ -140,7 +144,7 @@ export function TreeBanner({
 					</Typography>
 				)}
 
-				{ userRole === 'ADMIN' ? (
+				{guest ? null : userRole === 'ADMIN' ? (
 					<Button 
 						onClick={(e) => {
         					e.preventDefault();	

@@ -190,7 +190,7 @@ export class TreeController {
 	}
 
 	@Delete(':treeId')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	async deleteTree(@Req() req, @Param('treeId', ParseIntPipe) treeId: number) {
 		return this.treeService.deleteTree(treeId, req.user.profileId);
 	}

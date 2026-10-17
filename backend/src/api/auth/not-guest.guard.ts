@@ -3,7 +3,7 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 // The guest account (site role GUEST, "Try as guest" on the front page) is one
 // login shared by every visitor. Anything that would lock the others out or
 // reach real people (password, email, 2FA, deleting the account, friend
-// requests, uploads, new or joined trees) is refused. Use after JwtAuthGuard, which loads the role
+// requests, uploads, new, joined or deleted trees) is refused. Use after JwtAuthGuard, which loads the role
 // from the database on every request.
 @Injectable()
 export class NotGuestGuard implements CanActivate {
