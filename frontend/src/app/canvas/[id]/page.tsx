@@ -360,12 +360,22 @@ export default function Content() {
         if (res.status === 401) {
           throw new Error("Session expired. Please log in again.");
         }
-        throw new Error(`Failed to update profile: ${res.statusText}`);
+        const data = await res.json().catch(() => ({}));
+        // A 403 with no JSON body comes from the WAF, not the API: names that
+        // look like SQL (e.g. "1=1") are blocked before they reach the backend.
+        if (res.status === 403 && !data.message) {
+          throw new Error("That tree name was blocked by our security filter. Please try different wording.");
+        }
+        const message = Array.isArray(data.message) ? data.message.join(", ") : data.message;
+        throw new Error(message || `Failed to rename tree: ${res.statusText}`);
       }
       const updatedTree = await res.json();
       setName(updatedTree.name);
     } catch (err: any) {
       console.error("Save error:", err.message);
+      toast.error(err.message);
+      // Show the name that's actually saved, not the one that was refused.
+      setName(tree?.name || "my tree");
     }
   };
 
