@@ -20,7 +20,7 @@ export default function AdminOverviewPage() {
 
 	const cards = stats ? [
 		{ label: 'Accounts', value: stats.users, href: '/admin/users',
-			note: `${count(stats.roles.USER, 'user')} · ${count(stats.roles.MODERATOR, 'moderator')} · ${count(stats.roles.ADMIN, 'admin')}${stats.roles.GUEST ? ' · 1 guest' : ''}` },
+			note: `${count(stats.roles.USER, 'user')} · ${count(stats.roles.MODERATOR, 'moderator')} · ${count(stats.roles.ADMIN, 'admin')}${stats.roles.GUEST ? ` · ${count(stats.roles.GUEST, 'guest')}` : ''}` },
 		{ label: 'Suspended', value: stats.suspended, href: '/admin/users', note: 'accounts that can’t sign in' },
 		{ label: 'MFA on', value: stats.mfa, href: '/admin/users', note: 'accounts with an authenticator app' },
 		{ label: 'Trees', value: stats.trees, href: '/admin/trees', note: `${stats.people} ${stats.people === 1 ? 'person' : 'people'} drawn in them` },

@@ -82,7 +82,7 @@ export function SignInCard({ portal }: { portal: Portal }) {
 		<div className={`w-full max-w-md mx-auto mt-24 mb-12 self-start bg-white rounded-xl shadow-lg p-8 border-t-4 ${staff ? 'border-slate-800' : 'border-amber-700'}`}>
 			<div className="flex flex-col items-center gap-2 mb-6 text-center">
 				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img src="/icon.png" alt="" width={56} height={56} className="h-14 w-14" />
+				<img src="/icon.png" alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
 				{staff && (
 					<p className="text-xs font-semibold uppercase tracking-widest text-slate-600">Staff</p>
 				)}
@@ -140,11 +140,9 @@ export function SignInCard({ portal }: { portal: Portal }) {
 						) : (
 							<>
 								<li><Link href="/signup" className="underline">No account yet? Sign up</Link></li>
-								<li><Link href="/guest" className="underline">Just looking? Try it as a guest</Link></li>
 								<li><Link href="/staff" className="underline">Sign in as staff</Link></li>
 							</>
 						)}
-						<li><Link href="/terms" className="underline">Read our terms and conditions</Link></li>
 					</ul>
 				</>
 			)}

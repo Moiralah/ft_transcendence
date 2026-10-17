@@ -60,6 +60,18 @@ export function clearSession() {
 	sessionStorage.removeItem(ROLE_KEY);
 }
 
+// The signed-in account's id (the token's `sub`), e.g. to mark "you" in the
+// admin's user list. Display only: the backend checks the real token.
+export function getUserId(): string | null {
+	const token = getToken();
+	if (!token) return null;
+	try {
+		return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub ?? null;
+	} catch {
+		return null;
+	}
+}
+
 // --- Handing the session to a new tab -------------------------------------
 // Each tab keeps its own session (above), so a new tab used to start logged
 // out. Now a new tab asks the other open tabs of this site once; a logged-in
@@ -227,8 +239,8 @@ export async function exchangeSupabaseToken(accessToken: string, portal: Portal 
 	}
 }
 
-// "Try as guest": a session on the shared guest account (site role GUEST) and
-// the slug of its demo tree. No Supabase login involved.
+// "Try as guest": a session on a new guest account (site role GUEST) of this
+// visit's own, and the slug of its copy of the demo tree. No Supabase login involved.
 export async function loginAsGuest(): Promise<LoginSuccess & { slug: string }> {
 	const res = await fetch(`${apiUrl()}/auth/guest`, { method: 'POST' })
 		.catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });

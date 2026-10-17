@@ -22,7 +22,9 @@ export default function main() {
                     btnHref2 = "/login"
                 />
             </header>
-            <main id="main-content" tabIndex={-1} className="focus:outline-none">
+            {/* flex-1 keeps the footer at the bottom when the page is shorter than the
+                window (e.g. zoomed out); the last section grows so it stays white. */}
+            <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col [&>section:last-child]:flex-1 focus:outline-none">
                 <Banner
                     id="hero-heading"
                     headingLevel="h1"

@@ -57,6 +57,7 @@ export function Avatar({
 			<img
 				src={photoUrl || '/default-avatar.png'}
 				alt=""
+				draggable={false}
 				className="w-full h-full object-cover"
 			/>
 		</>

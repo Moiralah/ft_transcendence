@@ -56,14 +56,18 @@ export function NodeProfileModal({
 	onPhotoUpdated,
 	onDelete,
 }: NodeProfileModalProps) {
-	const [formMember, setFormMember] = useState<Member | null>(member);
-	const [editName, setEditName] = useState(false);
-	const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
-	const [editingField, setEditingField] = useState<string | null>(null);
-	// Removing someone takes two clicks: the first arms the button.
-	const [confirmDelete, setConfirmDelete] = useState(false);
-	const [deleting, setDeleting] = useState(false);
-	const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
+  // edits (<input type="date">) and saves just the day.
+  const withDays = (m: Member | null): Member | null =>
+    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
+  const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
+  const [editName, setEditName] = useState(false);
+  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  // Removing someone takes two clicks: the first arms the button.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const handleDelete = async () => {
 		if (!onDelete) return;
@@ -91,7 +95,7 @@ export function NodeProfileModal({
 	useEffect(() => {
 		setMounted(true);
 		if (member) {
-			setFormMember(member);
+			setFormMember(withDays(member));
 			setAlive(!member.deathDate);
 		}
 	}, [member]);
@@ -291,7 +295,7 @@ export function NodeProfileModal({
 				body: JSON.stringify({
 					firstName: formMember.firstName,
 					lastName: formMember.lastName,
-					gender: formMember.gender,
+					gender: formMember.gender || null, // Not Specified
 					birthDate: formMember.birthDate,
 					deathDate: formMember.deathDate,
 					motherId: formMember.motherId,
@@ -543,11 +547,13 @@ export function NodeProfileModal({
 							<select
 								id={`node-gender-${member.id}`}
 								name="gender"
-								value={formMember?.gender || 'male'}
+								// Stored as male/female or MALE/FEMALE (the demo tree); empty is Not Specified.
+								value={formMember?.gender?.toLowerCase() ?? ''}
 								onChange={handleChange}
 								disabled={!canEditFields}
 								className="border border-gray-300 rounded px-2 py-1 outline-none"
 							>
+								<option value="">Not Specified</option>
 								<option value="male">Male</option>
 								<option value="female">Female</option>
 							</select>

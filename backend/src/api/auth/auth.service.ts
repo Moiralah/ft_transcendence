@@ -3,7 +3,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TreeService } from '../tree/tree.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
@@ -181,97 +181,102 @@ export class AuthService {
 			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
 	}
-	// --- Guest account ("Try as guest" on the front page) -----------------
-	// One shared account with site role GUEST. Visitors get a normal session on
-	// it straight away, no Supabase login, and land on its demo tree. Account
-	// changes are refused for it (NotGuestGuard). example.com never gets mail.
-	private static readonly GUEST_EMAIL = 'guest@example.com';
+	// --- Guest accounts ("Try as guest" on the front page) ----------------
+	// Every visit gets its own throwaway account (site role GUEST) with its own
+	// copy of the demo tree below, so no visitor ever sees another's edits. No
+	// Supabase login: the things that would need one (password, email, MFA,
+	// deleting the account) are refused for guests anyway (NotGuestGuard).
+	// Guest accounts are removed a day later, on a later guest login.
+	// guest@example.com, the old shared guest account, is kept as the on/off
+	// switch: suspend it in the admin panel to turn guest access off.
+	private static readonly GUEST_SWITCH_EMAIL = 'guest@example.com';
 	private static readonly GUEST_TREE = 'Guest Demo Family';
+	private static readonly GUEST_LIFETIME_MS = 24 * 60 * 60 * 1000;
+	// No throttle on this route, and each visit makes an account and a tree.
+	private static readonly GUESTS_PER_HOUR = 20;
 
 	async loginAsGuest() {
-		const user = await this.ensureGuestUser();
-		if (user.suspended) {
+		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { suspended: true } });
+		if (sw?.suspended) {
 			throw new ForbiddenException('Guest access is turned off right now. Please sign up instead.');
 		}
-		// Saving the guest's own profile is refused (ProfileController.update);
-		// this also puts back anything changed before that.
-		await this.prisma.profile.update({
-			where: { id: user.profileId! },
-			data: { firstName: 'Guest', lastName: null, gender: null, birthDate: null, deathDate: null, bio: null, motherId: null, fatherId: null },
+		await this.removeOldGuests().catch((e) => this.logger.warn(`Guest cleanup failed: ${e?.message}`));
+		const lastHour = await this.prisma.user.count({
+			where: { role: 'GUEST', email: { not: AuthService.GUEST_SWITCH_EMAIL }, createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
 		});
-		await this.resetGuestTrees(user.profileId!);
-		const slug = await this.ensureGuestTree(user.profileId!);
+		if (lastHour >= AuthService.GUESTS_PER_HOUR) {
+			throw new ServiceUnavailableException('Too many guests right now. Please try again later, or sign up.');
+		}
+
+		const id = randomUUID();
+		const tag = randomBytes(4).toString('hex');
+		const user = await this.prisma.user.create({
+			data: {
+				id,
+				email: `guest-${tag}@example.com`, // example.com never gets mail
+				username: `guest-${tag}`,
+				role: 'GUEST',
+				profile: { create: { firstName: 'Guest', userId: id } },
+			},
+		});
+		const slug = await this.buildGuestTree(user.profileId!, tag);
 		return { ...(await this.issueSession(user)), slug };
 	}
 
-	private async ensureGuestUser() {
-		const email = AuthService.GUEST_EMAIL;
-		let user = await this.prisma.user.findUnique({ where: { email } });
-		if (!user) {
-			// Supabase owns the user ids, so the guest gets a Supabase user too
-			// (confirmed, with a random password nobody knows) to keep pages
-			// like Settings, which ask Supabase about the account, working.
-			const { data, error } = await this.supabase.auth.admin.createUser({
-				email,
-				// Random, plus one of each class Supabase's password policy asks for.
-				password: `${randomBytes(24).toString('base64url')}aA1!`,
-				email_confirm: true,
-			});
-			let id = data?.user?.id;
-			if (!id) {
-				this.logger.warn(`Guest: Supabase createUser failed (${error?.message}), looking the user up instead`);
-				// Already in Supabase (our row was deleted): reuse that id.
-				const rows = await this.prisma.$queryRaw<{ id: string }[]>`
-					SELECT id::text AS id FROM auth.users WHERE email = ${email}`;
-				id = rows[0]?.id;
-			}
-			if (!id) {
-				throw new ServiceUnavailableException('Guest access is not available right now. Please try again.');
-			}
-			try {
-				user = await this.createUser(id, email);
-				await this.prisma.profile.update({ where: { id: user.profileId! }, data: { firstName: 'Guest' } });
-			} catch (e) {
-				// Two visitors at once: the other request created it first.
-				user = await this.prisma.user.findUnique({ where: { email } });
-				if (!user) throw e;
+	// Guest accounts past their day, with their trees (and the trees the old
+	// shared guest account still owns). A few per login keeps each login quick.
+	private async removeOldGuests() {
+		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { profileId: true } });
+		if (sw?.profileId) {
+			for (const t of await this.prisma.tree.findMany({ where: { ownerId: sw.profileId }, select: { id: true } })) {
+				await this.trees.deleteTree(t.id, sw.profileId);
 			}
 		}
-		if (user.role !== 'GUEST') {
-			user = await this.prisma.user.update({ where: { id: user.id }, data: { role: 'GUEST' } });
-		}
-		return user;
-	}
-
-	// Each guest login starts clean: the trees the last visitor made or edited
-	// are deleted (with their made-up people) and any tree they joined is left,
-	// so ensureGuestTree below builds a fresh demo tree. A visitor still on the
-	// site when the next one logs in loses their tree; fine for a demo.
-	private async resetGuestTrees(profileId: number) {
-		const trees = await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } });
-		for (const { id } of trees) {
-			await this.trees.deleteTree(id, profileId).catch((e) => this.logger.warn(`Guest: could not delete tree ${id}: ${e?.message}`));
-		}
-		const joined = await this.prisma.treeMember.findMany({ where: { profileId, treeId: { not: null } }, select: { treeId: true } });
-		for (const { treeId } of joined) {
-			await this.trees.leaveTree(profileId, treeId!).catch((e) => this.logger.warn(`Guest: could not leave tree ${treeId}: ${e?.message}`));
-		}
-	}
-
-	// The guest's demo tree, built fresh after resetGuestTrees.
-	private async ensureGuestTree(profileId: number): Promise<string> {
-		const membership = await this.prisma.treeMember.findFirst({
-			where: { profileId, tree: { isNot: null } },
-			orderBy: { id: 'asc' },
-			select: { tree: { select: { slug: true } } },
+		const old = await this.prisma.user.findMany({
+			where: {
+				role: 'GUEST',
+				email: { not: AuthService.GUEST_SWITCH_EMAIL },
+				createdAt: { lt: new Date(Date.now() - AuthService.GUEST_LIFETIME_MS) },
+			},
+			select: { id: true, profileId: true },
+			take: 20,
 		});
-		if (membership?.tree) return membership.tree.slug;
+		for (const guest of old) {
+			await this.removeGuest(guest.id, guest.profileId);
+		}
+	}
 
-		const free = !(await this.prisma.tree.findUnique({ where: { name: AuthService.GUEST_TREE }, select: { id: true } }));
-		const name = free ? AuthService.GUEST_TREE : `${AuthService.GUEST_TREE} ${randomBytes(2).toString('hex')}`;
-		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. Edits are wiped when the next guest logs in.');
+	// Like deleteOwnAccount, minus what a guest can't have (photos, joined
+	// trees, a Supabase login).
+	private async removeGuest(userId: string, profileId: number | null) {
+		if (profileId) {
+			for (const t of await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } })) {
+				await this.trees.deleteTree(t.id, profileId);
+			}
+		}
+		await this.prisma.$transaction(async (tx) => {
+			await tx.invitation.deleteMany({ where: { inviterId: userId } });
+			await tx.user.delete({ where: { id: userId } }); // cascades friendships
+			if (profileId) {
+				await tx.treeMember.deleteMany({ where: { profileId } });
+				await tx.auditLog.deleteMany({ where: { profileId } });
+				await tx.profile.updateMany({ where: { motherId: profileId }, data: { motherId: null } });
+				await tx.profile.updateMany({ where: { fatherId: profileId }, data: { fatherId: null } });
+				await tx.profile.updateMany({ where: { spouseId: profileId }, data: { spouseId: null } });
+				await tx.profile.delete({ where: { id: profileId } }); // events cascade
+			}
+		});
+	}
+
+	// This visitor's own copy of the demo tree (the template below). Tree names
+	// are unique, so each copy carries the guest's tag.
+	private async buildGuestTree(profileId: number, tag: string): Promise<string> {
+		const name = `${AuthService.GUEST_TREE} ${tag}`;
+		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. It is yours alone, and is removed a day after your visit.');
 		if (!tree) throw new ServiceUnavailableException('Could not set up the demo tree. Please try again.');
 		const treeId = tree.id;
+		// No join code: nobody else joins a guest's tree, and the banner shows none.
+		await this.prisma.tree.update({ where: { id: treeId }, data: { code: null } });
 
 		const person = (id: number, firstName: string, lastName: string, gender: string, born: string, bio?: string) =>
 			this.prisma.profile.update({ where: { id }, data: { firstName, lastName, gender, birthDate: new Date(born), bio } });

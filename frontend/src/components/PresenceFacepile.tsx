@@ -12,7 +12,7 @@ const circle = "w-9 h-9 rounded-full border-2 border-green-300 shadow bg-gray-10
 function Face({ u }: { u: PresenceUser }) {
 	return u.photoUrl ? (
 		// eslint-disable-next-line @next/next/no-img-element
-		<img src={u.photoUrl} alt="" className="w-full h-full object-cover" />
+		<img src={u.photoUrl} alt="" draggable={false} className="w-full h-full object-cover" />
 	) : (
 		<>{initials(u)}</>
 	);

@@ -121,53 +121,50 @@ export default function SignupPage() {
     <header id="navbar" tabIndex={-1} className="focus:outline-none">
       <Navbar />
     </header>
-    <main id="main-content" tabIndex={-1} className="flex flex-1 focus:outline-none">
-    <div className="card">
-      <h1>Create an Account</h1>
-      <form onSubmit={handleSignup}>
-        {/* suppressHydrationWarning: browser extensions (password managers,
-            Grammarly, etc.) inject class/style onto these after load, which
-            otherwise trips React's hydration diff on a false positive. */}
-        <input
-          type="email"
-          autoComplete="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          suppressHydrationWarning
-        />
-        <input
-          type="password"
-          autoComplete="new-password"
-          placeholder={`Password (min. ${MIN_PASSWORD_LENGTH} characters)`}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          suppressHydrationWarning
-        />
-        <input
-          type="password"
-          autoComplete="new-password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          suppressHydrationWarning
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Sign Up'}
-        </button>
+    <main id="main-content" tabIndex={-1} className="flex flex-1 px-4 focus:outline-none">
+      {/* Same card as the login page (components/signInCard.tsx). */}
+      <div className="w-full max-w-md mx-auto mt-24 mb-12 self-start bg-white rounded-xl shadow-lg p-8 border-t-4 border-amber-700">
+        <div className="flex flex-col items-center gap-2 mb-6 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
+          <h1 className="text-2xl font-bold text-slate-900">Create an account</h1>
+        </div>
+
+        <form onSubmit={handleSignup} className="flex flex-col gap-1">
+          {/* suppressHydrationWarning: browser extensions (password managers,
+              Grammarly, etc.) inject class/style onto these after load, which
+              otherwise trips React's hydration diff on a false positive. */}
+          <label htmlFor="signup-email" className="text-sm font-medium text-slate-700">Email</label>
+          <input id="signup-email" type="email" autoComplete="email" required value={email}
+            onChange={(e) => setEmail(e.target.value)} className="!text-base !py-3 !mt-0" suppressHydrationWarning />
+          <label htmlFor="signup-password" className="text-sm font-medium text-slate-700 mt-2">Password</label>
+          <input id="signup-password" type="password" autoComplete="new-password" required value={password}
+            aria-describedby="signup-password-hint"
+            onChange={(e) => setPassword(e.target.value)} className="!text-base !py-3 !mt-0" suppressHydrationWarning />
+          <p id="signup-password-hint" className="text-xs text-slate-600">At least {MIN_PASSWORD_LENGTH} characters.</p>
+          <label htmlFor="signup-confirm" className="text-sm font-medium text-slate-700 mt-2">Confirm password</label>
+          <input id="signup-confirm" type="password" autoComplete="new-password" required value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)} className="!text-base !py-3 !mt-0" suppressHydrationWarning />
+          <button type="submit" disabled={loading} className="mt-4 !py-3 !text-base font-semibold disabled:opacity-60">
+            {loading ? 'Creating account…' : 'Sign up'}
+          </button>
+        </form>
+
         {error && !success && <div className="error" role="alert">{error}</div>}
         {success && <div className="success" role="status">{error}</div>}
-      </form>
-      <div className="flex flex-col gap-3 mt-3">
-        <button type="button" onClick={handleGoogleSignup}>Sign up with Google</button>
+
+        <div className="flex items-center gap-3 my-4 text-sm text-slate-600" aria-hidden="true">
+          <span className="h-px flex-1 bg-slate-200" />or<span className="h-px flex-1 bg-slate-200" />
+        </div>
+        <button type="button" onClick={handleGoogleSignup}
+          className="!py-3 !text-base !bg-white !text-slate-800 border !border-solid !border-slate-300 hover:!bg-slate-50">
+          Sign up with Google
+        </button>
+
+        <ul className="mt-6 !pl-0 list-none flex flex-col items-center gap-2 text-sm text-slate-700">
+          <li><Link href="/login" className="underline">Already have an account? Sign in</Link></li>
+        </ul>
       </div>
-      <p style={{ marginTop: 16, textAlign: 'center' }}>
-        Already have an account? <Link href="/login">Log in</Link>
-      </p>
-    </div>
     </main>
       <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
         <Footer/>
