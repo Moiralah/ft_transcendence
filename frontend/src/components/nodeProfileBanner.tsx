@@ -391,8 +391,10 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
 
 	// Fields (name, birth date, gender, photo) can only be edited on unclaimed
-	// rows, and only by ADMIN/MEMBER (JOINER is read-only).
-	const canEditFields = !isClaimedNode && canAddOrSave;
+	// rows, and only by ADMIN/MEMBER (JOINER is read-only). A MEMBER can't edit
+	// another real user's row; the server refuses that too.
+	const canEditFields = !isClaimedNode && canAddOrSave &&
+		(viewerRole === 'ADMIN' || member.role === 'HOLDER' || member.id === treeView.memberId);
 
   if (!mounted) return null;
 
