@@ -15,6 +15,11 @@ services:
         DATABASE_URL: ${DATABASE_URL}
     restart: unless-stopped
     depends_on: []
+    # `make local` reaches local Supabase on the host as host.docker.internal.
+    # Docker Desktop (Mac, Windows) provides that name; Docker on Linux (the 42
+    # machines, Ubuntu) only has it with this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # Logs and server-side times in Malaysia time (GMT+8), like the host.
       TZ: ${TZ:-Asia/Kuala_Lumpur}
