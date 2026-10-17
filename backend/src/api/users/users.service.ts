@@ -32,6 +32,9 @@ export class UsersService {
 
 	findAll() {
 		return this.prisma.user.findMany({
+			// Each "Try as guest" visit makes its own short-lived guest account; only
+			// guest@example.com, the on/off switch for guest access, is listed.
+			where: { OR: [{ role: { not: 'GUEST' } }, { email: 'guest@example.com' }] },
 			select: {
 				id: true,
 				username: true,

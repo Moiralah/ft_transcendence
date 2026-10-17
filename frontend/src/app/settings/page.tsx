@@ -136,14 +136,14 @@ export default function SettingsPage() {
 				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>
 
 				{guest ? (
-					// Everyone shares the guest login, so its account can't be changed.
+					// A guest account is a short-lived demo login, so its account settings can't be changed.
 					<section aria-labelledby="guest-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
 						<h2 id="guest-heading" className="text-lg font-bold text-slate-900">
 							You&apos;re using the guest account
 						</h2>
 						<p className="text-sm text-slate-700">
-							The guest account is shared by everyone trying the site, so its password, email, MFA and
-							deletion can&apos;t be changed. Sign up for your own free account to use these settings.
+							Guest accounts are short demo logins, removed a day after your visit, so their password,
+							email, MFA and deletion can&apos;t be changed. Sign up for your own free account to use these settings.
 						</p>
 						{/* /signup sends anyone logged in to the dashboard, so leave the guest session first. */}
 						<Button onClick={() => { clearSession(); router.push('/signup'); }} variant="primary">

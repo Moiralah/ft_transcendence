@@ -239,8 +239,8 @@ export async function exchangeSupabaseToken(accessToken: string, portal: Portal 
 	}
 }
 
-// "Try as guest": a session on the shared guest account (site role GUEST) and
-// the slug of its demo tree. No Supabase login involved.
+// "Try as guest": a session on a new guest account (site role GUEST) of this
+// visit's own, and the slug of its copy of the demo tree. No Supabase login involved.
 export async function loginAsGuest(): Promise<LoginSuccess & { slug: string }> {
 	const res = await fetch(`${apiUrl()}/auth/guest`, { method: 'POST' })
 		.catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });

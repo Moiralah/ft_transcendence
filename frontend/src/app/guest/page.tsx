@@ -8,8 +8,8 @@ import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 
-// "Try as guest" from the front page: signs in on the shared guest account and
-// opens its demo tree.
+// "Try as guest" from the front page: signs in on a new guest account of this
+// visit's own and opens its copy of the demo tree.
 export default function GuestLogin() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
