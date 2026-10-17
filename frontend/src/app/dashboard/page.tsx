@@ -896,6 +896,8 @@ export default function TreePage() {
         </section>
         */}
 
+        {/* Guests only have their demo tree: no searching real people's profiles. */}
+        {role !== 'GUEST' && (
         <section
           aria-labelledby="profile-search-heading"
           className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200"
@@ -1032,6 +1034,7 @@ export default function TreePage() {
             </Button>
           </div>
         </section>
+        )}
 
         {/* My Trees List */}
         <section aria-labelledby="your-trees-heading" className="space-y-4">

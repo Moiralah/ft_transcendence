@@ -49,7 +49,7 @@ export class ProfileController {
 	}
 
 	@Get('search')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard) // guests don't look up real people's profiles
 	search(
 		@Req() req: AuthenticatedRequest,
 		@Query('firstName') firstName?: string,
