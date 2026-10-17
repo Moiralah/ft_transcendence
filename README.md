@@ -29,7 +29,9 @@ host.
    comments in that file say where each value comes from), then run `make`.
    `make` (same as `make up`) starts everything: the app, both WAFs and Vault.
 2. **Approve the backend certificate:** open https://localhost:9443 in a new tab
-   and accept the self-signed certificate.
+   and accept the self-signed certificate. The page then shows
+   `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`: that's
+   expected (the API has no page at `/`) and means the certificate is accepted.
 3. **Approve the frontend certificate:** open https://localhost:8443, accept it,
    and use the app there.
 
