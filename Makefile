@@ -82,7 +82,7 @@ certs:
 		else \
 			echo "mkcert not found. Generating self-signed certificate with OpenSSL..."; \
 			echo "You may need to manually trust this certificate in your browser."; \
-			openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/localhost-key.pem -out certs/localhost.pem -days 365 -subj "/CN=localhost"; \
+			openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/localhost-key.pem -out certs/localhost.pem -days 365 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1,IP:::1"; \
 		fi \
 	fi
 	@# The WAFs' nginx runs as a non-root user and can't read mkcert's 0600 key.

@@ -33,6 +33,10 @@ host.
 3. **Approve the frontend certificate:** open https://localhost:8443, accept it,
    and use the app there.
 
+   If Chrome shows no "Proceed to localhost" link ("the website uses HSTS"), it
+   remembered HSTS for localhost from an earlier version: open
+   `chrome://net-internals/#hsts`, delete the domain `localhost`, and reload.
+
 `make down` stops everything. Other targets: `make logs`, `make ps`,
 `make build`, `make backend` / `make frontend` (rebuild one side),
 `make local` (run against a local Supabase, below).

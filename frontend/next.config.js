@@ -59,7 +59,12 @@ const securityHeaders = [
 	// config, and an earlier incident (see progress_log.md) was specifically
 	// caused by HSTS/subdomain interactions there — scoping this to just
 	// ft.natscho.my itself avoids repeating that class of problem.
-	{ key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+	// Production only (`next start`): on localhost, a browser that once trusted
+	// a cert (mkcert) remembers HSTS for every localhost port for a year, and
+	// then refuses the self-signed cert outright, with no "Proceed" button.
+	...(process.env.NODE_ENV === 'development'
+		? []
+		: [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }]),
 	{ key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ];
 
