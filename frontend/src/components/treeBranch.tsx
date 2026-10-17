@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { TreeNode } from './treeNode';
 
 
@@ -100,6 +100,52 @@ export function TreeBranch({
 
     return { children, spouse };
   };
+
+	// Connector x positions, measured from the real cards so the lines meet
+	// whatever width a card's text gives it. Relative to the children row, in
+	// layout pixels (the canvas zoom is a CSS scale, so it's divided back out).
+	const primaryRef = useRef<HTMLDivElement>(null);
+	const childrenRowRef = useRef<HTMLDivElement>(null);
+	const [connectors, setConnectors] = useState<{ parentX: number; childXs: number[] } | null>(null);
+
+	const measureConnectors = () => {
+		const row = childrenRowRef.current;
+		const primary = primaryRef.current;
+		if (!row || !primary) {
+			setConnectors((prev) => (prev ? null : prev));
+			return;
+		}
+		const rowRect = row.getBoundingClientRect();
+		const zoom = row.offsetWidth ? rowRect.width / row.offsetWidth : 1;
+		const centreOf = (el: Element) => {
+			const r = el.getBoundingClientRect();
+			return Math.round((r.left + r.width / 2 - rowRect.left) / zoom);
+		};
+		const parentX = centreOf(primary);
+		// Each child column's first [data-tree-primary] is that child's own card.
+		const childXs = Array.from(row.children)
+			.map((col) => col.querySelector('[data-tree-primary]'))
+			.filter((el): el is Element => el !== null)
+			.map(centreOf);
+		setConnectors((prev) =>
+			prev && prev.parentX === parentX && prev.childXs.join() === childXs.join()
+				? prev
+				: { parentX, childXs });
+	};
+
+	// Every render: cheap, and only sets state when a position moved.
+	useLayoutEffect(measureConnectors);
+
+	// Descendants re-render on their own, so also re-measure when sizes change.
+	const hasChildRow = Boolean(childrenRowRef.current);
+	useEffect(() => {
+		const row = childrenRowRef.current;
+		if (!row || typeof ResizeObserver === 'undefined') return;
+		const observer = new ResizeObserver(() => measureConnectors());
+		observer.observe(row);
+		if (primaryRef.current) observer.observe(primaryRef.current);
+		return () => observer.disconnect();
+	}, [hasChildRow]);
 
   if (!currentMember) return null;
 
@@ -287,11 +333,9 @@ const renderAddChild = (BranchAddMember: Member) => {
     <div
       className={`relative flex flex-row items-center`}
     >
-      <div className="flex flex-col items-center">
-        {/* Lift line from primary node */}
-        {children.length > 0 && (
-          <div className="absolute left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
-        )}
+      {/* Stretched to the row's height so its bottom meets the children row even
+          when the spouse card is the taller one. */}
+      <div ref={primaryRef} data-tree-primary className="relative self-stretch flex flex-col items-center justify-center">
         <TreeNode
           members={localMembers}
           currentMember={getLinkMember(activeCurrentMember.profileId)}
@@ -302,9 +346,9 @@ const renderAddChild = (BranchAddMember: Member) => {
           treeView={treeView}
           showDeleteButton={canDeleteMain}
         />
-        {/* Drop line from primary node */}
+        {/* Drop line from the centre of the primary node */}
         {children.length > 0 && (
-          <div className="absolute bottom-0 left-1/6 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
         )}
       </div>
 
@@ -327,46 +371,33 @@ const renderAddChild = (BranchAddMember: Member) => {
 
       {children.length > 0 && (
       <>
-        {/* Children Row Container */}
-        <div className="flex flex-row">
-          {children.map((child, index) => {
-            const isFirst = index === 0;
-            const isLast = index === children.length - 1;
-            const isOnly = children.length === 1;
-            const haveSpouse = Boolean(child.spouseId);
-
+        {/* Children Row Container. The pt-6 leaves room for the connectors:
+            one bar spanning the parent's and children's centres, and a short
+            drop into each child, all at measured card centres. */}
+        <div ref={childrenRowRef} className="relative flex flex-row pt-6">
+          {connectors && connectors.childXs.length > 0 && (() => {
+            const xs = [connectors.parentX, ...connectors.childXs];
+            const left = Math.min(...xs);
+            const right = Math.max(...xs);
             return (
-              <div key={child.profileId ?? child.id} className={`relative flex flex-col items-center px-4`}>
-                {/* Horizontal & Vertical Connector Lines */}
-                {!isOnly ? (
-                  <div className="absolute top-0 left-0 right-0 h-6 flex">
-                    <div className={`absolute left-0 right-[calc(50%+85px)] border-t-2 border-black ${isFirst? 'invisible' : ''}`} />
-                    <div className={`absolute left-[calc(50%-85px)] right-1/2 border-t-2 border-black ${((isLast && haveSpouse) || (isFirst && !haveSpouse))? 'invisible' : ''}`} />
-                    <div className={`absolute left-1/2 right-0 border-t-2 border-black ${(isLast)? 'invisible' : ''}`} />
-                  </div>
-                ) : (
-                  <div className="absolute top-0 left-0 right-0 h-6 flex">
-                    <div className={`absolute left-0 right-1/2 border-t-2 border-black ${haveSpouse? 'invisible' : ''}`} />
-                  </div>
-                )}
-                {/* Drop line going directly into the child */}
-                { haveSpouse ?
-                (
-                <div className="h-6 w-0.5 -ml-[170px] -translate-x-1/2 bg-black z-10" />
-                ) : (
-                <div className="h-6 w-0.5 -translate-x-1/2 bg-black z-10" />
-                )
-                }
-
-                <TreeBranch
-                  allMembers={localMembers}
-                  treeView={treeView}
-                  currentMember={child}
-                  onMembersChange={updateMembers}
-                />
-              </div>
+              <>
+                <div className="absolute top-0 h-0.5 bg-black" style={{ left: left - 1, width: right - left + 2 }} />
+                {connectors.childXs.map((x, i) => (
+                  <div key={i} className="absolute top-0 h-6 w-0.5 bg-black" style={{ left: x - 1 }} />
+                ))}
+              </>
             );
-          })}
+          })()}
+          {children.map((child) => (
+            <div key={child.profileId ?? child.id} className="flex flex-col items-center px-4">
+              <TreeBranch
+                allMembers={localMembers}
+                treeView={treeView}
+                currentMember={child}
+                onMembersChange={updateMembers}
+              />
+            </div>
+          ))}
         </div>
       </>
     )}
