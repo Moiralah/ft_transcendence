@@ -562,7 +562,8 @@ export default function TreePage() {
 
   const handleLogout = async () => {
     clearSession();
-    // OAuth logins also leave a Supabase session in the browser; drop it too.
+	window.dispatchEvent(new Event("app-logout"));
+	
     try {
       await supabase.auth.signOut();
     } catch {
@@ -678,8 +679,8 @@ export default function TreePage() {
 				>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block h-2 w-2 rounded-full ${
-                      ids.has(friend.user.profileId) ? "bg-green-500" : "bg-gray-300"
+                    className={`inline-block h-2 w-2 rounded-full ${ids.has(friend.user.profileId) ?
+						"bg-green-500" : "bg-gray-300"
                     }`}
                   />
                   <p className="font-semibold text-slate-900">
