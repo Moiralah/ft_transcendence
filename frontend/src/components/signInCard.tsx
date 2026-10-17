@@ -82,7 +82,7 @@ export function SignInCard({ portal }: { portal: Portal }) {
 		<div className={`w-full max-w-md mx-auto mt-24 mb-12 self-start bg-white rounded-xl shadow-lg p-8 border-t-4 ${staff ? 'border-slate-800' : 'border-amber-700'}`}>
 			<div className="flex flex-col items-center gap-2 mb-6 text-center">
 				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img src="/icon.png" alt="" width={56} height={56} className="h-14 w-14" />
+				<img src="/icon.png" alt="" width={56} height={56} draggable={false} className="h-14 w-14 select-none" />
 				{staff && (
 					<p className="text-xs font-semibold uppercase tracking-widest text-slate-600">Staff</p>
 				)}

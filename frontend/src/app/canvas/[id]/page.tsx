@@ -758,7 +758,7 @@ export default function Content() {
                   >
                     <span className="flex w-12 h-12 shrink-0 rounded-full bg-black text-white items-center justify-center overflow-hidden">
                       {member.photoUrl ? (
-                        <img src={member.photoUrl} alt="" className="w-full h-full object-cover" />
+                        <img src={member.photoUrl} alt="" draggable={false} className="w-full h-full object-cover" />
                       ) : (
                         <span aria-hidden="true">{member.firstName?.[0] || 'M'}</span>
                       )}
