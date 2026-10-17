@@ -193,7 +193,7 @@ export class AuthService {
 	private static readonly GUEST_TREE = 'Guest Demo Family';
 	private static readonly GUEST_LIFETIME_MS = 24 * 60 * 60 * 1000;
 	// No throttle on this route, and each visit makes an account and a tree.
-	private static readonly GUESTS_PER_HOUR = 100;
+	private static readonly GUESTS_PER_HOUR = 20;
 
 	async loginAsGuest() {
 		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { suspended: true } });
