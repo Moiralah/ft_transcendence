@@ -240,10 +240,10 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		{/* field map render each field row */}
         { fields.map(({ key, label, type }) => (
         <div key={key} className="flex items-center gap-2">
-          <span id={`profile-${key}-label`} className="w-40 text-xl p-5">
+          <span id={`profile-${key}-label`} className="w-40 shrink-0 text-xl p-5">
             { label } :
           </span>
-          <div className="">
+          <div className="min-w-0 flex-1">
             {editingField === key ? (
               type ==="select" && key==="gender") ? (
                 <select
@@ -278,7 +278,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               id={`profile-${key}-value`}
               onClick={() => setEditingField(key)}
               aria-labelledby={`profile-${key}-label profile-${key}-value`}
-              className="cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
+              className="max-w-full cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 [overflow-wrap:anywhere] bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
             >
               {formData[key] || 'Click to add '+label}
             </button>

@@ -57,7 +57,7 @@ export default function TermsOfServicePage() {
 				<Section title="3. Your Account">
 					<p>You're responsible for keeping your login credentials confidential and for
 					anything that happens under your account. We strongly recommend enabling
-					two-factor authentication under Security settings — if you do, keep your saved
+					multi-factor authentication under Security settings — if you do, keep your saved
 					recovery codes somewhere safe, since we cannot recover them for you if you lose
 					both your authenticator app and your codes.</p>
 					<p>You must provide an email you actually control, since it's how your account is

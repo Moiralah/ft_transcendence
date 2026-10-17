@@ -10,13 +10,16 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { getToken } from '@/lib/auth';
+import { getToken, isGuest } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
 	const token = getToken();
 
 	const [loading, setLoading] = useState(true);
+	// Read after mount: the role lives in sessionStorage, which the server render can't see.
+	const [guest, setGuest] = useState(false);
+	useEffect(() => setGuest(isGuest()), []);
 	const [enabled, setEnabled] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +48,7 @@ export default function SettingsPage() {
 
 	useEffect(() => {
 		if (!token) {
-			router.push('/login');
+			router.replace('/login');
 			return;
 		}
 		fetchStatus();
@@ -54,7 +57,7 @@ export default function SettingsPage() {
 	const fetchStatus = async () => {
 		try {
 			const res = await authedFetch('/auth/2fa/status');
-			if (!res.ok) throw new Error('Failed to load 2FA status');
+			if (!res.ok) throw new Error('Failed to load MFA status');
 			const data = await res.json();
 			setEnabled(data.enabled);
 		} catch (err: any) {
@@ -69,7 +72,7 @@ export default function SettingsPage() {
 		try {
 			const res = await authedFetch('/auth/2fa/setup', { method: 'POST' });
 			const data = await res.json();
-			if (!res.ok) throw new Error(data.message || 'Failed to start 2FA setup');
+			if (!res.ok) throw new Error(data.message || 'Failed to start MFA setup');
 			setQrCodeDataUrl(data.qrCodeDataUrl);
 			setSecret(data.secret);
 			setEnrolling(true);
@@ -129,7 +132,21 @@ export default function SettingsPage() {
 				</div>
 				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>
 
-				{loading ? (
+				{guest ? (
+					// Everyone shares the guest login, so its account can't be changed.
+					<section aria-labelledby="guest-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
+						<h2 id="guest-heading" className="text-lg font-bold text-slate-900">
+							You&apos;re using the guest account
+						</h2>
+						<p className="text-sm text-slate-700">
+							The guest account is shared by everyone trying the site, so its password, email, MFA and
+							deletion can&apos;t be changed. Sign up for your own free account to use these settings.
+						</p>
+						<Button href="/signup" variant="primary">
+							Sign up
+						</Button>
+					</section>
+				) : loading ? (
 					<p aria-live="polite">Loading...</p>
 				) : recoveryCodes ? (
 					<section aria-labelledby="recovery-codes-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
@@ -156,7 +173,7 @@ export default function SettingsPage() {
 						</h2>
 						{qrCodeDataUrl && (
 							// eslint-disable-next-line @next/next/no-img-element
-							<img src={qrCodeDataUrl} alt="Scan this QR code with your authenticator app to enable 2FA" width={200} height={200} />
+							<img src={qrCodeDataUrl} alt="Scan this QR code with your authenticator app to enable MFA" width={200} height={200} />
 						)}
 						{secret && (
 							<p className="text-sm text-slate-700">
@@ -175,19 +192,19 @@ export default function SettingsPage() {
 								onChange={(e) => setConfirmCode(e.target.value)}
 								required
 							/>
-							<button type="submit">Confirm and enable 2FA</button>
+							<button type="submit">Confirm and enable MFA</button>
 						</form>
 						{error && <div className="error" role="alert">{error}</div>}
 					</section>
 				) : enabled ? (
 					<section aria-labelledby="disable-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
 						<h2 id="disable-heading" className="text-lg font-bold text-slate-900">
-							2FA is enabled
+							MFA is enabled
 						</h2>
 						{disabling ? (
 							<form onSubmit={handleDisable} className="space-y-2">
 								<label htmlFor="disable-code" className="block text-sm font-medium text-slate-800">
-									Enter your current 6-digit code to disable 2FA
+									Enter your current 6-digit code to disable MFA
 								</label>
 								<input
 									id="disable-code"
@@ -197,34 +214,34 @@ export default function SettingsPage() {
 									onChange={(e) => setDisableCode(e.target.value)}
 									required
 								/>
-								<button type="submit">Disable 2FA</button>
+								<button type="submit">Disable MFA</button>
 								{error && <div className="error" role="alert">{error}</div>}
 							</form>
 						) : (
 							<Button onClick={() => setDisabling(true)} variant="secondary">
-								Disable 2FA
+								Disable MFA
 							</Button>
 						)}
 					</section>
 				) : (
 					<section aria-labelledby="enable-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
 						<h2 id="enable-heading" className="text-lg font-bold text-slate-900">
-							2FA is not enabled
+							MFA is not enabled
 						</h2>
 						<p className="text-sm text-slate-700">
 							Add an extra layer of security to your account using an authenticator app (e.g. Google
 							Authenticator, Authy, 1Password).
 						</p>
 						<Button onClick={startEnrollment} variant="primary">
-							Enable 2FA
+							Enable MFA
 						</Button>
 						{error && <div className="error" role="alert">{error}</div>}
 					</section>
 				)}
 
-				{!loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
-				{!loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
-				{!loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">

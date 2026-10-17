@@ -76,7 +76,9 @@ export const primitives = {
         Card: primitives.amber[800],
         bannerHeading: primitives.gray[800],
         bannerSpan: primitives.gray[400],
-        bannerRole: primitives.amber[600],
+        // 700, not 600: small bold text on white needs 4.5:1 (WCAG 1.4.3);
+        // amber 600 is 3.2:1, amber 700 is 5.0:1.
+        bannerRole: primitives.amber[700],
       },
       border: {
         subtle: primitives.slate[800],

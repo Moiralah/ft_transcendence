@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage() {
 					<p><strong>Family tree data.</strong> Information you add to a tree — first and
 					last name, gender, birth and death dates, a short bio, and a profile photo — for
 					yourself and for anyone else you add as a family member.</p>
-					<p><strong>Security information.</strong> If you enable two-factor authentication,
+					<p><strong>Security information.</strong> If you enable multi-factor authentication,
 					we store a TOTP secret and a set of one-time recovery codes. Recovery codes are
 					stored as bcrypt hashes, not in plain text — we cannot read them back.</p>
 					<p><strong>Session data.</strong> A signed session token and your role are kept in
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
 				<Section title="3. How We Use Your Information">
 					<p>To create and secure your account, let you build and collaborate on family
 					trees with people you invite, enforce the roles and permissions you or a tree
-					admin set, and — if you enable it — verify your identity via 2FA at login.</p>
+					admin set, and — if you enable it — verify your identity via MFA at login.</p>
 					<p>We do not sell your data, and we do not use it for advertising. There is
 					currently no analytics or tracking beyond what&apos;s needed to run the app.</p>
 				</Section>
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
 
 				<Section title="5. Data Security">
 					<p>Passwords are never handled or stored by our own code — that&apos;s entirely
-					delegated to Supabase Auth. 2FA recovery codes are bcrypt-hashed. All traffic
+					delegated to Supabase Auth. MFA recovery codes are bcrypt-hashed. All traffic
 					between your browser and our servers is encrypted (HTTPS). Access to
 					administrative actions (viewing all users, changing roles, deleting accounts) is
 					restricted to accounts with the <code>ADMIN</code> role, enforced on the server,
@@ -118,7 +118,7 @@ export default function PrivacyPolicyPage() {
 					you belong to. Tree admins and moderators can delete placeholder (made-up)
 					profiles that nobody has claimed.</p>
 					<p>You can delete your own account under Settings. That removes your login, your
-					account details (email address, username, two-factor settings and recovery
+					account details (email address, username, multi-factor settings and recovery
 					codes), your friends list, your photos and your profile details. Family trees you
 					own are deleted with it, for everyone in them. You leave the trees you joined, and a
 					person you had claimed there goes back to the made-up entry it was before. If a

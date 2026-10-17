@@ -74,7 +74,7 @@ export default function Content() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     fetchTree(token);
@@ -164,15 +164,15 @@ export default function Content() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
-			router.push('/dashboard?error=no-access');
+			router.replace('/dashboard?error=no-access');
 			return;
 		}
 		if (res.status === 404) {
-			router.push('/dashboard?error=not-found');
+			router.replace('/dashboard?error=not-found');
 			return;
 		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
@@ -196,15 +196,15 @@ export default function Content() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
 			return;
 		}
 		if (res.status === 403) {
-			router.push('/dashboard?error=no-access');
+			router.replace('/dashboard?error=no-access');
 			return;
 		}
 		if (res.status === 404) {
-			router.push('/dashboard?error=not-found');
+			router.replace('/dashboard?error=not-found');
 			return;
 		}
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
@@ -237,7 +237,7 @@ export default function Content() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
-  // Mouse Handlers for Dragging (Panning)
+  // Pointer handlers for dragging (panning): mouse, pen and touch alike
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
@@ -297,15 +297,29 @@ export default function Content() {
     if (dx || dy) setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
   };
 
-  // Scroll Wheel Handler for Zooming
-  const handleWheel = (e: React.WheelEvent) => {
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-
-    setScale((prevScale) => {
-      const newScale = prevScale * zoomFactor;
-      return Math.min(Math.max(0.3, newScale), 2.5);
-    });
-  };
+  // Wheel and trackpad pinch zoom the tree only. React's onWheel is passive,
+  // so it can't stop the browser zooming or scrolling the whole page; a native
+  // listener with passive: false can. Pinch arrives as ctrlKey + small deltas.
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = workspaceRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002));
+      setScale((prevScale) => Math.min(Math.max(0.3, prevScale * zoomFactor), 2.5));
+    };
+    // Safari sends its own gesture events for pinch; stop those zooming the page.
+    const stopGesture = (e: Event) => e.preventDefault();
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('gesturestart', stopGesture);
+    el.addEventListener('gesturechange', stopGesture);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('gesturestart', stopGesture);
+      el.removeEventListener('gesturechange', stopGesture);
+    };
+  }, []);
 
   const [treeMemberModal, setTreeMemberModal] = useState(false);
   const memberDialogRef = useDialog<HTMLDivElement>(() => setTreeMemberModal(false), treeMemberModal);
@@ -397,6 +411,12 @@ export default function Content() {
           Authorization: `Bearer ${token}`,
         },
       });
+      // Only tree ADMIN/MEMBER may see pending claims; a JOINER gets 403.
+      // That's expected, not an error, so no toast.
+      if (res.status === 403) {
+        setPending([]);
+        return;
+      }
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("Session expired. Please log in again.");
@@ -528,7 +548,7 @@ export default function Content() {
   const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
 
   return (
-    <div className="flex flex-col min-h-screen text-slate-900 bg-slate-50 font-sans">
+    <div className="flex flex-col h-dvh overflow-hidden text-slate-900 bg-slate-50 font-sans">
       <SkipLink />
       <header id="navbar" tabIndex={-1} className="focus:outline-none">
         <Navbar />
@@ -538,11 +558,13 @@ export default function Content() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="focus:outline-none max-w-8xl w-full mx-auto px-4 flex-1 pt-20"
+        className="focus:outline-none relative w-full flex-1 min-h-0 overflow-hidden"
       >
         <h1 className="sr-only">{`Family tree: ${name || 'my tree'}`}</h1>
+        {/* Cards float over the tree, which has the whole area to itself */}
+        <div className="absolute left-0 top-16 z-20 flex flex-col pointer-events-none [&>*]:pointer-events-auto">
         {/* Tree member card */}
-        <div className="sticky top-20 z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
+        <div className="w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm p-4 m-5 mb-0">
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-2">
             <div className="min-h-12 min-w-0 flex flex-1 items-center">
@@ -600,7 +622,7 @@ export default function Content() {
 
         {/* approval notification */}
 		    {pending && pending.length > 0 && (
-		    <div className="sticky top-72 max-h-[50vh] overflow-y-auto z-20 w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 shadow-sm p-4 m-5">
+		    <div className="max-h-[40vh] overflow-y-auto w-60 sm:w-80 flex flex-row lg:flex-col justify-between rounded-xl border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm p-4 m-5 mb-0">
 			      <div className="mb-4 space-y-2 bg-transparent">
 			      {pending.map((m: any) => (
 				      <div key={m.id} className="flex items-center gap-2 py-2 mx-2">
@@ -634,21 +656,25 @@ export default function Content() {
 			    </div>
 		    </div>
 		    )}
+        </div>
 
-        {/* Interactive Workspace */}
+        {/* Interactive Workspace: clipped so zooming never spills over the page */}
         <div
+          ref={workspaceRef}
           role="region"
           aria-label="Family tree. Tab moves between people; arrow keys move the view; plus and minus zoom; 0 resets."
-          className="flex-1 relative cursor-grab active:cursor-grabbing"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onWheel={handleWheel}
+          className="absolute inset-0 top-16 overflow-hidden touch-none cursor-grab active:cursor-grabbing"
+          onPointerDown={handleMouseDown}
+          onPointerMove={handleMouseMove}
+          onPointerUp={handleMouseUp}
+          onPointerLeave={handleMouseUp}
+          onPointerCancel={handleMouseUp}
           onKeyDown={handleWorkspaceKeyDown}
           onFocus={handleWorkspaceFocus}
         >
           {/* Transform Layer */}
           <div
+            className="pt-44 lg:pt-10 origin-top"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
             }}
@@ -665,7 +691,7 @@ export default function Content() {
         </div>
       </main>
 
-      <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
+      <footer id="footer" tabIndex={-1} className="focus:outline-none relative z-30 shrink-0">
         <Footer />
       </footer>
 
@@ -723,7 +749,9 @@ export default function Content() {
                     <span className="flex flex-col">
                       <span className="font-medium">{memberName}</span>
                       <span className="font-light text-sm text-gray-600">
-                        {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`}
+                        {/* Death date hidden (not needed for now):
+                        {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`} */}
+                        {formatDate(member.birthDate)}
                       </span>
                     </span>
                   </button>

@@ -22,7 +22,8 @@ export class ProfileService {
 
 	// Who may change a profile (PATCH /profile/:id). Mirrors the canvas's own
 	// rule (nodeProfileBanner): your own profile; any profile in a tree where
-	// you are ADMIN or MODERATOR; as a MEMBER, only the node you claimed.
+	// you are ADMIN or MODERATOR; as a MEMBER, the node you claimed or an
+	// unclaimed placeholder.
 	// Before this, any logged-in user could edit any profile by its id.
 	async assertCanEdit(userId: string, userProfileId: number | null, targetId: number) {
 		const target = await this.prisma.profile.findUnique({
@@ -35,7 +36,7 @@ export class ProfileService {
 		if (userProfileId !== null) {
 			const nodes = await this.prisma.treeMember.findMany({
 				where: { profileId: targetId, treeId: { not: null } },
-				select: { treeId: true, linkId: true, claim: true },
+				select: { treeId: true, role: true, linkId: true, claim: true },
 			});
 			for (const node of nodes) {
 				const mine = await this.prisma.treeMember.findUnique({
@@ -45,6 +46,9 @@ export class ProfileService {
 				if (!mine) continue;
 				if (mine.role === 'ADMIN' || mine.role === 'MODERATOR') return;
 				if (mine.role === 'MEMBER' && node.claim === 'ACCEPTED' && node.linkId === mine.id) return;
+				// A MEMBER may also edit a placeholder nobody has claimed yet,
+				// as the tree page allows. A real user's profile stays theirs.
+				if (mine.role === 'MEMBER' && node.role === 'HOLDER' && node.claim === 'EMPTY' && target.userId === null) return;
 			}
 		}
 		throw new ForbiddenException('You do not have permission to edit this profile.');

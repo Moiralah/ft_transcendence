@@ -70,34 +70,32 @@ export function TreeNode({
 
   if (!nodeMember) return null;
 
-  const handleDeleteNode = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  // Called from the profile modal's "Remove from tree" button. Throws so the
+  // modal can show what went wrong.
+  const handleDeleteNode = async () => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No token found. please log in");
+    }
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    try {
-      const token = getToken();
-        if (!token) {
-        throw new Error("No token found. please log in");
-      }
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    if (!res.ok) {
+      if (res.status === 401) throw new Error("Session expired. Please log in again.");
+      // statusText is empty over HTTP/2; the server's message says why.
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || `Could not remove this person (error ${res.status}).`);
+    }
 
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Session expired. Please log in again.");
-        throw new Error(`Failed to delete node: ${res.statusText}`);
-      }
-
-      if (NodeRemove) {
-        NodeRemove(nodeMember.profileId ?? nodeMember.id);
-      }
-    } catch (err: any) {
-      console.error("Delete error:", err.message);
+    setNodeProfileModal(false);
+    if (NodeRemove) {
+      NodeRemove(nodeMember.profileId ?? nodeMember.id);
     }
   };
 
@@ -124,19 +122,6 @@ export function TreeNode({
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px] max-w-[220px] [overflow-wrap:anywhere]
         `}
       >
-        {showDeleteButton ? (
-          <button
-            type="button"
-            aria-label={`Remove ${fullName} from the tree`}
-            className="flex items-center justify-center w-full h-4 p-0 text-xs text-gray-700 hover:text-red-700 hover:bg-red-200 bg-transparent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
-            onClick={handleDeleteNode}
-          >
-            <span aria-hidden="true">✕</span>
-          </button>
-        ) : (
-          <div className="h-4" />
-        )}
-
         {/* The keyboard way in (Tab, then Enter or Space). It has no onClick of its
             own: its click bubbles to the box above, which opens the profile. */}
         <button
@@ -152,9 +137,11 @@ export function TreeNode({
             <span>
               <span>b.</span> {nodeMember.birthDate ? formatDate(nodeMember.birthDate) : 'not available'}
             </span>
+            {/* Death date hidden (not needed for now).
             <span>
               <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
             </span>
+            */}
           </span>
         </button>
       </div>
@@ -169,6 +156,7 @@ export function TreeNode({
           member={nodeMember}
 	      treeView={treeView}
           onClose={() => setNodeProfileModal(false)}
+          onDelete={showDeleteButton ? handleDeleteNode : undefined}
 
           onClaim={(updatedMembers: Member[]) => {
 			if (updatedMembers[0]) setNodeMember(updatedMembers[0]);

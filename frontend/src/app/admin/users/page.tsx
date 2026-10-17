@@ -14,13 +14,14 @@ interface AdminUser {
 	id: string;
 	username: string;
 	email: string;
-	role: 'ADMIN' | 'MODERATOR' | 'USER';
+	role: 'ADMIN' | 'MODERATOR' | 'USER' | 'GUEST';
 	suspended: boolean;
 	twoFactorEnabled: boolean;
 	createdAt: string;
 	profile?: { firstName: string; lastName?: string | null } | null;
 }
 
+// GUEST isn't offered: it's only the shared guest account, whose role can't change.
 const ROLES: AdminUser['role'][] = ['ADMIN', 'MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
@@ -49,11 +50,11 @@ export default function AdminUsersPage() {
 
 	useEffect(() => {
 		if (!token) {
-			router.push('/login');
+			router.replace('/login');
 			return;
 		}
 		if (!isAdmin && !isModerator) {
-			router.push('/dashboard');
+			router.replace('/dashboard');
 			return;
 		}
 		fetchUsers();
@@ -63,7 +64,7 @@ export default function AdminUsersPage() {
 		try {
 			const res = await authedFetch('/users');
 			if (res.status === 403) {
-				router.push('/dashboard');
+				router.replace('/dashboard');
 				return;
 			}
 			if (!res.ok) throw new Error('Failed to load users');
@@ -155,7 +156,7 @@ export default function AdminUsersPage() {
 									<th scope="col" className="px-4 py-3">Email</th>
 									<th scope="col" className="px-4 py-3">Role</th>
 									<th scope="col" className="px-4 py-3">Status</th>
-									<th scope="col" className="px-4 py-3">2FA</th>
+									<th scope="col" className="px-4 py-3">MFA</th>
 									<th scope="col" className="px-4 py-3">Joined</th>
 									<th scope="col" className="px-4 py-3">
 										<span className="sr-only">Actions</span>
@@ -170,7 +171,7 @@ export default function AdminUsersPage() {
 											<td className="px-4 py-3">{u.username}</td>
 											<td className="px-4 py-3">{u.email}</td>
 											<td className="px-4 py-3">
-												{isAdmin ? (
+												{isAdmin && u.role !== 'GUEST' ? (
 													<>
 														<label className="sr-only" htmlFor={`role-${u.id}`}>
 															Role for {u.username}

@@ -6,7 +6,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
 
-const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User' };
+const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User', GUEST: 'Guest' };
 const ROLE_RIGHTS: Record<string, string> = {
 	ADMIN: 'You can now open the Admin Panel from your dashboard: see all users, change their roles, suspend and delete accounts.',
 	MODERATOR: 'You can now open Moderation from your dashboard: see all users and suspend or reactivate accounts.',
@@ -54,6 +54,10 @@ export class UsersService {
 		const user = await this.prisma.user.findUnique({ where: { id } });
 		if (!user) {
 			throw new NotFoundException('User not found.');
+		}
+		// Promoting the shared guest login would hand its rights to every visitor.
+		if (user.role === 'GUEST') {
+			throw new ForbiddenException("The guest account's role can't be changed.");
 		}
 
 		const updated = await this.prisma.user.update({

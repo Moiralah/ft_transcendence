@@ -32,6 +32,7 @@ export default function main() {
                     description="My Simple Family Tree is 100% free, private, and simple. Build your tree directly in your browser."
                     actions={[
                         { label: 'Start Building Your Tree', href: '/signup', variant: 'primary', showArrow: true },
+                        { label: 'Try as Guest', href: '/guest', variant: 'secondary' },
                     ]}
                 />
 

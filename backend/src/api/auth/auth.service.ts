@@ -145,6 +145,107 @@ export class AuthService {
 			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
 	}
+	// --- Guest account ("Try as guest" on the front page) -----------------
+	// One shared account with site role GUEST. Visitors get a normal session on
+	// it straight away, no Supabase login, and land on its demo tree. Account
+	// changes are refused for it (NotGuestGuard). example.com never gets mail.
+	private static readonly GUEST_EMAIL = 'guest@example.com';
+	private static readonly GUEST_TREE = 'Guest Demo Family';
+
+	async loginAsGuest() {
+		const user = await this.ensureGuestUser();
+		if (user.suspended) {
+			throw new ForbiddenException('Guest access is turned off right now. Please sign up instead.');
+		}
+		const slug = await this.ensureGuestTree(user.profileId!);
+		return { ...(await this.issueSession(user)), slug };
+	}
+
+	private async ensureGuestUser() {
+		const email = AuthService.GUEST_EMAIL;
+		let user = await this.prisma.user.findUnique({ where: { email } });
+		if (!user) {
+			// Supabase owns the user ids, so the guest gets a Supabase user too
+			// (confirmed, with a random password nobody knows) to keep pages
+			// like Settings, which ask Supabase about the account, working.
+			const { data, error } = await this.supabase.auth.admin.createUser({
+				email,
+				// Random, plus one of each class Supabase's password policy asks for.
+				password: `${randomBytes(24).toString('base64url')}aA1!`,
+				email_confirm: true,
+			});
+			let id = data?.user?.id;
+			if (!id) {
+				this.logger.warn(`Guest: Supabase createUser failed (${error?.message}), looking the user up instead`);
+				// Already in Supabase (our row was deleted): reuse that id.
+				const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+					SELECT id::text AS id FROM auth.users WHERE email = ${email}`;
+				id = rows[0]?.id;
+			}
+			if (!id) {
+				throw new ServiceUnavailableException('Guest access is not available right now. Please try again.');
+			}
+			try {
+				user = await this.createUser(id, email);
+				await this.prisma.profile.update({ where: { id: user.profileId! }, data: { firstName: 'Guest' } });
+			} catch (e) {
+				// Two visitors at once: the other request created it first.
+				user = await this.prisma.user.findUnique({ where: { email } });
+				if (!user) throw e;
+			}
+		}
+		if (user.role !== 'GUEST') {
+			user = await this.prisma.user.update({ where: { id: user.id }, data: { role: 'GUEST' } });
+		}
+		return user;
+	}
+
+	// The guest's tree, made again if a visitor deleted it.
+	private async ensureGuestTree(profileId: number): Promise<string> {
+		const membership = await this.prisma.treeMember.findFirst({
+			where: { profileId, tree: { isNot: null } },
+			orderBy: { id: 'asc' },
+			select: { tree: { select: { slug: true } } },
+		});
+		if (membership?.tree) return membership.tree.slug;
+
+		const free = !(await this.prisma.tree.findUnique({ where: { name: AuthService.GUEST_TREE }, select: { id: true } }));
+		const name = free ? AuthService.GUEST_TREE : `${AuthService.GUEST_TREE} ${randomBytes(2).toString('hex')}`;
+		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. Everyone using the guest account shares it.');
+		if (!tree) throw new ServiceUnavailableException('Could not set up the demo tree. Please try again.');
+		const treeId = tree.id;
+
+		const person = (id: number, firstName: string, lastName: string, gender: string, born: string, bio?: string) =>
+			this.prisma.profile.update({ where: { id }, data: { firstName, lastName, gender, birthDate: new Date(born), bio } });
+		const addSpouse = async (id: number) => {
+			await this.trees.addSpouseNode(treeId, profileId, id);
+			return (await this.prisma.profile.findUniqueOrThrow({ where: { id } })).spouseId!;
+		};
+		const addChild = async (id: number) => {
+			await this.trees.addChildNode(treeId, profileId, id);
+			const child = await this.prisma.profile.findFirstOrThrow({
+				where: { OR: [{ fatherId: id }, { motherId: id }] },
+				orderBy: { id: 'desc' },
+			});
+			return child.id;
+		};
+
+		// Three generations. Genders are set before adding children, since
+		// addChildNode uses them to pick the mother and father slots.
+		const robert = tree.root.profile!.id;
+		await person(robert, 'Robert', 'Tan', 'MALE', '1948-03-12', 'Retired teacher from Penang.');
+		await person(await addSpouse(robert), 'Mary', 'Tan', 'FEMALE', '1951-07-02', 'Loves gardening and cooking for the whole family.');
+		const david = await addChild(robert);
+		await person(david, 'David', 'Tan', 'MALE', '1975-11-20', 'Engineer in Kuala Lumpur.');
+		const susan = await addChild(robert);
+		await person(susan, 'Susan', 'Tan', 'FEMALE', '1979-04-08');
+		await person(await addSpouse(david), 'Grace', 'Lee', 'FEMALE', '1977-01-15');
+		await person(await addChild(david), 'Emily', 'Tan', 'FEMALE', '2005-06-30');
+		await person(await addChild(david), 'Jason', 'Tan', 'MALE', '2008-09-14');
+
+		return tree.slug;
+	}
+
 	// --- Account changes (email, password) -------------------------------
 	// The browser drops its Supabase session right after login (see the
 	// frontend's exchangeSupabaseToken), so these routes are the only way to

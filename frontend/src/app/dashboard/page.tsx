@@ -72,7 +72,7 @@ export default function TreePage() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     fetchMyTrees(token);
@@ -105,7 +105,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
@@ -130,7 +130,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);
       }
@@ -291,7 +291,7 @@ export default function TreePage() {
     }
 
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
 
@@ -334,7 +334,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
           return;
         }
 
@@ -589,7 +589,7 @@ export default function TreePage() {
     } catch {
       // already logged out of the app above — don't block the redirect
     }
-    router.push('/login');
+    router.replace('/login');
   };
 
   if (error) {
@@ -771,8 +771,8 @@ export default function TreePage() {
 						justify-between gap-3 p-4 rounded-lg
 						border border-slate-200"
 					>
-						<div>
-						<p className="font-semibold text-slate-900">
+						<div className="min-w-0">
+						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
 							{request.requester.username}
 						</p>
 						<p className="text-sm text-slate-600">
@@ -780,7 +780,7 @@ export default function TreePage() {
 						</p>
 						</div>
 
-						<div className="flex gap-2">
+						<div className="flex shrink-0 gap-2">
 						<Button
 							variant="primary"
 							onClick={() =>
@@ -826,8 +826,8 @@ export default function TreePage() {
 						justify-between gap-3 p-4 rounded-lg
 						border border-slate-200"
 					>
-						<div>
-						<p className="font-semibold text-slate-900">
+						<div className="min-w-0">
+						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
 							{request.addressee.username}
 						</p>
 						<p className="text-sm text-slate-600">
@@ -836,7 +836,7 @@ export default function TreePage() {
 						</div>
 						<Button
 						variant="secondary"
-						className="rounded-md px-3 w-auto"
+						className="rounded-md px-3 w-auto shrink-0"
 						onClick={() =>
 							cancelFriend(
 							request.id,
@@ -1211,11 +1211,13 @@ export default function TreePage() {
                         Birth Date: {profile.birthDate || 'N/A'}
                       </div>
 
+                      {/* Death date hidden (not needed for now).
                       {profile.deathDate && (
                         <div className="text-sm text-slate-700 mt-1">
                           Death Date: {profile.deathDate}
                         </div>
                       )}
+                      */}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {!profile.userId ? (

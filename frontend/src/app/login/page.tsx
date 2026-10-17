@@ -33,11 +33,11 @@ export default function LoginPage() {
 	// session over — no reason to show the login form again.
 	useEffect(() => {
 		if (getToken()) {
-			router.push('/dashboard');
+			router.replace('/dashboard');
 			return;
 		}
 		borrowSessionFromOtherTab().then((ok) => {
-			if (ok) router.push('/dashboard');
+			if (ok) router.replace('/dashboard');
 		});
 	}, [router]);
 
@@ -76,7 +76,7 @@ export default function LoginPage() {
 				return;
 			}
 			storeSession(result);
-			router.push('/dashboard');
+			router.replace('/dashboard');
 		} catch (err: any) {
 			setError(isSuspended(err) ? SUSPENDED_MESSAGE : err.message || 'Login failed');
 		}
@@ -95,7 +95,7 @@ export default function LoginPage() {
 					{challengeToken ? (
 						<TwoFactorPrompt
 							challengeToken={challengeToken}
-							onVerified={() => router.push('/dashboard')}
+							onVerified={() => router.replace('/dashboard')}
 						/>
 					) : (
 						<>
@@ -122,6 +122,9 @@ export default function LoginPage() {
 							<div  className="flex flex-col gap-3 ">
 								<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
 							</div>
+							<p className="text-sm text-slate-600">
+								Just looking? <Link href="/guest" className="underline">Try it as a guest</Link>.
+							</p>
 						</>
 					)}
 				</div>

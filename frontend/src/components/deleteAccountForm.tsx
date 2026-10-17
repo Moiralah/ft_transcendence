@@ -52,7 +52,7 @@ export function DeleteAccountForm() {
 			// the account is gone either way
 		}
 		setAccount({ kind: 'deleted' });
-		setTimeout(() => router.push('/'), 3000);
+		setTimeout(() => router.replace('/'), 3000);
 	};
 
 	return (

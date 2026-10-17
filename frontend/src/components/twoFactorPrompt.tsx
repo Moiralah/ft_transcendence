@@ -31,7 +31,7 @@ export function TwoFactorPrompt({ challengeToken, onVerified }: TwoFactorPromptP
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="mb-3" aria-label="Two-factor verification">
+		<form onSubmit={handleSubmit} className="mb-3" aria-label="Multi-factor verification">
 			<p className="text-sm text-slate-700 mb-2">
 				{useRecoveryCode
 					? 'Enter one of your recovery codes.'
