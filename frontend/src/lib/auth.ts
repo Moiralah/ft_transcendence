@@ -193,6 +193,23 @@ export async function exchangeSupabaseToken(accessToken: string): Promise<LoginR
 	}
 }
 
+// "Try as guest": a session on the shared guest account (site role GUEST) and
+// the slug of its demo tree. No Supabase login involved.
+export async function loginAsGuest(): Promise<LoginSuccess & { slug: string }> {
+	const res = await fetch(`${apiUrl()}/auth/guest`, { method: 'POST' })
+		.catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok) {
+		throw new LoginError(data.message || 'Guest login failed', res.status);
+	}
+	return data;
+}
+
+// UX only, like getRole(): the backend refuses account changes for the guest.
+export function isGuest(): boolean {
+	return getRole() === 'GUEST';
+}
+
 export async function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<LoginSuccess> {
 	const res = await fetch(`${apiUrl()}/auth/2fa/login-verify`, {
 		method: 'POST',

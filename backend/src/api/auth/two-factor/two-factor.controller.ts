@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { TwoFactorService } from './two-factor.service';
 import { JwtAuthGuard } from '../jwt-auth.guard';
+import { NotGuestGuard } from '../not-guest.guard';
 import { TwoFactorCodeDto, TwoFactorLoginVerifyDto } from './dto/two-factor.dto';
 
 interface AuthenticatedRequest {
@@ -18,19 +19,19 @@ export class TwoFactorController {
 	}
 
 	@Post('setup')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	setup(@Req() req: AuthenticatedRequest) {
 		return this.twoFactor.setup(req.user.id, req.user.email);
 	}
 
 	@Post('enable')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	enable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto) {
 		return this.twoFactor.enable(req.user.id, body.token);
 	}
 
 	@Post('disable')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	disable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto) {
 		return this.twoFactor.disable(req.user.id, body.token);
 	}

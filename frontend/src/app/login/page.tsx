@@ -122,6 +122,9 @@ export default function LoginPage() {
 							<div  className="flex flex-col gap-3 ">
 								<button onClick={() => handleOAuthLogin('google')}>Sign in with Google</button>
 							</div>
+							<p className="text-sm text-slate-600">
+								Just looking? <Link href="/guest" className="underline">Try it as a guest</Link>.
+							</p>
 						</>
 					)}
 				</div>

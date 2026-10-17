@@ -3,6 +3,7 @@ import {
   Body, Patch, Post, Req, UseGuards
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { NotGuestGuard } from '../auth/not-guest.guard';
 import { FriendService } from './friend.service';
 import { FriendStatusDto } from './dto/friend-status.dto';
 
@@ -18,6 +19,7 @@ export class FriendController {
   constructor(private readonly friendService: FriendService) {}
 
   @Post('request/:userId')
+  @UseGuards(NotGuestGuard) // the shared guest account doesn't message real people
   sendRequest(
     @Req() req: Request,
     @Param('userId') userId: string,

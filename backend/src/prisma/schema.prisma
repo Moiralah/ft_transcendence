@@ -42,6 +42,7 @@ enum UserRole {
   ADMIN
   MODERATOR
   USER
+  GUEST // the shared demo account behind "Try as guest" (see AuthService.loginAsGuest)
 }
 
 // ------------------- 2FA Recovery Codes -------------------

@@ -10,13 +10,16 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { getToken } from '@/lib/auth';
+import { getToken, isGuest } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
 	const token = getToken();
 
 	const [loading, setLoading] = useState(true);
+	// Read after mount: the role lives in sessionStorage, which the server render can't see.
+	const [guest, setGuest] = useState(false);
+	useEffect(() => setGuest(isGuest()), []);
 	const [enabled, setEnabled] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -129,7 +132,21 @@ export default function SettingsPage() {
 				</div>
 				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>
 
-				{loading ? (
+				{guest ? (
+					// Everyone shares the guest login, so its account can't be changed.
+					<section aria-labelledby="guest-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
+						<h2 id="guest-heading" className="text-lg font-bold text-slate-900">
+							You&apos;re using the guest account
+						</h2>
+						<p className="text-sm text-slate-700">
+							The guest account is shared by everyone trying the site, so its password, email, MFA and
+							deletion can&apos;t be changed. Sign up for your own free account to use these settings.
+						</p>
+						<Button href="/signup" variant="primary">
+							Sign up
+						</Button>
+					</section>
+				) : loading ? (
 					<p aria-live="polite">Loading...</p>
 				) : recoveryCodes ? (
 					<section aria-labelledby="recovery-codes-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
@@ -222,9 +239,9 @@ export default function SettingsPage() {
 					</section>
 				)}
 
-				{!loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
-				{!loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
-				{!loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
+				{!guest && !loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
