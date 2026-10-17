@@ -18,7 +18,7 @@ export default function AuthCallback() {
 			const { data, error } = await supabase.auth.getSession();
 			if (error) {
 				console.error(error);
-				router.push('/login?error=SessionError');
+				router.replace('/login?error=SessionError');
 				return;
 			}
 			if (data.session) {
@@ -29,10 +29,10 @@ export default function AuthCallback() {
 						return;
 					}
 					storeSession(result);
-					router.push('/dashboard');
+					router.replace('/dashboard');
 				} catch (err) {
 					// Say why on the login page instead of a generic "BackendError".
-					router.push(isSuspended(err) ? '/login?error=suspended'
+					router.replace(isSuspended(err) ? '/login?error=suspended'
 						: isApiUnreachable(err) ? '/login?error=ApiUnreachable'
 						: '/login?error=BackendError');
 				}
@@ -54,7 +54,7 @@ export default function AuthCallback() {
 							<h1 className="text-xl font-bold text-slate-900">Verify it&apos;s you</h1>
 							<TwoFactorPrompt
 								challengeToken={challengeToken}
-								onVerified={() => router.push('/dashboard')}
+								onVerified={() => router.replace('/dashboard')}
 							/>
 						</>
 					) : (

@@ -49,11 +49,11 @@ export default function AdminUsersPage() {
 
 	useEffect(() => {
 		if (!token) {
-			router.push('/login');
+			router.replace('/login');
 			return;
 		}
 		if (!isAdmin && !isModerator) {
-			router.push('/dashboard');
+			router.replace('/dashboard');
 			return;
 		}
 		fetchUsers();
@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
 		try {
 			const res = await authedFetch('/users');
 			if (res.status === 403) {
-				router.push('/dashboard');
+				router.replace('/dashboard');
 				return;
 			}
 			if (!res.ok) throw new Error('Failed to load users');
@@ -155,7 +155,7 @@ export default function AdminUsersPage() {
 									<th scope="col" className="px-4 py-3">Email</th>
 									<th scope="col" className="px-4 py-3">Role</th>
 									<th scope="col" className="px-4 py-3">Status</th>
-									<th scope="col" className="px-4 py-3">2FA</th>
+									<th scope="col" className="px-4 py-3">MFA</th>
 									<th scope="col" className="px-4 py-3">Joined</th>
 									<th scope="col" className="px-4 py-3">
 										<span className="sr-only">Actions</span>

@@ -1,7 +1,10 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from './button';
 import { componentTokens } from './colorPalette';
+import { getToken } from '@/lib/auth';
 
 interface NavbarProps {
   brandName?: string;
@@ -31,6 +34,14 @@ export function Navbar({
 
   const tokens = componentTokens.navbar(themeMode);
 
+  // The logo is "home": the landing page before login, the dashboard after.
+  // Read after mount: the session lives in sessionStorage, which the server
+  // render can't see, so starting at '/' avoids a hydration mismatch.
+  const [homeHref, setHomeHref] = useState('/');
+  useEffect(() => {
+    setHomeHref(getToken() ? '/dashboard' : '/');
+  }, []);
+
   return (
     <header className="fixed top-0 z-20 w-full backdrop-blur-md border-b"
       style= {{
@@ -43,7 +54,7 @@ export function Navbar({
         className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex justify-between items-center gap-2"
       >
         <Link
-          href="/dashboard"
+          href={homeHref}
           className="min-w-0 grid grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1 leading-tight whitespace-nowrap rounded-md font-bold text-sm min-[360px]:text-base sm:text-xl focus:outline-none focus:ring-2 focus:ring-offset-2"
           aria-label={`${brandName} Home`}
           style={{

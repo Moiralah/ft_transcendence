@@ -76,7 +76,7 @@ export class TwoFactorService {
 	async disable(userId: string, token: string) {
 		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
-			throw new BadRequestException('2FA is not enabled.');
+			throw new BadRequestException('MFA is not enabled.');
 		}
 		if (!authenticator.verify({ token, secret: user.twoFactorSecret })) {
 			throw new UnauthorizedException('Invalid verification code.');
@@ -90,7 +90,7 @@ export class TwoFactorService {
 			await tx.recoveryCode.deleteMany({ where: { userId } });
 		});
 
-		return { message: '2FA disabled.' };
+		return { message: 'MFA disabled.' };
 	}
 
 	async verifyLogin(challengeToken: string, code: string) {
@@ -110,7 +110,7 @@ export class TwoFactorService {
 
 		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: payload.sub } });
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
-			throw new ForbiddenException('2FA is not enabled for this account.');
+			throw new ForbiddenException('MFA is not enabled for this account.');
 		}
 		if (user.suspended) {
 			throw new ForbiddenException('Your account has been suspended.');
@@ -127,7 +127,7 @@ export class TwoFactorService {
 		}
 
 		this.recordFailure(user.id);
-		throw new UnauthorizedException('Invalid 2FA code.');
+		throw new UnauthorizedException('Invalid MFA code.');
 	}
 
 	private assertNotLocked(userId: string) {
@@ -154,9 +154,9 @@ export class TwoFactorService {
 		if (entry.count >= MAX_FAILED_ATTEMPTS) {
 			entry.lockedUntil = now + LOCKOUT_MS;
 			entry.count = 0;
-			this.logger.warn(`2FA login locked for user ${userId}: ${MAX_FAILED_ATTEMPTS} failed attempts, ${LOCKOUT_MS / 60000} min lockout`);
+			this.logger.warn(`MFA login locked for user ${userId}: ${MAX_FAILED_ATTEMPTS} failed attempts, ${LOCKOUT_MS / 60000} min lockout`);
 		} else {
-			this.logger.warn(`2FA login failed for user ${userId} (${entry.count}/${MAX_FAILED_ATTEMPTS})`);
+			this.logger.warn(`MFA login failed for user ${userId} (${entry.count}/${MAX_FAILED_ATTEMPTS})`);
 		}
 		this.failedAttempts.set(userId, entry);
 	}

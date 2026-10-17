@@ -38,6 +38,8 @@ interface NodeProfileModalProps {
   onAddChild: (newChildMember: Member) => void;
   onAddSpouse: (newSpouseMember: Member) => void;
   onPhotoUpdated?: (updatedMember: Member) => void;
+  // Present only when the viewer may remove this person from the tree.
+  onDelete?: () => Promise<void>;
 }
 
 export function NodeProfileModal({
@@ -51,11 +53,34 @@ export function NodeProfileModal({
   onAddChild,
   onAddSpouse,
   onPhotoUpdated,
+  onDelete,
 }: NodeProfileModalProps) {
   const [formMember, setFormMember] = useState<Member | null>(member);
   const [editName, setEditName] = useState(false);
   const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
   const [editingField, setEditingField] = useState<string | null>(null);
+  // Removing someone takes two clicks: the first arms the button.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete();
+    } catch (err: any) {
+      setDeleteError(err.message);
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Hydration state to prevent Next.js / SSR errors when using document.body
   const [mounted, setMounted] = useState(false);
@@ -587,7 +612,25 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		</div>
 
         {/* Action Buttons */}
+        {deleteError && <p role="alert" className="text-sm text-red-600 -mb-4">{deleteError}</p>}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+              onBlur={() => setConfirmDelete(false)}
+              disabled={deleting}
+              className={`sm:mr-auto px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-600 disabled:opacity-50 ${
+                confirmDelete ? 'text-white bg-red-700 hover:bg-red-800' : 'text-red-700 bg-red-50 hover:bg-red-100'
+              }`}
+            >
+              {deleting ? 'Removing…' : confirmDelete ? 'Click again to remove' : 'Remove from tree'}
+            </button>
+          )}
 
           {/* cancel button */}
           <button

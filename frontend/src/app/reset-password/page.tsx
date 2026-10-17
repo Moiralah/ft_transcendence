@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
 		// make them log in with the new password (and 2FA, if enabled).
 		clearSession();
 		await supabase.auth.signOut({ scope: 'global' });
-		router.push('/login?reset=1');
+		router.replace('/login?reset=1');
 	};
 
 	return (

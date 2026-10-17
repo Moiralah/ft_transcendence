@@ -22,9 +22,22 @@ export default function SignupPage() {
   // Already signed in — no reason to show the signup form again.
   useEffect(() => {
     if (getToken()) {
-      router.push('/dashboard');
+      router.replace('/dashboard');
     }
   }, [router]);
+
+  // Same Google flow as the login page: /consent creates the account on the
+  // first Google sign-in, so signing up and logging in are one button.
+  const handleGoogleSignup = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/consent`,
+      },
+    });
+    if (error) setError(error.message);
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +78,7 @@ export default function SignupPage() {
           // If auto-login fails, redirect to login page with message
           setSuccess(true);
           setError('Account created! Please log in.');
-          setTimeout(() => router.push('/login'), 2000);
+          setTimeout(() => router.replace('/login'), 2000);
           return;
         }
 
@@ -79,13 +92,13 @@ export default function SignupPage() {
           if (isTwoFactorRequired(result)) {
             setSuccess(true);
             setError('Account created! Please log in.');
-            setTimeout(() => router.push('/login'), 2000);
+            setTimeout(() => router.replace('/login'), 2000);
             return;
           }
 
           storeSession(result);
 
-          router.push('/dashboard');
+          router.replace('/dashboard');
         } else {
           throw new Error('No access token received');
         }
@@ -93,7 +106,7 @@ export default function SignupPage() {
         // Email confirmation might be required – show message
         setSuccess(true);
         setError('Please check your email to confirm your account before logging in.');
-        setTimeout(() => router.push('/login'), 3000);
+        setTimeout(() => router.replace('/login'), 3000);
       }
     } catch (err: any) {
       setError(err.message);
@@ -145,9 +158,12 @@ export default function SignupPage() {
         <button type="submit" disabled={loading}>
           {loading ? 'Creating account...' : 'Sign Up'}
         </button>
-        {error && <div className="error">{error}</div>}
-        {success && <div className="success">{error}</div>}
+        {error && !success && <div className="error" role="alert">{error}</div>}
+        {success && <div className="success" role="status">{error}</div>}
       </form>
+      <div className="flex flex-col gap-3 mt-3">
+        <button type="button" onClick={handleGoogleSignup}>Sign up with Google</button>
+      </div>
       <p style={{ marginTop: 16, textAlign: 'center' }}>
         Already have an account? <Link href="/login">Log in</Link>
       </p>

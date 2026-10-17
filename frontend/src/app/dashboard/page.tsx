@@ -72,7 +72,7 @@ export default function TreePage() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     fetchMyTrees(token);
@@ -105,7 +105,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch user: ${res.statusText}`);
       }
@@ -130,7 +130,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
         }
         throw new Error(`Failed to fetch trees: ${res.statusText}`);
       }
@@ -291,7 +291,7 @@ export default function TreePage() {
     }
 
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
 
@@ -334,7 +334,7 @@ export default function TreePage() {
       if (!res.ok) {
         if (res.status === 401) {
           clearSession();
-          router.push(await loginPathAfter401(res));
+          router.replace(await loginPathAfter401(res));
           return;
         }
 
@@ -589,7 +589,7 @@ export default function TreePage() {
     } catch {
       // already logged out of the app above — don't block the redirect
     }
-    router.push('/login');
+    router.replace('/login');
   };
 
   if (error) {
