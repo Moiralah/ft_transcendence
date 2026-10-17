@@ -193,6 +193,13 @@ export class AuthService {
 		if (user.suspended) {
 			throw new ForbiddenException('Guest access is turned off right now. Please sign up instead.');
 		}
+		// Saving the guest's own profile is refused (ProfileController.update);
+		// this also puts back anything changed before that.
+		await this.prisma.profile.update({
+			where: { id: user.profileId! },
+			data: { firstName: 'Guest', lastName: null, gender: null, birthDate: null, deathDate: null, bio: null, motherId: null, fatherId: null },
+		});
+		await this.resetGuestTrees(user.profileId!);
 		const slug = await this.ensureGuestTree(user.profileId!);
 		return { ...(await this.issueSession(user)), slug };
 	}
@@ -236,7 +243,22 @@ export class AuthService {
 		return user;
 	}
 
-	// The guest's tree, made again if a visitor deleted it.
+	// Each guest login starts clean: the trees the last visitor made or edited
+	// are deleted (with their made-up people) and any tree they joined is left,
+	// so ensureGuestTree below builds a fresh demo tree. A visitor still on the
+	// site when the next one logs in loses their tree; fine for a demo.
+	private async resetGuestTrees(profileId: number) {
+		const trees = await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } });
+		for (const { id } of trees) {
+			await this.trees.deleteTree(id, profileId).catch((e) => this.logger.warn(`Guest: could not delete tree ${id}: ${e?.message}`));
+		}
+		const joined = await this.prisma.treeMember.findMany({ where: { profileId, treeId: { not: null } }, select: { treeId: true } });
+		for (const { treeId } of joined) {
+			await this.trees.leaveTree(profileId, treeId!).catch((e) => this.logger.warn(`Guest: could not leave tree ${treeId}: ${e?.message}`));
+		}
+	}
+
+	// The guest's demo tree, built fresh after resetGuestTrees.
 	private async ensureGuestTree(profileId: number): Promise<string> {
 		const membership = await this.prisma.treeMember.findFirst({
 			where: { profileId, tree: { isNot: null } },
@@ -247,7 +269,7 @@ export class AuthService {
 
 		const free = !(await this.prisma.tree.findUnique({ where: { name: AuthService.GUEST_TREE }, select: { id: true } }));
 		const name = free ? AuthService.GUEST_TREE : `${AuthService.GUEST_TREE} ${randomBytes(2).toString('hex')}`;
-		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. Everyone using the guest account shares it.');
+		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. Edits are wiped when the next guest logs in.');
 		if (!tree) throw new ServiceUnavailableException('Could not set up the demo tree. Please try again.');
 		const treeId = tree.id;
 

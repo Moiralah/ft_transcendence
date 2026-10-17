@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { TreeService } from './tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { NotGuestGuard } from '../auth/not-guest.guard';
 import { CreateTreeDto } from './dto/create-tree.dto';
 import { JoinTreeDto } from './dto/join-tree.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
@@ -14,13 +15,13 @@ export class TreeController {
 	constructor(private readonly treeService: TreeService) { }
 
 	@Post('create')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard) // the guest gets its demo tree only; sign up for more
 	async createTree(@Req() req, @Body() body: CreateTreeDto) {
 		return this.treeService.createTree(req.user.profileId, body.name, body.description);
 	}
 
 	@Post('join')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard) // keeps the shared guest login out of real people's trees
 	async joinTree(@Req() req, @Body() body: JoinTreeDto) {
 		return this.treeService.joinTree(req.user.profileId, body.name, body.code);
 	}

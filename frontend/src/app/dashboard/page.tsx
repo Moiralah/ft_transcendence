@@ -593,6 +593,12 @@ export default function TreePage() {
     router.replace('/login');
   };
 
+  // /signup sends anyone logged in back here, so leave the guest session first.
+  const signUpFromGuest = () => {
+    clearSession();
+    router.push('/signup');
+  };
+
   if (error) {
     return (
       <div role="alert" className="p-8 text-red-700 font-semibold">
@@ -606,20 +612,21 @@ export default function TreePage() {
       <SkipLink />
 
       <header id="navbar" tabIndex={-1} className="focus:outline-none">
+        {/* The guest only gets its demo tree: more trees mean signing up. */}
         <Navbar
-          btnText1={
+          btnText1={role === 'GUEST' ? 'Sign up' : (
             <span className="flex gap-1 items-center">
               <span>+ Create</span>
               <span className="hidden md:inline">Tree</span>
             </span>
-          }
-          btnOnClick1={() => setShowCreateModal(true)}
-          btnText2={
+          )}
+          btnOnClick1={role === 'GUEST' ? signUpFromGuest : () => setShowCreateModal(true)}
+          btnText2={role !== 'GUEST' && (
             <span className="flex gap-1 items-center">
               <span>Join</span>
               <span className="hidden md:inline">Tree</span>
             </span>
-          }
+          )}
           btnOnClick2={() => setShowJoinModal(true)}
           btnText3="Logout"
           btnOnClick3={handleLogout}
@@ -641,9 +648,11 @@ export default function TreePage() {
                 size={160}
                 className="outline outline-4 outline-offset-2 outline-indigo-600"
               />
-              <Button onClick={() => setShowProfileModal(true)} variant="primary">
-                Edit Profile
-              </Button>
+              {role !== 'GUEST' && (
+                <Button onClick={() => setShowProfileModal(true)} variant="primary">
+                  Edit Profile
+                </Button>
+              )}
             </div>
 
             <div className="flex flex-col gap-2 text-sm text-slate-800">

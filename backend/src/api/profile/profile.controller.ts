@@ -1,6 +1,6 @@
 import {
 	Controller, Body, Delete, Get, Param, Query, Req,
-	Patch, Post, UseGuards, BadRequestException, ParseIntPipe,
+	Patch, Post, UseGuards, BadRequestException, ForbiddenException, ParseIntPipe,
 	UseInterceptors, UploadedFile
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
@@ -90,12 +90,16 @@ export class ProfileController {
 
 	// Your own profile, or a profile in a tree where you may edit it (the same
 	// rule the canvas shows in the UI): 403 otherwise, 404 if it doesn't exist.
+	// The shared guest may edit its demo tree but not its own profile.
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
 	async update(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() body: UpdateProfileDto) {
 		const profileId = Number(id);
 		if (!Number.isInteger(profileId) || profileId <= 0) {
 			throw new BadRequestException('Invalid profile id.');
+		}
+		if (req.user.role === 'GUEST' && profileId === req.user.profileId) {
+			throw new ForbiddenException("The guest account's profile can't be changed. Sign up for your own account to do this.");
 		}
 		await this.profile.assertCanEdit(req.user.id, req.user.profileId ?? null, profileId);
 		await this.profile.assertParentsAllowed(profileId, body.motherId, body.fatherId);

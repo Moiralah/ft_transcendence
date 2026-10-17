@@ -10,7 +10,7 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { getToken, isGuest } from '@/lib/auth';
+import { clearSession, getToken, isGuest } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
@@ -142,7 +142,8 @@ export default function SettingsPage() {
 							The guest account is shared by everyone trying the site, so its password, email, MFA and
 							deletion can&apos;t be changed. Sign up for your own free account to use these settings.
 						</p>
-						<Button href="/signup" variant="primary">
+						{/* /signup sends anyone logged in to the dashboard, so leave the guest session first. */}
+						<Button onClick={() => { clearSession(); router.push('/signup'); }} variant="primary">
 							Sign up
 						</Button>
 					</section>
