@@ -749,7 +749,9 @@ export default function Content() {
                     <span className="flex flex-col">
                       <span className="font-medium">{memberName}</span>
                       <span className="font-light text-sm text-gray-600">
-                        {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`}
+                        {/* Death date hidden (not needed for now):
+                        {`${formatDate(member.birthDate)} - ${formatDate(member.deathDate)}`} */}
+                        {formatDate(member.birthDate)}
                       </span>
                     </span>
                   </button>

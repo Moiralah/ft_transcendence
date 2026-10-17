@@ -1211,11 +1211,13 @@ export default function TreePage() {
                         Birth Date: {profile.birthDate || 'N/A'}
                       </div>
 
+                      {/* Death date hidden (not needed for now).
                       {profile.deathDate && (
                         <div className="text-sm text-slate-700 mt-1">
                           Death Date: {profile.deathDate}
                         </div>
                       )}
+                      */}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {!profile.userId ? (

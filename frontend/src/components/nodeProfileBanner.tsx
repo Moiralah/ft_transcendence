@@ -542,7 +542,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             </div>
           </div>
 
-          {/* Status */}
+          {/* Alive/Deceased status and death date hidden (not needed for now). The
+              data is untouched; uncomment to bring them back.
           <div className="flex flex-row text-xl font-normal items-center">
             <div id="node-status-label" className="flex w-40 shrink-0 text-gray-600">Status</div>
             <div role="group" aria-labelledby="node-status-label" className="flex border bg-gray-200 rounded-xl p-1">
@@ -580,6 +581,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <div className="h-8"></div>
           )
           }
+          */}
         </div>
 
 		{/* Upload Photo */}

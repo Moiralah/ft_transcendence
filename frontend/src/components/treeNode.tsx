@@ -137,9 +137,11 @@ export function TreeNode({
             <span>
               <span>b.</span> {nodeMember.birthDate ? formatDate(nodeMember.birthDate) : 'not available'}
             </span>
+            {/* Death date hidden (not needed for now).
             <span>
               <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
             </span>
+            */}
           </span>
         </button>
       </div>
