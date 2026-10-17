@@ -5,7 +5,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 // The site admin console (/admin): an overview and every tree on the site.
-// Users are managed through /users (UsersController). Site admins only.
+// Users are managed through /users (UsersController). Site admins can do all
+// of it; moderators can read every tree (list and detail), nothing else.
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -18,11 +19,13 @@ export class AdminController {
 	}
 
 	@Get('trees')
+	@Roles('ADMIN', 'MODERATOR') // read-only for moderators
 	trees() {
 		return this.admin.listTrees();
 	}
 
 	@Get('trees/:treeId')
+	@Roles('ADMIN', 'MODERATOR') // read-only for moderators
 	tree(@Param('treeId', ParseIntPipe) treeId: number) {
 		return this.admin.getTree(treeId);
 	}

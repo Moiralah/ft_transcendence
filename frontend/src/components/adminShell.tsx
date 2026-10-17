@@ -17,7 +17,7 @@ const TABS = [
 
 // The site admin console: its own header and tabs, none of the member app
 // (no trees of their own, no friends). Only ADMIN sessions get in; with
-// allowModerator (the Users page) moderators do too, with a link back to
+// allowModerator (Users, and Trees read-only) moderators do too, with a link back to
 // their dashboard instead of the admin tabs.
 export function AdminShell({ title, allowModerator = false, children }: {
 	title: string;
@@ -67,7 +67,7 @@ export function AdminShell({ title, allowModerator = false, children }: {
 				{role && (
 					<nav aria-label="Admin console" className="max-w-6xl mx-auto px-4 sm:px-6">
 						<ul className="flex flex-wrap gap-1 !pl-0 list-none">
-							{(isAdmin ? TABS : [{ href: '/dashboard', label: '← Back to dashboard' }, { href: '/admin/users', label: 'Users' }]).map((t) => {
+							{(isAdmin ? TABS : [{ href: '/dashboard', label: '← Back to dashboard' }, { href: '/admin/users', label: 'Users' }, { href: '/admin/trees', label: 'Trees' }]).map((t) => {
 								const current = t.href === '/admin' ? pathname === '/admin' : pathname.startsWith(t.href);
 								return (
 									<li key={t.href}>

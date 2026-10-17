@@ -8,18 +8,23 @@ import { AdminShell } from '@/components/adminShell';
 import { adminRequest, formatDate, type AdminTreeDetail } from '@/lib/admin';
 import { getRole } from '@/lib/auth';
 
+// Moderators see every tree too, read-only (no Delete); the backend agrees.
+const canRead = (r: string | null) => r === 'ADMIN' || r === 'MODERATOR';
+
 const CLAIM: Record<string, string> = { EMPTY: '—', PENDING: 'Claim pending', ACCEPTED: 'Claimed', DECLINED: 'Claim declined', BLOCKED: 'Blocked' };
 
 // One tree, read-only: the people drawn in it and the accounts that belong to
-// it. Admins don't edit family trees; they can delete a tree from here.
+// it. Nobody edits family trees here; admins can delete one, moderators only look.
 export default function AdminTreePage() {
 	const { id } = useParams<{ id: string }>();
 	const router = useRouter();
 	const [tree, setTree] = useState<AdminTreeDetail | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [isAdmin, setIsAdmin] = useState(false);
 
 	useEffect(() => {
-		if (getRole() !== 'ADMIN') return; // the shell redirects
+		setIsAdmin(getRole() === 'ADMIN');
+		if (!canRead(getRole())) return; // the shell redirects
 		adminRequest<AdminTreeDetail>(`/admin/trees/${encodeURIComponent(id)}`).then(setTree).catch((e) => setError(e.message));
 	}, [id]);
 
@@ -36,7 +41,7 @@ export default function AdminTreePage() {
 	};
 
 	return (
-		<AdminShell title={tree ? tree.name : 'Tree'}>
+		<AdminShell title={tree ? tree.name : 'Tree'} allowModerator>
 			<p><Link href="/admin/trees" className="underline">&larr; All trees</Link></p>
 			{error && <p role="alert" className="text-red-700 font-semibold">{error}</p>}
 			{!tree && !error && <p aria-live="polite">Loading…</p>}
@@ -109,11 +114,13 @@ export default function AdminTreePage() {
 						</div>
 					</section>
 
+					{isAdmin && (
 					<section aria-labelledby="danger-h" className="bg-white rounded-lg border border-red-200 p-5 space-y-2">
 						<h2 id="danger-h" className="text-lg font-bold text-red-800">Delete this tree</h2>
 						<p className="text-sm text-slate-700">Removes the tree and the people drawn in it. Member accounts stay; they just lose this tree.</p>
 						<button type="button" onClick={deleteTree} className="!w-auto !bg-red-700 hover:!bg-red-800 !px-5">Delete tree</button>
 					</section>
+					)}
 				</>
 			)}
 		</AdminShell>

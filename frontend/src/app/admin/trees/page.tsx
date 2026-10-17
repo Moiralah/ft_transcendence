@@ -7,15 +7,20 @@ import { AdminShell } from '@/components/adminShell';
 import { adminRequest, formatDate, type AdminTreeSummary } from '@/lib/admin';
 import { getRole } from '@/lib/auth';
 
+// Moderators see every tree too, read-only (no Delete); the backend agrees.
+const canRead = (r: string | null) => r === 'ADMIN' || r === 'MODERATOR';
+
 // Every tree on the site, with its owner and size. Open one to see who and
 // what is in it, or delete it.
 export default function AdminTreesPage() {
 	const [trees, setTrees] = useState<AdminTreeSummary[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [query, setQuery] = useState('');
+	const [isAdmin, setIsAdmin] = useState(false);
 
 	useEffect(() => {
-		if (getRole() !== 'ADMIN') return; // the shell redirects
+		setIsAdmin(getRole() === 'ADMIN');
+		if (!canRead(getRole())) return; // the shell redirects
 		adminRequest<AdminTreeSummary[]>('/admin/trees').then(setTrees).catch((e) => setError(e.message));
 	}, []);
 
@@ -37,7 +42,7 @@ export default function AdminTreesPage() {
 	};
 
 	return (
-		<AdminShell title="Trees">
+		<AdminShell title="Trees" allowModerator>
 			{error && <p role="alert" className="text-red-700 font-semibold">{error}</p>}
 			{!trees && !error && <p aria-live="polite">Loading trees…</p>}
 			{trees && (
@@ -73,8 +78,10 @@ export default function AdminTreesPage() {
 										<td className="px-4 py-3">
 											<div className="flex gap-3 whitespace-nowrap">
 												<Link href={`/admin/trees/${t.id}`} className="underline font-medium" aria-label={`View tree ${t.name}`}>View</Link>
-												<button type="button" onClick={() => deleteTree(t)} aria-label={`Delete tree ${t.name}`}
-													className="!w-auto !p-0 !bg-transparent !text-red-700 underline font-medium">Delete</button>
+												{isAdmin && (
+													<button type="button" onClick={() => deleteTree(t)} aria-label={`Delete tree ${t.name}`}
+														className="!w-auto !p-0 !bg-transparent !text-red-700 underline font-medium">Delete</button>
+												)}
 											</div>
 										</td>
 									</tr>
