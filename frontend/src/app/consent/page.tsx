@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isSuspended, isTwoFactorRequired, storeSession } from '@/lib/auth';
+import { exchangeSupabaseToken, isApiUnreachable, isSuspended, isTwoFactorRequired, storeSession } from '@/lib/auth';
 import { TwoFactorPrompt } from '@/components/twoFactorPrompt';
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -32,7 +32,9 @@ export default function AuthCallback() {
 					router.push('/dashboard');
 				} catch (err) {
 					// Say why on the login page instead of a generic "BackendError".
-					router.push(isSuspended(err) ? '/login?error=suspended' : '/login?error=BackendError');
+					router.push(isSuspended(err) ? '/login?error=suspended'
+						: isApiUnreachable(err) ? '/login?error=ApiUnreachable'
+						: '/login?error=BackendError');
 				}
 			}
 		};

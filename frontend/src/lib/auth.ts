@@ -136,6 +136,18 @@ export class LoginError extends Error {
 	}
 }
 
+// fetch() rejects (no HTTP status at all) when the browser can't reach the API.
+// Locally that's nearly always the API's self-signed certificate not accepted
+// yet in this browser: each browser, and each port, needs it once.
+export function apiUnreachableMessage(): string {
+	const origin = (() => { try { return new URL(apiUrl() ?? '').origin; } catch { return 'the API'; } })();
+	return `Can't reach the server. Open ${origin} once in this browser, accept its certificate, then sign in again.`;
+}
+
+export function isApiUnreachable(err: unknown): boolean {
+	return err instanceof LoginError && err.status === 0;
+}
+
 export function isSuspended(err: unknown): boolean {
 	return err instanceof LoginError && err.status === 403 && /suspended/i.test(err.message);
 }
@@ -143,6 +155,7 @@ export function isSuspended(err: unknown): boolean {
 // /login?error=<code> -> what the login page shows.
 export function loginErrorMessage(code: string | null): string | null {
 	if (code === 'suspended') return SUSPENDED_MESSAGE;
+	if (code === 'ApiUnreachable') return apiUnreachableMessage();
 	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
 	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
 	return null;
@@ -165,7 +178,7 @@ export async function exchangeSupabaseToken(accessToken: string): Promise<LoginR
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ accessToken }),
-		});
+		}).catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });
 		const data = await res.json().catch(() => ({}));
 		if (!res.ok) {
 			throw new LoginError(data.message || 'Login failed', res.status);
