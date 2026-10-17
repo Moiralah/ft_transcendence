@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { exchangeSupabaseToken, isApiUnreachable, isSuspended, isTwoFactorRequired, storeSession } from '@/lib/auth';
@@ -12,30 +12,36 @@ import { Footer } from '@/components/footer';
 export default function AuthCallback() {
 	const router = useRouter();
 	const [challengeToken, setChallengeToken] = useState<string | null>(null);
+	// Dev (React Strict Mode) runs effects twice; two logins at once for a new
+	// Google user race each other and the second fails. Run it once.
+	const started = useRef(false);
 
 	useEffect(() => {
+		if (started.current) return;
+		started.current = true;
 		const handleCallback = async () => {
 			const { data, error } = await supabase.auth.getSession();
-			if (error) {
-				console.error(error);
+			// No session at all (cancelled at Google, or the browser couldn't
+			// reach Supabase, e.g. Safari blocking local http Supabase from the
+			// https site): say so instead of spinning forever.
+			if (error || !data.session) {
+				if (error) console.error(error);
 				router.replace('/login?error=SessionError');
 				return;
 			}
-			if (data.session) {
-				try {
-					const result = await exchangeSupabaseToken(data.session.access_token);
-					if (isTwoFactorRequired(result)) {
-						setChallengeToken(result.challengeToken);
-						return;
-					}
-					storeSession(result);
-					router.replace('/dashboard');
-				} catch (err) {
-					// Say why on the login page instead of a generic "BackendError".
-					router.replace(isSuspended(err) ? '/login?error=suspended'
-						: isApiUnreachable(err) ? '/login?error=ApiUnreachable'
-						: '/login?error=BackendError');
+			try {
+				const result = await exchangeSupabaseToken(data.session.access_token);
+				if (isTwoFactorRequired(result)) {
+					setChallengeToken(result.challengeToken);
+					return;
 				}
+				storeSession(result);
+				router.replace('/dashboard');
+			} catch (err) {
+				// Say why on the login page instead of a generic "BackendError".
+				router.replace(isSuspended(err) ? '/login?error=suspended'
+					: isApiUnreachable(err) ? '/login?error=ApiUnreachable'
+					: '/login?error=BackendError');
 			}
 		};
 		handleCallback();
