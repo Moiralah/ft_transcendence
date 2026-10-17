@@ -275,6 +275,8 @@ export class AuthService {
 		const tree = await this.trees.createTree(profileId, name, 'A sample family to try things out. It is yours alone, and is removed a day after your visit.');
 		if (!tree) throw new ServiceUnavailableException('Could not set up the demo tree. Please try again.');
 		const treeId = tree.id;
+		// No join code: nobody else joins a guest's tree, and the banner shows none.
+		await this.prisma.tree.update({ where: { id: treeId }, data: { code: null } });
 
 		const person = (id: number, firstName: string, lastName: string, gender: string, born: string, bio?: string) =>
 			this.prisma.profile.update({ where: { id }, data: { firstName, lastName, gender, birthDate: new Date(born), bio } });
