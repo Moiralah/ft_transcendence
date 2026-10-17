@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import { AdminShell } from '@/components/adminShell';
 import { Button } from '@/components/button';
-import { getRole, getToken } from '@/lib/auth';
+import { getRole, getToken, getUserId } from '@/lib/auth';
 
 interface AdminUser {
 	id: string;
@@ -28,6 +28,10 @@ export default function AdminUsersPage() {
 	const role = getRole();
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
+	// Your own row has no actions: you can't change your own role, suspend or
+	// delete yourself (the backend refuses too), but you can do it to other admins.
+	const [myId, setMyId] = useState<string | null>(null);
+	useEffect(() => setMyId(getUserId()), []);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -147,13 +151,14 @@ export default function AdminUsersPage() {
 							</thead>
 							<tbody>
 								{users.map((u) => {
-									const canSuspend = !isModerator || u.role !== 'ADMIN';
+									const isMe = u.id === myId;
+									const canSuspend = !isMe && (!isModerator || u.role !== 'ADMIN');
 									return (
 										<tr key={u.id} className="border-t border-slate-200">
-											<td className="px-4 py-3">{u.username}</td>
+											<td className="px-4 py-3">{u.username}{isMe && <span className="ml-2 text-xs font-semibold text-slate-600">(you)</span>}</td>
 											<td className="px-4 py-3">{u.email}</td>
 											<td className="px-4 py-3">
-												{isAdmin && u.role !== 'GUEST' ? (
+												{isAdmin && !isMe && u.role !== 'GUEST' ? (
 													<>
 														<label className="sr-only" htmlFor={`role-${u.id}`}>
 															Role for {u.username}
@@ -193,7 +198,7 @@ export default function AdminUsersPage() {
 															{u.suspended ? 'Unsuspend' : 'Suspend'}
 														</Button>
 													)}
-													{isAdmin && (
+													{isAdmin && !isMe && (
 														<Button
 															variant="ghost"
 															onClick={() => deleteUser(u.id, u.username)}

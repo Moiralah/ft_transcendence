@@ -60,6 +60,18 @@ export function clearSession() {
 	sessionStorage.removeItem(ROLE_KEY);
 }
 
+// The signed-in account's id (the token's `sub`), e.g. to mark "you" in the
+// admin's user list. Display only: the backend checks the real token.
+export function getUserId(): string | null {
+	const token = getToken();
+	if (!token) return null;
+	try {
+		return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub ?? null;
+	} catch {
+		return null;
+	}
+}
+
 // --- Handing the session to a new tab -------------------------------------
 // Each tab keeps its own session (above), so a new tab used to start logged
 // out. Now a new tab asks the other open tabs of this site once; a logged-in
