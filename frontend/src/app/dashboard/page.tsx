@@ -15,6 +15,7 @@ import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
+import { truncateName } from '@/lib/names';
 import { Avatar } from '@/components/Avatar';
 
 export default function TreePage() {
@@ -1135,7 +1136,7 @@ export default function TreePage() {
                       onClick={() => setShowSearch(false)}
                       className="block bg-white p-4 rounded-lg border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/30 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
                     >
-                      <div className="font-bold text-slate-900 text-base [overflow-wrap:anywhere]">{tree.name}</div>
+                      <div className="font-bold text-slate-900 text-base [overflow-wrap:anywhere]" title={tree.name}>{truncateName(tree.name)}</div>
                       <div className="text-sm text-slate-700 mt-1 [overflow-wrap:anywhere]">
                         Description: {tree.description || 'N/A'}
                       </div>

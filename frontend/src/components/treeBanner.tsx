@@ -3,6 +3,7 @@ import { componentTokens } from './colorPalette';
 import { Typography } from './typograph';
 import { Button } from './button';
 import { getToken } from '@/lib/auth';
+import { truncateName } from '@/lib/names';
 
 interface TreeBannerProp {
 	name: String;
@@ -97,7 +98,7 @@ export function TreeBanner({
 					as='h3'
 					variant='h3'
 				>
-					{name}
+					<span title={name}>{truncateName(name)}</span>
 				</Typography>
 
 				<Typography

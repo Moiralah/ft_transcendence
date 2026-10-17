@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
 import { getToken } from '@/lib/auth';
+import { truncateName } from '@/lib/names';
 
 export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
@@ -130,7 +131,7 @@ export function TreeNode({
           className="block w-full p-0 bg-transparent hover:bg-transparent text-sm font-bold text-gray-800 text-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
         >
           <span className="sr-only">Open profile of </span>
-          <span className="block">{fullName}</span>
+          <span className="block" title={fullName}>{truncateName(fullName)}</span>
 
           <span className="text-xs font-normal flex flex-col py-1">
             <span><span aria-hidden="true">{genderSymbol}</span>{genderText}</span>

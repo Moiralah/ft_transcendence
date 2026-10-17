@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
 import { TreeBranch } from '@/components/treeBranch';
+import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
@@ -587,8 +588,9 @@ export default function Content() {
                   onKeyDown={handleNameStaticKeyDown}
                   onClick={() => setEditTreeName(true)}
                   className="flex min-h-12 min-w-0 items-center px-3 py-2 text-lg font-semibold text-gray-800 [overflow-wrap:anywhere] rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 cursor-pointer"
+                  title={name || "my tree"}
                 >
-                  {name || "my tree"}
+                  {truncateName(name || "my tree")}
                 </div>
               )}
             </div>
