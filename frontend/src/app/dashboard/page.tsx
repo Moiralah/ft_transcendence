@@ -869,7 +869,7 @@ export default function TreePage() {
 			</>
 		)}
 		</section>
-        {/* Search Bar */}
+        {/* Old "Search trees or profiles" bar: no longer used by anyone (admins included).
         <section aria-label="Search Trees and Profiles" className="flex w-full gap-2 items-center">
           <div className="flex-1 flex flex-col">
             <label htmlFor="tree-search-input" className="sr-only">
@@ -894,6 +894,7 @@ export default function TreePage() {
             {isSearching ? 'Searching...' : 'Search'}
           </Button>
         </section>
+        */}
 
         <section
           aria-labelledby="profile-search-heading"
