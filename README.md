@@ -42,7 +42,9 @@ host.
 `make down` stops everything. Other targets: `make logs`, `make ps`,
 `make build`, `make backend` / `make frontend` (rebuild one side, with the
 same settings as your last `make up` or `make local`),
-`make local` (run against a local Supabase, below).
+`make local` (run against a local Supabase, below), `make clean` (stop and
+delete the containers' volumes), `make fclean` (also the built images) and
+`make re` (`fclean`, then `make up`). None of them touch the database.
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
 set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in

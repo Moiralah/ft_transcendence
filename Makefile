@@ -131,4 +131,22 @@ backend-shell:
 frontend-shell:
 	docker compose exec frontend sh
 
-.PHONY: up stack local prod deploy unseal certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell
+# Local clean-up only (never run make on solsys). None of these touch your
+# database: Supabase, local or shared, runs outside this compose stack.
+# clean: stop everything and delete the containers' anonymous volumes (the
+# node_modules copies), which `down` leaves behind.
+clean:
+	docker compose $(STACK) down --remove-orphans -v
+
+# fclean: clean, plus the images built for this project and .stack-mode, so the
+# next `make` rebuilds from scratch. certs/ stays, so the browsers keep
+# trusting the localhost certificates.
+fclean:
+	docker compose $(STACK) down --remove-orphans -v --rmi local
+	rm -f .stack-mode
+
+# re: everything from scratch.
+re: fclean
+	$(MAKE) --no-print-directory up
+
+.PHONY: up stack local prod deploy unseal certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re
