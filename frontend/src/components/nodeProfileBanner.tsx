@@ -56,18 +56,18 @@ export function NodeProfileModal({
 	onPhotoUpdated,
 	onDelete,
 }: NodeProfileModalProps) {
-  // Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
-  // edits (<input type="date">) and saves just the day.
-  const withDays = (m: Member | null): Member | null =>
-    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
-  const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
-  const [editName, setEditName] = useState(false);
-  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
-  const [editingField, setEditingField] = useState<string | null>(null);
-  // Removing someone takes two clicks: the first arms the button.
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+	// Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
+	// edits (<input type="date">) and saves just the day.
+	const withDays = (m: Member | null): Member | null =>
+		m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
+	const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
+	const [editName, setEditName] = useState(false);
+	const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
+	const [editingField, setEditingField] = useState<string | null>(null);
+	// Removing someone takes two clicks: the first arms the button.
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const handleDelete = async () => {
 		if (!onDelete) return;
@@ -412,10 +412,11 @@ export function NodeProfileModal({
 	// Do I already have a claim somewhere in this tree?
 	const iAlreadyHaveAClaim = treeView.linkId != null;
 
+	const isHolder = member.role === 'HOLDER';
+
 	// Is THIS node the one I've claimed?
 	const isMyClaimOnThisNode =
-		member.role === 'HOLDER' &&
-		member.linkId != null &&
+		isHolder &&
 		member.linkId === treeView.memberId;
 
 	// Can I claim this node?
@@ -431,6 +432,11 @@ export function NodeProfileModal({
 	const isUnclaimedHolder =
 		member.role === 'HOLDER' &&
 		(member.claim === 'EMPTY' || !member.claim);
+
+	const canAddFamily =
+		canAddOrSave &&
+		isHolder &&
+		(isUnclaimedHolder || isMyClaimOnThisNode || viewerRole === 'ADMIN');
 
 	// Fields (name, birth date, gender, photo) can only be edited on unclaimed
 	// rows, and only by ADMIN/MEMBER (JOINER is read-only). A MEMBER can't edit
@@ -681,7 +687,7 @@ export function NodeProfileModal({
 							{canClaimThisNode && 'Claim for me'}
 						</button>
 					)}
-					{(canAddOrSave && !isClaimedNode) && (
+					{(canEditFields) && (
 						<button
 							type="button"
 							onClick={(e) => {
@@ -714,7 +720,7 @@ export function NodeProfileModal({
 
 				{/* Add Family Section */}
 				<div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
-					{canAddOrSave && (
+					{canAddFamily && (
 						<button
 							type="button"
 							onClick={(e) => {
@@ -726,7 +732,7 @@ export function NodeProfileModal({
 							Add child
 						</button>
 					)}
-					{canAddOrSave && !member.spouseId && (
+					{canAddFamily && !member.spouseId && (
 						<button
 							type="button"
 							onClick={(e) => {
