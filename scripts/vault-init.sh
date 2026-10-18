@@ -7,11 +7,11 @@
 #
 # Runs every time because Vault dev mode is IN-MEMORY — all of this is
 # wiped on every `vault` container restart, there is nothing to be
-# idempotent about. Not for production: see docker-compose-security.yml's
+# idempotent about. Not for production: see docker-compose.yml's
 # comment on the vault service for what a real deployment needs instead.
 set -e
 
-# Host port of the local Vault (docker-compose-security.yml), 8200 unless VAULT_PORT is set.
+# Host port of the local Vault (docker-compose.yml), 8200 unless VAULT_PORT is set.
 VAULT_ADDR="http://127.0.0.1:${VAULT_PORT:-8200}"
 VAULT_TOKEN="dev-only-root-token"
 SECRET_PATH="secret/data/family-tree/backend"
@@ -141,11 +141,11 @@ for accessor in $(curl -s -X LIST -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/
 done
 
 # Overridable so a production deploy can add docker-compose.prod.yml — without this,
-# this restart would recreate `backend` using only the base + security files, silently
+# this restart would recreate `backend` using only the base file, silently
 # reverting it from the `prod` build target back to `dev` (found while testing the
 # production compose locally: the container's CMD was still `node dist/main.js` only
 # because this script errored out *before* reaching this line that run).
-COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.yml -f docker-compose-security.yml}"
+COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.yml}"
 
 echo "[vault-init] starting backend with AppRole credentials..."
 DATABASE_URL="$DATABASE_URL_DOCKER" \

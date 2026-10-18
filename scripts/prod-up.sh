@@ -1,7 +1,7 @@
 #!/bin/sh
 # The one correct way to bring the production stack up — whether after a fresh
-# deploy, a VM reboot, or just recovering from something breaking. `make prod`
-# runs this on the server; `make deploy` runs it there from your laptop.
+# deploy, a VM reboot, or just recovering from something breaking. Run it on
+# the server itself (solsys has no make); `make deploy` runs it there from your laptop.
 #
 # Exists because every production incident so far in this project traces back
 # to the same root cause: some command in the sequence used a different subset
@@ -9,7 +9,7 @@
 # the dev target/bind-mount (docker-compose.yml alone) instead of the real
 # prod build (needs docker-compose.prod.yml too). This script always uses the
 # same file set, everywhere, so that class of bug can't happen again:
-#   - docker-compose.yml + docker-compose-security.yml + docker-compose.prod.yml
+#   - docker-compose.yml (app + WAFs + Vault) + docker-compose.prod.yml
 #   - + docker-compose.vault-server.yml once vault/backend-approle.env exists
 #     (server-mode Vault; see scripts/vault/backend-creds.sh). Without it, the
 #     old dev-mode Vault refilled from .env by vault-init.sh, as before.
@@ -21,7 +21,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-COMPOSE_FILES="-f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml"
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
 APPROLE_FILE=vault/backend-approle.env
 SERVER_VAULT=""
 if [ -f "$APPROLE_FILE" ]; then
@@ -59,7 +59,7 @@ if [ -n "$SERVER_VAULT" ]; then
   if curl -s http://127.0.0.1:8200/v1/sys/seal-status | grep -q '"sealed":true'; then
     echo "[prod-up] Vault is SEALED, so the backend can't get its secrets. Not restarting"
     echo "          anything else. One more share holder runs 'make unseal', then run"
-    echo "          this again ('make prod' here, or 'make deploy' from a laptop)."
+    echo "          this again (./scripts/prod-up.sh here, or 'make deploy' from a laptop)."
     exit 1
   fi
 

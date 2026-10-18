@@ -175,11 +175,17 @@ export function TreeNode({
 
           onSave={(updatedMember: Member) => {
             setNodeMember(updatedMember);
-            setNodeProfileModal(false);
+            // Also into the tree's member list: the card is re-filled from that
+            // list whenever it changes (a photo upload, adding a child...), so
+            // without this the saved gender or birth date would snap back.
+            if (NodeUpdate) NodeUpdate(updatedMember);
+            // Fields save one at a time now, so the window stays open.
           }}
 
 		  	onPhotoUpdated={(updatedMember: Member) => {
-			setNodeMember(updatedMember);
+			// Only the photo changed (the window sends id, profileId and photoUrl),
+			// so merge it in rather than replacing the whole person.
+			setNodeMember((prev) => (prev ? { ...prev, ...updatedMember } : updatedMember));
 			if (NodeUpdate) NodeUpdate(updatedMember);
 			// modal stays open — user can keep editing
 			}}

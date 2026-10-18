@@ -1,14 +1,13 @@
-# Production override. Additive on top of docker-compose.yml + docker-compose-security.yml,
-# same pattern as docker-compose-security.yml itself — never edit docker-compose.yml's dev
-# behaviour to make this work. Run on the VM with:
+# Production override. Additive on top of docker-compose.yml (app + WAFs + Vault) —
+# never edit docker-compose.yml's dev behaviour to make this work. Run on the VM with:
 #
-#   docker compose -f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
 # Needs its own .env on the VM (not this repo's local one) — same variable names as
 # .env.example, with production values: the real Supabase project's keys, and
 # NEXT_PUBLIC_API_URL / CORS_ORIGIN pointed at the real domain (below).
 #
-# What this changes vs. the local security stack:
+# What this changes vs. the local stack:
 # - `target: prod` on backend/frontend (production builds, not dev servers — see each
 #   Dockerfile's prod stage) and no bind-mounted source, so the built image is what
 #   actually runs, not whatever happens to be on disk.
@@ -23,7 +22,7 @@
 #   0.0.0.0. Locally that distinction is moot (nothing external reaches your own
 #   machine's :8200 anyway); on a VM with a real public IP it matters — Vault here runs
 #   in dev mode with a hardcoded, publicly-known root token (`dev-only-root-token`,
-#   visible in docker-compose-security.yml), so leaving it open to 0.0.0.0 would hand
+#   visible in docker-compose.yml), so leaving it open to 0.0.0.0 would hand
 #   out full read/write access to anyone who found it. Binding to loopback keeps it
 #   reachable from the VM itself (which is all vault-init.sh, run over SSH, needs) while
 #   still unreachable from the public internet — no need to route its bootstrap through
@@ -55,7 +54,7 @@ services:
       # Build-time, not just runtime — see frontend/Dockerfile's prod stage comment.
       # NEXT_PUBLIC_SUPABASE_URL/ANON_KEY come from the VM's .env (same names as
       # .env.example); NEXT_PUBLIC_API_URL is fixed to the real domain here, same
-      # as docker-compose-security.yml does for the local security stack.
+      # as docker-compose.yml does for localhost.
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}

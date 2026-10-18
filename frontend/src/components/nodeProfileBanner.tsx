@@ -56,18 +56,20 @@ export function NodeProfileModal({
 	onPhotoUpdated,
 	onDelete,
 }: NodeProfileModalProps) {
-	// Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
-	// edits (<input type="date">) and saves just the day.
-	const withDays = (m: Member | null): Member | null =>
-		m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
-	const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
-	const [editName, setEditName] = useState(false);
-	const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
-	const [editingField, setEditingField] = useState<string | null>(null);
-	// Removing someone takes two clicks: the first arms the button.
-	const [confirmDelete, setConfirmDelete] = useState(false);
-	const [deleting, setDeleting] = useState(false);
-	const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
+  // edits (<input type="date">) and saves just the day.
+  const withDays = (m: Member | null): Member | null =>
+    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
+  const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
+  // What's saved on the server, to tell whether a field really changed.
+  const savedRef = useRef<Member | null>(withDays(member));
+  const [editName, setEditName] = useState(false);
+  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  // Removing someone takes two clicks: the first arms the button.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const handleDelete = async () => {
 		if (!onDelete) return;
@@ -96,6 +98,7 @@ export function NodeProfileModal({
 		setMounted(true);
 		if (member) {
 			setFormMember(withDays(member));
+			savedRef.current = withDays(member);
 			setAlive(!member.deathDate);
 		}
 	}, [member]);
@@ -215,10 +218,13 @@ export function NodeProfileModal({
 				throw new Error(`Failed to update profile: ${res.statusText}`);
 			}
 
+			// The tree's owner claiming in their own tree is accepted at once
+			// (no approval step); anyone else's claim comes back PENDING.
+			const saved = await res.json().catch(() => ({}));
 			const updatedMember: Member = {
 				...member,
 				linkId: treeView.memberId,
-				claim: 'PENDING',
+				claim: saved?.claim === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
 			};
 
 			const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
@@ -275,7 +281,11 @@ export function NodeProfileModal({
 		}
 	};
 
-	const handleSave = async () => {
+	// Each field saves as soon as it's changed (no Save button): gender on
+	// pick, birth date and name when you leave the box. `next` is the values to
+	// save, since the state update from the change hasn't landed yet.
+	const handleSave = async (next: Member | null = formMember) => {
+		const formMember = next;
 		try {
 			if (!formMember?.profileId) return;
 
@@ -318,17 +328,33 @@ export function NodeProfileModal({
 			const rawResponseBody = await res.json();
 			const serverData = rawResponseBody.data || rawResponseBody;
 
+			// The reply is the profile row, so its id is the profile id: keep this
+			// node's own member id, or the update lands on a different node.
 			const updatedMember: Member = {
 				...formMember,
 				...serverData,
+				id: formMember.id,
+				profileId: formMember.profileId,
 			};
 
+			savedRef.current = withDays(updatedMember);
 			if (onSave) onSave(updatedMember);
-			if (onClose) onClose();
 		} catch (err: any) {
 			console.error('Save error:', err.message);
 			toast.error(err.message);
+			// Show what's actually saved again, not the refused value.
+			if (savedRef.current) setFormMember(savedRef.current);
 		}
+	};
+
+	// Leaving a field: save it if it changed since the window opened or the last save.
+	const saveIfChanged = (field: 'birthDate' | 'name') => {
+		const was = savedRef.current;
+		if (!formMember || !was) return;
+		const changed = field === 'name'
+			? formMember.firstName !== was.firstName || (formMember.lastName ?? '') !== (was.lastName ?? '')
+			: (formMember.birthDate ?? '') !== (was.birthDate ?? '');
+		if (changed) handleSave(formMember);
 	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -336,11 +362,20 @@ export function NodeProfileModal({
 		setFormMember((prev) => (prev ? { ...prev, [name]: value } : prev));
 	};
 
+	// Gender saves the moment it's picked.
+	const handleGenderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+		if (!formMember) return;
+		const next = { ...formMember, gender: (e.target.value || null) as Member['gender'] };
+		setFormMember(next);
+		handleSave(next);
+	};
+
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Enter' || e.key === 'Escape') {
 			// Escape here only stops editing the field; it doesn't close the dialog.
 			e.preventDefault();
 			const target = editName ? 'node-edit-name' : `node-${editingField}-value`;
+			saveIfChanged(editName ? 'name' : 'birthDate');
 			setEditingField(null);
 			setEditName(false);
 			// Put focus back on the button that started the edit.
@@ -349,6 +384,7 @@ export function NodeProfileModal({
 	};
 
 	const handleNameBlur = () => {
+		saveIfChanged('name');
 		setEditName(false);
 	};
 
@@ -521,7 +557,7 @@ export function NodeProfileModal({
 									value={formMember?.birthDate || ''}
 									onChange={handleChange}
 									onKeyDown={handleKeyDown}
-									onBlur={() => setEditingField(null)}
+									onBlur={() => { saveIfChanged('birthDate'); setEditingField(null); }}
 									autoFocus
 									aria-labelledby="node-birthDate-label"
 									className="text-xl outline-none border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-amber-600"
@@ -555,7 +591,7 @@ export function NodeProfileModal({
 								name="gender"
 								// Stored as male/female or MALE/FEMALE (the demo tree); empty is Not Specified.
 								value={formMember?.gender?.toLowerCase() ?? ''}
-								onChange={handleChange}
+								onChange={handleGenderChange}
 								disabled={!canEditFields}
 								className="border border-gray-300 rounded px-2 py-1 outline-none"
 							>
@@ -685,18 +721,6 @@ export function NodeProfileModal({
 						>
 							{isMyClaimOnThisNode && 'Unclaim from me'}
 							{canClaimThisNode && 'Claim for me'}
-						</button>
-					)}
-					{(canEditFields) && (
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								handleSave();
-							}}
-							className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
-						>
-							Save Changes
 						</button>
 					)}
 				</div>

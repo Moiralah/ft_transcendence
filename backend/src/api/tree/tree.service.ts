@@ -729,6 +729,12 @@ export class TreeService {
 			throw new ForbiddenException('This profile already has a pending or accepted claim.');
 		}
 
+		// The tree's owner claiming a person in their own tree is accepted
+		// straight away: they're the one who would approve it. Everyone else's
+		// claim waits for approval.
+		const tree = await this.prisma.tree.findUnique({ where: { id: treeId }, select: { ownerId: true } });
+		const byOwner = tree?.ownerId === requesterProfileId;
+
 		return this.prisma.$transaction(async (tx) => {
 
 			await tx.treeMember.update({
@@ -738,7 +744,7 @@ export class TreeService {
 
 			const updated = await tx.treeMember.update({
 				where: { id: holderMemberId },
-				data: { linkId: requesterMember.id, claim: 'PENDING' },
+				data: { linkId: requesterMember.id, claim: byOwner ? 'ACCEPTED' : 'PENDING' },
 				include: { profile: true, link: { include: { profile: true } } },
 			});
 
@@ -746,8 +752,10 @@ export class TreeService {
 				data: {
 					treeId,
 					profileId: requesterProfileId,
-					action: 'REQUEST_CLAIM',
-					details: `Requested to claim profile ${holder.profileId}`,
+					action: byOwner ? 'APPROVE_CLAIM' : 'REQUEST_CLAIM',
+					details: byOwner
+						? `Claimed profile ${holder.profileId} (tree owner, no approval needed)`
+						: `Requested to claim profile ${holder.profileId}`,
 				},
 			});
 

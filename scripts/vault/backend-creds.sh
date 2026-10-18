@@ -34,4 +34,4 @@ done
 ( umask 077; printf 'VAULT_ROLE_ID=%s\nVAULT_SECRET_ID=%s\n' "$ROLE_ID" "$SECRET_ID" > "$OUT" )
 SECRET_ID=""
 echo "[vault] backend login written to $OUT (owner-only); $revoked older secret_id(s) revoked."
-echo "        Restart the backend to use it: make prod"
+echo "        Restart the backend to use it: ./scripts/prod-up.sh"

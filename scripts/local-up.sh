@@ -6,6 +6,8 @@
 #
 # Usage:
 #   make local    (runs this, under scripts/vault/with-secrets.sh when VAULT_USER is set)
+#   make backend / make frontend after `make local` run this with backend-stack /
+#   frontend-stack: same settings, only that side is rebuilt, no schema push.
 #
 # Handles the two dependency notes documented in README > "Running Supabase Locally":
 # containers reach local Supabase via host.docker.internal, not 127.0.0.1
@@ -14,6 +16,7 @@
 # from `supabase status`, so there's no manual copy-pasting into .env.
 set -e
 cd "$(dirname "$0")/.."
+TARGET="${1:-stack}"
 
 if ! supabase status >/dev/null 2>&1; then
   echo "[local-up] local Supabase not running — starting it (first run pulls"
@@ -45,8 +48,10 @@ export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
 # vault-init.sh takes each value from the environment before .env, so these
 # win over a .env (or Vault dev secrets) that point at the cloud project.
 
-echo "[local-up] bringing up the stack against local Supabase..."
-make stack
+echo local > .stack-mode
+echo "[local-up] make $TARGET against local Supabase..."
+make --no-print-directory "$TARGET"
+[ "$TARGET" = stack ] || exit 0
 
 # A fresh local Supabase has no tables. Push the Prisma schema from inside the
 # backend container (it already has the Prisma CLI), so the host needs no Node.
