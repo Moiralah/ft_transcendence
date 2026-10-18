@@ -125,12 +125,12 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-15</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-18</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. It also keeps one more direct line
-    to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree and live change notices. Everything else is
+    to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree, friends&apos; online status and live change notices. Everything else is
     one path: browser → WAF → our backend → Postgres (locally with <code>make up</code>, at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
@@ -138,7 +138,7 @@
   <div class="diagram-card">
     <svg viewBox="0 0 1010 672" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dTitle dDesc">
       <title id="dTitle">Service architecture diagram</title>
-      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Supabase Realtime and Storage with its service key (live tree events, profile photos), to Postgres via Prisma, to Gmail SMTP for feedback and account emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
+      <desc id="dDesc">Browser talks directly to Supabase Auth for login and keeps a direct Supabase Realtime WebSocket for presence (in a tree and site-wide for friends) and change notices; everything else goes through the GCP proxy, a WireGuard tunnel and a ModSecurity WAF to the NestJS backend on the home server solsys. The backend talks to Supabase Auth, to Supabase Realtime and Storage with its service key (live tree events, profile photos), to Postgres via Prisma, to Gmail SMTP for feedback and account emails, and once at boot to HashiCorp Vault for its own secrets. Supabase Auth optionally talks to Google for OAuth sign-in.</desc>
 
       <!-- ===== Group: Client ===== -->
       <text x="40" y="34" class="group-title" fill="var(--sub)">Client</text>
@@ -196,7 +196,7 @@
       <g class="box-sub mono" fill="var(--backend)">
         <text x="502" y="290">/auth</text>
         <text x="502" y="308">/auth/2fa</text>
-        <text x="502" y="326">/users</text>
+        <text x="502" y="326">/users /admin</text>
         <text x="610" y="290">/profile</text>
         <text x="610" y="308">/trees</text>
         <text x="610" y="326">/friend</text>
@@ -324,7 +324,7 @@
         <tspan font-weight="600" fill="var(--ink)">Dashed outline</tspan> = solsys, the home server running the Docker stack in production (reached from the GCP VM over WireGuard). Locally there&apos;s no GCP hop.
       </text>
       <text x="30" y="650" class="box-sub" fill="var(--sub)">
-        <tspan font-weight="600" fill="var(--supabase)">Dotted green (R)</tspan> = Supabase Realtime WebSocket, browser ↔ Supabase directly, on each tree&apos;s private channel: presence and live change notices. Not behind our WAF.
+        <tspan font-weight="600" fill="var(--supabase)">Dotted green (R)</tspan> = Supabase Realtime WebSocket, browser ↔ Supabase directly, on each tree&apos;s private channel (presence and live change notices), plus one site-wide channel for friends&apos; online status. Not behind our WAF.
       </text>
     </svg>
   </div>
@@ -366,19 +366,19 @@
     </div>
     <div class="step">
       <div class="n">5</div>
-      <p><strong>Backend ↔ Postgres</strong> — via Prisma: find-or-create the local <code>User</code>, check <code>role</code> and <code>twoFactorEnabled</code>.<span class="tag">login only</span></p>
+      <p><strong>Backend ↔ Postgres</strong> — via Prisma: find-or-create the local <code>User</code>, check <code>role</code> and <code>twoFactorEnabled</code>. The sign-in page must match the role: site admins only through &ldquo;Sign in as staff&rdquo; (<code>/staff</code>, <code>portal: &apos;staff&apos;</code>, email + password only, read from the token&apos;s <code>amr</code> claim; no new accounts are made there), everyone else only through <code>/login</code>. &ldquo;Try as Guest&rdquo; skips Supabase: <code>POST /api/auth/guest</code> signs in on the shared GUEST account.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n">6</div>
-      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived 2FA challenge token if 2FA is on. Flows back through the same WAF connection.<span class="tag">login only</span></p>
+      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived MFA challenge token if MFA is on. A site admin without MFA gets a session that only reaches MFA setup and their own account until it&apos;s on (checked on every request), and can&apos;t turn it off. Flows back through the same WAF connection.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n waf">7</div>
-      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, admin actions, 2FA settings, feedback and profile photo uploads (the one <code>multipart/form-data</code> route, <code>POST /api/profile/:id/photo</code>) — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore. Programs outside the app use <code>/api/public/*</code> the same way, with an <code>X-API-Key</code> header instead of a JWT (Yiwei&apos;s public API, merged but not counted toward the modules).<span class="tag">ongoing</span></p>
+      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, the admin console (<code>/api/admin</code>: stats and every tree for admins; the trees read-only for moderators), user management, MFA settings, feedback and profile photo uploads (the one <code>multipart/form-data</code> route, <code>POST /api/profile/:id/photo</code>) — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore. Programs outside the app use <code>/api/public/*</code> the same way, with an <code>X-API-Key</code> header instead of a JWT (Yiwei&apos;s public API, merged but not counted toward the modules).<span class="tag">ongoing</span></p>
     </div>
     <div class="step">
       <div class="n opt">R</div>
-      <p><strong>Browser ↔ Supabase Realtime</strong> — a WebSocket straight from the frontend to Supabase, on the tree&apos;s own channel <code>tree-&lt;id&gt;-&lt;HMAC&gt;</code>, whose name the backend hands out only with the members-only tree response (<code>useTreePresence</code>: who&apos;s on the same tree canvas; <code>notification.ts</code>: toasts for the events from step B). Not through the GCP proxy or our WAF; the page&apos;s CSP allows it explicitly.<span class="tag">while a tree is open</span></p>
+      <p><strong>Browser ↔ Supabase Realtime</strong> — a WebSocket straight from the frontend to Supabase, on the tree&apos;s own channel <code>tree-&lt;id&gt;-&lt;HMAC&gt;</code>, whose name the backend hands out only with the members-only tree response (<code>useTreePresence</code>: who&apos;s on the same tree canvas; <code>notification.ts</code>: toasts for the events from step B; the canvas also reloads the tree, so other people&apos;s edits show up live). A second, site-wide channel <code>app-presence</code> (<code>usePresence</code>, joined from the root layout) carries friends&apos; online status: profile ids only, no names or data. Not through the GCP proxy or our WAF; the page&apos;s CSP allows it explicitly.<span class="tag">while signed in</span></p>
     </div>
     <div class="step">
       <div class="n">B</div>
@@ -508,7 +508,7 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
   <div class="callout">
     <div class="ic">📡</div>
     <div>
-      <strong>Realtime is a second direct path to Supabase (step R):</strong> the canvas&apos;s presence and the live
+      <strong>Realtime is a second direct path to Supabase (step R):</strong> the canvas&apos;s presence, friends&apos; online status and the live
       notifications use a Supabase Realtime WebSocket from the browser, with the public anon key. It doesn&apos;t pass
       the GCP proxy or our WAF. The browser has no Supabase login of its own (the backend issues our JWT), so anyone with
       the anon key can join a channel whose name they know: the name therefore ends in an HMAC of <code>JWT_SECRET</code>,
