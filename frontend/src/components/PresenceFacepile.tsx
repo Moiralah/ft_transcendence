@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { PresenceUser } from '@/hooks/useTreePresence';
+import { isGuest } from '@/lib/auth';
 
 function initials(u: PresenceUser): string {
 	return (`${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`).toUpperCase() || '?';
@@ -32,7 +33,8 @@ export function PresenceFacepile({ users, meId }: { users: PresenceUser[]; meId?
 		<div className="fixed top-4 right-4 z-40 flex -space-x-3">
 			{shown.map((u) => {
 				const name = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || 'Someone';
-				return u.profileId === meId ? (
+				// A guest has no dashboard to go back to: just "You".
+				return u.profileId === meId && !isGuest() ? (
 					<Link
 						key={u.profileId}
 						href="/dashboard"
@@ -43,7 +45,7 @@ export function PresenceFacepile({ users, meId }: { users: PresenceUser[]; meId?
 						<Face u={u} />
 					</Link>
 				) : (
-					<div key={u.profileId} title={name} className={circle}>
+					<div key={u.profileId} title={u.profileId === meId ? 'You' : name} className={circle}>
 						<Face u={u} />
 					</div>
 				);

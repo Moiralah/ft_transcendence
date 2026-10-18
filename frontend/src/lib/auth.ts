@@ -12,7 +12,6 @@ export interface LoginSuccess {
 // Where a site admin without MFA is sent (the backend refuses them everything
 // else until it's on, with a message containing "must turn on MFA").
 export const ADMIN_MFA_SETUP_PATH = '/settings?mfa=required';
-export const isAdminMfaRequired = (message: unknown) => /must turn on MFA/i.test(String(message ?? ''));
 
 export interface TwoFactorRequired {
 	twoFactorRequired: true;
@@ -37,6 +36,12 @@ export const MIN_PASSWORD_LENGTH = 8;
 // read localStorage silently found no token and acted logged out.
 const TOKEN_KEY = 'ft_token';
 const ROLE_KEY = 'ft_role';
+// A guest's own demo tree (its slug): a guest's home, since guests have no dashboard.
+const GUEST_TREE_KEY = 'ft_guest_tree';
+
+export function rememberGuestTree(slug: string) {
+	sessionStorage.setItem(GUEST_TREE_KEY, slug);
+}
 
 export function getToken(): string | null {
 	if (typeof window === 'undefined') return null; // server render: no session
@@ -65,6 +70,7 @@ export function updateRole(role: string) {
 export function clearSession() {
 	sessionStorage.removeItem(TOKEN_KEY);
 	sessionStorage.removeItem(ROLE_KEY);
+	sessionStorage.removeItem(GUEST_TREE_KEY);
 }
 
 // The signed-in account's id (the token's `sub`), e.g. to mark "you" in the
@@ -211,14 +217,25 @@ export const portalPath = (portal: Portal) => (portal === 'staff' ? '/staff' : '
 export const wrongPortalPath = (portal: Portal) => (portal === 'staff' ? '/staff?error=NotStaff' : '/login?error=StaffOnly');
 
 // Where a session lands: site admins have the admin console instead of the
-// member dashboard (they don't make trees or friends).
-export const homeFor = (role: string | null) => (role === 'ADMIN' ? '/admin' : '/dashboard');
+// member dashboard (they don't make trees or friends); a guest has only its
+// demo tree.
+export function homeFor(role: string | null): string {
+	if (role === 'ADMIN') return '/admin';
+	if (role === 'GUEST') {
+		const slug = typeof window === 'undefined' ? null : sessionStorage.getItem(GUEST_TREE_KEY);
+		return slug ? `/canvas/${slug}` : '/';
+	}
+	return '/dashboard';
+}
 
 // After a 401 on an API call: back to /login, saying why if the account was suspended.
 export async function loginPathAfter401(res: Response): Promise<string> {
 	try {
 		const data = await res.clone().json();
-		if (/suspended/i.test(String(data?.message ?? ''))) return '/login?error=suspended';
+		const message = String(data?.message ?? '');
+		if (/suspended/i.test(message)) return '/login?error=suspended';
+		// A guest removed after 15 idle minutes: back to the front page, which says so.
+		if (/guest session ended/i.test(message)) return '/?guest=ended';
 	} catch {
 		// not JSON: plain expired session
 	}

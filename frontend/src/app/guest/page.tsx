@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { loginAsGuest, storeSession } from '@/lib/auth';
+import { loginAsGuest, rememberGuestTree, storeSession } from '@/lib/auth';
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
@@ -22,6 +22,7 @@ export default function GuestLogin() {
 		loginAsGuest()
 			.then((result) => {
 				storeSession(result);
+				if (result.slug) rememberGuestTree(result.slug);
 				router.replace(result.slug ? `/canvas/${result.slug}` : '/dashboard');
 			})
 			.catch((err) => setError(err instanceof Error ? err.message : 'Guest login failed.'));

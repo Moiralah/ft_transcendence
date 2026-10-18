@@ -10,6 +10,7 @@ import { featureItems } from '@/data/featureItem';
 import { howItWorks } from '@/data/featureItem';
 import { faqs } from '@/data/featureItem';
 import { componentTokens } from '@/components/colorPalette';
+import { GuestEndedNotice } from '@/components/guestEndedNotice';
 
 export default function main() {
 
@@ -30,6 +31,7 @@ export default function main() {
             {/* flex-1 keeps the footer at the bottom when the page is shorter than the
                 window (e.g. zoomed out); the last section grows so it stays white. */}
             <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col [&>section:last-child]:flex-1 focus:outline-none">
+                <GuestEndedNotice />
                 <Banner
                     id="hero-heading"
                     headingLevel="h1"

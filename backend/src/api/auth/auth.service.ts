@@ -1,5 +1,5 @@
 
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit, BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -14,7 +14,7 @@ const STAFF_ONLY = 'Staff accounts sign in through "Sign in as staff", with emai
 const STAFF_PASSWORD_ONLY = 'Staff sign in with email and password, not Google.';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(AuthService.name);
 	private supabase: SupabaseClient;
 
@@ -196,7 +196,21 @@ export class AuthService {
 	// switch: suspend it in the admin panel to turn guest access off.
 	private static readonly GUEST_SWITCH_EMAIL = 'guest@example.com';
 	private static readonly GUEST_TREE = 'Guest Demo Family';
-	private static readonly GUEST_LIFETIME_MS = 24 * 60 * 60 * 1000;
+	// A guest (account and demo tree) is removed after 15 minutes without a
+	// request. JwtStrategy keeps User.updatedAt as the guest's last activity.
+	private static readonly GUEST_IDLE_MS = 15 * 60 * 1000;
+	private guestSweep?: ReturnType<typeof setInterval>;
+
+	// Checked every minute, so an idle guest goes within about 16 minutes.
+	onModuleInit() {
+		this.guestSweep = setInterval(() => {
+			this.removeOldGuests().catch((e) => this.logger.warn(`Guest cleanup failed: ${e?.message}`));
+		}, 60 * 1000);
+	}
+
+	onModuleDestroy() {
+		if (this.guestSweep) clearInterval(this.guestSweep);
+	}
 	// No throttle on this route, and each visit makes an account and a tree.
 	private static readonly GUESTS_PER_HOUR = 3;
 
@@ -228,8 +242,9 @@ export class AuthService {
 		return { ...(await this.issueSession(user)), slug };
 	}
 
-	// Guest accounts past their day, with their trees (and the trees the old
-	// shared guest account still owns). A few per login keeps each login quick.
+	// Guest accounts idle for GUEST_IDLE_MS, with their trees (and the trees the
+	// old shared guest account still owns). Runs every minute and on each guest
+	// login; a few at a time keeps each run quick.
 	private async removeOldGuests() {
 		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { profileId: true } });
 		if (sw?.profileId) {
@@ -241,7 +256,7 @@ export class AuthService {
 			where: {
 				role: 'GUEST',
 				email: { not: AuthService.GUEST_SWITCH_EMAIL },
-				createdAt: { lt: new Date(Date.now() - AuthService.GUEST_LIFETIME_MS) },
+				updatedAt: { lt: new Date(Date.now() - AuthService.GUEST_IDLE_MS) },
 			},
 			select: { id: true, profileId: true },
 			take: 20,

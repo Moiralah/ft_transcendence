@@ -6,6 +6,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 // The frontend matches on "must turn on MFA" to send the admin to Settings.
 export const ADMIN_MFA_REQUIRED = 'Site admins must turn on MFA before using the admin console. Set it up in Settings.';
 
+export const GUEST_SESSION_ENDED = 'Your guest session ended after 15 minutes without activity.';
+
 // What an admin without MFA may still call: the MFA setup, and the account
 // details the Settings page loads.
 const ADMIN_MFA_SETUP_ROUTES = [
@@ -48,10 +50,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// demoted admin loses the admin endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true, twoFactorEnabled: true },
+			select: { suspended: true, role: true, twoFactorEnabled: true, updatedAt: true },
 		});
+		// A guest removed after 15 idle minutes (AuthService): say so, rather
+		// than "suspended". The frontend matches on "guest session ended".
+		if (!user && payload.role === 'GUEST') {
+			throw new UnauthorizedException(GUEST_SESSION_ENDED);
+		}
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
+		}
+
+		// Guests' last activity, which the idle cleanup reads. At most once a
+		// minute, so a busy guest doesn't write on every request.
+		if (user.role === 'GUEST' && Date.now() - user.updatedAt.getTime() > 60 * 1000) {
+			await this.prisma.user.update({ where: { id: payload.sub }, data: { updatedAt: new Date() } });
 		}
 
 		// Site admins must have MFA. Until they turn it on, their session only
