@@ -163,7 +163,7 @@ touches the data.
 
 ## 🧩 Modules
 
-We claim **18 points**: 5 Majors (10 pts) + 8 Minors (8 pts). Modules we built
+We claim **22 points**: 6 Majors (12 pts) + 10 Minors (10 pts). Modules we built
 parts of but do not claim, because a part the subject asks for is missing, are
 listed after the table.
 
@@ -182,7 +182,10 @@ listed after the table.
 | 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
 | 12 | Accessibility, WCAG 2.1 AA | Major | 2 | Jon | canvas usable by keyboard, real dialogs (focus trap, Escape, focus returns), skip link, landmarks, labelled forms, a title per page; axe 0 violations, Lighthouse accessibility 100 |
 | 13 | Standard user management | Major | 2 | Moira, Jon, Yiwei | edit your profile, upload a photo (default avatar if none), friends with requests and online status, your profile on the dashboard and each person's profile on the tree |
-| | **Total** | | **18** | | |
+| 14 | Real-time features (WebSockets) | Major | 2 | Moira | Supabase Realtime on private per-tree channels: who is in the tree right now, live notices of changes; friends' online status on a site-wide channel |
+| 15 | Notification system (create / update / delete) | Minor | 1 | Moira, Tiara | live notices from the tree audit log, pending claims to approve, friend requests (incoming and sent) on the dashboard |
+| 16 | Real-time collaboration | Minor | 1 | Moira, Jon | several people edit one tree at once; each canvas redraws when someone else changes it, with who is there shown on top |
+| | **Total** | | **22** | | |
 
 ### Why each module
 
@@ -236,14 +239,18 @@ listed after the table.
   uploaded). The profile is shown on the dashboard and on that person's node
   in every tree. Friends send, accept, reject and cancel requests, and the
   friends list shows who is online.
+- **Real-time (14), notifications (15) and collaboration (16).** A family
+  fills in a tree together, often at the same time. Every change to a tree
+  writes an audit row; Supabase Realtime sends it over a WebSocket on that
+  tree's private channel, so everyone on the tree gets a notice and their
+  canvas redraws. Presence shows who is on the tree, and a site-wide
+  channel gives friends' online status. Claims to approve and friend
+  requests wait on the dashboard until someone acts on them.
 
 ### Built but not claimed
 
 | Module | What exists | What is missing for the module |
 |--------|-------------|-------------------------------|
-| Real-time features (Major) | Supabase Realtime: presence in a tree, live notifications of tree changes, on private per-tree channels | reconnection handling shown, every view updating live |
-| Notification system (Minor) | live notifications from the tree audit log, pending claims | notifications for every create/update/delete action |
-| Real-time collaboration (Minor) | shared tree canvas with live presence | other people's edits drawn live on the canvas |
 | Public API (Major) | `X-API-Key` guard, rate limit (60 a minute), Swagger at `/docs`, GET / POST / PUT on public trees (Yiwei) | 4 endpoints, not the 5 the subject asks for, and no DELETE |
 
 SSR and the user activity analytics dashboard were dropped on 10 Oct.
@@ -274,14 +281,15 @@ Differences we found:
 - Backend framework (NestJS) and ORM (Prisma): the schema and the services.
 - Organization system: trees, join codes, member roles, claims, remove a
   member, delete a tree; the tree roles decision (admin / member / joiner).
-- Real-time presence and notifications (with Tiara); profile photos on the
-  dashboard and the tree; landing page; skip link.
+- Real-time: presence and live notifications (with Tiara), real-time
+  collaboration on the canvas (with Jon); profile photos on the dashboard and
+  the tree; landing page; skip link.
 
 ### Jon (lechan)
 - Frontend framework (Next.js) and the design system components.
 - The tree canvas: nodes, connector lines, spouses; Delete / Leave Tree
   buttons; alive / deceased toggle.
-- Browser testing.
+- Browser testing; real-time collaboration on the canvas (with Moira).
 - Accessibility (WCAG 2.1 AA): the canvas by keyboard, dialogs with focus
   handling, skip link, landmarks, labels, page titles; the axe and Lighthouse
   checks.
@@ -295,6 +303,7 @@ Differences we found:
 
 ### Tiara (tching)
 - Google OAuth, 2FA, site roles with the admin panel and suspension.
+- Notifications (with Moira): private per-tree realtime channels.
 - Cybersecurity: WAF (ModSecurity + OWASP CRS) and HashiCorp Vault, in
   server mode on solsys with per-person logins through SSH tunnels.
 - Deployment (GCP proxy, WireGuard, solsys), Supabase RLS fix and private
