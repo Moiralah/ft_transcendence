@@ -9,7 +9,7 @@
 # the dev target/bind-mount (docker-compose.yml alone) instead of the real
 # prod build (needs docker-compose.prod.yml too). This script always uses the
 # same file set, everywhere, so that class of bug can't happen again:
-#   - docker-compose.yml + docker-compose-security.yml + docker-compose.prod.yml
+#   - docker-compose.yml (app + WAFs + Vault) + docker-compose.prod.yml
 #   - + docker-compose.vault-server.yml once vault/backend-approle.env exists
 #     (server-mode Vault; see scripts/vault/backend-creds.sh). Without it, the
 #     old dev-mode Vault refilled from .env by vault-init.sh, as before.
@@ -21,7 +21,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-COMPOSE_FILES="-f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml"
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
 APPROLE_FILE=vault/backend-approle.env
 SERVER_VAULT=""
 if [ -f "$APPROLE_FILE" ]; then

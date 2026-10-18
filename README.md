@@ -157,7 +157,7 @@ touches the data.
 | Friends: send / accept / reject / cancel / unfriend, list with online status | dashboard | Yiwei |
 | Admin panel: list users, change site roles, suspend, delete (with an email to the user) | `/admin/users` | Tiara |
 | Feedback form, Privacy Policy, Terms of Service | `/feedback`, `/privacy`, `/terms` | Tiara |
-| WAF in front of both apps, secrets from Vault | `docker-compose-security.yml`, `vault/` | Tiara |
+| WAF in front of both apps, secrets from Vault | `docker-compose.yml`, `waf/`, `vault/` | Tiara |
 
 ---
 
@@ -451,8 +451,8 @@ Restore your original `.env` values and you're back on the shared project
 ## 🛡️ Cybersecurity module (WAF + Vault)
 
 ModSecurity + the OWASP Core Rule Set, fronting both `frontend` and
-`backend`, plus Vault. They live in their own compose file
-(`docker-compose-security.yml`) and are part of `make up`. See `diagram/architecture.html` for the full request-flow
+`backend`, plus Vault. They are in `docker-compose.yml` with the app, so `make up`
+always starts them. See `diagram/architecture.html` for the full request-flow
 diagram (open it directly in a browser, no server needed).
 
 ```bash
@@ -461,15 +461,14 @@ make down              # tears it all down
 ```
 
 In this stack the WAF is the **only** way in: `:3000` and `:4000` are not
-published to your machine (`ports: !reset []` in
-`docker-compose-security.yml`, which needs Docker Compose 2.24 or newer). The
+published to your machine (`docker-compose.yml` gives them no `ports:`). The
 WAFs still reach the frontend and backend over the Docker network.
 - `https://localhost:8443` → frontend, inspected — **open the app here**
 - `https://localhost:9443` → backend API, inspected (the app's browser calls go here)
 
-To see a request that the WAF blocks reach the app unfiltered, start the app
-without the security file (`docker compose up -d`, which publishes `:3000` and
-`:4000`) and send it to `:4000`.
+To see a request that the WAF blocks reach the app unfiltered, send it to the
+backend from inside the Docker network, where no WAF sits in between:
+`docker run --rm --network familytree_default curlimages/curl -sk "https://backend:4000/api/..."`.
 
 **Dependency note:** the WAFs depend on the containers behind them. Their
 nginx looks up `backend`'s and `frontend`'s addresses once, when it starts, so
@@ -573,8 +572,8 @@ server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 - `vault/load-secrets.ts` – reads the secrets from Vault at boot
 
 ### Infrastructure
-- `docker-compose.yml` (app), `docker-compose-security.yml` (WAFs + Vault),
-  `docker-compose.prod.yml`, `docker-compose.vault-server.yml`
+- `docker-compose.yml` (app + WAFs + Vault), `docker-compose.prod.yml`
+  (production builds), `docker-compose.vault-server.yml` (server-mode Vault)
 - `waf/` – ModSecurity + CRS config and `test-waf.sh`
 - `vault/` – server-mode Vault scripts and setup guide
 - `scripts/` – `vault-init.sh`, `local-up.sh`, `prod-up.sh`, …

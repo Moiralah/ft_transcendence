@@ -1,8 +1,8 @@
 # Generate SSL certificates if they don't exist
 
-# Compose files for the whole stack: the app plus the IV.5 Cybersecurity module
-# (two WAFs and Vault, docker-compose-security.yml).
-STACK = -f docker-compose.yml -f docker-compose-security.yml
+# Compose file for the whole stack: the app plus the IV.5 Cybersecurity module
+# (two WAFs and Vault), all in docker-compose.yml.
+STACK = -f docker-compose.yml
 
 # Host port of the local Vault. On Windows (WSL), Hyper-V reserves blocks of
 # ports that often cover 8200 (`netsh interface ipv4 show excludedportrange
@@ -88,8 +88,6 @@ certs:
 	@# The WAFs' nginx runs as a non-root user and can't read mkcert's 0600 key.
 	@chmod 644 certs/localhost-key.pem
 
-# These always use both compose files: forgetting `-f docker-compose-security.yml`
-# would orphan `vault`/`waf-*`.
 down:
 	docker compose $(STACK) down
 

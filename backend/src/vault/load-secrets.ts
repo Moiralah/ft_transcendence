@@ -4,10 +4,10 @@
 //
 // Auth is via AppRole (VAULT_ROLE_ID/VAULT_SECRET_ID), not a root token —
 // this backend's AppRole is scoped to read-only on exactly one path
-// (see docker-compose-security.yml and the Vault policy `backend-readonly`).
+// (see docker-compose.yml and the Vault policy `backend-readonly`).
 //
-// If VAULT_ADDR isn't set, this is a no-op: local dev without the
-// security stack running falls back to `.env` entirely, same as before
+// If VAULT_ADDR isn't set, this is a no-op: running without Vault
+// falls back to `.env` entirely, same as before
 // Vault existed. Vault-provided values always win over `.env` for the
 // same key, since dotenv's config() (called after this, in main.ts)
 // does not overwrite already-set process.env vars.

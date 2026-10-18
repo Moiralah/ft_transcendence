@@ -1,3 +1,12 @@
+# The whole stack: the app (backend, frontend) behind two WAFs, with Vault for
+# the secrets (IV.5 Cybersecurity module). `make up` starts it; see the Makefile
+# for the start order. docker-compose.prod.yml (and on solsys
+# docker-compose.vault-server.yml) are layered on this file for production.
+#
+# The WAF is the *only* way in: backend's :4000 and frontend's :3000 are not
+# published (a WAF with a bypass path isn't protecting anything). They still
+# exist on the Docker network, which is how the WAFs reach them.
+
 # Containers, network and volumes are named familytree-* on every machine,
 # whatever the checkout folder is called (transpeed, ft_transcendence, ...).
 name: familytree
@@ -25,25 +34,37 @@ services:
       TZ: ${TZ:-Asia/Kuala_Lumpur}
       PORT: ${PORT}
       NODE_ENV: ${NODE_ENV}
-      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      CORS_ORIGIN: ${CORS_ORIGIN}
-      SUPABASE_AUTH_URL: ${SUPABASE_AUTH_URL}
+      # The browser loads the app from the WAF (:8443), so that's the origin
+      # CORS has to allow. docker-compose.prod.yml sets the live site instead.
+      CORS_ORIGIN: "https://localhost:8443"
       # Browser-facing Supabase address for stored photo links; only `make local`
       # sets it (see scripts/local-up.sh). Empty elsewhere = use SUPABASE_AUTH_URL.
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      DIRECT_URL: ${DIRECT_URL}
-      DATABASE_URL: ${DATABASE_URL}
+      # Secrets come ONLY from Vault (loaded in main.ts before Nest starts),
+      # so they're blank here and don't sit in clear text in the container's
+      # environment (`docker inspect`). SMTP_PASS is never passed either.
+      # SUPABASE_AUTH_URL is only the project address, not a credential, but it
+      # is one of Vault's six, so it is blank too. Manual Prisma commands inside
+      # this container need the URL given explicitly, e.g.
+      #   docker exec -e DIRECT_URL=... <backend> npx prisma db execute ...
+      JWT_SECRET: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      DATABASE_URL: ""
+      DIRECT_URL: ""
+      SUPABASE_AUTH_URL: ""
+      # How the backend finds and logs in to Vault. scripts/vault-init.sh
+      # (`make up`) sets them on every start, since dev Vault forgets them on
+      # restart; on solsys, scripts/prod-up.sh does. Without them,
+      # backend/src/vault/load-secrets.ts no-ops and falls back to `.env`.
+      VAULT_ADDR: ${VAULT_ADDR:-}
+      VAULT_ROLE_ID: ${VAULT_ROLE_ID:-}
+      VAULT_SECRET_ID: ${VAULT_SECRET_ID:-}
       # Feedback form (/feedback) emails go out through this SMTP account.
-      # SMTP_PASS is a secret: in the security/prod stack it comes from Vault
-      # (vault-init.sh), so it's deliberately not passed here.
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       FEEDBACK_TO: ${FEEDBACK_TO:-tiarabyte@gmail.com}
-    ports:
-      - "4000:4000"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -58,16 +79,96 @@ services:
       - backend
     environment:
       TZ: ${TZ:-Asia/Kuala_Lumpur}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      # Browser-side API calls go through waf-backend (:9443), otherwise the API
+      # traffic skips the WAF entirely. Next runs in dev mode here, so this is
+      # read at container start, no image rebuild needed.
+      NEXT_PUBLIC_API_URL: "https://localhost:9443/api"
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    ports:
-      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
       - ./certs:/app/certs
 
-# WAF (ModSecurity + OWASP CRS, IV.5 Cybersecurity module) lives in
-# docker-compose-security.yml, layered on this file. `make up` starts both;
-# see the Makefile for the start order.
+  # --- WAF (ModSecurity + OWASP CRS), IV.5 Cybersecurity module ---
+  # Two instances, one per upstream, since the browser calls the backend
+  # directly (NEXT_PUBLIC_API_URL) as well as loading the frontend — a WAF
+  # fronting only the frontend would inspect zero API traffic.
+  waf-frontend:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
+      BACKEND: "https://frontend:3000"
+      PROXY_SSL_VERIFY: "off" # frontend uses our own self-signed dev cert
+      PORT: "8080"
+      SSL_PORT: "8443"
+      # OWASP CRS paranoia level 2 (stricter than the default 1). Rolled out
+      # in two steps: 2026-10-05 detection only (logged, not blocked), then
+      # 2026-10-06 blocking, after waf/pl2-report.sh showed only bots here.
+      BLOCKING_PARANOIA: "2"
+      DETECTION_PARANOIA: "2"
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
+      - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+      - ./waf/frontend-exclusions.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
+    depends_on:
+      - frontend
+
+  waf-backend:
+    image: owasp/modsecurity-crs:nginx
+    restart: unless-stopped
+    environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
+      BACKEND: "https://backend:4000"
+      PROXY_SSL_VERIFY: "off" # backend uses our own self-signed dev cert
+      PORT: "8080"
+      SSL_PORT: "8443"
+      # CRS only allows GET HEAD POST OPTIONS by default (rule 911100); the
+      # REST API also uses PUT/PATCH/DELETE. Not set on waf-frontend, which
+      # only serves pages.
+      ALLOWED_METHODS: "GET HEAD POST OPTIONS PUT PATCH DELETE"
+      # Paranoia level 2, same two-step rollout as waf-frontend; the two real
+      # false positives in free text (942440, 932236) are excluded narrowly in
+      # waf/backend-exclusions.conf (rule 1000030).
+      BLOCKING_PARANOIA: "2"
+      DETECTION_PARANOIA: "2"
+      # The API receives JSON only, so anything else is refused (CRS rule
+      # 920420); the one exception is the profile photo upload, which may send
+      # multipart/form-data (waf/backend-exclusions.conf, rule 1000040).
+      # Bodies without files are capped at 128 KB, so every JSON request
+      # still is; with a file at 6 MB (default was 13 MB), headroom above the
+      # 1 MB photo limit (GCP nginx and the backend). Over the limit -> 413.
+      ALLOWED_REQUEST_CONTENT_TYPE: "|application/json|"
+      MODSEC_REQ_BODY_LIMIT: "6291456"
+      MODSEC_REQ_BODY_NOFILES_LIMIT: "131072"
+      MODSEC_REQ_BODY_LIMIT_ACTION: "Reject"
+    ports:
+      - "9443:8443"
+    volumes:
+      - ./certs/localhost.pem:/etc/nginx/conf/server.crt:ro
+      - ./certs/localhost-key.pem:/etc/nginx/conf/server.key:ro
+      - ./waf/backend-exclusions.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
+    depends_on:
+      - backend
+
+  # --- Secrets manager (HashiCorp Vault), IV.5 Cybersecurity module ---
+  # DEV MODE here, insecure by design and only for laptops: unsealed
+  # automatically, everything in memory (wiped on every restart), a fixed
+  # root token. Production on solsys runs it in server mode instead
+  # (docker-compose.vault-server.yml: file storage, Shamir unseal, AppRole).
+  vault:
+    image: hashicorp/vault:latest
+    restart: unless-stopped
+    environment:
+      TZ: "Asia/Kuala_Lumpur" # log times in Malaysia time, like the host
+      VAULT_DEV_ROOT_TOKEN_ID: "dev-only-root-token"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    # Host side: 8200, or VAULT_PORT (the Makefile sets 28200 on Windows/WSL,
+    # where Hyper-V often reserves a port range that covers 8200).
+    ports:
+      - "${VAULT_PORT:-8200}:8200"

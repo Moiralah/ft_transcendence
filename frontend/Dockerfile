@@ -13,7 +13,7 @@ CMD ["npm", "run", "dev"]
 # Serves plain HTTP internally, not HTTPS like the dev target does. `next start` doesn't
 # support `--experimental-https` at all — it's dev-only (Next.js's own docs). The WAF
 # terminates TLS publicly and reverse-proxies to this over the Docker network; :3000 is
-# never published externally in the security stack, so there's no exposure from dropping
+# never published externally by docker-compose.yml, so there's no exposure from dropping
 # TLS on this internal hop.
 FROM node:22-alpine AS prod
 WORKDIR /app

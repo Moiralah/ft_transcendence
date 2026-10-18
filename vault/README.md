@@ -185,7 +185,7 @@ Run in `~/ft_transcendence`, after this work is merged into `branchsaurus` and p
    ```
 2. Start the new Vault (sealed, empty) and set it up:
    ```sh
-   F="-f docker-compose.yml -f docker-compose-security.yml -f docker-compose.prod.yml -f docker-compose.vault-server.yml -f docker-compose.home.yml"
+   F="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.vault-server.yml -f docker-compose.home.yml"
    docker compose $F up -d vault
    export VAULT_CONTAINER=familytree-vault-1 VAULT_ADDR=http://127.0.0.1:8200
    scripts/vault/init.sh ~/vault-init.json          # 5 shares + root token

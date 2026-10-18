@@ -1,8 +1,8 @@
-# Server-mode Vault for production. Layered LAST, on top of docker-compose.yml +
-# docker-compose-security.yml + docker-compose.prod.yml (scripts/prod-up.sh does
+# Server-mode Vault for production. Layered on top of docker-compose.yml +
+# docker-compose.prod.yml (scripts/prod-up.sh does
 # this by itself once vault/backend-approle.env exists).
 #
-# What changes vs. the dev-mode Vault in docker-compose-security.yml:
+# What changes vs. the dev-mode Vault in docker-compose.yml:
 # - real storage (named volume vault-file): secrets, users and policies survive
 #   restarts, so nothing is re-written from .env any more; .env keeps only
 #   non-secret settings

@@ -404,7 +404,7 @@
       <code>application/json</code>, with bodies up to 128 KB; the one exception is the profile photo upload, which may
       send <code>multipart/form-data</code> (since 2026-10-14). The WAF lets that through up to 6 MB, but the photo itself is limited to 1 MB by the GCP nginx and the backend. Tuning, backend WAF only, in
       <code>waf/backend-exclusions.conf</code>: <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> allowed (rule 911100,
-      set in <code>docker-compose-security.yml</code>), the JSON field <code>profileId</code> (rule 930120), the two password
+      set in <code>docker-compose.yml</code>), the JSON field <code>profileId</code> (rule 930120), the two password
       fields on <code>change-email</code>/<code>change-password</code> (rule 1000020), rule 1000030, which skips 942440 (a plain
       <code>--</code>) and 932236 (a person called "Local") on free-text fields only, and rule 1000040, multipart on
       <code>POST /api/profile/:id/photo</code> only. Values are still inspected and every other rule
@@ -416,8 +416,8 @@
     <div class="ic">🔀</div>
     <div>
       <strong>How the app actually reaches the WAF:</strong> the browser calls the API directly (not through the
-      frontend), so putting a WAF in front of the frontend alone would inspect none of it. In the security stack
-      <code>docker-compose-security.yml</code> therefore sets <code>NEXT_PUBLIC_API_URL=https://localhost:9443/api</code>
+      frontend), so putting a WAF in front of the frontend alone would inspect none of it. So
+      <code>docker-compose.yml</code> sets <code>NEXT_PUBLIC_API_URL=https://localhost:9443/api</code>
       on the frontend and <code>CORS_ORIGIN=https://localhost:8443</code> on the backend, and Supabase's redirect
       allowlist includes <code>https://localhost:8443</code> for OAuth. Open the app on <code>:8443</code>; on
       <code>:3000</code> its API calls fail CORS. <code>make up</code> always uses this stack (since 11 Oct).
@@ -455,9 +455,9 @@
   <div class="callout ok">
     <div class="ic">🔒</div>
     <div>
-      <strong>WAF is the only way in (security stack):</strong> <code>:3000</code>/<code>:4000</code> are no longer
-      published — <code>ports: !reset []</code> on <code>backend</code>/<code>frontend</code> in
-      <code>docker-compose-security.yml</code>, so a WAF with a bypass path is no longer the situation. The WAFs still
+      <strong>WAF is the only way in:</strong> <code>:3000</code>/<code>:4000</code> are no longer
+      published — <code>backend</code>/<code>frontend</code> have no <code>ports:</code> in
+      <code>docker-compose.yml</code> (one file since 18 Oct; before, a separate security file reset them), so a WAF with a bypass path is no longer the situation. The WAFs still
       reach them over the Docker network. Since 11 Oct every <code>make up</code> uses this stack. The
       <code>!reset</code> tag needs Docker Compose 2.24 or newer.
     </div>
