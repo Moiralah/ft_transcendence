@@ -11,7 +11,7 @@ import { Footer } from '@/components/footer';
 // would never show. The import gets a content-hashed URL.
 import logo from '@/app/icon.png';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken } from '@/lib/auth';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken, isGuest, clearSession } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -22,8 +22,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Already signed in — no reason to show the signup form again.
+  // Already signed in — no reason to show the signup form again. A guest's
+  // throwaway session is dropped instead, so it can sign up.
   useEffect(() => {
+    if (isGuest()) clearSession();
     if (getToken()) {
       router.replace('/dashboard');
     }

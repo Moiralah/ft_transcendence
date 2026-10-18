@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
-	ADMIN_MFA_SETUP_PATH, borrowSessionFromOtherTab, exchangeSupabaseToken, getRole, getToken, homeFor, isSuspended, isTwoFactorRequired,
+	ADMIN_MFA_SETUP_PATH, borrowSessionFromOtherTab, clearSession, exchangeSupabaseToken, getRole, getToken, homeFor, isGuest, isSuspended, isTwoFactorRequired,
 	loginErrorMessage, rememberPortal, storeSession, SUSPENDED_MESSAGE, type Portal,
 } from '@/lib/auth';
 import { TwoFactorPrompt } from './twoFactorPrompt';
@@ -37,8 +37,10 @@ export function SignInCard({ portal }: { portal: Portal }) {
 	}, []);
 
 	// Already signed in, in this tab or in another open tab that hands its
-	// session over: no reason to show the form again.
+	// session over: no reason to show the form again. A guest coming here wants
+	// to sign in to a real account, so its throwaway session is dropped instead.
 	useEffect(() => {
+		if (isGuest()) clearSession();
 		if (getToken()) {
 			router.replace(homeFor(getRole()));
 			return;

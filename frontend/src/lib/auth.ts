@@ -113,7 +113,8 @@ export function answerSessionRequests(): () => void {
 		if (event.data?.type !== 'request') return;
 		const token = getToken();
 		const role = getRole();
-		if (token && role && tokenStillValid(token)) {
+		// Not a guest's: a new tab opening /login would land back on the demo tree.
+		if (token && role && role !== 'GUEST' && tokenStillValid(token)) {
 			channel.postMessage({ type: 'session', id: event.data.id, token, role });
 		}
 	};
