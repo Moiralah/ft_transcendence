@@ -12,7 +12,6 @@ export interface LoginSuccess {
 // Where a site admin without MFA is sent (the backend refuses them everything
 // else until it's on, with a message containing "must turn on MFA").
 export const ADMIN_MFA_SETUP_PATH = '/settings?mfa=required';
-export const isAdminMfaRequired = (message: unknown) => /must turn on MFA/i.test(String(message ?? ''));
 
 export interface TwoFactorRequired {
 	twoFactorRequired: true;

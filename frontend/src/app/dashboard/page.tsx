@@ -15,7 +15,6 @@ import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, homeFor, loginPathAfter401, updateRole } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
-import { truncateName } from '@/lib/names';
 import { Avatar } from '@/components/Avatar';
 
 export default function TreePage() {
@@ -33,7 +32,6 @@ export default function TreePage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
 
   // Form states
   const [newTreeName, setNewTreeName] = useState('');
@@ -46,11 +44,6 @@ export default function TreePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
-
-  // Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   const [profileFirstName, setProfileFirstName] = useState('');
   const [profileLastName, setProfileLastName] = useState('');
@@ -91,17 +84,6 @@ export default function TreePage() {
 	fetchRequests(token);
 	fetchFriends(token);
   }, [token]);
-
-  // Handle ESC key to close search modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showSearch) {
-        setShowSearch(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSearch]);
 
   const fetchMyProfile = async (authToken: string) => {
     try {
@@ -271,25 +253,6 @@ export default function TreePage() {
       if (token) fetchMyTrees(token);
     } catch (err: any) {
       alert(err.message);
-    }
-  };
-
-  const searchTrees = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trees/search?q=${encodeURIComponent(searchQuery)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error('Search failed');
-      const data = await res.json();
-      setSearchResults(data);
-      setShowSearch(true);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -874,33 +837,6 @@ export default function TreePage() {
 			</>
 		)}
 		</section>
-        {/* Old "Search trees or profiles" bar: no longer used by anyone (admins included).
-        <section aria-label="Search Trees and Profiles" className="flex w-full gap-2 items-center">
-          <div className="flex-1 flex flex-col">
-            <label htmlFor="tree-search-input" className="sr-only">
-              Search trees or profiles
-            </label>
-            <input
-              id="tree-search-input"
-              type="search"
-              placeholder="Search trees or profiles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && searchTrees()}
-              className="w-full border border-slate-300 rounded-lg h-12 px-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-            />
-          </div>
-          <Button
-            onClick={searchTrees}
-            variant="ghost"
-            disabled={isSearching}
-            aria-label="Submit search query"
-          >
-            {isSearching ? 'Searching...' : 'Search'}
-          </Button>
-        </section>
-        */}
-
         {/* Guests only have their demo tree: no searching real people's profiles. */}
         {role !== 'GUEST' && (
         <section
@@ -1120,60 +1056,6 @@ export default function TreePage() {
         />
       )}
 
-      {/* Search Results Modal */}
-      {showSearch && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          onClick={() => setShowSearch(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="search-modal-title"
-            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 id="search-modal-title" className="text-xl font-bold text-slate-900">
-                Search Results
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowSearch(false)}
-                aria-label="Close search results modal"
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white hove:bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div aria-live="polite">
-              {searchResults.length === 0 ? (
-                <p className="text-slate-600 py-4">No results found.</p>
-              ) : (
-                <div className="space-y-3">
-                  {searchResults.map((tree: any) => (
-                    <Link
-                      key={tree.id}
-                      href={`/canvas/${tree.slug}`}
-                      onClick={() => setShowSearch(false)}
-                      className="block bg-white p-4 rounded-lg border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/30 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                    >
-                      <div className="font-bold text-slate-900 text-base [overflow-wrap:anywhere]" title={tree.name}>{truncateName(tree.name)}</div>
-                      <div className="text-sm text-slate-700 mt-1 [overflow-wrap:anywhere]">
-                        Description: {tree.description || 'N/A'}
-                      </div>
-                      <div className="text-xs text-slate-600 mt-1">
-                        Owner: {tree.owner?.user?.username || tree.owner?.firstName || 'Unknown'}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {showProfileSearch && (
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
