@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
-	borrowSessionFromOtherTab, exchangeSupabaseToken, getRole, getToken, homeFor, isSuspended, isTwoFactorRequired,
+	ADMIN_MFA_SETUP_PATH, borrowSessionFromOtherTab, exchangeSupabaseToken, getRole, getToken, homeFor, isSuspended, isTwoFactorRequired,
 	loginErrorMessage, rememberPortal, storeSession, SUSPENDED_MESSAGE, type Portal,
 } from '@/lib/auth';
 import { TwoFactorPrompt } from './twoFactorPrompt';
@@ -73,7 +73,7 @@ export function SignInCard({ portal }: { portal: Portal }) {
 				return;
 			}
 			storeSession(result);
-			router.replace(homeFor(result.user.role));
+			router.replace(result.twoFactorSetupRequired ? ADMIN_MFA_SETUP_PATH : homeFor(result.user.role));
 		} catch (err: any) {
 			setError(isSuspended(err) ? SUSPENDED_MESSAGE : err.message || 'Login failed');
 		} finally {

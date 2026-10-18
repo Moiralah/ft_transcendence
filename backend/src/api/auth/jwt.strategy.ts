@@ -1,7 +1,27 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+
+// The frontend matches on "must turn on MFA" to send the admin to Settings.
+export const ADMIN_MFA_REQUIRED = 'Site admins must turn on MFA before using the admin console. Set it up in Settings.';
+
+// What an admin without MFA may still call: the MFA setup, and the account
+// details the Settings page loads.
+const ADMIN_MFA_SETUP_ROUTES = [
+	'GET /auth/2fa/status',
+	'POST /auth/2fa/setup',
+	'POST /auth/2fa/enable',
+	'GET /auth/account',
+];
+
+// "METHOD /path" without the global API prefix or the query string.
+function routeOf(req: any): string {
+	const prefix = '/' + (process.env.API_PREFIX || 'api');
+	let path = String(req.originalUrl ?? req.url ?? '').split('?')[0];
+	if (path.startsWith(prefix + '/')) path = path.slice(prefix.length);
+	return `${req.method} ${path.replace(/\/+$/, '')}`;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -10,10 +30,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
 			secretOrKey: process.env.JWT_SECRET,
+			passReqToCallback: true,
 		});
 	}
 
-	async validate(payload: any) {
+	async validate(req: any, payload: any) {
 		// 2FA challenge tokens are only valid for /auth/2fa/login-verify — never
 		// as a real bearer token for the rest of the API.
 		if (payload.purpose === 'mfa') {
@@ -27,10 +48,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// demoted admin loses the admin endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true },
+			select: { suspended: true, role: true, twoFactorEnabled: true },
 		});
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
+		}
+
+		// Site admins must have MFA. Until they turn it on, their session only
+		// reaches what setting it up needs; everything else, the admin console
+		// included, is refused. Also checked per request, so a user made admin
+		// is held here too until they enrol.
+		if (user.role === 'ADMIN' && !user.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
+			throw new ForbiddenException(ADMIN_MFA_REQUIRED);
 		}
 
 		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role };

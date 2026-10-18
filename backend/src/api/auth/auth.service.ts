@@ -98,6 +98,11 @@ export class AuthService {
 			return { twoFactorRequired: true, challengeToken };
 		}
 
+		// A site admin without MFA gets a session that only reaches MFA setup
+		// (JwtStrategy); this tells the frontend to send them there first.
+		if (user.role === 'ADMIN') {
+			return { ...(await this.issueSession(user)), twoFactorSetupRequired: true };
+		}
 		return this.issueSession(user);
 	}
 
