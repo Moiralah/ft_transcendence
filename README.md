@@ -163,7 +163,7 @@ touches the data.
 
 ## 🧩 Modules
 
-We claim **16 points**: 4 Majors (8 pts) + 8 Minors (8 pts). Modules we built
+We claim **18 points**: 5 Majors (10 pts) + 8 Minors (8 pts). Modules we built
 parts of but do not claim, because a part the subject asks for is missing, are
 listed after the table.
 
@@ -181,7 +181,8 @@ listed after the table.
 | 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
 | 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
 | 12 | Accessibility, WCAG 2.1 AA | Major | 2 | Jon | canvas usable by keyboard, real dialogs (focus trap, Escape, focus returns), skip link, landmarks, labelled forms, a title per page; axe 0 violations, Lighthouse accessibility 100 |
-| | **Total** | | **16** | | |
+| 13 | Standard user management | Major | 2 | Moira, Jon, Yiwei | edit your profile, upload a photo (default avatar if none), friends with requests and online status, your profile on the dashboard and each person's profile on the tree |
+| | **Total** | | **18** | | |
 
 ### Why each module
 
@@ -229,16 +230,21 @@ listed after the table.
   returns). Checked with axe (0 violations on the dashboard, canvas, settings,
   each dialog and the admin console) and Lighthouse (accessibility 100 on the
   public pages).
+- **Standard user management (13), Major.** A family tree is about people,
+  so each account has a profile: name, dates, bio and a photo (JPEG, PNG,
+  WebP or GIF, max 1 MB, checked by content; a default avatar until one is
+  uploaded). The profile is shown on the dashboard and on that person's node
+  in every tree. Friends send, accept, reject and cancel requests, and the
+  friends list shows who is online.
 
 ### Built but not claimed
 
 | Module | What exists | What is missing for the module |
 |--------|-------------|-------------------------------|
 | Real-time features (Major) | Supabase Realtime: presence in a tree, live notifications of tree changes, on private per-tree channels | reconnection handling shown, every view updating live |
-| Standard user management (Major) | profile edit, photo upload with a default avatar, friends with requests, online status (Moira, Jon, Yiwei) | a profile page for other users |
 | Notification system (Minor) | live notifications from the tree audit log, pending claims | notifications for every create/update/delete action |
 | Real-time collaboration (Minor) | shared tree canvas with live presence | other people's edits drawn live on the canvas |
-| Public API (Major) | `X-API-Key` guard, rate limit, Swagger, endpoints on public trees (Yiwei) | dropped on 13 Oct: not ready for evaluation |
+| Public API (Major) | `X-API-Key` guard, rate limit (60 a minute), Swagger at `/docs`, GET / POST / PUT on public trees (Yiwei) | 4 endpoints, not the 5 the subject asks for, and no DELETE |
 
 SSR and the user activity analytics dashboard were dropped on 10 Oct.
 
