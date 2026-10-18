@@ -163,7 +163,7 @@ touches the data.
 
 ## 🧩 Modules
 
-We claim **14 points**: 3 Majors (6 pts) + 8 Minors (8 pts). Modules we built
+We claim **16 points**: 4 Majors (8 pts) + 8 Minors (8 pts). Modules we built
 parts of but do not claim, because a part the subject asks for is missing, are
 listed after the table.
 
@@ -180,7 +180,8 @@ listed after the table.
 | 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin panel, suspend |
 | 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
 | 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
-| | **Total** | | **14** | | |
+| 12 | Accessibility, WCAG 2.1 AA | Major | 2 | Jon | canvas usable by keyboard, real dialogs (focus trap, Escape, focus returns), skip link, landmarks, labelled forms, a title per page; axe 0 violations, Lighthouse accessibility 100 |
+| | **Total** | | **16** | | |
 
 ### Why each module
 
@@ -220,6 +221,14 @@ listed after the table.
   sealed after a restart until 2 of 5 unseal shares are given, one login per
   person, no root token, every request in the audit log. It took a real
   infrastructure change (and a rehearsal) beyond writing app code.
+- **Accessibility, WCAG 2.1 AA (12), Major.** Relatives of every age use a
+  family tree, some with a screen reader or only a keyboard. The hardest part
+  is the canvas: each person is a real button, arrow keys pan, +/- zoom, 0
+  resets, and the view follows focus. The four modals are real dialogs
+  (`hooks/useDialog.ts`: focus moves in, Tab is trapped, Escape closes, focus
+  returns). Checked with axe (0 violations on the dashboard, canvas, settings,
+  each dialog and the admin console) and Lighthouse (accessibility 100 on the
+  public pages).
 
 ### Built but not claimed
 
@@ -229,7 +238,6 @@ listed after the table.
 | Standard user management (Major) | profile edit, photo upload with a default avatar, friends with requests, online status | a profile page for other users |
 | Notification system (Minor) | live notifications from the tree audit log, pending claims | notifications for every create/update/delete action |
 | Real-time collaboration (Minor) | shared tree canvas with live presence | other people's edits drawn live on the canvas |
-| Accessibility, WCAG 2.1 AA (Major) | skip link, landmarks, labelled forms, ARIA attributes | a full audit, especially the canvas |
 | Public API (Major) | `X-API-Key` guard, rate limit, Swagger, endpoints on public trees (Yiwei) | dropped on 13 Oct: not ready for evaluation |
 
 SSR and the user activity analytics dashboard were dropped on 10 Oct.
@@ -267,7 +275,10 @@ Differences we found:
 - Frontend framework (Next.js) and the design system components.
 - The tree canvas: nodes, connector lines, spouses; Delete / Leave Tree
   buttons; alive / deceased toggle.
-- Browser testing; accessibility groundwork (landmarks, labels, ARIA).
+- Browser testing.
+- Accessibility (WCAG 2.1 AA): the canvas by keyboard, dialogs with focus
+  handling, skip link, landmarks, labels, page titles; the axe and Lighthouse
+  checks.
 
 ### Yiwei (yiwei)
 - Advanced search with filters, sorting and pagination.
