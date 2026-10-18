@@ -61,16 +61,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		// Site admins must have MFA. Until they turn it on, their session only
-		// reaches what setting it up needs; everything else, the admin console
-		// included, is refused. Also checked per request, so a user made admin
-		// is held here too until they enrol.
 		// Guests' last activity, which the idle cleanup reads. At most once a
 		// minute, so a busy guest doesn't write on every request.
 		if (user.role === 'GUEST' && Date.now() - user.updatedAt.getTime() > 60 * 1000) {
 			await this.prisma.user.update({ where: { id: payload.sub }, data: { updatedAt: new Date() } });
 		}
 
+		// Site admins must have MFA. Until they turn it on, their session only
+		// reaches what setting it up needs; everything else, the admin console
+		// included, is refused. Also checked per request, so a user made admin
+		// is held here too until they enrol.
 		if (user.role === 'ADMIN' && !user.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
 			throw new ForbiddenException(ADMIN_MFA_REQUIRED);
 		}
