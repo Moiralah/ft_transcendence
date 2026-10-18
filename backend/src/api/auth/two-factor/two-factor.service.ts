@@ -78,6 +78,10 @@ export class TwoFactorService {
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
 			throw new BadRequestException('MFA is not enabled.');
 		}
+		// Site admins must always have MFA (see JwtStrategy).
+		if (user.role === 'ADMIN') {
+			throw new ForbiddenException('Site admins must keep MFA on.');
+		}
 		if (!authenticator.verify({ token, secret: user.twoFactorSecret })) {
 			throw new UnauthorizedException('Invalid verification code.');
 		}

@@ -70,7 +70,7 @@ laptop with SSH to solsys) pulls `branchsaurus` there and runs
 | **Moira** | huidris | Product Owner, Technical Lead | backend, trees as organizations, real-time, profiles |
 | **Tiara** | tching | Project Manager / Scrum Master | auth (Google, 2FA), site roles and admin panel, security (WAF + Vault), deployment |
 | **Jon** | lechan | Technical Lead / Architect | frontend, design system, tree canvas, browsers, accessibility |
-| **Yiwei** | yiwei | Developer | search, friends and online status, public API |
+| **Yiwei** | yiwei | Developer | search, friends and online status, user management and auth (with Moira and Jon), public API |
 
 | Role | Who | Responsibilities |
 |------|-----|------------------|
@@ -144,13 +144,13 @@ touches the data.
 
 | Feature | Where | Who |
 |---------|-------|-----|
-| Sign up / log in with email and password | `/signup`, `/login` | Moira, Jon, Tiara |
+| Sign up / log in with email and password | `/signup`, `/login` | Moira, Jon, Yiwei, Tiara |
 | Forgot / reset password | `/forgot-password`, `/reset-password` | Tiara |
 | Log in with Google (OAuth 2.0) | `/login` → `/consent` | Tiara |
 | Two-factor authentication: QR enrollment, 8 recovery codes, login challenge | `/settings` | Tiara |
 | Settings: change password, change email, delete my account (goodbye email) | `/settings` | Tiara |
 | Dashboard: my trees, create a tree, join with a code, delete / leave a tree | `/dashboard` | Jon, Moira |
-| Profile: edit, photo upload (JPEG/PNG/WebP/GIF, max 1 MB, checked by content) | dashboard, canvas | Moira, Jon, Tiara |
+| Profile: edit, photo upload (JPEG/PNG/WebP/GIF, max 1 MB, checked by content) | dashboard, canvas | Moira, Jon, Yiwei, Tiara |
 | Tree canvas: draw the family, add parents / children / spouse, claim yourself, approve claims, remove a member | `/canvas/[id]` | Jon, Moira |
 | Who is in the tree right now (presence) and live notifications of changes | canvas | Moira, Tiara |
 | Search people with filters, sorting and pages | dashboard | Yiwei |
@@ -163,7 +163,7 @@ touches the data.
 
 ## 🧩 Modules
 
-We claim **14 points**: 3 Majors (6 pts) + 8 Minors (8 pts). Modules we built
+We claim **22 points**: 6 Majors (12 pts) + 10 Minors (10 pts). Modules we built
 parts of but do not claim, because a part the subject asks for is missing, are
 listed after the table.
 
@@ -180,7 +180,12 @@ listed after the table.
 | 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin panel, suspend |
 | 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
 | 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
-| | **Total** | | **14** | | |
+| 12 | Accessibility, WCAG 2.1 AA | Major | 2 | Jon | canvas usable by keyboard, real dialogs (focus trap, Escape, focus returns), skip link, landmarks, labelled forms, a title per page; axe 0 violations, Lighthouse accessibility 100 |
+| 13 | Standard user management | Major | 2 | Moira, Jon, Yiwei | edit your profile, upload a photo (default avatar if none), friends with requests and online status, your profile on the dashboard and each person's profile on the tree |
+| 14 | Real-time features (WebSockets) | Major | 2 | Moira | Supabase Realtime on private per-tree channels: who is in the tree right now, live notices of changes; friends' online status on a site-wide channel |
+| 15 | Notification system (create / update / delete) | Minor | 1 | Moira, Tiara | live notices from the tree audit log, pending claims to approve, friend requests (incoming and sent) on the dashboard |
+| 16 | Real-time collaboration | Minor | 1 | Moira, Jon | several people edit one tree at once; each canvas redraws when someone else changes it, with who is there shown on top |
+| | **Total** | | **22** | | |
 
 ### Why each module
 
@@ -220,17 +225,33 @@ listed after the table.
   sealed after a restart until 2 of 5 unseal shares are given, one login per
   person, no root token, every request in the audit log. It took a real
   infrastructure change (and a rehearsal) beyond writing app code.
+- **Accessibility, WCAG 2.1 AA (12), Major.** Relatives of every age use a
+  family tree, some with a screen reader or only a keyboard. The hardest part
+  is the canvas: each person is a real button, arrow keys pan, +/- zoom, 0
+  resets, and the view follows focus. The four modals are real dialogs
+  (`hooks/useDialog.ts`: focus moves in, Tab is trapped, Escape closes, focus
+  returns). Checked with axe (0 violations on the dashboard, canvas, settings,
+  each dialog and the admin console) and Lighthouse (accessibility 100 on the
+  public pages).
+- **Standard user management (13), Major.** A family tree is about people,
+  so each account has a profile: name, dates, bio and a photo (JPEG, PNG,
+  WebP or GIF, max 1 MB, checked by content; a default avatar until one is
+  uploaded). The profile is shown on the dashboard and on that person's node
+  in every tree. Friends send, accept, reject and cancel requests, and the
+  friends list shows who is online.
+- **Real-time (14), notifications (15) and collaboration (16).** A family
+  fills in a tree together, often at the same time. Every change to a tree
+  writes an audit row; Supabase Realtime sends it over a WebSocket on that
+  tree's private channel, so everyone on the tree gets a notice and their
+  canvas redraws. Presence shows who is on the tree, and a site-wide
+  channel gives friends' online status. Claims to approve and friend
+  requests wait on the dashboard until someone acts on them.
 
 ### Built but not claimed
 
 | Module | What exists | What is missing for the module |
 |--------|-------------|-------------------------------|
-| Real-time features (Major) | Supabase Realtime: presence in a tree, live notifications of tree changes, on private per-tree channels | reconnection handling shown, every view updating live |
-| Standard user management (Major) | profile edit, photo upload with a default avatar, friends with requests, online status | a profile page for other users |
-| Notification system (Minor) | live notifications from the tree audit log, pending claims | notifications for every create/update/delete action |
-| Real-time collaboration (Minor) | shared tree canvas with live presence | other people's edits drawn live on the canvas |
-| Accessibility, WCAG 2.1 AA (Major) | skip link, landmarks, labelled forms, ARIA attributes | a full audit, especially the canvas |
-| Public API (Major) | `X-API-Key` guard, rate limit, Swagger, endpoints on public trees (Yiwei) | dropped on 13 Oct: not ready for evaluation |
+| Public API (Major) | `X-API-Key` guard, rate limit (60 a minute), Swagger at `/docs`, GET / POST / PUT on public trees (Yiwei) | 4 endpoints, not the 5 the subject asks for, and no DELETE |
 
 SSR and the user activity analytics dashboard were dropped on 10 Oct.
 
@@ -260,22 +281,29 @@ Differences we found:
 - Backend framework (NestJS) and ORM (Prisma): the schema and the services.
 - Organization system: trees, join codes, member roles, claims, remove a
   member, delete a tree; the tree roles decision (admin / member / joiner).
-- Real-time presence and notifications (with Tiara); profile photos on the
-  dashboard and the tree; landing page; skip link.
+- Real-time: presence and live notifications (with Tiara), real-time
+  collaboration on the canvas (with Jon); profile photos on the dashboard and
+  the tree; landing page; skip link.
 
 ### Jon (lechan)
 - Frontend framework (Next.js) and the design system components.
 - The tree canvas: nodes, connector lines, spouses; Delete / Leave Tree
   buttons; alive / deceased toggle.
-- Browser testing; accessibility groundwork (landmarks, labels, ARIA).
+- Browser testing; real-time collaboration on the canvas (with Moira).
+- Accessibility (WCAG 2.1 AA): the canvas by keyboard, dialogs with focus
+  handling, skip link, landmarks, labels, page titles; the axe and Lighthouse
+  checks.
 
 ### Yiwei (yiwei)
 - Advanced search with filters, sorting and pagination.
 - Friends: requests, current friends, online status on the dashboard.
+- Standard user management and auth, with Moira and Jon: sign up / log in,
+  profile edit and photos.
 - Public API (built, not claimed).
 
 ### Tiara (tching)
 - Google OAuth, 2FA, site roles with the admin panel and suspension.
+- Notifications (with Moira): private per-tree realtime channels.
 - Cybersecurity: WAF (ModSecurity + OWASP CRS) and HashiCorp Vault, in
   server mode on solsys with per-person logins through SSH tunnels.
 - Deployment (GCP proxy, WireGuard, solsys), Supabase RLS fix and private

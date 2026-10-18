@@ -105,19 +105,21 @@ export function TreeNode({
   };
 
   const fullName = `${nodeMember.firstName || ''} ${nodeMember.lastName || ''}`.trim() || 'Unknown';
+  // Stored as male/female or MALE/FEMALE (the demo tree), so compare lowercased.
+  const gender = nodeMember.gender?.toLowerCase();
   // Gender is also shown as text, not only by the box colour (WCAG 1.4.1).
   const genderText =
-    nodeMember.gender === 'male' ? 'Male' : nodeMember.gender === 'female' ? 'Female' : 'Gender not set';
-  const genderSymbol = nodeMember.gender === 'male' ? '♂ ' : nodeMember.gender === 'female' ? '♀ ' : '';
+    gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Gender not set';
+  const genderSymbol = gender === 'male' ? '♂ ' : gender === 'female' ? '♀ ' : '';
 
   return (
     <div className="flex flex-col items-center relative z-10">
       <div
         onClick={handleNodeClick}
         className={`
-          ${nodeMember.gender === 'male' ?
+          ${gender === 'male' ?
             'bg-blue-200 border-blue-600' :
-          nodeMember.gender === 'female' ?
+          gender === 'female' ?
             'bg-red-200 border-red-600' :
           'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px] max-w-[220px] [overflow-wrap:anywhere]

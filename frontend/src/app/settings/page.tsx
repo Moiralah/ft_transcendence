@@ -33,6 +33,9 @@ export default function SettingsPage() {
 	const [confirmCode, setConfirmCode] = useState('');
 	const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
 
+	// Site admins must have MFA; the backend refuses them everything else until it's on.
+	const adminNeedsMfa = siteAdmin && !loading && !enabled;
+
 	// Disable state
 	const [disabling, setDisabling] = useState(false);
 	const [disableCode, setDisableCode] = useState('');
@@ -128,12 +131,21 @@ export default function SettingsPage() {
 			</header>
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
-				<div>
-					<Button href={siteAdmin ? '/admin' : '/dashboard'} variant="secondary">
-						&larr; {siteAdmin ? 'Back to admin console' : 'Back to dashboard'}
-					</Button>
-				</div>
+				{!adminNeedsMfa && (
+					<div>
+						<Button href={siteAdmin ? '/admin' : '/dashboard'} variant="secondary">
+							&larr; {siteAdmin ? 'Back to admin console' : 'Back to dashboard'}
+						</Button>
+					</div>
+				)}
 				<h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+
+				{adminNeedsMfa && (
+					<div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+						<strong>Turn on MFA to continue.</strong> Site admins must use MFA. The admin console opens
+						once it&apos;s set up below.
+					</div>
+				)}
 
 				{guest ? (
 					// A guest account is a short-lived demo login, so its account settings can't be changed.
@@ -166,8 +178,11 @@ export default function SettingsPage() {
 								<li key={code}>{code}</li>
 							))}
 						</ul>
-						<Button onClick={() => setRecoveryCodes(null)} variant="primary">
-							I've saved these codes
+						<Button
+							onClick={() => (siteAdmin ? router.push('/admin') : setRecoveryCodes(null))}
+							variant="primary"
+						>
+							{siteAdmin ? 'I\'ve saved these codes, open the admin console' : 'I\'ve saved these codes'}
 						</Button>
 					</section>
 				) : enrolling ? (
@@ -205,7 +220,10 @@ export default function SettingsPage() {
 						<h2 id="disable-heading" className="text-lg font-bold text-slate-900">
 							MFA is enabled
 						</h2>
-						{disabling ? (
+						{siteAdmin ? (
+							// The backend refuses it too.
+							<p className="text-sm text-slate-700">Site admins must keep MFA on.</p>
+						) : disabling ? (
 							<form onSubmit={handleDisable} className="space-y-2">
 								<label htmlFor="disable-code" className="block text-sm font-medium text-slate-800">
 									Enter your current 6-digit code to disable MFA
@@ -243,10 +261,10 @@ export default function SettingsPage() {
 					</section>
 				)}
 
-				{!guest && !loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
-				{!guest && !loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
+				{!guest && !adminNeedsMfa && !loading && !recoveryCodes && !enrolling && <ChangePasswordForm />}
+				{!guest && !adminNeedsMfa && !loading && !recoveryCodes && !enrolling && <ChangeEmailForm />}
 				{!guest && !siteAdmin && !loading && !recoveryCodes && !enrolling && <DeleteAccountForm />}
-				{siteAdmin && !loading && !recoveryCodes && !enrolling && (
+				{siteAdmin && !adminNeedsMfa && !loading && !recoveryCodes && !enrolling && (
 					// The backend refuses it too: there must always be an admin left.
 					<section aria-labelledby="admin-delete-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-2">
 						<h2 id="admin-delete-heading" className="text-lg font-bold text-slate-900">Delete account</h2>
