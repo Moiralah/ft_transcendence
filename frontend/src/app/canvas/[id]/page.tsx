@@ -243,21 +243,40 @@ export default function Content() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
+  // Where the pointer went down; the pan only starts once it has moved past
+  // PAN_THRESHOLD, so the small wobble of clicking a node doesn't move the tree.
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
+  const PAN_THRESHOLD = 5;
+
+  // React passes events from portals (the node profile window) up to here as
+  // well; only pointers that are really on the canvas may pan it.
+  const onCanvas = (e: React.PointerEvent) =>
+    workspaceRef.current?.contains(e.target as Node) ?? false;
+
   // Pointer handlers for dragging (panning): mouse, pen and touch alike
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
+  const handleMouseDown = (e: React.PointerEvent) => {
+    if (!onCanvas(e) || e.button !== 0) return;
+    pressRef.current = { x: e.clientX, y: e.clientY };
     dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+  const handleMouseMove = (e: React.PointerEvent) => {
+    const press = pressRef.current;
+    if (!press || !onCanvas(e)) return;
+    if (!isDragging) {
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < PAN_THRESHOLD) return;
+      setIsDragging(true);
+    }
     setPan({
       x: e.clientX - dragStartRef.current.x,
       y: e.clientY - dragStartRef.current.y,
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = () => {
+    pressRef.current = null;
+    setIsDragging(false);
+  };
 
   // Keyboard: arrow keys move the view, + and - zoom, 0 resets (WCAG 2.1.1).
   const PAN_STEP = 60;
