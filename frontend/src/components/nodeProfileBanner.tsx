@@ -215,10 +215,13 @@ export function NodeProfileModal({
 				throw new Error(`Failed to update profile: ${res.statusText}`);
 			}
 
+			// The tree's owner claiming in their own tree is accepted at once
+			// (no approval step); anyone else's claim comes back PENDING.
+			const saved = await res.json().catch(() => ({}));
 			const updatedMember: Member = {
 				...member,
 				linkId: treeView.memberId,
-				claim: 'PENDING',
+				claim: saved?.claim === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
 			};
 
 			const requesterRow = allMembers.find((m) => m.id === treeView.memberId);
