@@ -158,7 +158,7 @@ export default function Content() {
 	}, 400);
 	}, [token, treeId]);
 	// Pops a toast whenever an AuditLog row is inserted for this tree.
-  useTreeNotifications(tree?.realtimeChannel ?? null, treesMember, refetchAll);
+  useTreeNotifications(tree?.realtimeChannel ?? null, refetchAll);
 
   const fetchTree = async (authToken: string) => {
     try {

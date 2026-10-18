@@ -46,8 +46,12 @@ export class TreeService {
 		db: Pick<PrismaService, 'auditLog'>,
 		args: { data: { treeId: number; profileId: number; action: string; details?: string } },
 	) {
-		const log = await db.auditLog.create(args);
-		broadcastAudit(log);
+		const { profile, ...log } = await db.auditLog.create({
+			...args,
+			include: { profile: { select: { firstName: true, lastName: true } } },
+		});
+		const actorName = `${profile.firstName} ${profile.lastName ?? ''}`.trim();
+		broadcastAudit({ id: log.id, treeId: log.treeId, actorName, action: log.action, details: log.details, createdAt: log.createdAt });
 		return log;
 	}
 

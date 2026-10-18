@@ -25,10 +25,13 @@ export function treeChannel(treeId: number): string {
 	return `tree-${treeId}-${sig}`;
 }
 
+// The actor goes out as a name, not a profileId: a JOIN_TREE toast reaches
+// members whose member list doesn't have the joiner yet, so the browser
+// couldn't look the id up.
 export interface AuditEvent {
 	id: number;
 	treeId: number;
-	profileId: number;
+	actorName: string;
 	action: string;
 	details: string | null;
 	createdAt: Date;

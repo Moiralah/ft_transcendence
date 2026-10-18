@@ -5,32 +5,20 @@ import toast from 'react-hot-toast';
 type AuditLog = {
 	id: number;
 	treeId: number;
-	profileId: number;
+	actorName: string;
 	action: string;
 	details: string | null;
 	createdAt: string;
 };
-
-interface MemberLike {
-	profileId: number;
-	firstName?: string;
-	lastName?: string;
-}
 
 // `channel` is the tree's realtimeChannel from GET /trees/slug/:slug (members
 // only). The backend broadcasts every audit row there; see
 // backend/src/api/tree/tree-realtime.ts for why it isn't a table subscription.
 export function useTreeNotifications(
 	channel: string | null,
-	members: MemberLike[] = [],
 	onTreeChange?: () => void,
 ) {
-	const membersRef = useRef(members);
 	const onTreeChangeRef = useRef(onTreeChange);
-
-	useEffect(() => {
-		membersRef.current = members;
-	}, [members]);
 
 	useEffect(() => {
 		onTreeChangeRef.current = onTreeChange;
@@ -44,7 +32,7 @@ export function useTreeNotifications(
 			.on('broadcast', { event: 'audit' }, ({ payload }) => {
 				const log = payload as AuditLog;
 				// Show a toast notification
-				const message = formatNotification(log, membersRef.current);
+				const message = formatNotification(log);
 				toast.success(message, {
 					duration: 7000,
 					position: 'bottom-right',
@@ -60,14 +48,8 @@ export function useTreeNotifications(
 	}, [channel]);
 }
 
-function actorName(profileId: number, members: MemberLike[]): string {
-	const member = members.find((m) => m.profileId === profileId);
-	const name = `${member?.firstName ?? ''} ${member?.lastName ?? ''}`.trim();
-	return name || 'Someone';
-}
-
-function formatNotification(log: AuditLog, members: MemberLike[]): string {
-	const who = actorName(Number(log.profileId), members);
+function formatNotification(log: AuditLog): string {
+	const who = log.actorName || 'Someone';
 	switch (log.action) {
 		case 'CREATE_TREE':
 			return `🌳 ${who} created a tree: ${log.details ?? ''}`;
