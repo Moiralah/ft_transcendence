@@ -33,9 +33,12 @@ export function FeaturesGrid({ id, title, subtitle, features, themeMode}: Featur
         >
             <div className="max-w-7xl mx-auto px-4">
                 <SectionHeader id={id} title={title} subtitle={subtitle} />
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
+                {/* Wrapping rows, centred: a last row with fewer cards (e.g. 4 cards, 3
+                    across) sits in the middle instead of on the left. Widths match a
+                    1 / 2 / 3 column grid with gap-8 (2rem). */}
+                <div className="flex flex-wrap justify-center gap-8">
                     {features.map((item, index) => (
-                        <div key={index}>
+                        <div key={index} className="flex w-full md:w-[calc((100%-2rem)/2)] lg:w-[calc((100%-4rem)/3)] [&>*]:w-full">
                             <FeatureCard
                                 icon = {item.icon}
                                 title = {item.title}
