@@ -10,7 +10,7 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { clearSession, getRole, getToken, isGuest } from '@/lib/auth';
+import { clearSession, getRole, getToken, homeFor, isGuest } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
@@ -133,8 +133,8 @@ export default function SettingsPage() {
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-xl w-full mx-auto p-6 flex-1 pt-24 space-y-6">
 				{!adminNeedsMfa && (
 					<div>
-						<Button href={siteAdmin ? '/admin' : '/dashboard'} variant="secondary">
-							&larr; {siteAdmin ? 'Back to admin console' : 'Back to dashboard'}
+						<Button href={siteAdmin ? '/admin' : guest ? homeFor('GUEST') : '/dashboard'} variant="secondary">
+							&larr; {siteAdmin ? 'Back to admin console' : guest ? 'Back to your tree' : 'Back to dashboard'}
 						</Button>
 					</div>
 				)}

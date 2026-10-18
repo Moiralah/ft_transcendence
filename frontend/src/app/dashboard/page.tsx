@@ -13,7 +13,7 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken, loginPathAfter401, updateRole } from '@/lib/auth';
+import { clearSession, getRole, getToken, homeFor, loginPathAfter401, updateRole } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { truncateName } from '@/lib/names';
 import { Avatar } from '@/components/Avatar';
@@ -79,6 +79,11 @@ export default function TreePage() {
     // Site admins aren't members: their home is the admin console.
     if (getRole() === 'ADMIN') {
       router.replace('/admin');
+      return;
+    }
+    // Guests only have their demo tree, no dashboard.
+    if (getRole() === 'GUEST') {
+      router.replace(homeFor('GUEST'));
       return;
     }
     fetchMyTrees(token);
