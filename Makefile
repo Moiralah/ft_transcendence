@@ -1,5 +1,3 @@
-# Generate SSL certificates if they don't exist
-
 # Compose file for the whole stack: the app plus the IV.5 Cybersecurity module
 # (two WAFs and Vault), all in docker-compose.yml.
 STACK = -f docker-compose.yml
@@ -21,6 +19,7 @@ export VAULT_PORT
 # scripts/vault/lib.sh). Without VAULT_USER (an evaluator, a 42 machine) the
 # values come from .env, as before.
 up: certs
+	@echo shared > .stack-mode
 	@if [ -n "$$VAULT_USER" ]; then \
 		./scripts/vault/with-secrets.sh dev -- $(MAKE) --no-print-directory stack; \
 	else \
@@ -44,7 +43,8 @@ stack: certs
 	docker compose $(STACK) restart waf-frontend waf-backend
 
 # Same as `up`, but against local Supabase (`supabase start`) instead of the
-# shared dev DB — see scripts/local-up.sh for what it sets.
+# shared dev DB — see scripts/local-up.sh for what it sets. It also writes
+# .stack-mode, so `make backend` / `make frontend` stay on local Supabase.
 local: certs
 	@if [ -n "$$VAULT_USER" ]; then \
 		./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh; \
@@ -54,7 +54,8 @@ local: certs
 
 # Production only, run ON the server (needs docker-compose.prod.yml and the
 # server's .env) — NOT a local dev target. Builds and restarts everything; see
-# scripts/prod-up.sh for which compose files it uses and why.
+# scripts/prod-up.sh for which compose files it uses and why. solsys has no
+# make: there, run ./scripts/prod-up.sh itself (or `make deploy` from a laptop).
 prod:
 	./scripts/prod-up.sh
 
@@ -100,15 +101,27 @@ logs:
 ps:
 	docker compose $(STACK) ps
 
-# Rebuild and restart one side. backend goes through vault-init.sh, so it keeps
-# its Vault credentials; then the WAF in front of it is restarted (see `up`).
-backend:
+# Rebuild and restart one side, with the same settings as the last `make up` or
+# `make local` (read from .stack-mode): after `make local` they go through
+# local-up.sh, so they stay on local Supabase instead of picking up .env's
+# shared database; with VAULT_USER set they get the secrets from Vault, like
+# `make up`. backend goes through vault-init.sh, so it keeps its Vault
+# credentials; then the WAF in front of it is restarted (see `stack`).
+backend frontend: certs
+	@mode=$$(cat .stack-mode 2>/dev/null || echo shared); \
+	if [ "$$mode" = local ]; then run="./scripts/local-up.sh $@-stack"; \
+	else run="$(MAKE) --no-print-directory $@-stack"; fi; \
+	echo "[make $@] same settings as the last 'make $$( [ "$$mode" = local ] && echo local || echo up )'"; \
+	if [ -n "$$VAULT_USER" ]; then ./scripts/vault/with-secrets.sh dev -- $$run; else $$run; fi
+
+# What `backend` / `frontend` run, with the settings already in place.
+backend-stack:
 	docker compose $(STACK) build backend
 	docker compose $(STACK) up -d vault
 	./scripts/vault-init.sh
 	docker compose $(STACK) restart waf-backend
 
-frontend:
+frontend-stack:
 	docker compose $(STACK) up -d --build --no-deps frontend
 	docker compose $(STACK) restart waf-frontend
 
@@ -118,10 +131,4 @@ backend-shell:
 frontend-shell:
 	docker compose exec frontend sh
 
-seed:
-	docker compose exec backend npx prisma db seed
-
-clean: down
-	docker compose $(STACK) rm -f
-
-.PHONY: up stack local prod deploy unseal certs down build logs ps backend frontend backend-shell frontend-shell seed clean
+.PHONY: up stack local prod deploy unseal certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell

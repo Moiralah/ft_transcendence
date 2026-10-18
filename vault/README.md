@@ -5,7 +5,7 @@ first (2026-10-08). Two places hold secrets, both on solsys, in one server-mode 
 
 | Path | Who can read it | Used by |
 |---|---|---|
-| `secret/family-tree/prod` | the production backend (AppRole `backend`) and the admin | `make prod` / `make deploy` |
+| `secret/family-tree/prod` | the production backend (AppRole `backend`) and the admin | `./scripts/prod-up.sh` / `make deploy` |
 | `secret/family-tree/dev` | every teammate (userpass, policy `dev-read`) and the admin | `make up` on laptops |
 
 Both use the **production Supabase** (decided 2026-10-12): the dev set holds the same
@@ -25,7 +25,7 @@ The unseal key is split into 5 shares (Tiara, solsys, Yiwei, Jon, Moira); any 2 
 | `make up` | your laptop, `VAULT_USER` set | opens your SSH tunnel, logs in to Vault (password once a day), loads the dev secrets into memory, starts the app, both WAFs and the local Vault at https://localhost:8443 |
 | `make up` | without `VAULT_USER` (evaluators, anyone without a login) | the same stack, values from `.env` |
 | `make local` | any machine | like `make up`, on a local Supabase (test data only); not the team's way of working |
-| `make deploy` | your laptop (needs SSH to solsys) | pulls `branchsaurus` on solsys and runs `make prod` there |
+| `make deploy` | your laptop (needs SSH to solsys) | pulls `branchsaurus` on solsys and runs `./scripts/prod-up.sh` there |
 | `make unseal` | any share holder's laptop | type your share after solsys restarts (through your SSH tunnel); solsys adds its own (cron, every minute) |
 
 ## Your access (each person, once per machine)
@@ -192,9 +192,9 @@ Run in `~/ft_transcendence`, after this work is merged into `branchsaurus` and p
    scripts/vault/unseal.sh                          # type any 2 shares
    scripts/vault/configure.sh ~/vault-init.json ~/vault-passwords.txt   # revokes the root token
    ```
-3. Keep solsys's share where `make prod` looks for it, owner-only, and let solsys add it
+3. Keep solsys's share where `./scripts/prod-up.sh` looks for it, owner-only, and let solsys add it
    by itself after a reboot (so one teammate's `make unseal` is enough; without this, a
-   reboot needs two people, or someone with SSH running `make prod`):
+   reboot needs two people, or someone with SSH running `./scripts/prod-up.sh`):
    ```sh
    mkdir -m 700 ~/.ft-vault && (umask 077; echo '<share 2>' > ~/.ft-vault/unseal-share)
    crontab -e   # add:
@@ -213,20 +213,20 @@ Run in `~/ft_transcendence`, after this work is merged into `branchsaurus` and p
    VAULT_USER=tching scripts/vault/put-secrets.sh dev ~/dev.env JWT_SECRET SUPABASE_SERVICE_ROLE_KEY DATABASE_URL DIRECT_URL SUPABASE_AUTH_URL
    rm ~/dev.env
    ```
-5. `make prod`. It now sees `vault/backend-approle.env` and uses the server-mode Vault.
+5. `./scripts/prod-up.sh`. It now sees `vault/backend-approle.env` and uses the server-mode Vault.
    Check https://ft.natscho.my, then remove the secret lines from `.env`.
 6. Hand each person their share and their initial password (in person, never in chat),
    then **delete `~/vault-init.json` and `~/vault-passwords.txt`**. Each person changes
    their password.
 
 Undo, if something goes wrong before step 6: `mv vault/backend-approle.env ~/` and
-`make prod`. That is the old dev-mode Vault refilled from `.env`, exactly as before.
+`./scripts/prod-up.sh`. That is the old dev-mode Vault refilled from `.env`, exactly as before.
 
 ## Rotating
 
-- A secret: `put-secrets.sh prod <file> KEY`, then `make prod`. Vault keeps old versions.
+- A secret: `put-secrets.sh prod <file> KEY`, then `./scripts/prod-up.sh`. Vault keeps old versions.
   Only the named key changes; the others stay. A rotated Supabase value or database
   password must go into dev too (same project): `put-secrets.sh dev <file> KEY`.
-- The backend's login: `backend-creds.sh`, then `make prod` (older logins are revoked).
+- The backend's login: `backend-creds.sh`, then `./scripts/prod-up.sh` (older logins are revoked).
 - A teammate leaving: the admin deletes their user (`auth/userpass/users/<name>`), and
   the 5 shares are re-made with `vault operator rekey`.

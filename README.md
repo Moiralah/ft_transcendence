@@ -40,7 +40,8 @@ host.
    `chrome://net-internals/#hsts`, delete the domain `localhost`, and reload.
 
 `make down` stops everything. Other targets: `make logs`, `make ps`,
-`make build`, `make backend` / `make frontend` (rebuild one side),
+`make build`, `make backend` / `make frontend` (rebuild one side, with the
+same settings as your last `make up` or `make local`),
 `make local` (run against a local Supabase, below).
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and

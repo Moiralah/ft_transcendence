@@ -74,3 +74,6 @@ db-backups/
 
 # Backend's Vault login on the production server (scripts/vault/backend-creds.sh)
 vault/backend-approle.env
+
+# Which stack the last `make up` / `make local` started (Makefile)
+.stack-mode

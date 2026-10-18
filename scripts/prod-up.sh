@@ -1,7 +1,7 @@
 #!/bin/sh
 # The one correct way to bring the production stack up — whether after a fresh
-# deploy, a VM reboot, or just recovering from something breaking. `make prod`
-# runs this on the server; `make deploy` runs it there from your laptop.
+# deploy, a VM reboot, or just recovering from something breaking. Run it on
+# the server itself (solsys has no make); `make deploy` runs it there from your laptop.
 #
 # Exists because every production incident so far in this project traces back
 # to the same root cause: some command in the sequence used a different subset
@@ -59,7 +59,7 @@ if [ -n "$SERVER_VAULT" ]; then
   if curl -s http://127.0.0.1:8200/v1/sys/seal-status | grep -q '"sealed":true'; then
     echo "[prod-up] Vault is SEALED, so the backend can't get its secrets. Not restarting"
     echo "          anything else. One more share holder runs 'make unseal', then run"
-    echo "          this again ('make prod' here, or 'make deploy' from a laptop)."
+    echo "          this again (./scripts/prod-up.sh here, or 'make deploy' from a laptop)."
     exit 1
   fi
 
