@@ -1,3 +1,4 @@
+import { FeaturesGrid } from "./featureGrid";
 import { TreeBanner } from "./treeBanner";
 
 export const primitives = {
@@ -56,6 +57,7 @@ export const primitives = {
       surface: {
         footer: primitives.slate[900],
         navbar: primitives.whiteAlpha90,
+        featuresGrid: primitives.white,
       },
       bg: {
         low: primitives.slate[100],
@@ -76,14 +78,13 @@ export const primitives = {
         Card: primitives.amber[800],
         bannerHeading: primitives.gray[800],
         bannerSpan: primitives.gray[400],
-        // 700, not 600: small bold text on white needs 4.5:1 (WCAG 1.4.3);
-        // amber 600 is 3.2:1, amber 700 is 5.0:1.
-        bannerRole: primitives.amber[700],
+        bannerRole: primitives.amber[600],
       },
       border: {
         subtle: primitives.slate[800],
         navbar: primitives.slate[200],
         banner: primitives.slate[200],
+        featureCard: primitives.slate[100],
       },
       interactive: {
         focusRing: primitives.amber[400],
@@ -142,6 +143,17 @@ export const primitives = {
         badgeText: s.text.badge,
         highlightText: s.text.highlight,
       };
+    },
+    featuresGrid: (themeMode: 'light') => {
+        const s = semantics[themeMode] || semantics.light;
+        return {
+            bg: s.surface.featuresGrid,
+            bgCard: s.bg.high,
+            bgCard2: s.bg.badge,
+            text: s.text.Card,
+            border: s.border.banner,
+            borderCard: s.border.featureCard,
+        };
     },
     TreeBanner: (themeMode: 'light') => {
       const s = semantics[themeMode] || semantics.light;
