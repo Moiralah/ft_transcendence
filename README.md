@@ -68,7 +68,7 @@ laptop with SSH to solsys) pulls `branchsaurus` there and runs
 | Member | Intra login | Role | Main areas |
 |--------|-------------|------|------------|
 | **Moira** | huidris | Product Owner, Technical Lead | backend, trees as organizations, real-time, profiles |
-| **Tiara** | tching | Project Manager / Scrum Master | auth (Google, 2FA), site roles and admin panel, security (WAF + Vault), deployment |
+| **Tiara** | tching | Project Manager / Scrum Master | auth (Google, MFA), site roles and admin panel, security (WAF + Vault), deployment |
 | **Jon** | lechan | Technical Lead / Architect | frontend, design system, tree canvas, browsers, accessibility |
 | **Yiwei** | yiwei | Developer | search, friends and online status, user management and auth (with Moira and Jon), public API |
 
@@ -105,16 +105,16 @@ laptop with SSH to solsys) pulls `branchsaurus` there and runs
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| Frontend | **Next.js 14** (App Router), React 18, TypeScript, **Tailwind CSS 3** | File-based routing, one framework for pages and client code; Tailwind keeps the design system in one place |
-| Backend | **NestJS 10**, TypeScript | Modules, guards and DTO validation out of the box: fits role checks and a growing API |
-| Database | **PostgreSQL** hosted by **Supabase** | Managed Postgres plus auth, storage and realtime from the same project |
-| ORM | **Prisma 7** (`PrismaPg` driver adapter) | Typed queries generated from one schema file |
-| Auth | Supabase Auth (email/password, Google OAuth 2.0) + our own JWT, custom TOTP 2FA (`otplib`) | |
-| Real-time | Supabase Realtime (broadcast + presence) over WebSocket | |
-| Storage | Supabase Storage (`avatars` bucket) for profile photos | |
-| Security | ModSecurity + OWASP Core Rule Set (WAF), **HashiCorp Vault** (secrets), AppRole auth | |
-| Email | Gmail SMTP (account notices, feedback form) | |
-| Deployment | Docker / Docker Compose, `make`; GCP nginx proxy + WireGuard to solsys | |
+| Frontend | **Next.js 14** (App Router), React 18, TypeScript 5, **Tailwind CSS 3** | File-based routing, one framework for pages and client code; Tailwind keeps the design system's colours, type and spacing in one place |
+| Backend | **NestJS 10**, TypeScript 5 | Modules, guards and DTO validation out of the box: every route gets the same role and input checks, which a site with personal data needs |
+| Database | **PostgreSQL** hosted by **Supabase** | Relational data (people, parents, spouses, memberships) fits SQL; Supabase gives managed Postgres plus auth, storage and realtime from one project |
+| ORM | **Prisma 7** (`PrismaPg` driver adapter) | Typed queries generated from one schema file, and transactions for changes that touch several people at once |
+| Auth | Supabase Auth (email/password, Google OAuth 2.0) + our own JWT; our own TOTP **MFA** (`otplib`, bcrypt-hashed recovery codes) | Supabase stores and hashes passwords and runs the Google flow, so we never handle raw credentials. Our JWT carries the site role, read again from the database on every request, so a suspension or role change applies at once. MFA is our own so the challenge works the same on both login paths, and site admins can be required to have it |
+| Real-time | Supabase Realtime (broadcast + presence) over WebSocket | Already part of the Supabase project: private per-tree channels for live changes and who is on a tree, one site-wide channel for friends' online status, with no extra server to run |
+| Storage | Supabase Storage (`avatars` bucket) for profile photos | Photos stay out of the database and the app server; the backend checks type and size (max 1 MB) before upload |
+| Security | ModSecurity + OWASP Core Rule Set (WAF), **HashiCorp Vault** (secrets), AppRole auth | The site is public and holds personal data: the WAF blocks common attacks before they reach either app, and Vault keeps production secrets out of `.env` files, with an audit log of every read |
+| Email | Gmail SMTP via `nodemailer` (account notices, feedback form) | Free and reliable for the small volume we send: role changes, suspensions, account deletion, feedback |
+| Deployment | Docker / Docker Compose (Node 22 Alpine images), `make`; GCP nginx proxy + WireGuard to solsys (the Vault server, HashiCorp Vault) | One command starts the whole stack the same way on every machine; the GCP proxy gives a public IP and HTTPS while the app runs on our own server |
 
 ---
 
@@ -124,8 +124,8 @@ Prisma schema: [backend/src/prisma/schema.prisma](backend/src/prisma/schema.pris
 
 | Model | What it holds | Key relations |
 |-------|---------------|---------------|
-| `User` | site account: username, email, site `role` (ADMIN / MODERATOR / USER), `suspended`, 2FA fields | one `Profile` (the person who is you); friendships; invitations sent |
-| `RecoveryCode` | bcrypt-hashed 2FA recovery codes | → `User` (cascade) |
+| `User` | site account: username, email, site `role` (ADMIN / MODERATOR / USER / GUEST), `suspended`, MFA fields | one `Profile` (the person who is you); friendships; invitations sent |
+| `RecoveryCode` | bcrypt-hashed MFA recovery codes | → `User` (cascade) |
 | `Tree` | a family tree: name, slug, join `code`, `isPublic` | owner → `Profile`; root → `TreeMember` |
 | `TreeMember` | a person's place in a tree: tree `role` (ADMIN / MEMBER / JOINER / HOLDER), claim status | → `Tree`, → `Profile` |
 | `Profile` | a person: names, gender, birth/death dates, photo | `mother`, `father`, `spouse` (self-relations); optional `User` |
@@ -147,7 +147,7 @@ touches the data.
 | Sign up / log in with email and password | `/signup`, `/login` | Moira, Jon, Yiwei, Tiara |
 | Forgot / reset password | `/forgot-password`, `/reset-password` | Tiara |
 | Log in with Google (OAuth 2.0) | `/login` → `/consent` | Tiara |
-| Two-factor authentication: QR enrollment, 8 recovery codes, login challenge | `/settings` | Tiara |
+| Multi-factor authentication (MFA): QR enrollment, 8 recovery codes, login challenge; required for site admins | `/settings` | Tiara |
 | Settings: change password, change email, delete my account (goodbye email) | `/settings` | Tiara |
 | Dashboard: my trees, create a tree, join with a code, delete / leave a tree | `/dashboard` | Jon, Moira |
 | Profile: edit, photo upload (JPEG/PNG/WebP/GIF, max 1 MB, checked by content) | dashboard, canvas | Moira, Jon, Yiwei, Tiara |
@@ -175,7 +175,7 @@ listed after the table.
 | 4 | Custom design system, ≥10 reusable components | Minor | 1 | Jon | palette, typography, icons; Button, Navbar, Footer, Banner, TreeBanner, ModalBanner, Typography, Avatar, PresenceFacepile, SkipLink |
 | 5 | Support for additional browsers | Minor | 1 | Jon | Firefox, Safari, Edge (see [Browsers](#-browser-support)) |
 | 6 | Remote authentication with OAuth 2.0 (Google) | Minor | 1 | Tiara | Google sign-in through Supabase, checked end to end on production |
-| 7 | Two-factor authentication (2FA) | Minor | 1 | Tiara | TOTP, QR enrollment, 8 bcrypt-hashed recovery codes, login challenge |
+| 7 | Two-factor authentication (2FA), as MFA | Minor | 1 | Tiara | TOTP, QR enrollment, 8 bcrypt-hashed recovery codes, login challenge; site admins must have it |
 | 8 | Advanced search (filters, sorting, pagination) | Minor | 1 | Yiwei | `GET /api/profile/search`: name, birth date, gender; `sortBy`, `order`; `page`, `limit` with the total |
 | 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin panel, suspend |
 | 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
@@ -198,11 +198,12 @@ listed after the table.
   accessible (the skip link, labelled controls).
 - **Additional browsers (5).** Families use whatever browser they have, often
   Safari on a phone. Testing found real differences (below).
-- **OAuth (6) and 2FA (7).** Most relatives won't make a new password; Google
+- **OAuth (6) and MFA (7).** Most relatives won't make a new password; Google
   sign-in removes that step. The tree holds living people's birth dates, so
-  accounts get a second factor. 2FA is our own TOTP (not Supabase's MFA), so we
-  control enrollment, recovery codes and the challenge on both login paths
-  (password and Google).
+  accounts get a second factor. MFA is our own TOTP (not Supabase's built-in
+  MFA), so we control enrollment, recovery codes and the challenge on both
+  login paths (password and Google). Site admins can reach every account, so
+  they must have MFA: until it's on, an admin's session only reaches MFA setup.
 - **Advanced search (8).** Finding a relative across a large tree needs
   filters and pages, not a scroll.
 - **Advanced permissions (9), Major.** A site with personal data needs people
@@ -259,7 +260,7 @@ SSR and the user activity analytics dashboard were dropped on 10 Oct.
 
 ## 🌐 Browser support
 
-Tested with the same flows (sign up, log in, Google, 2FA, dashboard, open a
+Tested with the same flows (sign up, log in, Google, MFA, dashboard, open a
 tree, claim, add a person, settings) in **Google Chrome** (required),
 **Firefox**, **Safari** and **Microsoft Edge**, latest stable versions.
 
@@ -302,7 +303,7 @@ Differences we found:
 - Public API (built, not claimed).
 
 ### Tiara (tching)
-- Google OAuth, 2FA, site roles with the admin panel and suspension.
+- Google OAuth, MFA, site roles with the admin panel and suspension.
 - Notifications (with Moira): private per-tree realtime channels.
 - Cybersecurity: WAF (ModSecurity + OWASP CRS) and HashiCorp Vault, in
   server mode on solsys with per-person logins through SSH tunnels.
@@ -542,14 +543,17 @@ server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 ### Frontend (Next.js, `frontend/src`)
 - `app/page.tsx` – landing page
 - `app/login`, `app/signup`, `app/forgot-password`, `app/reset-password` – email/password
-  auth and Google; a 2FA code prompt appears inline when a login needs it
-- `app/consent` – OAuth callback, also handles the 2FA challenge for Google logins
+  auth and Google; an MFA code prompt appears inline when a login needs it
+- `app/consent` – OAuth callback, also handles the MFA challenge for Google logins
 - `app/dashboard` – my trees (create, join with a code, delete / leave), profile and
   photo, search, friends, links to Settings and (role-gated) the admin panel
 - `app/canvas/[id]` – the tree canvas: people, claims, members, presence, notifications
-- `app/settings` – 2FA, change password, change email, delete account
+- `app/settings` – MFA, change password, change email, delete account
   (old `/settings/2fa` links redirect here)
-- `app/admin/users` – user list, role changes, suspend, delete
+- `app/staff` – "Sign in as staff": the admin sign-in, email and password only, no sign-up
+- `app/guest` – Try as Guest: signs in on the shared demo account
+- `app/admin` – the admin console: overview, users (role changes, suspend, delete), every tree
+  (view, delete); moderators get users and a read-only view of every tree
 - `app/feedback`, `app/privacy`, `app/terms`
 - `components/` – the design system (`Button`, `Navbar`, `Footer`, `Banner`,
   `TreeBanner`, `ModalBanner`, `Typography`, `Avatar`, `PresenceFacepile`,
@@ -557,7 +561,8 @@ server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 
 ### Backend (NestJS, `backend/src`, every route under `/api`)
 - `api/auth` – Supabase login + our JWT, global `RolesGuard`, account changes and deletion
-- `api/auth/two-factor` – TOTP setup / enable / disable / login-verify
+- `api/auth/two-factor` – MFA (TOTP) setup / enable / disable / login-verify
+- `api/admin` – console stats and every tree: list and view (admin and moderator), delete (admin)
 - `api/users` – user list (admin and moderator), role change and delete (admin), suspend (admin and moderator)
 - `api/profile` – people: CRUD, photo upload, search
 - `api/tree` – trees: create, join, members, roles, claims, delete, leave; audit log + realtime broadcast
