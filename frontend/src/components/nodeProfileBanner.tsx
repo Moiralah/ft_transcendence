@@ -107,9 +107,7 @@ export function NodeProfileModal({
 		if (!targetId) return null;
 		const foundMember = allMembers.find((m) => m.profileId === targetId);
 		if (!foundMember) return null;
-		return foundMember?.firstName && foundMember?.lastName
-			? `${foundMember.firstName} ${foundMember.lastName}`
-			: '-';
+		return `${foundMember.firstName ?? ''} ${foundMember.lastName ?? ''}`.trim() || 'Unnamed Member';
 	};
 
 	const childNames = allMembers

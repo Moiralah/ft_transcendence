@@ -5,7 +5,8 @@ const FOCUSABLE =
 
 /**
  * Makes a modal behave as a dialog for keyboard and screen-reader users
- * (WCAG 2.1.2, 2.4.3): focus moves into it when it opens, Tab and Shift+Tab
+ * (WCAG 2.1.2, 2.4.3): focus moves into it when it opens (onto the dialog
+ * itself if it has tabIndex={-1}, else its first control), Tab and Shift+Tab
  * stay inside, Escape closes it, and focus goes back to whatever opened it.
  *
  * Put the returned ref on the element with role="dialog". Pass `active` false
@@ -28,8 +29,10 @@ export function useDialog<T extends HTMLElement>(onClose?: () => void, active = 
 				(el) => el.offsetParent !== null,
 			);
 
+		// A dialog with tabIndex={-1} takes the focus itself, so its first button
+		// isn't shown as selected (and pressed by Enter) the moment it opens.
 		if (!dialog.contains(document.activeElement)) {
-			(focusables()[0] ?? dialog).focus();
+			(dialog.getAttribute('tabindex') === '-1' ? dialog : focusables()[0] ?? dialog).focus();
 		}
 
 		const onKeyDown = (e: KeyboardEvent) => {
