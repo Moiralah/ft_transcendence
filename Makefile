@@ -74,6 +74,11 @@ deploy:
 unseal:
 	./scripts/vault/unseal.sh
 
+# Teammates: log in to the solsys Vault only (tunnel + password, token kept
+# in ~/.vault-token), so later `make up`/`make local` don't ask again.
+vault-login:
+	./scripts/vault/login.sh
+
 certs:
 	@if [ ! -f certs/localhost.pem ] || [ ! -f certs/localhost-key.pem ]; then \
 		mkdir -p certs; \
@@ -149,4 +154,4 @@ fclean:
 re: fclean
 	$(MAKE) --no-print-directory up
 
-.PHONY: up stack local prod deploy unseal certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re
+.PHONY: up stack local prod deploy unseal vault-login certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re
