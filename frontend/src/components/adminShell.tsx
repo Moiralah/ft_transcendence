@@ -52,6 +52,16 @@ export function AdminShell({ title, allowModerator = false, children }: {
 
 	const isAdmin = role === 'ADMIN';
 
+	// Nothing of the console (header, title, tabs) until the role is checked,
+	// so someone who isn't let in never sees it flash before the redirect.
+	if (!role) {
+		return (
+			<div className="min-h-screen bg-slate-50">
+				<p aria-live="polite" className="sr-only">Loading…</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans">
 			<SkipLink />
@@ -65,28 +75,26 @@ export function AdminShell({ title, allowModerator = false, children }: {
 						Sign out
 					</button>
 				</div>
-				{role && (
-					<nav aria-label="Admin console" className="max-w-6xl mx-auto px-4 sm:px-6">
-						<ul className="flex flex-wrap gap-1 !pl-0 list-none">
-							{(isAdmin ? TABS : [{ href: '/dashboard', label: '← Back to dashboard' }, { href: '/admin/users', label: 'Users' }, { href: '/admin/trees', label: 'Trees' }]).map((t) => {
-								const current = t.href === '/admin' ? pathname === '/admin' : pathname.startsWith(t.href);
-								return (
-									<li key={t.href}>
-										<Link href={t.href} aria-current={current ? 'page' : undefined}
-											className={`inline-block px-4 py-2 text-sm rounded-t-md focus:outline-none focus:ring-2 focus:ring-amber-400 ${current ? 'bg-slate-50 text-slate-900 font-semibold' : 'text-slate-200 hover:bg-slate-800'}`}>
-											{t.label}
-										</Link>
-									</li>
-								);
-							})}
-						</ul>
+				<nav aria-label="Admin console" className="max-w-6xl mx-auto px-4 sm:px-6">
+					<ul className="flex flex-wrap gap-1 !pl-0 list-none">
+						{(isAdmin ? TABS : [{ href: '/dashboard', label: '← Back to dashboard' }, { href: '/admin/users', label: 'Users' }, { href: '/admin/trees', label: 'Trees' }]).map((t) => {
+							const current = t.href === '/admin' ? pathname === '/admin' : pathname.startsWith(t.href);
+							return (
+								<li key={t.href}>
+									<Link href={t.href} aria-current={current ? 'page' : undefined}
+										className={`inline-block px-4 py-2 text-sm rounded-t-md focus:outline-none focus:ring-2 focus:ring-amber-400 ${current ? 'bg-slate-50 text-slate-900 font-semibold' : 'text-slate-200 hover:bg-slate-800'}`}>
+										{t.label}
+									</Link>
+								</li>
+							);
+						})}
+					</ul>
 					</nav>
-				)}
 			</header>
 
 			<main id="main-content" tabIndex={-1} className="focus:outline-none max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 flex-1 space-y-6">
 				<h1 className="text-2xl font-bold">{title}</h1>
-				{role ? children : <p aria-live="polite">Loading…</p>}
+				{children}
 			</main>
 
 			<footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">

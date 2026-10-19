@@ -13,9 +13,11 @@ export function AdminMfaGate({ children }: { children: React.ReactNode }) {
 
 	useEffect(() => {
 		const token = getToken();
-		// No session: the admin pages already send people to sign in.
+		// No session: straight to staff sign-in, without drawing any of the
+		// console first (the session is per-tab, so a pasted /admin link in a
+		// new browser or tab lands here).
 		if (!token) {
-			setReady(true);
+			router.replace('/staff');
 			return;
 		}
 		fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/status`, {
