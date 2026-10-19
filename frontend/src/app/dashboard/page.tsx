@@ -683,7 +683,7 @@ useEffect(() => {
 
           {/* Bio Section */}
           <div className="w-full pt-6 mt-6 border-t border-slate-200 text-center">
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-700 [overflow-wrap:anywhere]">
               {myProfile?.bio || 'Bio is empty'}
             </p>
           </div>

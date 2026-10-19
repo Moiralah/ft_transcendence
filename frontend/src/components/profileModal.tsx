@@ -8,6 +8,8 @@ import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 import { useDialog } from '@/hooks/useDialog';
 
+// Matches the backend UpdateProfileDto limit.
+const BIO_MAX_LENGTH = 250;
 
 export interface Profile {
   id: number;
@@ -276,6 +278,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               name= {key}
               min={type === "date" ? MIN_PROFILE_DATE : undefined}
               max={type === "date" ? todayDate() : undefined}
+              maxLength={key === "bio" ? BIO_MAX_LENGTH : undefined}
               value={formData[key] || "" }
               onChange={handleChange}
               onKeyDown={handleKeyDown}
