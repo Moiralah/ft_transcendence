@@ -981,7 +981,7 @@ export class TreeService {
 
 		return this.prisma.$transaction(async (tx) => {
 
-			const kickedName = await this.profileNameById(tx, holder.profileId!);
+			const kickedName = await this.profileNameById(tx, target.profileId!);
 			// 5. If the target had claimed a placeholder, release it.
 			const claimedHolder = await tx.treeMember.findUnique({
 				where: { linkId: target.id },
