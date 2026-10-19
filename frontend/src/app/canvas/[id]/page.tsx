@@ -839,7 +839,7 @@ export default function Content() {
                 className="w-24 h-10 bg-white hover:bg-gray-50 border border-black shadow text-black focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
                 onClick={() => setTreeMemberModal(false)}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
