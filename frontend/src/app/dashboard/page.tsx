@@ -19,6 +19,12 @@ import { Avatar } from '@/components/Avatar';
 import { useAuthGate } from '@/hooks/useAuthGate';
 import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
 
+type FriendUser = { username: string; profile?: { firstName: string | null; lastName: string | null } | null };
+
+// A friend's profile name, falling back to their username when they haven't set one.
+const displayName = (u: FriendUser) =>
+  [u.profile?.firstName, u.profile?.lastName].filter((name) => name?.trim()).join(' ') || u.username;
+
 export default function TreePage() {
   const router = useRouter();
   //const token = getToken();
@@ -683,7 +689,7 @@ useEffect(() => {
 
           {/* Bio Section */}
           <div className="w-full pt-6 mt-6 border-t border-slate-200 text-center">
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-700 [overflow-wrap:anywhere]">
               {myProfile?.bio || 'Bio is empty'}
             </p>
           </div>
@@ -716,9 +722,7 @@ useEffect(() => {
                     }`}
                   />
                   <p className="font-semibold text-slate-900">
-                {([friend.user.profile?.firstName, friend.user.profile?.lastName]
-                .filter((name) => name?.trim())
-                .join(' ') || friend.user.username)}
+                {displayName(friend.user)}
                   </p>
                 </div>
 				<Button
@@ -785,7 +789,7 @@ useEffect(() => {
 					>
 						<div className="min-w-0">
 						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
-							{request.requester.username}
+							{displayName(request.requester)}
 						</p>
 						<p className="text-sm text-slate-600">
 							Received: {formatDate(request.createdAt)}
@@ -840,7 +844,7 @@ useEffect(() => {
 					>
 						<div className="min-w-0">
 						<p className="font-semibold text-slate-900 [overflow-wrap:anywhere]">
-							{request.addressee.username}
+							{displayName(request.addressee)}
 						</p>
 						<p className="text-sm text-slate-600">
 							Sent: {formatDate(request.createdAt)}

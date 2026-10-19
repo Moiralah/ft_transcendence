@@ -103,22 +103,32 @@ export function NodeProfileModal({
 		}
 	}, [member]);
 
+	// A claimed placeholder shows its claimant's name, as its card does
+	// (treeBranch's getLinkMember); the placeholder's own may still be "New Spouse".
+	const shownName = (m: Member) => {
+		const claimant = m.role === 'HOLDER' && m.claim === 'ACCEPTED' && m.linkId != null
+			? allMembers.find((c) => c.id === m.linkId)
+			: undefined;
+		const p = claimant ?? m;
+		return `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim();
+	};
+
 	const getMemberNameById = (targetId: number | null) => {
 		if (!targetId) return null;
 		const foundMember = allMembers.find((m) => m.profileId === targetId);
 		if (!foundMember) return null;
-		return `${foundMember.firstName ?? ''} ${foundMember.lastName ?? ''}`.trim() || 'Unnamed Member';
+		return shownName(foundMember) || 'Unnamed Member';
 	};
 
 	const childNames = allMembers
 		.filter((m) => member.childrenIds?.includes(m.profileId ?? -1))
-		.map((m) => `${m.firstName} ${m.lastName ?? ''}`.trim())
+		.map(shownName)
 		.filter(Boolean)
 		.join(', ');
 
 	const parentNames = allMembers
 		.filter((m) => m.profileId === member.fatherId || m.profileId === member.motherId)
-		.map((m) => `${m.firstName} ${m.lastName ?? ''}`.trim())
+		.map(shownName)
 		.filter(Boolean)
 		.join(', ');
 
