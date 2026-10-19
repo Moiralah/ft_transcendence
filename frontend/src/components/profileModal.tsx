@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import toast from 'react-hot-toast';
 import { Button } from './button';
 import { getToken } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
@@ -177,7 +178,15 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (res.status === 401) {
           throw new Error("Session expired. Please log in again.");
         }
-        throw new Error(`Failed to update profile: ${res.statusText}`);
+        const data = await res.json().catch(() => ({}));
+        // A 403 with no JSON body comes from the WAF, not the API: names that
+        // look like SQL (e.g. "1=1") are blocked before they reach the backend.
+        if (res.status === 403 && !data.message) {
+          throw new Error("That name or bio was blocked by our security filter. Please try different wording.");
+        }
+        // e.g. "birthDate must be between 1000-01-01 and today" for year 9999.
+        const message = Array.isArray(data.message) ? data.message.join(", ") : data.message;
+        throw new Error(message || `Failed to update profile: ${res.statusText}`);
       }
       const updatedProfile: Profile = await res.json();
       if (onSave) {
@@ -187,7 +196,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         onClose();
       }
     } catch (err: any) {
-    console.error("Save error:", err.message);
+      console.error("Save error:", err.message);
+      toast.error(err.message);
     }
   };
 
