@@ -423,7 +423,7 @@ export class TreeService {
 	} as const;
 
 	private mapMemberRow(m: any) {
-		//const display = m.claim === 'ACCEPTED' && m.link?.profile ? m.link.profile : m.profile;
+		const display = m.claim === 'ACCEPTED' && m.link?.profile ? m.link.profile : m.profile;
 		return {
 			id: m.id,
 			profileId: m.profileId,
@@ -431,11 +431,11 @@ export class TreeService {
 			role: m.role,
 			claim: m.claim,
 			joinedAt: m.joinedAt,
-			firstName: m.profile?.firstName ?? '',
-			lastName: m.profile?.lastName ?? '',
-			photoUrl: m.profile?.photoUrl ?? null,
-			gender: m.profile?.gender ?? null,
-			birthDate: m.profile?.birthDate ?? null,
+			firstName: display?.firstName ?? '',
+			lastName: display?.lastName ?? '',
+			photoUrl: display?.photoUrl ?? null,
+			gender: display?.gender ?? null,
+			birthDate: display?.birthDate ?? null,
 			deathDate: m.profile?.deathDate ?? null,
 			linkId: m.linkId,
 			spouseId: m.profile?.spouseId ?? null,
