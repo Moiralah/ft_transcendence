@@ -6,11 +6,10 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
 
-const ROLE_NAMES: Record<string, string> = { ADMIN: 'Admin', MODERATOR: 'Moderator', USER: 'User', GUEST: 'Guest' };
+const ROLE_NAMES: Record<string, string> = { MODERATOR: 'Moderator', USER: 'User', GUEST: 'Guest' };
 const ROLE_RIGHTS: Record<string, string> = {
-	ADMIN: 'You are now a site admin. Sign in through "Sign in as staff" (email and password) to open the admin console: manage all users and trees. Admin accounts don\'t make trees or friends.',
 	MODERATOR: 'You can now open Moderation from your dashboard: see all users, suspend or reactivate accounts, and look at every tree (read-only).',
-	USER: 'You no longer have access to the Admin Panel or Moderation.',
+	USER: 'You no longer have access to Moderation.',
 };
 
 @Injectable()
@@ -49,7 +48,7 @@ export class UsersService {
 		});
 	}
 
-	async updateRole(id: string, role: 'ADMIN' | 'MODERATOR' | 'USER', requesterId: string) {
+	async updateRole(id: string, role: 'MODERATOR' | 'USER', requesterId: string) {
 		if (id === requesterId) {
 			throw new ForbiddenException('You cannot change your own role.');
 		}
@@ -94,7 +93,8 @@ export class UsersService {
 		return site ? `${site}/login` : '';
 	}
 
-	async setSuspended(id: string, suspended: boolean, requesterId: string, requesterRole: string) {
+	// Admins aren't users (Admin table), so a moderator never reaches one here.
+	async setSuspended(id: string, suspended: boolean, requesterId: string) {
 		if (id === requesterId) {
 			throw new ForbiddenException('You cannot suspend your own account.');
 		}
@@ -102,9 +102,6 @@ export class UsersService {
 		const user = await this.prisma.user.findUnique({ where: { id } });
 		if (!user) {
 			throw new NotFoundException('User not found.');
-		}
-		if (user.role === 'ADMIN' && requesterRole !== 'ADMIN') {
-			throw new ForbiddenException('Moderators cannot suspend an admin.');
 		}
 
 		const updated = await this.prisma.user.update({

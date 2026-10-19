@@ -1,6 +1,7 @@
 import { IsIn } from 'class-validator';
 
 export class UpdateRoleDto {
-	@IsIn(['ADMIN', 'MODERATOR', 'USER'])
-	role: 'ADMIN' | 'MODERATOR' | 'USER';
+	// Not ADMIN: site admins are separate accounts (Admin table, /admin/admins).
+	@IsIn(['MODERATOR', 'USER'])
+	role: 'MODERATOR' | 'USER';
 }

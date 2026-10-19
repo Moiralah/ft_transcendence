@@ -5,7 +5,7 @@ import { NotGuestGuard } from '../not-guest.guard';
 import { TwoFactorCodeDto, TwoFactorLoginVerifyDto } from './dto/two-factor.dto';
 
 interface AuthenticatedRequest {
-	user: { id: string; email: string };
+	user: { id: string; email: string; role: string };
 }
 
 @Controller('auth/2fa')
@@ -15,25 +15,25 @@ export class TwoFactorController {
 	@Get('status')
 	@UseGuards(JwtAuthGuard)
 	status(@Req() req: AuthenticatedRequest) {
-		return this.twoFactor.getStatus(req.user.id);
+		return this.twoFactor.getStatus(req.user.id, req.user.role === 'ADMIN');
 	}
 
 	@Post('setup')
 	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	setup(@Req() req: AuthenticatedRequest) {
-		return this.twoFactor.setup(req.user.id, req.user.email);
+		return this.twoFactor.setup(req.user.id, req.user.email, req.user.role === 'ADMIN');
 	}
 
 	@Post('enable')
 	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	enable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto) {
-		return this.twoFactor.enable(req.user.id, body.token);
+		return this.twoFactor.enable(req.user.id, body.token, req.user.role === 'ADMIN');
 	}
 
 	@Post('disable')
 	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	disable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto) {
-		return this.twoFactor.disable(req.user.id, body.token);
+		return this.twoFactor.disable(req.user.id, body.token, req.user.role === 'ADMIN');
 	}
 
 	// No JwtAuthGuard here — the caller only has a "purpose: mfa" challenge

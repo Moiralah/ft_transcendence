@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { Prisma } from '../../../generated/client';
 import { AuthService } from '../auth.service';
 
 const RECOVERY_CODE_COUNT = 8;
@@ -33,14 +34,35 @@ export class TwoFactorService {
 		private readonly auth: AuthService,
 	) { }
 
-	async getStatus(userId: string) {
-		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+	// Admins and users keep their MFA in their own tables (Admin, User); the
+	// fields are the same. `admin` comes from the session's role, or from the
+	// challenge token at login.
+	private async load(id: string, admin: boolean) {
+		const select = { id: true, email: true, twoFactorEnabled: true, twoFactorSecret: true } as const;
+		if (admin) {
+			return { ...(await this.prisma.admin.findUniqueOrThrow({ where: { id }, select })), suspended: false };
+		}
+		return this.prisma.user.findUniqueOrThrow({ where: { id }, select: { ...select, suspended: true, profileId: true, role: true } });
+	}
+
+	private save(tx: Prisma.TransactionClient, id: string, admin: boolean, data: { twoFactorEnabled?: boolean; twoFactorSecret?: string | null }) {
+		return admin
+			? tx.admin.update({ where: { id }, data })
+			: tx.user.update({ where: { id }, data });
+	}
+
+	private codesOf(id: string, admin: boolean) {
+		return admin ? { adminId: id } : { userId: id };
+	}
+
+	async getStatus(userId: string, admin = false) {
+		const user = await this.load(userId, admin);
 		return { enabled: user.twoFactorEnabled };
 	}
 
-	async setup(userId: string, email: string) {
+	async setup(userId: string, email: string, admin = false) {
 		const secret = authenticator.generateSecret();
-		await this.prisma.user.update({ where: { id: userId }, data: { twoFactorSecret: secret } });
+		await this.save(this.prisma, userId, admin, { twoFactorSecret: secret });
 
 		const otpauthUrl = authenticator.keyuri(email, 'Family Tree', secret);
 		const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
@@ -48,8 +70,8 @@ export class TwoFactorService {
 		return { secret, otpauthUrl, qrCodeDataUrl };
 	}
 
-	async enable(userId: string, token: string) {
-		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+	async enable(userId: string, token: string, admin = false) {
+		const user = await this.load(userId, admin);
 		if (!user.twoFactorSecret) {
 			throw new BadRequestException('Call /auth/2fa/setup first.');
 		}
@@ -63,35 +85,32 @@ export class TwoFactorService {
 		);
 
 		await this.prisma.$transaction(async (tx) => {
-			await tx.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
-			await tx.recoveryCode.deleteMany({ where: { userId } });
+			await this.save(tx, userId, admin, { twoFactorEnabled: true });
+			await tx.recoveryCode.deleteMany({ where: this.codesOf(userId, admin) });
 			await tx.recoveryCode.createMany({
-				data: hashedCodes.map((codeHash) => ({ userId, codeHash })),
+				data: hashedCodes.map((codeHash) => ({ ...this.codesOf(userId, admin), codeHash })),
 			});
 		});
 
 		return { recoveryCodes };
 	}
 
-	async disable(userId: string, token: string) {
-		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+	async disable(userId: string, token: string, admin = false) {
+		// Site admins must always have MFA (see JwtStrategy).
+		if (admin) {
+			throw new ForbiddenException('Site admins must keep MFA on.');
+		}
+		const user = await this.load(userId, admin);
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
 			throw new BadRequestException('MFA is not enabled.');
-		}
-		// Site admins must always have MFA (see JwtStrategy).
-		if (user.role === 'ADMIN') {
-			throw new ForbiddenException('Site admins must keep MFA on.');
 		}
 		if (!authenticator.verify({ token, secret: user.twoFactorSecret })) {
 			throw new UnauthorizedException('Invalid verification code.');
 		}
 
 		await this.prisma.$transaction(async (tx) => {
-			await tx.user.update({
-				where: { id: userId },
-				data: { twoFactorEnabled: false, twoFactorSecret: null },
-			});
-			await tx.recoveryCode.deleteMany({ where: { userId } });
+			await this.save(tx, userId, admin, { twoFactorEnabled: false, twoFactorSecret: null });
+			await tx.recoveryCode.deleteMany({ where: this.codesOf(userId, admin) });
 		});
 
 		return { message: 'MFA disabled.' };
@@ -112,7 +131,8 @@ export class TwoFactorService {
 		// locked — otherwise the guessing could just continue until it hits.
 		this.assertNotLocked(payload.sub);
 
-		const user = await this.prisma.user.findUniqueOrThrow({ where: { id: payload.sub } });
+		const admin = payload.admin === true;
+		const user = await this.load(payload.sub, admin);
 		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
 			throw new ForbiddenException('MFA is not enabled for this account.');
 		}
@@ -120,14 +140,11 @@ export class TwoFactorService {
 			throw new ForbiddenException('Your account has been suspended.');
 		}
 
-		if (authenticator.verify({ token: code, secret: user.twoFactorSecret })) {
+		const ok = authenticator.verify({ token: code, secret: user.twoFactorSecret })
+			|| await this.tryConsumeRecoveryCode(user.id, code, admin);
+		if (ok) {
 			this.failedAttempts.delete(user.id);
-			return this.auth.issueSession(user);
-		}
-
-		if (await this.tryConsumeRecoveryCode(user.id, code)) {
-			this.failedAttempts.delete(user.id);
-			return this.auth.issueSession(user);
+			return 'role' in user ? this.auth.issueSession(user) : this.auth.issueAdminSession(user);
 		}
 
 		this.recordFailure(user.id);
@@ -165,8 +182,8 @@ export class TwoFactorService {
 		this.failedAttempts.set(userId, entry);
 	}
 
-	private async tryConsumeRecoveryCode(userId: string, code: string): Promise<boolean> {
-		const unused = await this.prisma.recoveryCode.findMany({ where: { userId, usedAt: null } });
+	private async tryConsumeRecoveryCode(userId: string, code: string, admin: boolean): Promise<boolean> {
+		const unused = await this.prisma.recoveryCode.findMany({ where: { ...this.codesOf(userId, admin), usedAt: null } });
 		for (const recoveryCode of unused) {
 			if (await bcrypt.compare(code, recoveryCode.codeHash)) {
 				await this.prisma.recoveryCode.update({

@@ -10,7 +10,6 @@
 */
 
 export const UserRole = {
-  ADMIN: 'ADMIN',
   MODERATOR: 'MODERATOR',
   USER: 'USER',
   GUEST: 'GUEST'

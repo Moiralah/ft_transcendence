@@ -43,14 +43,34 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('MFA challenge token cannot be used for authentication');
 		}
 
+		// Site admins have their own table (Admin). The token says which table
+		// to look in; the row is still read on every request, so a removed
+		// admin loses the console on their next request.
+		if (payload.role === 'ADMIN') {
+			const admin = await this.prisma.admin.findUnique({
+				where: { id: payload.sub },
+				select: { twoFactorEnabled: true },
+			});
+			if (!admin) {
+				throw new UnauthorizedException('This admin account no longer exists.');
+			}
+			// Site admins must have MFA. Until they turn it on, their session only
+			// reaches what setting it up needs; everything else, the admin console
+			// included, is refused.
+			if (!admin.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
+				throw new ForbiddenException(ADMIN_MFA_REQUIRED);
+			}
+			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN' };
+		}
+
 		// Checked on every request (not just at login) so a suspension takes
 		// effect immediately against an already-issued token, instead of
 		// waiting up to JWT_EXPIRES_IN for the session to expire on its own.
 		// Same for the role: it comes from the database, not the token, so a
-		// demoted admin loses the admin endpoints on their next request.
+		// demoted moderator loses the moderation endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true, twoFactorEnabled: true, updatedAt: true },
+			select: { suspended: true, role: true, updatedAt: true },
 		});
 		// A guest removed after 15 idle minutes (AuthService): say so, rather
 		// than "suspended". The frontend matches on "guest session ended".
@@ -65,14 +85,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// minute, so a busy guest doesn't write on every request.
 		if (user.role === 'GUEST' && Date.now() - user.updatedAt.getTime() > 60 * 1000) {
 			await this.prisma.user.update({ where: { id: payload.sub }, data: { updatedAt: new Date() } });
-		}
-
-		// Site admins must have MFA. Until they turn it on, their session only
-		// reaches what setting it up needs; everything else, the admin console
-		// included, is refused. Also checked per request, so a user made admin
-		// is held here too until they enrol.
-		if (user.role === 'ADMIN' && !user.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
-			throw new ForbiddenException(ADMIN_MFA_REQUIRED);
 		}
 
 		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role };

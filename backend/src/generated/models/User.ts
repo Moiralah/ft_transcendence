@@ -489,14 +489,14 @@ export type UserSumOrderByAggregateInput = {
   profileId?: Prisma.SortOrder
 }
 
-export type UserScalarRelationFilter = {
-  is?: Prisma.UserWhereInput
-  isNot?: Prisma.UserWhereInput
-}
-
 export type UserNullableScalarRelationFilter = {
   is?: Prisma.UserWhereInput | null
   isNot?: Prisma.UserWhereInput | null
+}
+
+export type UserScalarRelationFilter = {
+  is?: Prisma.UserWhereInput
+  isNot?: Prisma.UserWhereInput
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -533,10 +533,12 @@ export type UserCreateNestedOneWithoutRecoveryCodesInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutRecoveryCodesNestedInput = {
+export type UserUpdateOneWithoutRecoveryCodesNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutRecoveryCodesInput, Prisma.UserUncheckedCreateWithoutRecoveryCodesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecoveryCodesInput
   upsert?: Prisma.UserUpsertWithoutRecoveryCodesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRecoveryCodesInput, Prisma.UserUpdateWithoutRecoveryCodesInput>, Prisma.UserUncheckedUpdateWithoutRecoveryCodesInput>
 }

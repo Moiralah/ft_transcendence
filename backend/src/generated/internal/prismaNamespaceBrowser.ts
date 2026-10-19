@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Admin: 'Admin',
   RecoveryCode: 'RecoveryCode',
   Tree: 'Tree',
   TreeMember: 'TreeMember',
@@ -94,9 +95,23 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const AdminScalarFieldEnum = {
+  id: 'id',
+  username: 'username',
+  email: 'email',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  twoFactorEnabled: 'twoFactorEnabled',
+  twoFactorSecret: 'twoFactorSecret'
+} as const
+
+export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof AdminScalarFieldEnum]
+
+
 export const RecoveryCodeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  adminId: 'adminId',
   codeHash: 'codeHash',
   usedAt: 'usedAt',
   createdAt: 'createdAt'

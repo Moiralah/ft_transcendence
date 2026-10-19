@@ -12,7 +12,7 @@ interface AdminUser {
 	id: string;
 	username: string;
 	email: string;
-	role: 'ADMIN' | 'MODERATOR' | 'USER' | 'GUEST';
+	role: 'MODERATOR' | 'USER' | 'GUEST';
 	suspended: boolean;
 	twoFactorEnabled: boolean;
 	createdAt: string;
@@ -20,7 +20,8 @@ interface AdminUser {
 }
 
 // GUEST isn't offered: it's only the shared guest account, whose role can't change.
-const ROLES: AdminUser['role'][] = ['ADMIN', 'MODERATOR', 'USER'];
+// Nor ADMIN: admins are separate accounts, added on the Admins tab.
+const ROLES: AdminUser['role'][] = ['MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
 	const router = useRouter();
@@ -28,8 +29,8 @@ export default function AdminUsersPage() {
 	const role = getRole();
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
-	// Your own row has no actions: you can't change your own role, suspend or
-	// delete yourself (the backend refuses too), but you can do it to other admins.
+	// A moderator's own row has no actions: they can't change their own role,
+	// suspend or delete themselves (the backend refuses too). Admins aren't listed here.
 	const [myId, setMyId] = useState<string | null>(null);
 	useEffect(() => setMyId(getUserId()), []);
 	const [loading, setLoading] = useState(true);
@@ -73,10 +74,7 @@ export default function AdminUsersPage() {
 	};
 
 	const changeRole = async (id: string, username: string, newRole: AdminUser['role']) => {
-		const question = newRole === 'ADMIN'
-			? `Make ${username} a site admin? Admin accounts sign in only through "Sign in as staff" with email and password, and can't use trees or friends: ${username} loses access to their own trees.`
-			: `Change ${username}'s role to ${newRole}?`;
-		if (!confirm(question)) return;
+		if (!confirm(`Change ${username}'s role to ${newRole}?`)) return;
 		setError(null);
 		try {
 			const res = await authedFetch(`/users/${id}/role`, {
@@ -152,7 +150,7 @@ export default function AdminUsersPage() {
 							<tbody>
 								{users.map((u) => {
 									const isMe = u.id === myId;
-									const canSuspend = !isMe && (!isModerator || u.role !== 'ADMIN');
+									const canSuspend = !isMe;
 									return (
 										<tr key={u.id} className="border-t border-slate-200">
 											<td className="px-4 py-3">{u.username}{isMe && <span className="ml-2 text-xs font-semibold text-slate-600">(you)</span>}</td>

@@ -1057,21 +1057,14 @@ export class TreeService {
 	 * Global platform admin — role on User, not TreeMember.
 	 * Used to let superusers bypass per-tree permission checks.
 	 */
-	private async isGlobalAdmin(profileId: number): Promise<boolean> {
-		const user = await this.prisma.user.findUnique({
-			where: { profileId },
-			select: { role: true },
-		});
-		return user?.role === 'ADMIN';
-	}
-
-	async deleteTree(treeId: number, requesterProfileId: number) {
+	// siteAdmin: called from the admin console (AdminService), whose accounts
+	// have no profile; the route itself is admin-only.
+	async deleteTree(treeId: number, requesterProfileId: number | null, siteAdmin = false) {
 		const tree = await this.prisma.tree.findUnique({ where: { id: treeId } });
 		if (!tree) throw new NotFoundException('Tree not found.');
 
 		// Only the owner and global admin can delete.
-		const isAdmin = await this.isGlobalAdmin(requesterProfileId);
-		if (tree.ownerId !== requesterProfileId && !isAdmin) {
+		if (tree.ownerId !== requesterProfileId && !siteAdmin) {
 			throw new ForbiddenException('Only the tree owner and global admin can delete this tree.');
 		}
 
@@ -1131,8 +1124,8 @@ export class TreeService {
 		const byOwner = tree.ownerId === requesterProfileId;
 		this.logger.log(
 			// JSON.stringify: a name with line breaks can't forge extra log lines.
-			`Tree ${treeId} ${JSON.stringify(tree.name)} deleted by profile ${requesterProfileId}`
-			+ `${byOwner ? ' (owner)' : ' (site admin)'}; ${result.deletedProfileCount} made-up profiles removed`,
+			`Tree ${treeId} ${JSON.stringify(tree.name)} deleted by ${byOwner ? `profile ${requesterProfileId} (owner)` : 'a site admin'}`
+			+ `; ${result.deletedProfileCount} made-up profiles removed`,
 		);
 		if (!byOwner) {
 			const owner = await this.prisma.user.findUnique({

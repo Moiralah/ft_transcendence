@@ -15,7 +15,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Global role (admin panel / permissions) — separate from per-tree roles (see `Role`)
+  // Global role (moderation / permissions) — separate from per-tree roles (see `Role`).
+  // Site admins are not users: they live in their own table (see `Admin`).
   role UserRole @default(USER)
 
   // Moderator action: blocks login without deleting the account (admin-only action)
@@ -39,22 +40,44 @@ model User {
 }
 
 enum UserRole {
-  ADMIN
   MODERATOR
   USER
   GUEST // the shared demo account behind "Try as guest" (see AuthService.loginAsGuest)
 }
 
+// ------------------- Site admins -------------------
+// The admin console accounts ("Sign in as staff"), kept apart from User: no
+// profile, trees, friends or invitations. The id is the Supabase login's UUID,
+// like User.id; one Supabase login is either an admin or a user, never both.
+// Admins are added and removed from the console (AdminsController), not by
+// changing a user's role. MFA is required (JwtStrategy).
+model Admin {
+  id        String   @id
+  username  String   @unique
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 2FA (TOTP)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  recoveryCodes    RecoveryCode[]
+}
+
 // ------------------- 2FA Recovery Codes -------------------
+// Belongs to a user or an admin (exactly one of userId / adminId is set).
 model RecoveryCode {
   id        Int       @id @default(autoincrement())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminId   String?
+  admin     Admin?    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   codeHash  String
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId])
+  @@index([adminId])
 }
 
 // ------------------- Family Trees -------------------
