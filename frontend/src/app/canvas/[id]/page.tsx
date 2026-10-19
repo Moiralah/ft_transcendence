@@ -14,7 +14,8 @@ import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
 import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
 import { useDialog } from '@/hooks/useDialog';
-
+import { useAuthGate } from '@/hooks/useAuthGate';
+import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
 
 interface PendingClaim {
   id: number;
@@ -51,7 +52,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const slug = params.id as unknown as string;
-  const token = getToken();
+  //const token = getToken();
   const isEditingRef = useRef(false);
 
   const [rootMember, setRootMember] = useState<any>();
@@ -73,19 +74,31 @@ export default function Content() {
 
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
+//   useEffect(() => {
+//     if (!token) {
+//       router.replace('/login');
+//       return;
+//     }
+//     // Site admins look at trees read-only in the admin console.
+//     if (getRole() === 'ADMIN') {
+//       router.replace('/admin/trees');
+//       return;
+//     }
+//     fetchTree(token);
+//     fetchMyProfile(token);
+//   }, [slug, token]);
+
+  const { status, token } = useAuthGate((token, role) => {
+    if (!token) return { action: 'redirect', to: '/login' };
+    if (role === 'ADMIN') return { action: 'redirect', to: '/admin/trees' };
+    return { action: 'allow' };
+  });
+
   useEffect(() => {
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
-    // Site admins look at trees read-only in the admin console.
-    if (getRole() === 'ADMIN') {
-      router.replace('/admin/trees');
-      return;
-    }
+    if (status !== 'ready' || !token) return;
     fetchTree(token);
     fetchMyProfile(token);
-  }, [slug, token]);
+  }, [status, token, slug]);
 
   useEffect(() => {
     if (tree?.name) {
@@ -581,6 +594,10 @@ export default function Content() {
 
   // People who joined the tree; HOLDER rows are the drawn placeholder nodes.
   const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
+
+  if (status !== 'ready') {
+     return <AuthGatePlaceholder redirecting={status === 'redirecting'} />;
+   }
 
   return (
     <div className="flex flex-col h-dvh overflow-hidden text-slate-900 bg-slate-50 font-sans">
