@@ -13,14 +13,18 @@ export class AdminService {
 	) { }
 
 	async stats() {
-		const [byRole, suspended, mfa, trees, people] = await Promise.all([
+		// Admins are counted from their own table; every admin has MFA, or
+		// they can't use the console at all.
+		const [byRole, admins, suspended, mfa, trees, people] = await Promise.all([
 			this.prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
+			this.prisma.admin.count(),
 			this.prisma.user.count({ where: { suspended: true } }),
 			this.prisma.user.count({ where: { twoFactorEnabled: true } }),
 			this.prisma.tree.count(),
 			this.prisma.treeMember.count({ where: { role: 'HOLDER' } }),
 		]);
-		const roles = Object.fromEntries(byRole.map((r) => [r.role, r._count._all]));
+		const roles: Record<string, number> = Object.fromEntries(byRole.map((r) => [r.role, r._count._all]));
+		roles.ADMIN = admins;
 		const users = byRole.reduce((sum, r) => sum + r._count._all, 0);
 		return { users, roles, suspended, mfa, trees, people };
 	}
@@ -103,7 +107,7 @@ export class AdminService {
 
 	// Same delete as the owner's (placeholder people cleaned up too); TreeService
 	// already lets a site admin delete any tree.
-	deleteTree(treeId: number, adminProfileId: number) {
-		return this.trees.deleteTree(treeId, adminProfileId);
+	deleteTree(treeId: number) {
+		return this.trees.deleteTree(treeId, null, true);
 	}
 }

@@ -33,7 +33,7 @@ export class UsersController {
 	@Patch(':id/suspend')
 	@Roles('ADMIN', 'MODERATOR')
 	setSuspended(@Req() req: AuthenticatedRequest, @Param('id') id: string, @Body() body: SuspendUserDto) {
-		return this.users.setSuspended(id, body.suspended, req.user.id, req.user.role);
+		return this.users.setSuspended(id, body.suspended, req.user.id);
 	}
 
 	@Delete(':id')

@@ -269,7 +269,7 @@ export default function SettingsPage() {
 					<section aria-labelledby="admin-delete-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-2">
 						<h2 id="admin-delete-heading" className="text-lg font-bold text-slate-900">Delete account</h2>
 						<p className="text-sm text-slate-700">
-							A site admin can&apos;t delete their own account. Another admin can delete it, or change its role first.
+							A site admin can&apos;t delete their own account. Another admin can remove it on the Admins tab.
 						</p>
 					</section>
 				)}

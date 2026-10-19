@@ -47,6 +47,19 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 			throw new ForbiddenException(STAFF_PASSWORD_ONLY);
 		}
 
+		// Site admins are their own accounts (Admin table) and sign in on the
+		// staff page only, everyone else on the normal login (like 42's "Sign in
+		// as staff"). Checked before MFA, so the wrong page doesn't even get as
+		// far as asking for a code.
+		const admin = await this.prisma.admin.findUnique({ where: { id: supabaseUser.id } });
+		if (portal === 'staff') {
+			// The staff page never creates accounts: admins are added from the
+			// admin console (POST /admins), nobody signs up as one.
+			if (!admin) throw new ForbiddenException(NOT_STAFF);
+			return this.loginAdmin(admin, supabaseUser.email);
+		}
+		if (admin) throw new ForbiddenException(STAFF_ONLY);
+
 		// 2. Find or create user in local database (using Prisma).
 		// Looked up by Supabase's own stable UUID, not email — email can
 		// change (e.g. via a "change email" flow), but the UUID never does.
@@ -56,13 +69,6 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		let user = await this.prisma.user.findUnique({
 			where: { id: supabaseUser.id },
 		});
-
-		// The staff page never creates accounts: someone new is not staff, and
-		// nobody signs up as an admin (new accounts are USER; only an admin can
-		// change a role, PATCH /users/:id/role).
-		if (!user && portal === 'staff') {
-			throw new ForbiddenException(NOT_STAFF);
-		}
 
 		if (!user) {
 			user = await this.findOrphanedAccount(supabaseUser.id, supabaseUser.email)
@@ -80,30 +86,35 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 			throw new ForbiddenException('Your account has been suspended.');
 		}
 
-		// Admins sign in on the staff page only, everyone else on the normal
-		// login (like 42's "Sign in as staff"). Checked before MFA, so the wrong
-		// page doesn't even get as far as asking for a code.
-		if ((portal === 'staff') !== (user.role === 'ADMIN')) {
-			throw new ForbiddenException(portal === 'staff' ? NOT_STAFF : STAFF_ONLY);
-		}
-
 		// 3. If this user has 2FA enabled, don't issue the real JWT yet — hand
 		// back a short-lived challenge token the frontend must exchange for a
 		// real session via /auth/2fa/login-verify.
 		if (user.twoFactorEnabled) {
-			const challengeToken = await this.jwt.signAsync(
-				{ sub: user.id, purpose: 'mfa' },
-				{ expiresIn: '5m' },
-			);
-			return { twoFactorRequired: true, challengeToken };
-		}
-
-		// A site admin without MFA gets a session that only reaches MFA setup
-		// (JwtStrategy); this tells the frontend to send them there first.
-		if (user.role === 'ADMIN') {
-			return { ...(await this.issueSession(user)), twoFactorSetupRequired: true };
+			return this.mfaChallenge(user.id);
 		}
 		return this.issueSession(user);
+	}
+
+	private async loginAdmin(admin: { id: string; email: string; twoFactorEnabled: boolean }, email?: string) {
+		if (email && admin.email !== email) {
+			// Same as for users: follow a confirmed email change in Supabase.
+			await this.prisma.admin.update({ where: { id: admin.id }, data: { email } });
+		}
+		if (admin.twoFactorEnabled) {
+			return this.mfaChallenge(admin.id, true);
+		}
+		// An admin without MFA gets a session that only reaches MFA setup
+		// (JwtStrategy); this tells the frontend to send them there first.
+		return { ...(await this.issueAdminSession({ id: admin.id, email: email ?? admin.email })), twoFactorSetupRequired: true };
+	}
+
+	// `admin` tells /auth/2fa/login-verify which table the account is in.
+	private async mfaChallenge(id: string, admin = false) {
+		const challengeToken = await this.jwt.signAsync(
+			{ sub: id, purpose: 'mfa', ...(admin && { admin: true }) },
+			{ expiresIn: '5m' },
+		);
+		return { twoFactorRequired: true, challengeToken };
 	}
 
 	// How the Supabase session was made: its access token lists the sign-in
@@ -171,6 +182,12 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 			}
 		}
 		throw new ServiceUnavailableException('Could not create your account right now. Please try again.');
+	}
+
+	// Admins have no profile; their sessions carry role ADMIN, which is how
+	// JwtStrategy knows to look in the Admin table.
+	issueAdminSession(admin: { id: string; email: string }) {
+		return this.issueSession({ ...admin, profileId: null, role: 'ADMIN' });
 	}
 
 	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
@@ -456,14 +473,14 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		if (confirm !== 'DELETE') {
 			throw new BadRequestException('Type DELETE to confirm');
 		}
+		// Admin accounts can't delete themselves either: a site with no admin
+		// left has nobody to manage it. Another admin removes them (DELETE /admins/:id).
+		if (await this.prisma.admin.findUnique({ where: { id: userId } })) {
+			throw new ForbiddenException('Site admins cannot delete their own account. Ask another admin to remove it.');
+		}
 		const user = await this.prisma.user.findUnique({ where: { id: userId } });
 		if (!user) {
 			throw new NotFoundException('Account not found');
-		}
-		// The admin panel can't delete its own account either: a site with no
-		// admin left has nobody to manage it.
-		if (user.role === 'ADMIN') {
-			throw new ForbiddenException('Site admins cannot delete their own account. Ask another admin to remove your admin role first.');
 		}
 		// Accounts with a password prove it's them; Google-only accounts have
 		// nothing to check beyond the typed confirmation.
