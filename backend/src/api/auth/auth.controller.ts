@@ -14,6 +14,14 @@ export class AuthController {
 		return this.auth.loginWithSupabaseToken(body.accessToken, body.portal);
 	}
 
+	// Ends the session the request was made with (the frontend's Logout button).
+	@Post('logout')
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(204)
+	async logout(@Req() req) {
+		await this.auth.logout(req.user.jti, req.user.exp);
+	}
+
 	// "Try as guest" on the front page: a session on the shared guest account,
 	// no Supabase login needed. Its demo tree is (re)created if it's missing.
 	@Post('guest')

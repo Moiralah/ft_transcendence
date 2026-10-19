@@ -191,18 +191,30 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
-		const token = await this.jwt.signAsync({
-			sub: user.id,
-			email: user.email,
-			profileId: user.profileId,
-			role: user.role,
-		});
+		// The jti names this one session, so Logout can end it (RevokedToken).
+		const token = await this.jwt.signAsync(
+			{
+				sub: user.id,
+				email: user.email,
+				profileId: user.profileId,
+				role: user.role,
+			},
+			{ jwtid: randomUUID() },
+		);
 
 		return {
 			accessToken: token,
 			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
 	}
+	// Logout: this session's token stops working everywhere, including in any
+	// other tab that was handed the same token. Upsert, since two tabs can log
+	// out of the same session at once.
+	async logout(jti: string, exp: number) {
+		const expiresAt = new Date(exp * 1000);
+		await this.prisma.revokedToken.upsert({ where: { jti }, create: { jti, expiresAt }, update: {} });
+	}
+
 	// --- Guest accounts ("Try as guest" on the front page) ----------------
 	// Every visit gets its own throwaway guest (Guest table, session role GUEST)
 	// with its own copy of the demo tree below, so no visitor ever sees
@@ -217,9 +229,12 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	private guestSweep?: ReturnType<typeof setInterval>;
 
 	// Checked every minute, so an idle guest goes within about 16 minutes.
+	// Logged-out tokens that have expired by now are dropped at the same time.
 	onModuleInit() {
 		this.guestSweep = setInterval(() => {
 			this.removeOldGuests().catch((e) => this.logger.warn(`Guest cleanup failed: ${e?.message}`));
+			this.prisma.revokedToken.deleteMany({ where: { expiresAt: { lt: new Date() } } })
+				.catch((e) => this.logger.warn(`Revoked token cleanup failed: ${e?.message}`));
 		}, 60 * 1000);
 	}
 

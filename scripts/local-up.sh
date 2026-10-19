@@ -72,4 +72,13 @@ for attempt in 1 2 3 4 5 6; do
   sleep 5
 done
 
+# The push makes new tables with RLS off; turn it on for every table.
+echo "[local-up] turning on RLS for every table..."
+if ! docker compose exec -T \
+    -e DIRECT_URL="$DIRECT_URL" -e DATABASE_URL="$DATABASE_URL" \
+    backend npx prisma db execute --stdin < scripts/db/enable-rls.sql; then
+  echo "[local-up] enabling RLS failed; see the error above" >&2
+  exit 1
+fi
+
 echo "[local-up] done. Open https://localhost:8443"

@@ -13,7 +13,7 @@ import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken, homeFor, loginPathAfter401, updateRole } from '@/lib/auth';
+import { clearSession, getRole, getToken, homeFor, logOut, loginPathAfter401, updateRole } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar } from '@/components/Avatar';
 import { useAuthGate } from '@/hooks/useAuthGate';
@@ -582,14 +582,14 @@ useEffect(() => {
   const formatDate = (iso?: string) => (iso ? iso.split('T')[0] : '');
 
   const handleLogout = async () => {
-    clearSession();
+    const path = await logOut();
     // OAuth logins also leave a Supabase session in the browser; drop it too.
     try {
       await supabase.auth.signOut();
     } catch {
       // already logged out of the app above — don't block the redirect
     }
-    router.replace('/login');
+    router.replace(path);
   };
 
   // /signup sends anyone logged in back here, so leave the guest session first.
