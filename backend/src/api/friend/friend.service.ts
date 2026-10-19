@@ -312,14 +312,16 @@ export class FriendService {
           select: {
             id: true,
             username: true,
-			profileId: true
+			profileId: true,
+			profile: { select: { firstName: true, lastName: true } },
           },
         },
         addressee: {
           select: {
             id: true,
             username: true,
-			profileId: true
+			profileId: true,
+			profile: { select: { firstName: true, lastName: true } },
           },
         },
       },
@@ -353,6 +355,7 @@ export class FriendService {
           select: {
             id: true,
             username: true,
+            profile: { select: { firstName: true, lastName: true } },
           },
         },
       },
@@ -376,6 +379,7 @@ export class FriendService {
           select: {
             id: true,
             username: true,
+            profile: { select: { firstName: true, lastName: true } },
           },
         },
       },
