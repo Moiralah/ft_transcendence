@@ -12,7 +12,7 @@ import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
-import { clearSession, getRole, getToken, loginPathAfter401 } from '@/lib/auth';
+import { clearSession, getRole, getToken, isGuest, loginPathAfter401 } from '@/lib/auth';
 import { useDialog } from '@/hooks/useDialog';
 import { useAuthGate } from '@/hooks/useAuthGate';
 import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
@@ -368,6 +368,9 @@ export default function Content() {
     if (tree?.name) document.title = `${name || tree.name} · Family Tree`;
   }, [name, tree]);
   const [editTreeName, setEditTreeName] = useState(false);
+  // Guests can't rename their demo tree (the API refuses it too).
+  const [guest, setGuest] = useState(false);
+  useEffect(() => setGuest(isGuest()), []);
 
   const handleSaveTreeName = async () => {
     const currentName = name.trim() || "my tree";
@@ -620,7 +623,14 @@ export default function Content() {
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-2">
             <div className="min-h-12 min-w-0 flex flex-1 items-center">
-              {editTreeName ? (
+              {guest ? (
+                <div
+                  className="flex min-h-12 min-w-0 items-center px-3 py-2 text-lg font-semibold text-gray-800 [overflow-wrap:anywhere]"
+                  title={name || "my tree"}
+                >
+                  {truncateName(name || "my tree")}
+                </div>
+              ) : editTreeName ? (
                 <input
                   type="text"
                   value={name}

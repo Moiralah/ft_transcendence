@@ -62,7 +62,7 @@ export class TreeController {
 	}
 
 	@Patch(':treeId')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard) // the guest's demo tree keeps its name
 	async update(@Req() req, @Param('treeId', ParseIntPipe) treeId: number, @Body() body: UpdateTreeDto) {
 		return this.treeService.update(
 			Number(treeId),
