@@ -10,6 +10,10 @@ import { Footer } from '@/components/footer';
 // Imported, not /icon.png: that URL is cached for a year, so a new logo
 // would never show. The import gets a content-hashed URL.
 import logo from '@/app/icon.png';
+
+import { useAuthGate } from '@/hooks/useAuthGate';
+import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
+
 import { supabase } from '@/lib/supabaseClient';
 import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken, isGuest, clearSession } from '@/lib/auth';
 
@@ -24,12 +28,20 @@ export default function SignupPage() {
 
   // Already signed in — no reason to show the signup form again. A guest's
   // throwaway session is dropped instead, so it can sign up.
-  useEffect(() => {
-    if (isGuest()) clearSession();
-    if (getToken()) {
-      router.replace('/dashboard');
-    }
-  }, [router]);
+//   useEffect(() => {
+//     if (isGuest()) clearSession();
+//     if (getToken()) {
+//       router.replace('/dashboard');
+//     }
+//   }, [router]);
+
+  const { status } = useAuthGate((token, role) => {
+     // A guest's throwaway session is dropped, so they can sign up.
+     if (role === 'GUEST') return { action: 'clear-then-allow' };
+     // A real logged-in user has no reason to see the signup form.
+     if (token) return { action: 'redirect', to: '/dashboard' };
+     return { action: 'allow' };
+	});
 
   // Same Google flow as the login page: /consent creates the account on the
   // first Google sign-in, so signing up and logging in are one button.
@@ -84,6 +96,11 @@ export default function SignupPage() {
           setSuccess(true);
           setError('Account created! Please log in.');
           setTimeout(() => router.replace('/login'), 2000);
+
+		if (status !== 'ready') {
+            return <AuthGatePlaceholder redirecting={status === 'redirecting'} />;
+          }
+		  
           return;
         }
 

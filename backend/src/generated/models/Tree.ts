@@ -292,12 +292,12 @@ export type TreeOrderByWithRelationInput = {
 export type TreeWhereUniqueInput = Prisma.AtLeast<{
   id?: number
   slug?: string
-  name?: string
   code?: string
   rootId?: number
   AND?: Prisma.TreeWhereInput | Prisma.TreeWhereInput[]
   OR?: Prisma.TreeWhereInput[]
   NOT?: Prisma.TreeWhereInput | Prisma.TreeWhereInput[]
+  name?: Prisma.StringFilter<"Tree"> | string
   description?: Prisma.StringNullableFilter<"Tree"> | string | null
   ownerId?: Prisma.IntFilter<"Tree"> | number
   createdAt?: Prisma.DateTimeFilter<"Tree"> | Date | string
@@ -308,7 +308,7 @@ export type TreeWhereUniqueInput = Prisma.AtLeast<{
   members?: Prisma.TreeMemberListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
-}, "id" | "slug" | "name" | "code" | "rootId">
+}, "id" | "slug" | "code" | "rootId">
 
 export type TreeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder

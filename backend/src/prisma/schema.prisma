@@ -61,7 +61,7 @@ model RecoveryCode {
 model Tree {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
-  name        String   @unique
+  name        String
   code        String?  @unique// 6-8 character alphanumeric join code
   description String?
   ownerId     Int

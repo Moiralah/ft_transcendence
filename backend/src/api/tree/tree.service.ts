@@ -1,6 +1,6 @@
 import {
 	Injectable, Logger, NotFoundException, ForbiddenException,
-	BadRequestException, ConflictException,
+	BadRequestException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -9,6 +9,11 @@ import { broadcastAudit, treeChannel } from './tree-realtime';
 
 const ASSIGNABLE_ROLES = ['ADMIN', 'MEMBER', 'JOINER'] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+const displayName = (
+	p: { firstName?: string | null; lastName?: string | null } | null | undefined,
+): string =>
+	[p?.firstName, p?.lastName].filter(Boolean).join(' ').trim() || 'Unknown';
 
 @Injectable()
 export class TreeService {
@@ -55,6 +60,17 @@ export class TreeService {
 		return log;
 	}
 
+	private async profileNameById(
+		db: Pick<PrismaService, 'profile'>,
+		profileId: number,
+	): Promise<string> {
+		const p = await db.profile.findUnique({
+			where: { id: profileId },
+			select: { firstName: true, lastName: true },
+		});
+		return displayName(p);
+	}
+
 	private generateTreeCode(): string {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
 	}
@@ -70,17 +86,7 @@ export class TreeService {
 		return `${base}-${suffix}`;
 	}
 
-	// Tree.name is unique across the whole site (schema.prisma), so a name
-	// another family already uses used to crash Prisma with a raw 500.
-	private async assertNameFree(name: string, exceptTreeId?: number) {
-		const taken = await this.prisma.tree.findUnique({ where: { name }, select: { id: true } });
-		if (taken && taken.id !== exceptTreeId) {
-			throw new ConflictException('A tree with this name already exists. Please choose another name.');
-		}
-	}
-
 	async createTree(profileId: number, name: string, description?: string) {
-		await this.assertNameFree(name);
 
 		let code: string;
 		do {
@@ -162,7 +168,7 @@ export class TreeService {
 			},
 		});
 		if (!tree) {
-			throw new NotFoundException('Tree not found. Check name and code.');
+			throw new NotFoundException('Tree not found. Check name and  JOIN code.');
 		}
 
 		const existing = await this.prisma.treeMember.findUnique({
@@ -380,10 +386,6 @@ export class TreeService {
 			);
 		}
 
-		if (data.name !== undefined && data.name !== tree.name) {
-			await this.assertNameFree(data.name, treeId);
-		}
-
 		const updatedTree = await this.prisma.tree.update({
 			where: { id: treeId },
 			data: {
@@ -537,7 +539,7 @@ export class TreeService {
 					treeId,
 					profileId: requesterProfileId,
 					action: 'ADD_CHILD',
-					details: `Added a child under profile ${parentProfileId}`,
+					details: `Added a child under profile ${displayName(parent)}`,
 				},
 			});
 
@@ -609,7 +611,7 @@ export class TreeService {
 					treeId,
 					profileId: requesterProfileId,
 					action: 'ADD_SPOUSE',
-					details: `Added a spouse for profile ${partnerProfileId}`,
+					details: `Added a spouse for ${displayName(partner)}`,
 				},
 			});
 
@@ -665,6 +667,7 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
+			const targetName = await this.profileNameById(tx, target.profileId!);
 			if (target.linkId) {
 				const linkedMember = await tx.treeMember.findUnique({ where: { id: target.linkId } });
 
@@ -694,7 +697,7 @@ export class TreeService {
 					treeId,
 					profileId: requesterProfileId,
 					action: 'DELETE_PROFILE',
-					details: `Deleted profile ${target.profileId}`,
+					details: `Deleted ${targetName}`,
 				},
 			});
 
@@ -741,6 +744,8 @@ export class TreeService {
 
 		return this.prisma.$transaction(async (tx) => {
 
+			const holderName = await this.profileNameById(tx, holder.profileId!);
+
 			await tx.treeMember.update({
 				where: { id: requesterMember.id },
 				data: { linkId: holderMemberId },
@@ -758,8 +763,8 @@ export class TreeService {
 					profileId: requesterProfileId,
 					action: byOwner ? 'APPROVE_CLAIM' : 'REQUEST_CLAIM',
 					details: byOwner
-						? `Claimed profile ${holder.profileId} (tree owner, no approval needed)`
-						: `Requested to claim profile ${holder.profileId}`,
+						? `Claimed ${holderName}`
+						: `Requested to claim ${holderName}`,
 				},
 			});
 
@@ -779,6 +784,9 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
+
+			const holderName = await this.profileNameById(tx, holder.profileId!);
+
 			const linkedMember = await tx.treeMember.findUnique({ where: { id: holder.linkId! } });
 			if (!linkedMember) {
 				throw new NotFoundException('Linked member not found.');
@@ -804,7 +812,7 @@ export class TreeService {
 					treeId,
 					profileId: approverProfileId,
 					action: 'APPROVE_CLAIM',
-					details: `Approved claim on profile ${holder.profileId}`,
+					details: `Approved claim on ${holderName}`,
 				},
 			});
 
@@ -830,6 +838,8 @@ export class TreeService {
 		// (by this or another claimant).
 		return this.prisma.$transaction(async (tx) => {
 
+			const holderName = await this.profileNameById(tx, holder.profileId!);
+
 			if (linkedMemberId) {
 				await tx.treeMember.updateMany({
 					where: { id: linkedMemberId, linkId: holderMemberId },
@@ -847,7 +857,7 @@ export class TreeService {
 					treeId,
 					profileId: approverProfileId,
 					action: 'REJECT_CLAIM',
-					details: `Rejected claim on profile ${holder.profileId}`,
+					details: `Rejected claim on ${holderName}`,
 				},
 			});
 
@@ -892,6 +902,8 @@ export class TreeService {
 		const linkedMemberId = holder.linkId;
 
 		return this.prisma.$transaction(async (tx) => {
+
+			const holderName = await this.profileNameById(tx, holder.profileId!);
 			// 4. If the claim was accepted, the claimant may have been promoted
 			//    from JOINER to MEMBER. Revert that.
 			//    ADMIN / Member keep their role.
@@ -929,8 +941,8 @@ export class TreeService {
 					profileId: requesterProfileId,
 					action: isAccepted ? 'UNCLAIM' : 'REJECT_CLAIM',
 					details: isAccepted
-						? `Unclaimed profile ${holder.profileId}`
-						: `Withdrew pending claim on profile ${holder.profileId}`,
+						? `Unclaimed ${holderName}`
+						: `Withdrew pending claim on ${holderName}`,
 				},
 			});
 
@@ -968,6 +980,8 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
+
+			const kickedName = await this.profileNameById(tx, holder.profileId!);
 			// 5. If the target had claimed a placeholder, release it.
 			const claimedHolder = await tx.treeMember.findUnique({
 				where: { linkId: target.id },
@@ -996,7 +1010,7 @@ export class TreeService {
 					treeId,
 					profileId: requesterProfileId,
 					action: 'KICK_USER',
-					details: `Kicked profile ${targetProfileId} from the tree`,
+					details: `Kicked ${kickedName} from the tree`,
 				},
 			});
 

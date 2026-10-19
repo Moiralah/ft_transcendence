@@ -16,17 +16,19 @@ import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, homeFor, loginPathAfter401, updateRole } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar } from '@/components/Avatar';
+import { useAuthGate } from '@/hooks/useAuthGate';
+import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
 
 export default function TreePage() {
   const router = useRouter();
-  const token = getToken();
+  //const token = getToken();
   // Read after the first render: the server has no sessionStorage, so reading
   // it while rendering made the server and browser HTML differ for admins and
   // moderators (the Admin Panel button) and React threw a hydration error.
-  const [role, setRole] = useState<string | null>(null);
-  useEffect(() => {
-    setRole(getRole());
-  }, []);
+//  const [role, setRole] = useState<string | null>(null);
+//   useEffect(() => {
+//     setRole(getRole());
+//   }, []);
 
   // Modals
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -52,38 +54,62 @@ export default function TreePage() {
   const [profileSortBy, setProfileSortBy] = useState<'firstName' | 'lastName'>('firstName');
   const [profileOrder, setProfileOrder] = useState<'asc' | 'desc'>('asc');
   const [profileResults, setProfileResults] = useState<any[]>([]);
-  const [friendStatuses, setFriendStatuses] = useState<Record<string, { status: string; friendId: number | null;}>>({});  
+  const [friendStatuses, setFriendStatuses] = useState<Record<string, { status: string; friendId: number | null;}>>({});
   const [friends, setFriends] = useState<{id: number;createdAt:string;user:{id:string;username:string;profileId:number|null;profile?:{firstName:string|null;lastName:string|null;}|null;};}[]>([]);
   const [profilePage, setProfilePage] = useState(1);
   const [profileTotalPages, setProfileTotalPages] = useState(0);
   const [profileTotal, setProfileTotal] = useState(0);
   const [inRequests, setInRequests] = useState<any[]>([]);
-  const [outRequests, setOutRequests] = useState<any[]>([]); 
+  const [outRequests, setOutRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
-  const [requestsError, setRequestsError] = useState<string | null>(null); 
+  const [requestsError, setRequestsError] = useState<string | null>(null);
   const [isProfileSearching, setIsProfileSearching] = useState(false);
   const [showProfileSearch, setShowProfileSearch] = useState(false);
 
-  useEffect(() => {
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
-    // Site admins aren't members: their home is the admin console.
-    if (getRole() === 'ADMIN') {
-      router.replace('/admin');
-      return;
-    }
-    // Guests only have their demo tree, no dashboard.
-    if (getRole() === 'GUEST') {
-      router.replace(homeFor('GUEST'));
-      return;
-    }
-    fetchMyTrees(token);
-    fetchMyProfile(token);
-	fetchRequests(token);
-	fetchFriends(token);
-  }, [token]);
+//   useEffect(() => {
+//     if (!token) {
+//       router.replace('/login');
+//       return;
+//     }
+//     // Site admins aren't members: their home is the admin console.
+//     if (getRole() === 'ADMIN') {
+//       router.replace('/admin');
+//       return;
+//     }
+//     // Guests only have their demo tree, no dashboard.
+//     if (getRole() === 'GUEST') {
+//       router.replace(homeFor('GUEST'));
+//       return;
+//     }
+//     fetchMyTrees(token);
+//     fetchMyProfile(token);
+// 	fetchRequests(token);
+// 	fetchFriends(token);
+//   }, [token]);
+
+const { status, token, role: gateRole } = useAuthGate((token, role) => {
+  if (!token) return { action: 'redirect', to: '/login' };
+  // Site admins aren't members: their home is the admin console.
+  if (role === 'ADMIN') return { action: 'redirect', to: '/admin' };
+  // Guests only have their demo tree, no dashboard.
+  if (role === 'GUEST') return { action: 'redirect', to: homeFor('GUEST') };
+  return { action: 'allow' };
+});
+
+// The local role starts from the gate's snapshot and is refreshed by
+// fetchMyProfile (which persists via updateRole).
+const [role, setRole] = useState<string | null>(null);
+useEffect(() => {
+  if (gateRole !== null) setRole(gateRole);
+}, [gateRole]);
+
+useEffect(() => {
+  if (status !== 'ready' || !token) return;
+  fetchMyTrees(token);
+  fetchMyProfile(token);
+  fetchRequests(token);
+  fetchFriends(token);
+}, [status, token]);
 
   const fetchMyProfile = async (authToken: string) => {
     try {
@@ -139,10 +165,10 @@ export default function TreePage() {
   const fetchRequests = async (authToken: string) => {
     setRequestsLoading(true);
     setRequestsError(null);
-  
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  
+
       const [inRes, outRes] = await Promise.all([
         fetch(`${apiUrl}/friend/requests/in`, {
           headers: {
@@ -155,16 +181,16 @@ export default function TreePage() {
           }
         })
       ]);
-  
+
       if (!inRes.ok || !outRes.ok) {
         throw new Error('Failed to load friend requests');
       }
-  
+
       const [inData, outData] = await Promise.all([
         inRes.json(),
         outRes.json()
       ]);
-  
+
       setInRequests(inData);
       setOutRequests(outData);
     } catch (err) {
@@ -185,11 +211,11 @@ export default function TreePage() {
           },
         }
       );
-  
+
       if (!res.ok) {
         throw new Error('Failed to load friends');
       }
-  
+
       const data = await res.json();
       setFriends(data);
     } catch (err) {
@@ -578,6 +604,10 @@ export default function TreePage() {
         Error: {error}
       </div>
     );
+  }
+
+  if (status !== 'ready') {
+    return <AuthGatePlaceholder redirecting={status === 'redirecting'} />;
   }
 
   return (
@@ -993,6 +1023,12 @@ export default function TreePage() {
                 <Link
                   key={tree.id}
                   href={`/canvas/${tree.slug}`}
+				   onClick={(e) => {
+                      if (!getToken()) {
+                      e.preventDefault();
+                      router.replace('/login');
+                    }
+                  }}
                   className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   aria-label={`View ${tree.name} family tree`}
                 >
