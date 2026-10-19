@@ -81,6 +81,17 @@ model Guest {
   @@index([lastSeenAt])
 }
 
+// Sessions ended with Logout (POST /auth/logout), by the token's jti. Our JWTs
+// can't be taken back, so JwtStrategy refuses any token listed here. A row is
+// only needed until the token would have expired anyway; AuthService removes
+// it then.
+model RevokedToken {
+  jti       String   @id
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
 // ------------------- Site settings -------------------
 // A single row (id 1). guestAccess turns "Try as guest" on and off (admin
 // console, Users page).

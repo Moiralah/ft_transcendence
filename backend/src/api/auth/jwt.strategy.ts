@@ -15,7 +15,10 @@ const ADMIN_MFA_SETUP_ROUTES = [
 	'POST /auth/2fa/setup',
 	'POST /auth/2fa/enable',
 	'GET /auth/account',
+	'POST /auth/logout',
 ];
+
+export const SESSION_ENDED = 'This session was logged out. Please sign in again.';
 
 // "METHOD /path" without the global API prefix or the query string.
 function routeOf(req: any): string {
@@ -43,6 +46,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('MFA challenge token cannot be used for authentication');
 		}
 
+		// Every session token has a jti (AuthService.issueSession); one without is
+		// from before Logout could end sessions, so it's refused too. A token
+		// logged out (POST /auth/logout) is listed in RevokedToken until it expires.
+		if (typeof payload.jti !== 'string') {
+			throw new UnauthorizedException(SESSION_ENDED);
+		}
+		const revoked = await this.prisma.revokedToken.findUnique({ where: { jti: payload.jti }, select: { jti: true } });
+		if (revoked) {
+			throw new UnauthorizedException(SESSION_ENDED);
+		}
+		// What POST /auth/logout needs to list this token.
+		const session = { jti: payload.jti as string, exp: payload.exp as number };
+
 		// Site admins have their own table (Admin). The token says which table
 		// to look in; the row is still read on every request, so a removed
 		// admin loses the console on their next request.
@@ -60,7 +76,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			if (!admin.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
 				throw new ForbiddenException(ADMIN_MFA_REQUIRED);
 			}
-			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN' };
+			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN', ...session };
 		}
 
 		// Guests have their own table (Guest) too. A guest removed after 15 idle
@@ -79,7 +95,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			if (Date.now() - guest.lastSeenAt.getTime() > 60 * 1000) {
 				await this.prisma.guest.update({ where: { id: payload.sub }, data: { lastSeenAt: new Date() } });
 			}
-			return { id: payload.sub, email: payload.email, profileId: guest.profileId, role: 'GUEST' };
+			return { id: payload.sub, email: payload.email, profileId: guest.profileId, role: 'GUEST', ...session };
 		}
 
 		// Checked on every request (not just at login) so a suspension takes
@@ -95,6 +111,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role };
+		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role, ...session };
 	}
 }

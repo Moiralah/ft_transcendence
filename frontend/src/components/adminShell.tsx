@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { SkipLink } from './SkipLink';
 import { Footer } from './footer';
-import { clearSession, getRole, getToken } from '@/lib/auth';
+import { getRole, getToken, logOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabaseClient';
 
 const TABS = [
@@ -44,10 +44,9 @@ export function AdminShell({ title, allowModerator = false, children }: {
 	}, [router, allowModerator]);
 
 	const signOut = async () => {
-		const wasAdmin = getRole() === 'ADMIN';
-		clearSession();
+		const path = await logOut();
 		await supabase.auth.signOut().catch(() => {});
-		router.replace(wasAdmin ? '/staff' : '/login');
+		router.replace(path);
 	};
 
 	const isAdmin = role === 'ADMIN';

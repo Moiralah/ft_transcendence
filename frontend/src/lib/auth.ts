@@ -89,7 +89,8 @@ export function getUserId(): string | null {
 // Each tab keeps its own session (above), so a new tab used to start logged
 // out. Now a new tab asks the other open tabs of this site once; a logged-in
 // tab answers with its token, and from then on the two tabs are independent
-// again (logging out or switching account in one doesn't touch the other).
+// again (switching account in one doesn't touch the other), except that the
+// Logout button logs out every tab on that account (see logOut()).
 // BroadcastChannel only reaches tabs of this same origin.
 const SESSION_CHANNEL = 'ft-session';
 const BORROWED_AT_KEY = 'ft_borrowed_at';
@@ -105,11 +106,49 @@ function tokenStillValid(token: string, marginMs = 60_000): boolean {
 	}
 }
 
-// Runs in every tab (see components/sessionShare.tsx): answers new tabs.
+// Where a tab goes once logged out: staff accounts sign in on /staff.
+const logoutPath = () => (getRole() === 'ADMIN' ? '/staff' : '/login');
+
+// The Logout button: ends this tab's session and every other tab's session
+// on the same account (they got the token from this one, or the other way
+// round). Tabs on another account stay logged in. Returns where to go.
+// The backend also stops accepting this token (POST /auth/logout), so a copy
+// of it left anywhere else no longer works either.
+export async function logOut(): Promise<string> {
+	const path = logoutPath();
+	const sub = getUserId();
+	const token = getToken();
+	if (token) {
+		// Logging out still happens here if the server can't be reached.
+		await fetch(`${apiUrl()}/auth/logout`, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${token}` },
+			keepalive: true,
+		}).catch(() => {});
+	}
+	if (sub && typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+		const channel = new BroadcastChannel(SESSION_CHANNEL);
+		channel.postMessage({ type: 'logout', sub });
+		channel.close();
+	}
+	clearSession();
+	return path;
+}
+
+// Runs in every tab (see components/sessionShare.tsx): answers new tabs, and
+// logs this tab out when another tab logs out of the same account.
 export function answerSessionRequests(): () => void {
 	if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return () => {};
 	const channel = new BroadcastChannel(SESSION_CHANNEL);
 	channel.onmessage = (event) => {
+		if (event.data?.type === 'logout') {
+			if (event.data.sub && event.data.sub === getUserId()) {
+				const path = logoutPath();
+				clearSession();
+				window.location.replace(path);
+			}
+			return;
+		}
 		if (event.data?.type !== 'request') return;
 		const token = getToken();
 		const role = getRole();
