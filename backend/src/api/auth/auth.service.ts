@@ -204,17 +204,15 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		};
 	}
 	// --- Guest accounts ("Try as guest" on the front page) ----------------
-	// Every visit gets its own throwaway account (site role GUEST) with its own
-	// copy of the demo tree below, so no visitor ever sees another's edits. No
-	// Supabase login: the things that would need one (password, email, MFA,
-	// deleting the account) are refused for guests anyway (NotGuestGuard).
-	// Guest accounts are removed a day later, on a later guest login.
-	// guest@example.com, the old shared guest account, is kept as the on/off
-	// switch: suspend it in the admin panel to turn guest access off.
-	private static readonly GUEST_SWITCH_EMAIL = 'guest@example.com';
+	// Every visit gets its own throwaway guest (Guest table, session role GUEST)
+	// with its own copy of the demo tree below, so no visitor ever sees
+	// another's edits. Guests are not users: no User row, no Supabase login. The
+	// things that would need one (password, email, MFA, deleting the account)
+	// are refused for guests anyway (NotGuestGuard).
+	// SiteSettings.guestAccess is the on/off switch (admin console, Users page).
 	private static readonly GUEST_TREE = 'Guest Demo Family';
-	// A guest (account and demo tree) is removed after 15 minutes without a
-	// request. JwtStrategy keeps User.updatedAt as the guest's last activity.
+	// A guest (and its demo tree) is removed after 15 minutes without a
+	// request. JwtStrategy keeps Guest.lastSeenAt as the guest's last activity.
 	private static readonly GUEST_IDLE_MS = 15 * 60 * 1000;
 	private guestSweep?: ReturnType<typeof setInterval>;
 
@@ -228,53 +226,41 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	onModuleDestroy() {
 		if (this.guestSweep) clearInterval(this.guestSweep);
 	}
-	// No throttle on this route, and each visit makes an account and a tree.
+	// No throttle on this route, and each visit makes a guest and a tree.
 	private static readonly GUESTS_PER_HOUR = 3;
 
 	async loginAsGuest() {
-		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { suspended: true } });
-		if (sw?.suspended) {
+		const settings = await this.prisma.siteSettings.findUnique({ where: { id: 1 } });
+		if (settings && !settings.guestAccess) {
 			throw new ForbiddenException('Guest access is turned off right now. Please sign up instead.');
 		}
 		await this.removeOldGuests().catch((e) => this.logger.warn(`Guest cleanup failed: ${e?.message}`));
-		const lastHour = await this.prisma.user.count({
-			where: { role: 'GUEST', email: { not: AuthService.GUEST_SWITCH_EMAIL }, createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
+		const lastHour = await this.prisma.guest.count({
+			where: { createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
 		});
 		if (lastHour >= AuthService.GUESTS_PER_HOUR) {
 			throw new ServiceUnavailableException('Too many guests right now. Please try again later, or sign up.');
 		}
 
 		const id = randomUUID();
-		const tag = randomBytes(4).toString('hex');
-		const user = await this.prisma.user.create({
+		const tag = `guest-${randomBytes(4).toString('hex')}`;
+		const guest = await this.prisma.guest.create({
 			data: {
 				id,
-				email: `guest-${tag}@example.com`, // example.com never gets mail
-				username: `guest-${tag}`,
-				role: 'GUEST',
+				tag,
 				profile: { create: { firstName: 'Guest', userId: id } },
 			},
 		});
-		const slug = await this.buildGuestTree(user.profileId!, tag);
-		return { ...(await this.issueSession(user)), slug };
+		const slug = await this.buildGuestTree(guest.profileId, tag);
+		// example.com never gets mail; the email is only there for the session's shape.
+		return { ...(await this.issueSession({ id, email: `${tag}@example.com`, profileId: guest.profileId, role: 'GUEST' })), slug };
 	}
 
-	// Guest accounts idle for GUEST_IDLE_MS, with their trees (and the trees the
-	// old shared guest account still owns). Runs every minute and on each guest
-	// login; a few at a time keeps each run quick.
+	// Guests idle for GUEST_IDLE_MS, with their trees. Runs every minute and on
+	// each guest login; a few at a time keeps each run quick.
 	private async removeOldGuests() {
-		const sw = await this.prisma.user.findUnique({ where: { email: AuthService.GUEST_SWITCH_EMAIL }, select: { profileId: true } });
-		if (sw?.profileId) {
-			for (const t of await this.prisma.tree.findMany({ where: { ownerId: sw.profileId }, select: { id: true } })) {
-				await this.trees.deleteTree(t.id, sw.profileId);
-			}
-		}
-		const old = await this.prisma.user.findMany({
-			where: {
-				role: 'GUEST',
-				email: { not: AuthService.GUEST_SWITCH_EMAIL },
-				updatedAt: { lt: new Date(Date.now() - AuthService.GUEST_IDLE_MS) },
-			},
+		const old = await this.prisma.guest.findMany({
+			where: { lastSeenAt: { lt: new Date(Date.now() - AuthService.GUEST_IDLE_MS) } },
 			select: { id: true, profileId: true },
 			take: 20,
 		});
@@ -284,24 +270,19 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	// Like deleteOwnAccount, minus what a guest can't have (photos, joined
-	// trees, a Supabase login).
-	private async removeGuest(userId: string, profileId: number | null) {
-		if (profileId) {
-			for (const t of await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } })) {
-				await this.trees.deleteTree(t.id, profileId);
-			}
+	// trees, friends, a Supabase login).
+	private async removeGuest(guestId: string, profileId: number) {
+		for (const t of await this.prisma.tree.findMany({ where: { ownerId: profileId }, select: { id: true } })) {
+			await this.trees.deleteTree(t.id, profileId);
 		}
 		await this.prisma.$transaction(async (tx) => {
-			await tx.invitation.deleteMany({ where: { inviterId: userId } });
-			await tx.user.delete({ where: { id: userId } }); // cascades friendships
-			if (profileId) {
-				await tx.treeMember.deleteMany({ where: { profileId } });
-				await tx.auditLog.deleteMany({ where: { profileId } });
-				await tx.profile.updateMany({ where: { motherId: profileId }, data: { motherId: null } });
-				await tx.profile.updateMany({ where: { fatherId: profileId }, data: { fatherId: null } });
-				await tx.profile.updateMany({ where: { spouseId: profileId }, data: { spouseId: null } });
-				await tx.profile.delete({ where: { id: profileId } }); // events cascade
-			}
+			await tx.guest.delete({ where: { id: guestId } });
+			await tx.treeMember.deleteMany({ where: { profileId } });
+			await tx.auditLog.deleteMany({ where: { profileId } });
+			await tx.profile.updateMany({ where: { motherId: profileId }, data: { motherId: null } });
+			await tx.profile.updateMany({ where: { fatherId: profileId }, data: { fatherId: null } });
+			await tx.profile.updateMany({ where: { spouseId: profileId }, data: { spouseId: null } });
+			await tx.profile.delete({ where: { id: profileId } }); // events cascade
 		});
 	}
 

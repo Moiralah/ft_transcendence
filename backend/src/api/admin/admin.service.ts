@@ -13,11 +13,12 @@ export class AdminService {
 	) { }
 
 	async stats() {
-		// Admins are counted from their own table; every admin has MFA, or
-		// they can't use the console at all.
-		const [byRole, admins, suspended, mfa, trees, people] = await Promise.all([
+		// Admins and guests are counted from their own tables; every admin has
+		// MFA, or they can't use the console at all.
+		const [byRole, admins, guests, suspended, mfa, trees, people] = await Promise.all([
 			this.prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
 			this.prisma.admin.count(),
+			this.prisma.guest.count(),
 			this.prisma.user.count({ where: { suspended: true } }),
 			this.prisma.user.count({ where: { twoFactorEnabled: true } }),
 			this.prisma.tree.count(),
@@ -25,8 +26,24 @@ export class AdminService {
 		]);
 		const roles: Record<string, number> = Object.fromEntries(byRole.map((r) => [r.role, r._count._all]));
 		roles.ADMIN = admins;
+		roles.GUEST = guests;
 		const users = byRole.reduce((sum, r) => sum + r._count._all, 0);
 		return { users, roles, suspended, mfa, trees, people };
+	}
+
+	// "Try as guest" on or off (SiteSettings row 1; no row yet = on).
+	async getGuestAccess() {
+		const settings = await this.prisma.siteSettings.findUnique({ where: { id: 1 } });
+		return { guestAccess: settings?.guestAccess ?? true };
+	}
+
+	async setGuestAccess(guestAccess: boolean) {
+		const settings = await this.prisma.siteSettings.upsert({
+			where: { id: 1 },
+			create: { id: 1, guestAccess },
+			update: { guestAccess },
+		});
+		return { guestAccess: settings.guestAccess };
 	}
 
 	// Every tree, newest first: owner, how many people are drawn in it (HOLDER

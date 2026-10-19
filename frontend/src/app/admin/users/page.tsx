@@ -7,20 +7,21 @@ import toast from 'react-hot-toast';
 import { AdminShell } from '@/components/adminShell';
 import { Button } from '@/components/button';
 import { getRole, getToken, getUserId } from '@/lib/auth';
+import { adminRequest } from '@/lib/admin';
 
 interface AdminUser {
 	id: string;
 	username: string;
 	email: string;
-	role: 'MODERATOR' | 'USER' | 'GUEST';
+	role: 'MODERATOR' | 'USER';
 	suspended: boolean;
 	twoFactorEnabled: boolean;
 	createdAt: string;
 	profile?: { firstName: string; lastName?: string | null } | null;
 }
 
-// GUEST isn't offered: it's only the shared guest account, whose role can't change.
-// Nor ADMIN: admins are separate accounts, added on the Admins tab.
+// Not ADMIN: admins are separate accounts, added on the Admins tab. Guests
+// aren't users either (their own table); only the on/off switch is here.
 const ROLES: AdminUser['role'][] = ['MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
@@ -55,7 +56,27 @@ export default function AdminUsersPage() {
 		// AdminShell sends everyone else away.
 		if (!token || (!isAdmin && !isModerator)) return;
 		fetchUsers();
+		adminRequest<{ guestAccess: boolean }>('/admin/guest-access')
+			.then((r) => setGuestAccess(r.guestAccess))
+			.catch(() => {});
 	}, [token, role]);
+
+	// "Try as guest" on the front page, on or off.
+	const [guestAccess, setGuestAccess] = useState<boolean | null>(null);
+	const toggleGuestAccess = async () => {
+		const next = !guestAccess;
+		if (!next && !confirm('Turn off "Try as guest"? Visitors will be asked to sign up instead. Guests already inside keep their visit until it ends.')) return;
+		try {
+			const r = await adminRequest<{ guestAccess: boolean }>('/admin/guest-access', {
+				method: 'PATCH',
+				body: JSON.stringify({ guestAccess: next }),
+			});
+			setGuestAccess(r.guestAccess);
+			toast.success(r.guestAccess ? 'Guest access is on.' : 'Guest access is off.');
+		} catch (err: any) {
+			toast.error(err.message);
+		}
+	};
 
 	const fetchUsers = async () => {
 		try {
@@ -128,6 +149,20 @@ export default function AdminUsersPage() {
 		<AdminShell title="User management" allowModerator>
 				{error && <div role="alert" className="text-red-700 font-semibold">{error}</div>}
 
+				{guestAccess !== null && (
+					<section aria-labelledby="guest-access-heading" className="bg-white p-4 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+						<div>
+							<h2 id="guest-access-heading" className="font-bold">Try as guest</h2>
+							<p className="text-sm text-slate-700">
+								{guestAccess ? 'On: visitors can try the site with a demo tree, without signing up.' : 'Off: visitors must sign up to try the site.'}
+							</p>
+						</div>
+						<Button variant="secondary" onClick={toggleGuestAccess}>
+							{guestAccess ? 'Turn off' : 'Turn on'}
+						</Button>
+					</section>
+				)}
+
 				{loading ? (
 					<p aria-live="polite">Loading users...</p>
 				) : (
@@ -156,7 +191,7 @@ export default function AdminUsersPage() {
 											<td className="px-4 py-3">{u.username}{isMe && <span className="ml-2 text-xs font-semibold text-slate-600">(you)</span>}</td>
 											<td className="px-4 py-3">{u.email}</td>
 											<td className="px-4 py-3">
-												{isAdmin && !isMe && u.role !== 'GUEST' ? (
+												{isAdmin && !isMe ? (
 													<>
 														<label className="sr-only" htmlFor={`role-${u.id}`}>
 															Role for {u.username}

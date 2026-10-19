@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminsService } from './admins.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { GuestAccessDto } from './dto/guest-access.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -21,6 +22,20 @@ export class AdminController {
 	@Get('stats')
 	stats() {
 		return this.admin.stats();
+	}
+
+	// The "Try as guest" switch. Moderators may flip it too, as they could
+	// when it was the suspended flag on the old shared guest account.
+	@Get('guest-access')
+	@Roles('ADMIN', 'MODERATOR')
+	guestAccess() {
+		return this.admin.getGuestAccess();
+	}
+
+	@Patch('guest-access')
+	@Roles('ADMIN', 'MODERATOR')
+	setGuestAccess(@Body() body: GuestAccessDto) {
+		return this.admin.setGuestAccess(body.guestAccess);
 	}
 
 	@Get('trees')

@@ -16,7 +16,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Global role (moderation / permissions) — separate from per-tree roles (see `Role`).
-  // Site admins are not users: they live in their own table (see `Admin`).
+  // Site admins and guests are not users: they have their own tables (`Admin`, `Guest`).
   role UserRole @default(USER)
 
   // Moderator action: blocks login without deleting the account (admin-only action)
@@ -42,7 +42,6 @@ model User {
 enum UserRole {
   MODERATOR
   USER
-  GUEST // the shared demo account behind "Try as guest" (see AuthService.loginAsGuest)
 }
 
 // ------------------- Site admins -------------------
@@ -62,6 +61,32 @@ model Admin {
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
   recoveryCodes    RecoveryCode[]
+}
+
+// ------------------- Guests -------------------
+// "Try as guest" visitors: one row per visit, with its own profile and copy of
+// the demo tree (AuthService.loginAsGuest). No Supabase login, email, friends
+// or MFA. Removed with their tree after 15 idle minutes; JwtStrategy keeps
+// lastSeenAt. The profile's userId holds the guest's id (it's a plain column),
+// so the profile counts as the guest's own, like a user's.
+model Guest {
+  id         String   @id
+  tag        String   @unique // short random name, e.g. guest-1a2b3c4d
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  profileId Int     @unique
+  profile   Profile @relation(fields: [profileId], references: [id])
+
+  @@index([lastSeenAt])
+}
+
+// ------------------- Site settings -------------------
+// A single row (id 1). guestAccess turns "Try as guest" on and off (admin
+// console, Users page).
+model SiteSettings {
+  id          Int     @id @default(1)
+  guestAccess Boolean @default(true)
 }
 
 // ------------------- 2FA Recovery Codes -------------------
@@ -217,6 +242,7 @@ model Profile {
   // User who owned this profile (optional)
   userId      String? @unique
   user        User? @relation
+  guest       Guest?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

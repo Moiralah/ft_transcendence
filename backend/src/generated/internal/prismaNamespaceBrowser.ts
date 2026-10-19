@@ -53,6 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Admin: 'Admin',
+  Guest: 'Guest',
+  SiteSettings: 'SiteSettings',
   RecoveryCode: 'RecoveryCode',
   Tree: 'Tree',
   TreeMember: 'TreeMember',
@@ -106,6 +108,25 @@ export const AdminScalarFieldEnum = {
 } as const
 
 export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof AdminScalarFieldEnum]
+
+
+export const GuestScalarFieldEnum = {
+  id: 'id',
+  tag: 'tag',
+  createdAt: 'createdAt',
+  lastSeenAt: 'lastSeenAt',
+  profileId: 'profileId'
+} as const
+
+export type GuestScalarFieldEnum = (typeof GuestScalarFieldEnum)[keyof typeof GuestScalarFieldEnum]
+
+
+export const SiteSettingsScalarFieldEnum = {
+  id: 'id',
+  guestAccess: 'guestAccess'
+} as const
+
+export type SiteSettingsScalarFieldEnum = (typeof SiteSettingsScalarFieldEnum)[keyof typeof SiteSettingsScalarFieldEnum]
 
 
 export const RecoveryCodeScalarFieldEnum = {

@@ -63,6 +63,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN' };
 		}
 
+		// Guests have their own table (Guest) too. A guest removed after 15 idle
+		// minutes (AuthService): say so, rather than "suspended". The frontend
+		// matches on "guest session ended".
+		if (payload.role === 'GUEST') {
+			const guest = await this.prisma.guest.findUnique({
+				where: { id: payload.sub },
+				select: { profileId: true, lastSeenAt: true },
+			});
+			if (!guest) {
+				throw new UnauthorizedException(GUEST_SESSION_ENDED);
+			}
+			// The guest's last activity, which the idle cleanup reads. At most once
+			// a minute, so a busy guest doesn't write on every request.
+			if (Date.now() - guest.lastSeenAt.getTime() > 60 * 1000) {
+				await this.prisma.guest.update({ where: { id: payload.sub }, data: { lastSeenAt: new Date() } });
+			}
+			return { id: payload.sub, email: payload.email, profileId: guest.profileId, role: 'GUEST' };
+		}
+
 		// Checked on every request (not just at login) so a suspension takes
 		// effect immediately against an already-issued token, instead of
 		// waiting up to JWT_EXPIRES_IN for the session to expire on its own.
@@ -70,21 +89,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// demoted moderator loses the moderation endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true, updatedAt: true },
+			select: { suspended: true, role: true },
 		});
-		// A guest removed after 15 idle minutes (AuthService): say so, rather
-		// than "suspended". The frontend matches on "guest session ended".
-		if (!user && payload.role === 'GUEST') {
-			throw new UnauthorizedException(GUEST_SESSION_ENDED);
-		}
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
-		}
-
-		// Guests' last activity, which the idle cleanup reads. At most once a
-		// minute, so a busy guest doesn't write on every request.
-		if (user.role === 'GUEST' && Date.now() - user.updatedAt.getTime() > 60 * 1000) {
-			await this.prisma.user.update({ where: { id: payload.sub }, data: { updatedAt: new Date() } });
 		}
 
 		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role };
