@@ -357,7 +357,8 @@ export default function Content() {
       el.removeEventListener('gesturestart', stopGesture);
       el.removeEventListener('gesturechange', stopGesture);
     };
-  }, []);
+    // The workspace only mounts once the auth gate is ready, so re-run then.
+  }, [status]);
 
   const [treeMemberModal, setTreeMemberModal] = useState(false);
   const memberDialogRef = useDialog<HTMLDivElement>(() => setTreeMemberModal(false), treeMemberModal);
