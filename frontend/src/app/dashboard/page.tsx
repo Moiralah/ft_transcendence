@@ -718,11 +718,11 @@ useEffect(() => {
 				>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block h-2 w-2 rounded-full ${
+                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${
                       ids.has(friend.user.profileId) ? "bg-green-500" : "bg-gray-300"
                     }`}
                   />
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-slate-900 min-w-0 [overflow-wrap:anywhere] break-words">
                 {displayName(friend.user)}
                   </p>
                 </div>
