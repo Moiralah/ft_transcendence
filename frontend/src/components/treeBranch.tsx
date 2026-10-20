@@ -346,9 +346,11 @@ const renderAddChild = (BranchAddMember: Member) => {
           treeView={treeView}
           showDeleteButton={canDeleteMain}
         />
-        {/* Drop line from the centre of the primary node */}
+        {/* Drop line from the centre of the primary node. It runs from the
+            middle of the column, behind the card, so it still meets the card's
+            bottom edge when a taller spouse card leaves space under it. */}
         {children.length > 0 && (
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-6 w-0.5 bg-black z-10"></div>
+          <div className="absolute top-1/2 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-black z-0"></div>
         )}
       </div>
 

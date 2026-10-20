@@ -33,7 +33,7 @@ export class AuthController {
 	// Email, pending email change and whether there's a password at all, for
 	// the settings forms (the browser keeps no Supabase session to ask itself).
 	@Get('account')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, NotGuestGuard) // a guest has no Supabase login to describe
 	async account(@Req() req) {
 		return this.auth.getAccount(req.user.id);
 	}
