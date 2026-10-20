@@ -74,6 +74,8 @@ function formatNotification(log: AuditLog): string {
 			return `✏️ ${who}: ${log.details ?? 'updated the tree'}`;
 		case 'UNCLAIM':
 			return `↩️ ${who}: ${log.details ?? 'unclaimed a profile'}`;
+		case 'UPDATE_PROFILE':
+			return `📝 ${who}: ${log.details ?? 'updated a profile'}`;
 		case 'KICK_USER':
 			return `👢 ${who}: ${log.details ?? 'removed a member'}`;
 		default:

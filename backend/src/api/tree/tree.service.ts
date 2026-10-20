@@ -71,6 +71,30 @@ export class TreeService {
 		return displayName(p);
 	}
 
+	// Someone's details or photo were saved (ProfileController). Profile edits
+	// don't go through this service, so without this no audit row is written
+	// and other members' open canvases never hear about it. One row per tree
+	// the person is in; the save itself has already happened, so a failure
+	// here is only logged.
+	async logProfileUpdate(actorProfileId: number, profileId: number, what: 'details' | 'photo') {
+		try {
+			const nodes = await this.prisma.treeMember.findMany({
+				where: { profileId, treeId: { not: null } },
+				select: { treeId: true },
+			});
+			const treeIds = [...new Set(nodes.map((n) => n.treeId!))];
+			if (treeIds.length === 0) return;
+			const name = await this.profileNameById(this.prisma, profileId);
+			for (const treeId of treeIds) {
+				await this.logAudit(this.prisma, {
+					data: { treeId, profileId: actorProfileId, action: 'UPDATE_PROFILE', details: `Updated ${name}'s ${what}` },
+				});
+			}
+		} catch (e) {
+			this.logger.warn(`Profile ${profileId} saved, but the tree update wasn't logged: ${(e as Error)?.message}`);
+		}
+	}
+
 	private generateTreeCode(): string {
 		return Math.random().toString(36).substring(2, 8).toUpperCase();
 	}
