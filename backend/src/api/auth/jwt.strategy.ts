@@ -24,6 +24,10 @@ const ADMIN_MFA_SETUP_ROUTES = [
 
 export const SESSION_ENDED = 'This session was logged out. Please sign in again.';
 
+// MFA is on for the account, but this session never passed it (it was issued
+// before MFA was turned on). A 401 so the frontend sends them to sign in again.
+export const MFA_SESSION_REQUIRED = 'Please sign in again with your MFA code.';
+
 // "METHOD /path" without the global API prefix or the query string.
 function routeOf(req: any): string {
 	const prefix = '/' + (process.env.API_PREFIX || 'api');
@@ -77,8 +81,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			// Site admins must have MFA. Until they turn it on, their session only
 			// reaches what setting it up needs; everything else, the admin console
 			// included, is refused.
-			if (!admin.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
-				throw new ForbiddenException(ADMIN_MFA_REQUIRED);
+			// The account having MFA isn't enough: this session must have passed it.
+			if (!ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
+				if (!admin.twoFactorEnabled) throw new ForbiddenException(ADMIN_MFA_REQUIRED);
+				if (payload.mfa !== true) throw new UnauthorizedException(MFA_SESSION_REQUIRED);
 			}
 			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN', ...session };
 		}
@@ -115,7 +121,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		// mfa: read by RolesGuard, which refuses moderation to a moderator without it.
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role, mfa: user.twoFactorEnabled, ...session };
+		// mfa: read by RolesGuard, which refuses moderation to a moderator without
+		// it. mfaSession: MFA is on and this session passed it (issueSession).
+		return {
+			id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role,
+			mfa: user.twoFactorEnabled, mfaSession: user.twoFactorEnabled && payload.mfa === true, ...session,
+		};
 	}
 }

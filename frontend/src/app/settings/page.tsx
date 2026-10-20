@@ -10,7 +10,7 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { clearSession, getRole, getToken, isGuest } from '@/lib/auth';
+import { clearSession, getRole, getToken, isGuest, storeSession } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
@@ -106,6 +106,9 @@ export default function SettingsPage() {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || 'Invalid code');
+			// A new session that counts as MFA-verified: moderation and the admin
+			// console only accept those, not the session from before MFA was on.
+			if (data.accessToken) storeSession(data);
 			setRecoveryCodes(data.recoveryCodes);
 			setEnabled(true);
 			setEnrolling(false);

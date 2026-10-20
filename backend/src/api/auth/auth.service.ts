@@ -191,11 +191,14 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 
 	// Admins have no profile; their sessions carry role ADMIN, which is how
 	// JwtStrategy knows to look in the Admin table.
-	issueAdminSession(admin: { id: string; email: string }) {
-		return this.issueSession({ ...admin, profileId: null, role: 'ADMIN' });
+	issueAdminSession(admin: { id: string; email: string }, mfa = false) {
+		return this.issueSession({ ...admin, profileId: null, role: 'ADMIN' }, mfa);
 	}
 
-	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
+	// mfa: this session passed a TOTP or recovery code (login-verify, or turning
+	// MFA on). JwtStrategy only lets moderation and the admin console through
+	// with it, so a session from before MFA was turned on stays out.
+	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }, mfa = false) {
 		// The jti names this one session, so Logout can end it (RevokedToken).
 		const token = await this.jwt.signAsync(
 			{
@@ -203,6 +206,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 				email: user.email,
 				profileId: user.profileId,
 				role: user.role,
+				...(mfa && { mfa: true }),
 			},
 			{ jwtid: randomUUID() },
 		);
