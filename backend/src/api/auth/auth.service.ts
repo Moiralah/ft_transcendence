@@ -92,6 +92,11 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		if (user.twoFactorEnabled) {
 			return this.mfaChallenge(user.id);
 		}
+		// A moderator without MFA can't moderate (RolesGuard); this tells the
+		// frontend to land them on MFA setup instead of the dashboard.
+		if (user.role === 'MODERATOR') {
+			return { ...(await this.issueSession(user)), twoFactorSetupRequired: true };
+		}
 		return this.issueSession(user);
 	}
 

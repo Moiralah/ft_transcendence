@@ -5,12 +5,13 @@ const apiUrl = () => process.env.NEXT_PUBLIC_API_URL;
 export interface LoginSuccess {
 	accessToken: string;
 	user: { id: string; email: string; profileId: number | null; role: string };
-	// A site admin without MFA: the session only reaches MFA setup until it's on.
+	// A site admin without MFA (the session only reaches MFA setup until it's
+	// on), or a moderator without it (can't moderate until it's on): land on MFA setup.
 	twoFactorSetupRequired?: boolean;
 }
 
-// Where a site admin without MFA is sent (the backend refuses them everything
-// else until it's on, with a message containing "must turn on MFA").
+// Where a site admin or moderator without MFA is sent (the backend refuses an
+// admin everything else, a moderator moderation, until it's on).
 export const ADMIN_MFA_SETUP_PATH = '/settings?mfa=required';
 
 export interface TwoFactorRequired {
