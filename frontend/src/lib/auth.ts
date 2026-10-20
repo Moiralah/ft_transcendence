@@ -261,10 +261,7 @@ export const wrongPortalPath = (portal: Portal) => (portal === 'staff' ? '/staff
 // demo tree.
 export function homeFor(role: string | null): string {
 	if (role === 'ADMIN') return '/admin';
-	if (role === 'GUEST') {
-		const slug = typeof window === 'undefined' ? null : sessionStorage.getItem(GUEST_TREE_KEY);
-		return slug ? `/canvas/${slug}` : '/';
-	}
+	if (role === 'GUEST') return '/';
 	return '/dashboard';
 }
 
