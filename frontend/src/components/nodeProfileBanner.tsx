@@ -469,10 +469,6 @@ export function NodeProfileModal({
 		(member.claim === 'EMPTY' || !member.claim) &&
 		!iAlreadyHaveAClaim;
 
-	const isClaimedNode =
-		member.role === 'HOLDER' &&
-		(member.claim === 'PENDING' || member.claim === 'ACCEPTED');
-
 	const isUnclaimedHolder =
 		member.role === 'HOLDER' &&
 		(member.claim === 'EMPTY' || !member.claim);
@@ -480,7 +476,6 @@ export function NodeProfileModal({
 	const canAddFamily =
 		canAddOrSave &&
 		isHolder &&
-		isClaimedNode &&
 		(isUnclaimedHolder || isMyClaimOnThisNode || viewerRole === 'ADMIN');
 
 	// Fields (name, birth date, gender, photo) can only be edited on unclaimed
