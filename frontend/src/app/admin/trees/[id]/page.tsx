@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { AdminShell } from '@/components/adminShell';
+import { AdminShell, useConsoleBase } from '@/components/adminShell';
 import { adminRequest, formatDate, type AdminTreeDetail } from '@/lib/admin';
 import { getRole } from '@/lib/auth';
 
-// Moderators see every tree too, read-only (no Delete); the backend agrees.
+// Also served at /moderator/trees/[id]: moderators see every tree too,
+// read-only (no Delete); the backend agrees.
 const canRead = (r: string | null) => r === 'ADMIN' || r === 'MODERATOR';
 
 const CLAIM: Record<string, string> = { EMPTY: '—', PENDING: 'Claim pending', ACCEPTED: 'Claimed', DECLINED: 'Claim declined', BLOCKED: 'Blocked' };
@@ -21,6 +22,7 @@ export default function AdminTreePage() {
 	const [tree, setTree] = useState<AdminTreeDetail | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isAdmin, setIsAdmin] = useState(false);
+	const base = useConsoleBase();
 
 	useEffect(() => {
 		setIsAdmin(getRole() === 'ADMIN');
@@ -34,15 +36,15 @@ export default function AdminTreePage() {
 		try {
 			await adminRequest(`/admin/trees/${tree.id}`, { method: 'DELETE' });
 			toast.success(`"${tree.name}" deleted.`);
-			router.replace('/admin/trees');
+			router.replace(`${base}/trees`);
 		} catch (e: any) {
 			toast.error(e.message);
 		}
 	};
 
 	return (
-		<AdminShell title={tree ? tree.name : 'Tree'} allowModerator>
-			<p><Link href="/admin/trees" className="underline">&larr; All trees</Link></p>
+		<AdminShell title={tree ? tree.name : 'Tree'}>
+			<p><Link href={`${base}/trees`} className="underline">&larr; All trees</Link></p>
 			{error && <p role="alert" className="text-red-700 font-semibold">{error}</p>}
 			{!tree && !error && <p aria-live="polite">Loading…</p>}
 			{tree && (

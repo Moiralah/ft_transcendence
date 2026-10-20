@@ -680,7 +680,7 @@ useEffect(() => {
                   Settings
                 </Button>
                 {(role === 'ADMIN' || role === 'MODERATOR') && (
-                  <Button href="/admin/users" variant="secondary">
+                  <Button href={role === 'ADMIN' ? '/admin/users' : '/moderator/users'} variant="secondary">
                     {role === 'ADMIN' ? 'Admin Panel' : 'Moderation'}
                   </Button>
                 )}

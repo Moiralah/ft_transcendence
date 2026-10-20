@@ -20,6 +20,7 @@ interface AdminUser {
 	profile?: { firstName: string; lastName?: string | null } | null;
 }
 
+// Also served at /moderator/users (suspend only, no role changes or deletes).
 // Not ADMIN: admins are separate accounts, added on the Admins tab. Guests
 // aren't users either (their own table); only the on/off switch is here.
 const ROLES: AdminUser['role'][] = ['MODERATOR', 'USER'];
@@ -146,7 +147,7 @@ export default function AdminUsersPage() {
 	};
 
 	return (
-		<AdminShell title="User management" allowModerator>
+		<AdminShell title="User management">
 				{error && <div role="alert" className="text-red-700 font-semibold">{error}</div>}
 
 				{guestAccess !== null && (

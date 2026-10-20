@@ -6,6 +6,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 // The frontend matches on "must turn on MFA" to send the admin to Settings.
 export const ADMIN_MFA_REQUIRED = 'Site admins must turn on MFA before using the admin console. Set it up in Settings.';
 
+// Moderators must have MFA too, but only for the moderation endpoints
+// (RolesGuard): the rest of the app is their member account, which stays open.
+export const MODERATOR_MFA_REQUIRED = 'Moderators must turn on MFA before using the moderation console. Set it up in Settings.';
+
 export const GUEST_SESSION_ENDED = 'Your guest session ended after 15 minutes without activity.';
 
 // What an admin without MFA may still call: the MFA setup, and the account
@@ -105,12 +109,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// demoted moderator loses the moderation endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true },
+			select: { suspended: true, role: true, twoFactorEnabled: true },
 		});
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role, ...session };
+		// mfa: read by RolesGuard, which refuses moderation to a moderator without it.
+		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role, mfa: user.twoFactorEnabled, ...session };
 	}
 }

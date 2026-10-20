@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { AdminShell } from '@/components/adminShell';
+import { AdminShell, useConsoleBase } from '@/components/adminShell';
 import { adminRequest, formatDate, type AdminTreeSummary } from '@/lib/admin';
 import { getRole } from '@/lib/auth';
 
-// Moderators see every tree too, read-only (no Delete); the backend agrees.
+// Also served at /moderator/trees: moderators see every tree too, read-only
+// (no Delete); the backend agrees.
 const canRead = (r: string | null) => r === 'ADMIN' || r === 'MODERATOR';
 
 // Every tree on the site, with its owner and size. Open one to see who and
@@ -17,6 +18,7 @@ export default function AdminTreesPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [query, setQuery] = useState('');
 	const [isAdmin, setIsAdmin] = useState(false);
+	const base = useConsoleBase();
 
 	useEffect(() => {
 		setIsAdmin(getRole() === 'ADMIN');
@@ -42,7 +44,7 @@ export default function AdminTreesPage() {
 	};
 
 	return (
-		<AdminShell title="Trees" allowModerator>
+		<AdminShell title="Trees">
 			{error && <p role="alert" className="text-red-700 font-semibold">{error}</p>}
 			{!trees && !error && <p aria-live="polite">Loading trees…</p>}
 			{trees && (
@@ -77,7 +79,7 @@ export default function AdminTreesPage() {
 										<td className="px-4 py-3 whitespace-nowrap">{formatDate(t.createdAt)}</td>
 										<td className="px-4 py-3">
 											<div className="flex gap-3 whitespace-nowrap">
-												<Link href={`/admin/trees/${t.id}`} className="underline font-medium" aria-label={`View tree ${t.name}`}>View</Link>
+												<Link href={`${base}/trees/${t.id}`} className="underline font-medium" aria-label={`View tree ${t.name}`}>View</Link>
 												{isAdmin && (
 													<button type="button" onClick={() => deleteTree(t)} aria-label={`Delete tree ${t.name}`}
 														className="!w-auto !p-0 !bg-transparent !text-red-700 underline font-medium">Delete</button>

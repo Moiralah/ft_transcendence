@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
+import { MODERATOR_MFA_REQUIRED } from './jwt.strategy';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -16,6 +17,10 @@ export class RolesGuard implements CanActivate {
 		const { user } = context.switchToHttp().getRequest();
 		if (!user || !requiredRoles.includes(user.role)) {
 			throw new ForbiddenException('Insufficient permissions.');
+		}
+		// Moderation needs MFA (admins are held to it in JwtStrategy already).
+		if (user.role === 'MODERATOR' && !user.mfa) {
+			throw new ForbiddenException(MODERATOR_MFA_REQUIRED);
 		}
 		return true;
 	}

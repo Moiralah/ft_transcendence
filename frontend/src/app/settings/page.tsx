@@ -23,6 +23,8 @@ export default function SettingsPage() {
 	// Site admins come here from the admin console, not a dashboard.
 	const [siteAdmin, setSiteAdmin] = useState(false);
 	useEffect(() => setSiteAdmin(getRole() === 'ADMIN'), []);
+	const [moderator, setModerator] = useState(false);
+	useEffect(() => setModerator(getRole() === 'MODERATOR'), []);
 	const [enabled, setEnabled] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,8 @@ export default function SettingsPage() {
 
 	// Site admins must have MFA; the backend refuses them everything else until it's on.
 	const adminNeedsMfa = siteAdmin && !loading && !enabled;
+	// Moderators too, but only for the moderation console; the rest stays open.
+	const moderatorNeedsMfa = moderator && !loading && !enabled;
 
 	// Disable state
 	const [disabling, setDisabling] = useState(false);
@@ -153,6 +157,13 @@ export default function SettingsPage() {
 					</div>
 				)}
 
+				{moderatorNeedsMfa && (
+					<div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+						<strong>Turn on MFA to moderate.</strong> Moderators must use MFA. The moderation console
+						opens once it&apos;s set up below.
+					</div>
+				)}
+
 				{guest ? (
 					// A guest account is a short-lived demo login, so its account settings can't be changed.
 					<section aria-labelledby="guest-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
@@ -185,10 +196,10 @@ export default function SettingsPage() {
 							))}
 						</ul>
 						<Button
-							onClick={() => (siteAdmin ? router.push('/admin') : setRecoveryCodes(null))}
+							onClick={() => (siteAdmin ? router.push('/admin') : moderator ? router.push('/moderator/users') : setRecoveryCodes(null))}
 							variant="primary"
 						>
-							{siteAdmin ? 'I\'ve saved these codes, open the admin console' : 'I\'ve saved these codes'}
+							{siteAdmin ? 'I\'ve saved these codes, open the admin console' : moderator ? 'I\'ve saved these codes, open the moderation console' : 'I\'ve saved these codes'}
 						</Button>
 					</section>
 				) : enrolling ? (
