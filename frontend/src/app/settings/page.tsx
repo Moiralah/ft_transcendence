@@ -57,6 +57,11 @@ export default function SettingsPage() {
 			router.replace('/login');
 			return;
 		}
+		// A guest gets the "guest account" card, with no MFA section to fill.
+		if (isGuest()) {
+			setLoading(false);
+			return;
+		}
 		fetchStatus();
 	}, [token]);
 

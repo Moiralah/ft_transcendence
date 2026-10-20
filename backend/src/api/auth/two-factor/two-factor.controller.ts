@@ -15,7 +15,8 @@ export class TwoFactorController {
 	@Get('status')
 	@UseGuards(JwtAuthGuard)
 	status(@Req() req: AuthenticatedRequest) {
-		// A guest has no User row (and can't turn MFA on), but Settings still asks.
+		// A guest has no User row and can't turn MFA on (Settings doesn't ask for
+		// one; this keeps a direct call from failing with a 500).
 		if (req.user.role === 'GUEST') return { enabled: false };
 		return this.twoFactor.getStatus(req.user.id, req.user.role === 'ADMIN');
 	}
