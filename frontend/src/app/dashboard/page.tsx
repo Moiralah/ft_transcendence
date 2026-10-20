@@ -289,10 +289,8 @@ useEffect(() => {
   };
 
   const searchProfiles = async (page = 1) => {
-    const hasCriteria = profileFirstName.trim() ||
-      profileLastName.trim() || profileBirthDate || profileGender;
-
-    if (!hasCriteria) {
+    if (!profileFirstName.trim() && !profileLastName.trim()) {
+      alert('Please input first name or last name');
       return;
     }
 
@@ -998,11 +996,7 @@ useEffect(() => {
             <Button
               onClick={() => searchProfiles(1)}
               variant="primary"
-              disabled={
-                isProfileSearching ||
-                !(profileFirstName.trim() || profileLastName.trim() ||
-                  profileBirthDate || profileGender)
-              }
+              disabled={isProfileSearching}
             >
               {isProfileSearching ? 'Searching...' : 'Search'}
             </Button>
