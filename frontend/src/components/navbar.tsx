@@ -35,12 +35,14 @@ export function Navbar({
   const tokens = componentTokens.navbar(themeMode);
 
   // The logo is "home": the landing page before login, the dashboard after
-  // (the admin console for site admins).
+  // (the admin console for site admins). A guest's only page is its demo
+  // tree, so its logo goes to the landing page instead.
   // Read after mount: the session lives in sessionStorage, which the server
   // render can't see, so starting at '/' avoids a hydration mismatch.
   const [homeHref, setHomeHref] = useState('/');
   useEffect(() => {
-    setHomeHref(getToken() ? homeFor(getRole()) : '/');
+    const role = getRole();
+    setHomeHref(getToken() && role !== 'GUEST' ? homeFor(role) : '/');
   }, []);
 
   return (
