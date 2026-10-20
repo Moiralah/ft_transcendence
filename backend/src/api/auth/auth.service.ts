@@ -242,7 +242,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		if (this.guestSweep) clearInterval(this.guestSweep);
 	}
 	// No throttle on this route, and each visit makes a guest and a tree.
-	private static readonly GUESTS_PER_HOUR = 3;
+	// Site-wide, so it has to leave room for several people (evaluators) at once.
+	private static readonly GUESTS_PER_HOUR = 30;
 
 	async loginAsGuest() {
 		const settings = await this.prisma.siteSettings.findUnique({ where: { id: 1 } });
