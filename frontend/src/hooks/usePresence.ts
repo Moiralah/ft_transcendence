@@ -78,7 +78,6 @@ export function AppPresence() {
 
     return () => {
       void supabase.removeChannel(channel);
-      setOnlineIds(new Set());
     };
   }, [id]);
 
