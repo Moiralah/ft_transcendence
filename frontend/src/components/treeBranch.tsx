@@ -385,7 +385,7 @@ const renderAddChild = (BranchAddMember: Member) => {
               <>
                 <div className="absolute top-0 h-0.5 bg-black" style={{ left: left - 1, width: right - left + 2 }} />
                 {connectors.childXs.map((x, i) => (
-                  <div key={i} className="absolute top-0 h-6 w-0.5 bg-black" style={{ left: x - 1 }} />
+                  <div key={i} className="absolute top-0 h-10 w-0.5 bg-black" style={{ left: x - 1 }} />
                 ))}
               </>
             );
