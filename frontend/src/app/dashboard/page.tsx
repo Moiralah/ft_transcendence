@@ -1148,10 +1148,10 @@ useEffect(() => {
                           .join(' ')}
                       </div>
                       <div className="text-sm text-slate-700 mt-1">
-                        Gender: {profile.gender || 'N/A'}
+                        Gender: {profile.hidden ? 'Private' : profile.gender || 'N/A'}
                       </div>
                       <div className="text-sm text-slate-700 mt-1">
-                        Birth Date: {profile.birthDate || 'N/A'}
+                        Birth Date: {profile.hidden ? 'Private' : profile.birthDate || 'N/A'}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
