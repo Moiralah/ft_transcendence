@@ -11,6 +11,7 @@ import { usePresence } from "../../hooks/usePresence";
 import { TreeBanner } from '../../components/treeBanner';
 import { ModalBanner } from '../../components/modalBanner';
 import { Button } from '../../components/button';
+import { useDialog } from '../../hooks/useDialog';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
 import { clearSession, getRole, getToken, homeFor, logOut, loginPathAfter401, updateRole } from '@/lib/auth';
@@ -512,6 +513,8 @@ useEffect(() => {
     }
 	await fetchRequests(token);
   };
+
+  const searchRef = useDialog<HTMLDivElement>(() => setShowProfileSearch(false), showProfileSearch);
 
   const cancelFriend = async (friendId: number, userId: string) => {
     if (!token) return;
@@ -1097,8 +1100,10 @@ useEffect(() => {
           <div
             role="dialog"
             aria-modal="true"
+			ref={searchRef}
             aria-labelledby="profile-search-modal-title"
-            className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200"
+            tabIndex={-1}
+			className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 shadow-xl border border-slate-200 focus:outline-none"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
@@ -1119,7 +1124,7 @@ useEffect(() => {
                 type="button"
                 onClick={() => setShowProfileSearch(false)}
                 aria-label="Close profile search results"
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2"
               >
                 ✕
               </button>
@@ -1137,7 +1142,7 @@ useEffect(() => {
                     className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-4"
                   >
                     <div>
-                      <div className="font-bold text-slate-900 text-base">
+                      <div className="font-bold text-slate-900 text-base [overflow-wrap:anywhere]">
                         {[profile.firstName, profile.lastName]
                           .filter(Boolean)
                           .join(' ')}
@@ -1145,18 +1150,9 @@ useEffect(() => {
                       <div className="text-sm text-slate-700 mt-1">
                         Gender: {profile.gender || 'N/A'}
                       </div>
-
                       <div className="text-sm text-slate-700 mt-1">
                         Birth Date: {profile.birthDate || 'N/A'}
                       </div>
-
-                      {/* Death date hidden (not needed for now).
-                      {profile.deathDate && (
-                        <div className="text-sm text-slate-700 mt-1">
-                          Death Date: {profile.deathDate}
-                        </div>
-                      )}
-                      */}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {!profile.userId ? (
@@ -1164,17 +1160,15 @@ useEffect(() => {
                           No account
                         </span>
                       ) : status === 'NONE' || status === 'DECLINED' ? (
-                        <button
-                          type="button"
+                        <Button
+						  variant="primary"
                           onClick={() => addFriend(profile.userId)}
-                          className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
                         >
                           Add Friend
-                        </button>
+                        </Button>
                       ) : status === 'PENDING_OUT' ? (
-						<button
-							type="button"
-							className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+						<Button
+						    variant="primary"
 							onClick={() => {
 							const friendId = friendStatus?.friendId;
 
@@ -1184,12 +1178,11 @@ useEffect(() => {
 							}}
 						>
 							Cancel Request
-						</button>
+						</Button>
                       ) : status === 'PENDING_IN' ? (
                         <>
-                          <button
-                            type="button"
-                            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
+                          <Button
+						    variant="primary"
 							onClick={() => {
 								const friendId = friendStatus?.friendId;
 
@@ -1199,11 +1192,10 @@ useEffect(() => {
 							}}
 						  >
                             Accept
-                          </button>
+                          </Button>
 
-                          <button
-                            type="button"
-                            className="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300"
+                          <Button
+							variant="secondary"
 							onClick={() => {
 								const friendId = friendStatus?.friendId;
 
@@ -1213,12 +1205,11 @@ useEffect(() => {
 							}}
 						  >
                             Decline
-                          </button>
+                          </Button>
                         </>
                       ) : status === 'ACCEPTED' ? (
-						<button
-						type="button"
-						className="..."
+						<Button
+						variant="primary"
 						onClick={() => {
 							const friendId = friendStatus?.friendId;
 
@@ -1228,7 +1219,7 @@ useEffect(() => {
 						}}
 						>
 						Unfriend
-						</button>
+						</Button>
                       ) : (
                         <span className="px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm font-medium">
                           {status}
