@@ -112,6 +112,13 @@ export function TreeNode({
     gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Gender not set';
   const genderSymbol = gender === 'male' ? '♂ ' : gender === 'female' ? '♀ ' : '';
 
+  // A node represents a real person in two cases:
+  //  - a HOLDER slot whose claim has been ACCEPTED (a real user sits there)
+  //  - a real user's own membership row (role is not HOLDER)
+  const isRealUserNode =
+    (nodeMember.role === 'HOLDER' && nodeMember.claim === 'ACCEPTED') ||
+    nodeMember.role !== 'HOLDER';
+
   return (
     <div className="flex flex-col items-center relative z-10">
       <div
@@ -123,7 +130,8 @@ export function TreeNode({
             'bg-red-200 border-red-600' :
           'bg-amber-100 border-amber-600'}
           border-2 font-bold rounded-xl px-4 py-2 text-sm text-center text-gray-800 shadow-sm z-10 min-w-[140px] max-w-[220px] [overflow-wrap:anywhere]
-        `}
+          ${isRealUserNode ? 'ring-2 ring-indigo-600 ring-offset-2' : ''}
+		  `}
       >
         {/* The keyboard way in (Tab, then Enter or Space). It has no onClick of its
             own: its click bubbles to the box above, which opens the profile. */}
