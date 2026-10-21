@@ -25,6 +25,13 @@ const ADMIN_MFA_SETUP_ROUTES = [
 
 export const SESSION_ENDED = 'This session was logged out. Please sign in again.';
 
+// The frontend matches on "password was changed" to say why on the login page.
+export const PASSWORD_CHANGED = 'Your password was changed, so every session was signed out. Please sign in with the new password.';
+
+// RevokedToken's name for "every session of this account issued until now"
+// (AuthService.endAllSessions). Never a real jti: those are UUIDs, no colon.
+export const allSessionsKey = (accountId: string) => `all:${accountId}`;
+
 // MFA is on for the account, but this session never passed it (it was issued
 // before MFA was turned on). A 401 so the frontend sends them to sign in again.
 export const MFA_SESSION_REQUIRED = 'Please sign in again with your MFA code.';
@@ -59,12 +66,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// Every session token has a jti (AuthService.issueSession); one without is
 		// from before Logout could end sessions, so it's refused too. A token
 		// logged out (POST /auth/logout) is listed in RevokedToken until it expires.
+		// So is a password change or reset: one row for the whole account, which
+		// ends every session that expires no later than it (issued before it).
 		if (typeof payload.jti !== 'string') {
 			throw new UnauthorizedException(SESSION_ENDED);
 		}
-		const revoked = await this.prisma.revokedToken.findUnique({ where: { jti: payload.jti }, select: { jti: true } });
-		if (revoked) {
+		const revoked = await this.prisma.revokedToken.findMany({
+			where: { jti: { in: [payload.jti, allSessionsKey(payload.sub)] } },
+		});
+		if (revoked.some((r) => r.jti === payload.jti)) {
 			throw new UnauthorizedException(SESSION_ENDED);
+		}
+		if (revoked.some((r) => payload.exp * 1000 <= r.expiresAt.getTime())) {
+			throw new UnauthorizedException(PASSWORD_CHANGED);
 		}
 		// What POST /auth/logout needs to list this token.
 		const session = { jti: payload.jti as string, exp: payload.exp as number };

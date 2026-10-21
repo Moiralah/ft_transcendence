@@ -208,6 +208,7 @@ export function isSuspended(err: unknown): boolean {
 export function loginErrorMessage(code: string | null): string | null {
 	if (code === 'suspended') return SUSPENDED_MESSAGE;
 	if (code === 'expired') return 'Your session ended after 1 hour. Please sign in again.';
+	if (code === 'password') return 'Your password was changed, so every session was signed out. Please sign in with the new password.';
 	if (code === 'ApiUnreachable') return apiUnreachableMessage();
 	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
 	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
@@ -253,12 +254,14 @@ export function homeFor(role: string | null): string {
 	return '/dashboard';
 }
 
-// After a 401 on an API call: back to /login, saying why if the account was suspended.
+// After a 401 on an API call: back to /login, saying why if the account was
+// suspended or its password was changed (on another device, or a reset link).
 export async function loginPathAfter401(res: Response): Promise<string> {
 	try {
 		const data = await res.clone().json();
 		const message = String(data?.message ?? '');
 		if (/suspended/i.test(message)) return '/login?error=suspended';
+		if (/password was changed/i.test(message)) return '/login?error=password';
 		// A guest removed after 15 idle minutes: back to the front page, which says so.
 		if (/guest session ended/i.test(message)) return '/?guest=ended';
 	} catch {
@@ -358,6 +361,20 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
 // currentPassword is ignored for accounts without one (Google-only).
 export const deleteAccount = (currentPassword: string, confirm: string) =>
 	accountRequest<{ message: string; deletedTrees: number }>('account', { currentPassword, confirm }, 'DELETE');
+
+// The reset-password page, after Supabase took the new password: ends every
+// app session of the account too (backend checks it's a reset-link session).
+export async function endSessionsAfterReset(accessToken: string) {
+	const res = await apiFetch(`${apiUrl()}/auth/password-reset`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ accessToken }),
+	});
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}));
+		throw new Error(data.message || 'Could not sign out your other sessions');
+	}
+}
 
 // For accounts with no password yet (signed up with Google): emails the same
 // link as "Forgot password". Setting a password there adds an email + password

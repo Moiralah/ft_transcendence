@@ -7,6 +7,7 @@ import { randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TreeService } from '../tree/tree.service';
 import { MailService, malaysiaTime } from '../../mail/mail.service';
+import { allSessionsKey } from './jwt.strategy';
 
 // Login refusals for the wrong sign-in page. The frontend matches on "staff".
 const NOT_STAFF = 'This is not a staff account. Sign in on the normal login page.';
@@ -43,7 +44,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		const supabaseUser = data.user;
 
 		// Staff sign in with email + password only, never Google.
-		if (portal === 'staff' && !this.signedInWithPassword(accessToken)) {
+		if (portal === 'staff' && !this.signedInWith(accessToken, ['password'])) {
 			throw new ForbiddenException(STAFF_PASSWORD_ONLY);
 		}
 
@@ -123,12 +124,12 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	// How the Supabase session was made: its access token lists the sign-in
-	// methods in `amr` ("password", "oauth", ...). Only read after getUser()
-	// above has checked the token, so the payload can be trusted.
-	private signedInWithPassword(accessToken: string): boolean {
+	// methods in `amr` ("password", "oauth", "recovery", ...). Only read after
+	// getUser() has checked the token, so the payload can be trusted.
+	private signedInWith(accessToken: string, methods: string[]): boolean {
 		try {
 			const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
-			return Array.isArray(payload.amr) && payload.amr.some((a: any) => a?.method === 'password');
+			return Array.isArray(payload.amr) && payload.amr.some((a: any) => methods.includes(a?.method));
 		} catch {
 			return false;
 		}
@@ -216,6 +217,34 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 			user: { id: user.id, email: user.email, profileId: user.profileId, role: user.role },
 		};
 	}
+	// A password change or reset ends every session of the account, on every
+	// device, the one that changed it included: they all sign in again with the
+	// new password. One RevokedToken row for the account (not a jti), expiring
+	// when a session issued right now would: JwtStrategy refuses every token
+	// that expires no later than that, i.e. every one issued until now. It's
+	// dropped with the logged-out tokens, once those sessions have all expired.
+	async endAllSessions(accountId: string) {
+		const seconds = Number(process.env.JWT_EXPIRES_IN) || 3600;
+		const expiresAt = new Date((Math.floor(Date.now() / 1000) + seconds) * 1000);
+		const jti = allSessionsKey(accountId);
+		await this.prisma.revokedToken.upsert({ where: { jti }, create: { jti, expiresAt }, update: { expiresAt } });
+	}
+
+	// The reset-password page ("Forgot password", "Set a password") changes the
+	// password with Supabase itself, then sends that session's token here so
+	// the app's sessions end too. Only a session from a reset link: any other
+	// Supabase token can't sign an account out everywhere.
+	async endSessionsAfterReset(accessToken: string) {
+		const { data, error } = await this.supabase.auth.getUser(accessToken);
+		if (error || !data.user) {
+			throw new UnauthorizedException('Invalid Supabase token');
+		}
+		if (!this.signedInWith(accessToken, ['recovery', 'otp'])) {
+			throw new ForbiddenException('Only a password reset link can do this.');
+		}
+		await this.endAllSessions(data.user.id);
+	}
+
 	// Logout: this session's token stops working everywhere, including in any
 	// other tab that was handed the same token. Upsert, since two tabs can log
 	// out of the same session at once.
@@ -463,8 +492,9 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 			throw new BadRequestException(error.message);
 		}
 		// Ends every Supabase session for this account, e.g. an unused
-		// password-reset session. App JWTs are stateless and run until expiry.
+		// password-reset session, then every app session (this one included).
 		await client.auth.signOut({ scope: 'global' });
+		await this.endAllSessions(userId);
 		return { ok: true };
 	}
 
