@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import toast from 'react-hot-toast';
 import { Button } from './button';
 import { getSessionId, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
@@ -63,7 +62,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 	const [uploading, setUploading] = useState(false);
 	const [photoError, setPhotoError] = useState<string | null>(null);
 
-const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 	const file = e.target.files?.[0];
 	if (!file) return;
 
@@ -146,8 +145,44 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       setTimeout(() => document.getElementById(`profile-${field}-value`)?.focus());
     }
   };
+  
+  const [error, setErrors] = useState<string[]>([]);
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Create a temporary array to collect all errors
+    const newErrors: string[] = [];
+
+    if (formData.firstName.length > 100) {
+      newErrors.push('First name cannot be more than 100 characters');
+      console.log('First name cannot be more than 100 characters');
+    }
+
+    if (formData.lastName.length > 100) {
+      newErrors.push('Last name cannot be more than 100 characters');
+      console.log('Last name cannot be more than 100 characters');
+    }
+
+    if (formData.bio.length > 250) {
+      newErrors.push('Bio cannot be more than 250 characters');
+      console.log('Bio cannot be more than 250 characters');
+    }
+
+    if (formData.birthDate && formData.birthDate > todayDate()) {
+      newErrors.push('Birth date cannot be in the future');
+      console.log('Birth date cannot be in the future');
+    }
+
+    // If any errors were found, update state and stop here
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Clear previous errors if validation passes
+    setErrors([]);
+
     try {
       const token = getSessionId();
       if (!token) {
@@ -195,9 +230,9 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (onClose) {
         onClose();
       }
+      
     } catch (err: any) {
       console.error("Save error:", err.message);
-      toast.error(err.message);
     }
   };
 
@@ -208,57 +243,67 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center  bg-black/50 p-4">
-      { /* form fill section */}
-      <div
-        ref={dialogRef}
+return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      {/* Wrap everything in a form element */}
+      <form
+        onSubmit={handleSave}
+        ref={dialogRef as unknown as React.RefObject<HTMLFormElement>}
         role="dialog"
         aria-modal="true"
         aria-label="Edit your profile"
         tabIndex={-1}
         className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 focus:outline-none"
       >
-		{/* Photo */}
-		<div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-200">
-		<Avatar
-			photoUrl={formData.photoUrl}
-			size={160}
-			className="outline outline-4 outline-offset-2 outline-indigo-600"
-			onClick={() => fileInputRef.current?.click()}
-		/>
+        {/* Error Banner Pop-up inside the modal */}
+      {error.length > 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
+          <ul className="list-disc list-inside space-y-1">
+            {error.map((err, index) => (
+              <li key={index}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-		<Button
-			type="button"
-			onClick={() => fileInputRef.current?.click()}
-			disabled={uploading}
-		>
-			{uploading ? 'Uploading…' : 'Change photo'}
-		</Button>
-		<p className="text-sm text-gray-500">{PHOTO_HINT}</p>
-		{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
+        {/* Photo Section */}
+        <div className="flex flex-col items-center gap-3 pb-2 border-b border-slate-200">
+          <Avatar
+            photoUrl={formData.photoUrl}
+            size={160}
+            className="outline outline-4 outline-offset-2 outline-indigo-600"
+            onClick={() => fileInputRef.current?.click()}
+          />
 
-		<input
-			ref={fileInputRef}
-			type="file"
-			accept={PHOTO_TYPES}
-			className="hidden"
-			onChange={handlePhotoUpload}
-		/>
-		</div>
+          <Button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading…' : 'Change photo'}
+          </Button>
+          <p className="text-sm text-gray-500">{PHOTO_HINT}</p>
+          {photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
 
-		{/* field map render each field row */}
-        { fields.map(({ key, label, type }) => (
-        <div key={key} className="flex items-center gap-2">
-          <span id={`profile-${key}-label`} className="w-40 shrink-0 text-xl p-5">
-            { label } :
-          </span>
-          <div className="min-w-0 flex-1">
-            {editingField === key ? (
-              type ==="select" && key==="gender") ? (
-                <select
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={PHOTO_TYPES}
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+        </div>
+
+        {fields.map(({ key, label, type }) => (
+          <div key={key} className="flex items-center gap-2">
+            <span id={`profile-${key}-label`} className="w-40 shrink-0 text-xl p-5">
+              {label} :
+            </span>
+            <div className="min-w-0 flex-1">
+              {editingField === key ? (
+                type === "select" && key === "gender" ? (
+                  <select
                     name="gender"
-                    // Stored as male/female or MALE/FEMALE (the demo tree); empty is Not Specified.
                     value={formData.gender?.toLowerCase() ?? ""}
                     onChange={handleChange}
                     onBlur={() => setEditingField(null)}
@@ -266,61 +311,61 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     aria-labelledby={`profile-${key}-label`}
                     className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full bg-white focus:ring-2 focus:ring-amber-600"
                   >
-                  <option value="">Not Specified</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
+                    <option value="">Not Specified</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                ) : (
+                  <input
+                    type={type}
+                    name={key}
+                    min={type === "date" ? MIN_PROFILE_DATE : undefined}
+                    max={type === "date" ? todayDate() : undefined}
+                    maxLength={key === "bio" ? BIO_MAX_LENGTH : undefined}
+                    value={formData[key] || ""}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    onBlur={() => setEditingField(null)}
+                    autoFocus
+                    aria-labelledby={`profile-${key}-label`}
+                    className="text-xl outline-none border border-none w-full focus:ring-2 focus:ring-amber-600 rounded"
+                  />
+                )
               ) : (
-            <input
-              type={ type }
-              name= {key}
-              min={type === "date" ? MIN_PROFILE_DATE : undefined}
-              max={type === "date" ? todayDate() : undefined}
-              maxLength={key === "bio" ? BIO_MAX_LENGTH : undefined}
-              value={formData[key] || "" }
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              onBlur={() => setEditingField(null)}
-              autoFocus
-              aria-labelledby={`profile-${key}-label`}
-              className="text-xl outline-none border border-none w-full focus:ring-2 focus:ring-amber-600 rounded"
-            />
-            ) : (
-            <button
-              type="button"
-              id={`profile-${key}-value`}
-              onClick={() => setEditingField(key)}
-              aria-labelledby={`profile-${key}-label profile-${key}-value`}
-              className="max-w-full cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 [overflow-wrap:anywhere] bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
-            >
-              {key === 'gender'
-                ? ({ male: 'Male', female: 'Female' } as Record<string, string>)[formData.gender?.toLowerCase() ?? ''] ?? 'Not Specified'
-                : formData[key] || 'Click to add '+label}
-            </button>
-            )}
+                <button
+                  type="button"
+                  id={`profile-${key}-value`}
+                  onClick={() => setEditingField(key)}
+                  aria-labelledby={`profile-${key}-label profile-${key}-value`}
+                  className="max-w-full cursor-pointer hover:bg-gray-100 rounded text-xl text-left text-gray-900 [overflow-wrap:anywhere] bg-transparent px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-600"
+                >
+                  {key === 'gender'
+                    ? ({ male: 'Male', female: 'Female' } as Record<string, string>)[formData.gender?.toLowerCase() ?? ''] ?? 'Not Specified'
+                    : formData[key] || 'Click to add ' + label}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
         ))}
 
-        { /* button section */}
+        {/* button section */}
         <div className="flex items-center justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="primary"
             onClick={handleCancel}
-            // className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             Cancel
           </Button>
+          {/* Change type to submit so it triggers form's onSubmit */}
           <Button
-            type="button"
-            onClick={handleSave}
-            // className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+            type="submit"
           >
             Save
           </Button>
         </div>
-      </div>
+      </form>
     </div>
   );
+
 }
