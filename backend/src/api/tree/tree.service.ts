@@ -1190,7 +1190,14 @@ export class TreeService {
 
 	// Powers a "pending claims" notification panel for admins/Members.
 	async getPendingClaims(treeId: number, requesterProfileId: number) {
-		await this.assertMemberOrAdmin(treeId, requesterProfileId);
+		const requester = await this.prisma.treeMember.findUnique({
+			where: { profileId_treeId: { profileId: requesterProfileId, treeId } },
+			select: { role: true },
+		});
+
+		if (!requester || !['ADMIN', 'MEMBER'].includes(requester.role)) {
+			return [];
+		}
 
 		const result = await this.prisma.treeMember.findMany({
 			where: { treeId, role: 'HOLDER', claim: 'PENDING' },
