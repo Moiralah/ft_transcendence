@@ -46,7 +46,8 @@ Node is not needed on the host.
 same settings as your last `make up` or `make local`),
 `make local` (run against a local Supabase, below), `make clean` (stop and
 delete the containers' volumes), `make fclean` (also the built images) and
-`make re` (`fclean`, then `make up`). None of them touch the shared
+`make re` (`fclean`, then `make up`, or `make local` if that was your last
+one). None of them touch the shared
 database; `make local` pushes the schema to your local Supabase only.
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
