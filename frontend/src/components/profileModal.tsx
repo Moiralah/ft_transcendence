@@ -254,7 +254,7 @@ return (
         aria-modal="true"
         aria-label="Edit your profile"
         tabIndex={-1}
-        className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 focus:outline-none"
+        className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl max-h-full overflow-y-auto p-6 focus:outline-none"
       >
         {/* Error Banner Pop-up inside the modal */}
       {error.length > 0 && (
