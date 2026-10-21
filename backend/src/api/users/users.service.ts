@@ -147,15 +147,15 @@ export class UsersService {
 			// rather than deleted. Only its userId is cleared: profiles.userId is
 			// unique, so leaving it set makes the next login for this account fail
 			// creating a fresh profile (500). One transaction so a failed user
-			// delete (e.g. invitations still reference them) undoes the detach.
+			// user delete undoes the detach.
 			await this.prisma.$transaction([
 				this.prisma.profile.updateMany({ where: { userId: id }, data: { userId: null } }),
 				this.prisma.user.delete({ where: { id } }),
 			]);
 		} catch {
-			// Foreign-key violation — user still has invitations/audit logs.
+			// Foreign-key violation: other rows still reference the user.
 			throw new ConflictException(
-				'This user has related data (audit logs or invitations) and cannot be deleted.',
+				'This user has related data and cannot be deleted.',
 			);
 		}
 		this.logger.log(`User ${id} deleted by admin ${requesterId}`);

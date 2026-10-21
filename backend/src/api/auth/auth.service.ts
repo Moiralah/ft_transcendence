@@ -154,7 +154,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		}
 
 		// profiles.userId is a plain column (no foreign key), so it's moved by hand;
-		// recovery codes, friendships and invitations follow via ON UPDATE CASCADE.
+		// recovery codes and friendships follow via ON UPDATE CASCADE.
 		return this.prisma.$transaction(async (tx) => {
 			await tx.profile.updateMany({ where: { userId: old.id }, data: { userId: newId } });
 			return tx.user.update({ where: { id: old.id }, data: { id: newId } });
@@ -499,8 +499,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	// --- Deleting your own account ----------------------------------------
-	// What goes: the login, the user row, friendships, 2FA codes, invitations
-	// sent, every tree they own (with its made-up people) and their photos.
+	// What goes: the login, the user row, friendships, 2FA codes, every tree
+	// they own (with its made-up people) and their photos.
 	// Trees they only joined are left like "Leave tree" does it, so a node they
 	// claimed shows its made-up person again. Their profile is deleted, or, if
 	// another tree's history still points at it, kept as an empty "Deleted
@@ -558,7 +558,6 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 					}
 				}
 			}
-			await tx.invitation.deleteMany({ where: { inviterId: userId } });
 			// Cascades friendships and recovery codes.
 			await tx.user.delete({ where: { id: userId } });
 
@@ -569,9 +568,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 				await tx.profile.updateMany({ where: { spouseId: profileId }, data: { spouseId: null } });
 				const logged = await tx.auditLog.count({ where: { profileId } });
 				if (logged === 0) {
-					await tx.profile.delete({ where: { id: profileId } }); // events cascade
+					await tx.profile.delete({ where: { id: profileId } });
 				} else {
-					await tx.event.deleteMany({ where: { profileId } });
 					await tx.profile.update({
 						where: { id: profileId },
 						data: {

@@ -44,7 +44,7 @@ export class ProfileService {
 					select: { id: true, role: true },
 				});
 				if (!mine) continue;
-				if (mine.role === 'ADMIN' || mine.role === 'MODERATOR') return;
+				if (mine.role === 'ADMIN') return;
 				if (mine.role === 'MEMBER' && node.claim === 'ACCEPTED' && node.linkId === mine.id) return;
 				// A MEMBER may also edit a placeholder nobody has claimed yet,
 				// as the tree page allows. A real user's profile stays theirs.

@@ -1133,7 +1133,7 @@ export class TreeService {
 			});
 			const deletableProfileIds = placeholders.map((p) => p.id);
 
-			// 3. Delete the tree itself — this cascades TreeMember / Invitation / AuditLog.
+			// 3. Delete the tree itself — this cascades TreeMember / AuditLog.
 			await tx.tree.delete({ where: { id: treeId } });
 
 			// 4. Clean up the orphaned placeholder profiles.
