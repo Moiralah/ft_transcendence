@@ -1023,7 +1023,7 @@ useEffect(() => {
                 <Link
                   key={tree.id}
                   href={`/canvas/${tree.slug}`}
-				   onClick={(e) => {
+				          onClick={(e) => {
                       if (!getToken()) {
                       e.preventDefault();
                       router.replace('/login');

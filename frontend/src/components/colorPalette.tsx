@@ -78,7 +78,7 @@ export const primitives = {
         Card: primitives.amber[800],
         bannerHeading: primitives.gray[800],
         bannerSpan: primitives.gray[400],
-        bannerRole: primitives.amber[600],
+        bannerRole: primitives.amber[900],
       },
       border: {
         subtle: primitives.slate[800],
