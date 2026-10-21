@@ -50,7 +50,7 @@ export default function PrivacyPolicyPage() {
 					Supabase, briefly, when you confirm it to change your email or password) or your
 					name, email, and profile picture from Google if you use OAuth sign-in.</p>
 					<p><strong>Family tree data.</strong> Information you add to a tree — first and
-					last name, gender, birth and death dates, a short bio, and a profile photo — for
+					last name, gender, birth date, a short bio, and a profile photo — for
 					yourself and for anyone else you add as a family member.</p>
 					<p><strong>Security information.</strong> If you enable multi-factor authentication,
 					we store a TOTP secret and a set of one-time recovery codes. Recovery codes are

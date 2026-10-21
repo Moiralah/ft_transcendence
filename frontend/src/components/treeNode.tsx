@@ -23,7 +23,6 @@ export interface Member {
   lastName?: string | null;
   gender?: 'male' | 'female' | null;
   birthDate?: string | null;
-  deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
@@ -147,11 +146,6 @@ export function TreeNode({
             <span>
               <span>b.</span> {nodeMember.birthDate ? formatDate(nodeMember.birthDate) : 'not available'}
             </span>
-            {/* Death date hidden (not needed for now).
-            <span>
-              <span>d.</span> {nodeMember.deathDate ? formatDate(nodeMember.deathDate) : 'not available'}
-            </span>
-            */}
           </span>
         </button>
       </div>

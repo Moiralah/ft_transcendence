@@ -17,7 +17,6 @@ export interface Member {
 	lastName?: string | null;
 	gender?: 'male' | 'female' | null;
 	birthDate?: string | null;
-	deathDate?: string | null;
 	bio?: string | null;
 	photoUrl?: string | null;
 	claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
@@ -59,12 +58,11 @@ export function NodeProfileModal({
   // Dates arrive as full timestamps (1975-11-20T00:00:00.000Z); the form shows,
   // edits (<input type="date">) and saves just the day.
   const withDays = (m: Member | null): Member | null =>
-    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate, deathDate: m.deathDate?.split('T')[0] ?? m.deathDate };
+    m && { ...m, birthDate: m.birthDate?.split('T')[0] ?? m.birthDate };
   const [formMember, setFormMember] = useState<Member | null>(() => withDays(member));
   // What's saved on the server, to tell whether a field really changed.
   const savedRef = useRef<Member | null>(withDays(member));
   const [editName, setEditName] = useState(false);
-  const [alive, setAlive] = useState(formMember?.deathDate ? false : true);
   const [editingField, setEditingField] = useState<string | null>(null);
   // Removing someone takes two clicks: the first arms the button.
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -99,7 +97,6 @@ export function NodeProfileModal({
 		if (member) {
 			setFormMember(withDays(member));
 			savedRef.current = withDays(member);
-			setAlive(!member.deathDate);
 		}
 	}, [member]);
 
@@ -310,7 +307,6 @@ export function NodeProfileModal({
 					lastName: formMember.lastName,
 					gender: formMember.gender || null, // Not Specified
 					birthDate: formMember.birthDate,
-					deathDate: formMember.deathDate,
 					motherId: formMember.motherId,
 					fatherId: formMember.fatherId,
 					bio: formMember.bio,
@@ -599,47 +595,6 @@ export function NodeProfileModal({
 							</select>
 						</div>
 					</div>
-
-					{/* Alive/Deceased status and death date hidden (not needed for now). The
-              data is untouched; uncomment to bring them back.
-          <div className="flex flex-row text-xl font-normal items-center">
-            <div id="node-status-label" className="flex w-40 shrink-0 text-gray-600">Status</div>
-            <div role="group" aria-labelledby="node-status-label" className="flex border bg-gray-200 rounded-xl p-1">
-              <button
-                type="button"
-                aria-pressed={alive}
-                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-600 ${
-                  alive ? 'bg-black text-white shadow-sm' : 'bg-gray-200 text-gray-900'
-                }`}
-                onClick={() => setAlive(true)}
-				        disabled={!canEditFields}
-              >
-                Alive
-              </button>
-              <button
-                type="button"
-                aria-pressed={!alive}
-                className={`px-3 py-1 rounded-lg text-sm font-medium hover:bg-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-600 ${
-                  !alive ? 'bg-black text-white' : 'bg-gray-200 text-gray-900'
-                }`}
-                onClick={() => setAlive(false)}
-				        disabled={!canEditFields}
-              >
-                Deceased
-              </button>
-            </div>
-          </div>
-
-          {!alive ? (
-            <div className="flex flex-row text-xl font-normal">
-              <div className="flex w-40 shrink-0 text-gray-500">Died</div>
-              <div>{formMember?.deathDate || 'Not specified'}</div>
-            </div>
-          ) : (
-            <div className="h-8"></div>
-          )
-          }
-          */}
 				</div>
 
 				{/* Upload Photo */}

@@ -545,7 +545,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 					await tx.profile.update({
 						where: { id: profileId },
 						data: {
-							firstName: 'Deleted user', lastName: null, gender: null, birthDate: null, deathDate: null,
+							firstName: 'Deleted user', lastName: null, gender: null, birthDate: null,
 							bio: null, photoUrl: null, verified: false, userId: null,
 							motherId: null, fatherId: null, spouseId: null,
 						},

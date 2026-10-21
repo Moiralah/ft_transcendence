@@ -20,7 +20,6 @@ export interface Profile {
   lastName?: string | null;
   gender?: 'male' | 'female' | null;
   birthDate?: string | null;
-  deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   motherId?: number | null;
