@@ -13,6 +13,14 @@ export class LoginDto {
 	portal?: 'staff';
 }
 
+// The reset-password page's Supabase session, after it set the new password.
+export class PasswordResetDto {
+	@IsString({ message: 'Missing access token' })
+	@IsNotEmpty({ message: 'Missing access token' })
+	@MaxLength(8192)
+	accessToken: string;
+}
+
 // The service gives the friendly messages (wrong password, invalid email, too
 // short); these only make sure each field is text of a sane length.
 export class ChangeEmailDto {

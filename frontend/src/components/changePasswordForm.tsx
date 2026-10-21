@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MIN_PASSWORD_LENGTH, SessionExpiredError, changePassword, getAccount, sendSetPasswordEmail } from '@/lib/auth';
+import { MIN_PASSWORD_LENGTH, SessionExpiredError, changePassword, clearSession, getAccount, getRole, sendSetPasswordEmail } from '@/lib/auth';
 
 type Account =
 	| { kind: 'loading' }
@@ -16,7 +16,6 @@ export function ChangePasswordForm() {
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [linkSent, setLinkSent] = useState(false);
 
@@ -49,7 +48,6 @@ export function ChangePasswordForm() {
 		e.preventDefault();
 		if (account.kind !== 'ready') return;
 		setError(null);
-		setSuccess(false);
 
 		if (newPassword !== confirmPassword) {
 			setError('New passwords do not match');
@@ -67,7 +65,9 @@ export function ChangePasswordForm() {
 		setSubmitting(true);
 		try {
 			// The backend checks the current password itself before changing
-			// anything, then ends the account's other Supabase sessions.
+			// anything, then ends every session of the account, this one
+			// included: sign in again with the new password. Other tabs follow
+			// (watchSessionInOtherTabs), other devices on their next request.
 			try {
 				await changePassword(currentPassword, newPassword);
 			} catch (err) {
@@ -75,10 +75,9 @@ export function ChangePasswordForm() {
 				else setError((err as Error).message);
 				return;
 			}
-			setCurrentPassword('');
-			setNewPassword('');
-			setConfirmPassword('');
-			setSuccess(true);
+			const signIn = getRole() === 'ADMIN' ? '/staff' : '/login';
+			clearSession();
+			window.location.replace(`${signIn}?reset=1`);
 		} finally {
 			setSubmitting(false);
 		}
@@ -155,15 +154,13 @@ export function ChangePasswordForm() {
 						onChange={(e) => setConfirmPassword(e.target.value)}
 						required
 					/>
+					<p className="text-sm text-slate-700">
+						This signs you out everywhere, this browser included; then sign in with the new password.
+					</p>
 					<button type="submit" disabled={submitting}>
 						{submitting ? 'Saving...' : 'Change password'}
 					</button>
 					{error && <div className="error" role="alert">{error}</div>}
-					{success && (
-						<div className="success" role="status">
-							Password updated. Your other sign-in sessions on this account were ended.
-						</div>
-					)}
 				</form>
 			)}
 		</section>

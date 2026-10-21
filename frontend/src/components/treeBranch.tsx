@@ -13,7 +13,6 @@ export interface Member {
   lastName?: string | null;
   gender?: 'male' | 'female' | null;
   birthDate?: string | null;
-  deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   claim?: 'EMPTY' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
@@ -185,7 +184,6 @@ export function TreeBranch({
         photoUrl: claimant.photoUrl,
         gender: claimant.gender,
         birthDate: claimant.birthDate,
-        deathDate: claimant.deathDate,
         bio: claimant.bio,
 	  };
     }

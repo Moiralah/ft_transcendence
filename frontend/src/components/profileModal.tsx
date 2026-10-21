@@ -20,7 +20,6 @@ export interface Profile {
   lastName?: string | null;
   gender?: 'male' | 'female' | null;
   birthDate?: string | null;
-  deathDate?: string | null;
   bio?: string | null;
   photoUrl?: string | null;
   motherId?: number | null;
@@ -233,6 +232,8 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
       
     } catch (err: any) {
       console.error("Save error:", err.message);
+      // Show it in the modal's error banner, or the save just silently does nothing.
+      setErrors([err.message]);
     }
   };
 
@@ -253,7 +254,7 @@ return (
         aria-modal="true"
         aria-label="Edit your profile"
         tabIndex={-1}
-        className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl p-6 focus:outline-none"
+        className="flex flex-col gap-6 bg-white rounded-xl w-full max-w-3xl max-h-full overflow-y-auto p-6 focus:outline-none"
       >
         {/* Error Banner Pop-up inside the modal */}
       {error.length > 0 && (
@@ -343,6 +344,12 @@ return (
                     ? ({ male: 'Male', female: 'Female' } as Record<string, string>)[formData.gender?.toLowerCase() ?? ''] ?? 'Not Specified'
                     : formData[key] || 'Click to add ' + label}
                 </button>
+              )}
+              {/* The box stops typing at the limit; say so instead of just going quiet. */}
+              {key === "bio" && editingField === "bio" && (
+                <p className="px-2 pt-1 text-sm text-gray-500" aria-live="polite">
+                  {formData.bio.length}/{BIO_MAX_LENGTH} characters
+                </p>
               )}
             </div>
           </div>

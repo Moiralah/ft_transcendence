@@ -44,7 +44,7 @@ export class ProfileService {
 					select: { id: true, role: true },
 				});
 				if (!mine) continue;
-				if (mine.role === 'ADMIN' || mine.role === 'MODERATOR') return;
+				if (mine.role === 'ADMIN') return;
 				if (mine.role === 'MEMBER' && node.claim === 'ACCEPTED' && node.linkId === mine.id) return;
 				// A MEMBER may also edit a placeholder nobody has claimed yet,
 				// as the tree page allows. A real user's profile stays theirs.
@@ -97,7 +97,6 @@ export class ProfileService {
 				lastName: true,
 				gender: true,
 				birthDate: true,
-				deathDate: true,
 				bio: true,
 				photoUrl: true,
 			},
@@ -112,23 +111,10 @@ export class ProfileService {
 		lastName?: string;
 		gender?: string;
 		birthDate?: string;
-		deathDate?: string;
 		motherId?: number | null;
 		fatherId?: number | null;
 		bio?: string | null;
 	}) {
-		// The DTO checks each date's range; here, death must not come before
-		// birth. A date left out of the request keeps its stored value.
-		if (data.birthDate || data.deathDate) {
-			const current = await this.prisma.profile.findUnique({
-				where: { id: UserId },
-				select: { birthDate: true, deathDate: true },
-			});
-			const birth = data.birthDate ? new Date(data.birthDate) : current?.birthDate;
-			const death = data.deathDate ? new Date(data.deathDate) : current?.deathDate;
-			if (birth && death && death < birth)
-				throw new BadRequestException('Death date cannot be before birth date.');
-		}
 		return this.prisma.profile.update({
 			where: { id: UserId },
 			data: {
@@ -136,7 +122,6 @@ export class ProfileService {
 				lastName: data.lastName,
 				gender: data.gender,
 				birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
-				deathDate: data.deathDate ? new Date(data.deathDate) : undefined,
 				motherId: data.motherId ?? undefined,
 				fatherId: data.fatherId ?? undefined,
 				bio: data.bio ?? undefined,
@@ -162,7 +147,6 @@ export class ProfileService {
 			name: [p.firstName, p.lastName].filter(Boolean).join(' '),
 			gender: p.gender,
 			birth_date: p.birthDate ? p.birthDate.toISOString().split('T')[0] : null,
-			death_date: p.deathDate ? p.deathDate.toISOString().split('T')[0] : null,
 			mother_name: p.mother ? [p.mother.firstName, p.mother.lastName].filter(Boolean).join(' ') : null,
 			father_name: p.father ? [p.father.firstName, p.father.lastName].filter(Boolean).join(' ') : null,
 		}));
@@ -329,8 +313,7 @@ export class ProfileService {
 					lastName: true,
 					gender: true,
 					birthDate: true,
-					deathDate: true,
-					user: {
+						user: {
 						select: {
 							id: true,
 						},
@@ -351,14 +334,11 @@ export class ProfileService {
 					userId: profile.user?.id ?? null,
 					firstName: profile.firstName,
 					lastName: profile.lastName,
-					// hidden: not a friend, so gender and dates are left out (null).
+					// hidden: not a friend, so gender and birth date are left out (null).
 					hidden: !friend,
 					gender: friend ? profile.gender : null,
 					birthDate: friend && profile.birthDate
 						? profile.birthDate.toISOString().split('T')[0]
-						: null,
-					deathDate: friend && profile.deathDate
-						? profile.deathDate.toISOString().split('T')[0]
 						: null,
 				};
 			}),

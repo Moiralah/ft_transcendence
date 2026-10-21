@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, MIN_PASSWORD_LENGTH } from '@/lib/auth';
+import { clearSession, endSessionsAfterReset, MIN_PASSWORD_LENGTH } from '@/lib/auth';
 
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -64,6 +64,14 @@ export default function ResetPasswordPage() {
 			setError(error.message);
 			setSubmitting(false);
 			return;
+		}
+		// Every app session of the account ends too, on every device. The
+		// password is already changed, so a failure here is only logged.
+		const { data: { session } } = await supabase.auth.getSession();
+		try {
+			if (session) await endSessionsAfterReset(session.access_token);
+		} catch (err) {
+			console.warn('Signing out the other sessions failed:', err);
 		}
 		clearSession();
 		await supabase.auth.signOut({ scope: 'global' });

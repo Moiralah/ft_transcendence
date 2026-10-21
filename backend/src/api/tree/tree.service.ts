@@ -438,7 +438,6 @@ export class TreeService {
 		photoUrl: true,
 		gender: true,
 		birthDate: true,
-		deathDate: true,
 		spouseId: true,
 		fatherId: true,
 		motherId: true,
@@ -460,7 +459,6 @@ export class TreeService {
 			photoUrl: display?.photoUrl ?? null,
 			gender: display?.gender ?? null,
 			birthDate: display?.birthDate ?? null,
-			deathDate: m.profile?.deathDate ?? null,
 			linkId: m.linkId,
 			spouseId: m.profile?.spouseId ?? null,
 			motherId: m.profile?.motherId ?? null,
@@ -1135,7 +1133,7 @@ export class TreeService {
 			});
 			const deletableProfileIds = placeholders.map((p) => p.id);
 
-			// 3. Delete the tree itself — this cascades TreeMember / Invitation / AuditLog.
+			// 3. Delete the tree itself — this cascades TreeMember / AuditLog.
 			await tx.tree.delete({ where: { id: treeId } });
 
 			// 4. Clean up the orphaned placeholder profiles.

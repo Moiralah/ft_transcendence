@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { NotGuestGuard } from './not-guest.guard';
-import { ChangeEmailDto, ChangePasswordDto, DeleteAccountDto, LoginDto } from './dto/auth.dto';
+import { ChangeEmailDto, ChangePasswordDto, DeleteAccountDto, LoginDto, PasswordResetDto } from './dto/auth.dto';
 import { clearSessionCookie, withSessionCookie } from './session-cookie';
 
 @Controller(`auth`) // Base route path prefix: /auth
@@ -49,11 +49,23 @@ export class AuthController {
 		return this.auth.changeEmail(req.user.id, body?.currentPassword, body?.newEmail);
 	}
 
+	// Ends every session of the account, this one included: sign in again.
 	@Post('change-password')
 	@UseGuards(JwtAuthGuard, NotGuestGuard)
 	@HttpCode(200)
-	async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
-		return this.auth.changePassword(req.user.id, body?.currentPassword, body?.newPassword);
+	async changePassword(@Req() req, @Body() body: ChangePasswordDto, @Res({ passthrough: true }) res: Response) {
+		const result = await this.auth.changePassword(req.user.id, body?.currentPassword, body?.newPassword);
+		clearSessionCookie(res);
+		return result;
+	}
+
+	// After the reset-password page set a new password with Supabase: ends
+	// every app session of the account, like Change password.
+	@Post('password-reset')
+	@HttpCode(204)
+	async passwordReset(@Body() body: PasswordResetDto, @Res({ passthrough: true }) res: Response) {
+		await this.auth.endSessionsAfterReset(body.accessToken);
+		clearSessionCookie(res);
 	}
 
 	// The user deleting their own account (admins delete others via /users/:id).

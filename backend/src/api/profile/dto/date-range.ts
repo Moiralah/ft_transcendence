@@ -1,6 +1,6 @@
 import { ValidateBy, ValidationOptions } from 'class-validator';
 
-// Birth/death dates: no future dates, and nothing older than year 1000
+// Birth dates: no future dates, and nothing older than year 1000
 // (family trees can go back a long way). Without this, a date input
 // happily accepts 9999-12-31.
 export const MIN_PROFILE_DATE = '1000-01-01';

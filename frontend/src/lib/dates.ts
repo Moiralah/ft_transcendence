@@ -1,4 +1,4 @@
-// Bounds for birth/death date inputs, matching the backend check
+// Bounds for birth date inputs, matching the backend check
 // (backend/src/api/profile/dto/date-range.ts): year 1000 up to today.
 export const MIN_PROFILE_DATE = '1000-01-01';
 

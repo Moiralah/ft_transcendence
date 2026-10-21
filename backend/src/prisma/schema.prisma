@@ -43,7 +43,7 @@ enum UserRole {
 
 // ------------------- Site admins -------------------
 // The admin console accounts ("Sign in as staff"), kept apart from User: no
-// profile, trees, friends or invitations. The id is the Supabase login's UUID,
+// profile, trees or friends. The id is the Supabase login's UUID,
 // like User.id; one Supabase login is either an admin or a user, never both.
 // Admins are added and removed from the console (AdminsController), not by
 // changing a user's role. MFA is required (JwtStrategy).
@@ -140,7 +140,7 @@ model TreeMember {
   id        Int      @id @default(autoincrement())
   profileId Int?
   treeId    Int?
-  role      Role     // ADMIN, MODERATOR, MEMBER, JOINER, HOLDER
+  role      Role     // ADMIN, MEMBER, JOINER, HOLDER
   joinedAt  DateTime @default(now())
 
   //Link Profile
@@ -192,7 +192,6 @@ model Profile {
   lastName    String?
   gender      String?
   birthDate   DateTime? @db.Date
-  deathDate   DateTime? @db.Date
   bio         String?
   photoUrl    String?
   verified    Boolean  @default(false)
