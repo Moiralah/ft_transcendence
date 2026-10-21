@@ -92,6 +92,11 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 		if (user.twoFactorEnabled) {
 			return this.mfaChallenge(user.id);
 		}
+		// A moderator without MFA can't moderate (RolesGuard); this tells the
+		// frontend to land them on MFA setup instead of the dashboard.
+		if (user.role === 'MODERATOR') {
+			return { ...(await this.issueSession(user)), twoFactorSetupRequired: true };
+		}
 		return this.issueSession(user);
 	}
 
@@ -186,11 +191,14 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 
 	// Admins have no profile; their sessions carry role ADMIN, which is how
 	// JwtStrategy knows to look in the Admin table.
-	issueAdminSession(admin: { id: string; email: string }) {
-		return this.issueSession({ ...admin, profileId: null, role: 'ADMIN' });
+	issueAdminSession(admin: { id: string; email: string }, mfa = false) {
+		return this.issueSession({ ...admin, profileId: null, role: 'ADMIN' }, mfa);
 	}
 
-	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }) {
+	// mfa: this session passed a TOTP or recovery code (login-verify, or turning
+	// MFA on). JwtStrategy only lets moderation and the admin console through
+	// with it, so a session from before MFA was turned on stays out.
+	async issueSession(user: { id: string; email: string; profileId: number | null; role: string }, mfa = false) {
 		// The jti names this one session, so Logout can end it (RevokedToken).
 		const token = await this.jwt.signAsync(
 			{
@@ -198,6 +206,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 				email: user.email,
 				profileId: user.profileId,
 				role: user.role,
+				...(mfa && { mfa: true }),
 			},
 			{ jwtid: randomUUID() },
 		);

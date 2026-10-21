@@ -245,12 +245,23 @@ export class ProfileService {
 			throw new BadRequestException('need at least one criteria');
 		}
 
+		// Profiles aren't public: anyone can be found by name, but gender and
+		// dates only show for accepted friends. Filtering on them is limited to
+		// friends too, or which profiles come back would give the values away.
+		const friendships = await this.prisma.friendship.findMany({
+			where: { status: 'ACCEPTED', OR: [{ requesterId: userId }, { addresseeId: userId }] },
+			select: { requesterId: true, addresseeId: true },
+		});
+		const friendIds = new Set(friendships.map((f) => (f.requesterId === userId ? f.addresseeId : f.requesterId)));
+		const privateFilter = Boolean(birthDate?.trim() || gender?.trim());
+
 		const where: any = {};
 
 		where.user = {
 			is: {
 				id: {
 					not: userId,
+					...(privateFilter && { in: [...friendIds] }),
 				},
 			},
 		};
@@ -333,19 +344,24 @@ export class ProfileService {
 		]);
 
 		return {
-			data: profiles.map((profile) => ({
-				id: profile.id,
-				userId: profile.user?.id ?? null,
-				firstName: profile.firstName,
-				lastName: profile.lastName,
-				gender: profile.gender,
-				birthDate: profile.birthDate
-					? profile.birthDate.toISOString().split('T')[0]
-					: null,
-				deathDate: profile.deathDate
-					? profile.deathDate.toISOString().split('T')[0]
-					: null,
-			})),
+			data: profiles.map((profile) => {
+				const friend = Boolean(profile.user && friendIds.has(profile.user.id));
+				return {
+					id: profile.id,
+					userId: profile.user?.id ?? null,
+					firstName: profile.firstName,
+					lastName: profile.lastName,
+					// hidden: not a friend, so gender and dates are left out (null).
+					hidden: !friend,
+					gender: friend ? profile.gender : null,
+					birthDate: friend && profile.birthDate
+						? profile.birthDate.toISOString().split('T')[0]
+						: null,
+					deathDate: friend && profile.deathDate
+						? profile.deathDate.toISOString().split('T')[0]
+						: null,
+				};
+			}),
 
 			pagination: {
 				page: pg,

@@ -125,13 +125,13 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="kicker">my simple family tree — system overview · updated 2026-10-18</p>
+  <p class="kicker">my simple family tree — system overview · updated 2026-10-20</p>
   <h1>How the services talk to each other</h1>
   <p class="lede">
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. It also keeps one more direct line
     to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree, friends&apos; online status and live change notices. Everything else is
-    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code>, at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code> against the shared dev database, or <code>make local</code> against a local Supabase; both at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -184,7 +184,7 @@
       <rect x="480" y="46" width="230" height="112" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.5"/>
       <text x="502" y="76" class="box-label" fill="var(--supabase)">Supabase</text>
       <text x="502" y="94" class="box-sub" fill="var(--ink)">Auth (GoTrue) · Realtime · Storage</text>
-      <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 local · project.supabase.co</text>
+      <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 (make local) · project.supabase.co</text>
       <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
       <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 
@@ -201,7 +201,6 @@
         <text x="610" y="308">/trees</text>
         <text x="610" y="326">/friend</text>
         <text x="502" y="344">/feedback</text>
-        <text x="610" y="344">/public</text>
       </g>
       <text x="502" y="360" class="box-sub" fill="var(--sub)">mints its own app JWT</text>
       <text x="502" y="374" class="box-sub" fill="var(--ext)" font-style="italic">runs on solsys (home server)</text>
@@ -370,11 +369,11 @@
     </div>
     <div class="step">
       <div class="n">6</div>
-      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived MFA challenge token if MFA is on. A site admin without MFA gets a session that only reaches MFA setup and their own account until it&apos;s on (checked on every request), and can&apos;t turn it off. Flows back through the same WAF connection.<span class="tag">login only</span></p>
+      <p><strong>Backend → Browser</strong> — issues our own app JWT (with <code>role</code> baked in), or a short-lived MFA challenge token if MFA is on. A site admin without MFA gets a session that only reaches MFA setup and their own account until it&apos;s on (checked on every request), and can&apos;t turn it off. A moderator without MFA is sent to MFA setup at sign-in too; their member account works, but every moderation endpoint answers <code>403</code> until MFA is on (since 2026-10-20). Flows back through the same WAF connection.<span class="tag">login only</span></p>
     </div>
     <div class="step">
       <div class="n waf">7</div>
-      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, the admin console (<code>/api/admin</code>: stats and every tree for admins; the trees read-only for moderators), user management, MFA settings, feedback and profile photo uploads (the one <code>multipart/form-data</code> route, <code>POST /api/profile/:id/photo</code>) — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore. Programs outside the app use <code>/api/public/*</code> the same way, with an <code>X-API-Key</code> header instead of a JWT (Yiwei&apos;s public API, merged but not counted toward the modules).<span class="tag">ongoing</span></p>
+      <p><strong>Browser → WAF → Backend, every request after this</strong> — <code>Authorization: Bearer &lt;app JWT&gt;</code> for trees, profiles, friends, the admin console (<code>/admin</code> pages, admins only: stats and every tree) and the moderator console (<code>/moderator/users</code>, <code>/moderator/trees</code>, since 2026-10-20: the trees read-only), both on <code>/api/admin</code>, user management, MFA settings, feedback and profile photo uploads (the one <code>multipart/form-data</code> route, <code>POST /api/profile/:id/photo</code>) — same WAF-fronted path as step 3. Supabase Auth isn't in the loop at all anymore.<span class="tag">ongoing</span></p>
     </div>
     <div class="step">
       <div class="n opt">R</div>
@@ -437,7 +436,7 @@
     </div>
   </div>
 
-  <div class="callout">
+  <div class="callout ok">
     <div class="ic">⚠️</div>
     <div>
       <strong>Two Vaults, two modes.</strong> <strong>Production (solsys) runs server mode since 13 Oct</strong>:
@@ -463,7 +462,7 @@
     </div>
   </div>
 
-  <div class="callout">
+  <div class="callout ok">
     <div class="ic">⚠️</div>
     <div>
       <strong>Local dev dependency note (it bit us three times this project):</strong> when the backend runs in Docker and
@@ -505,7 +504,7 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
     </div>
   </div>
 
-  <div class="callout">
+  <div class="callout ok">
     <div class="ic">📡</div>
     <div>
       <strong>Realtime is a second direct path to Supabase (step R):</strong> the canvas&apos;s presence, friends&apos; online status and the live
@@ -562,17 +561,17 @@ backend log: [vault] loaded 6 secrets (since 13 Oct from secret/data/family-tree
     </div>
   </div>
 
-  <div class="callout">
-    <div class="ic">🚧</div>
+  <div class="callout ok">
+    <div class="ic">✅</div>
     <div>
-      <strong>Still open (as of 2026-10-15):</strong> the <code>spouse_id</code> unique-constraint crash in the
-      add-spouse flow (2026-09-25) is believed fixed but hasn&apos;t been re-tested on production. Product question for the
-      trees module: a tree MODERATOR may edit any member&apos;s profile in that tree, including a real user&apos;s own profile
-      (the canvas&apos;s existing behaviour, kept for now).
-      Resolved since this list was first written: <strong>Realtime</strong> on private per-tree channels, no more
+      <strong>All resolved (as of 2026-10-20):</strong> <strong>tree roles</strong> are admin / member / joiner (the per-tree
+      MODERATOR role was removed on 2026-10-12, <code>e9bed75</code>); a tree ADMIN may edit anyone in that tree,
+      including a real user&apos;s own profile, by design; the <strong><code>spouse_id</code> crash</strong> in the add-spouse flow
+      (2026-09-25): a person gets at most one spouse, checked on production 2026-10-20 (no add-spouse button once a
+      spouse exists); <strong>Realtime</strong> on private per-tree channels, no more
       audit feed for everyone (2026-10-14, <code>da7cd9c</code>); <strong>photo upload</strong> needs edit permission on the
       profile (<code>40bef86</code>) and gets through the WAF (<code>fe8465c</code>), both 2026-10-14; <strong>profile permissions</strong>: <code>PATCH /api/profile/:id</code>
-      now needs your own profile, ADMIN/MODERATOR in that tree, or (as MEMBER) your claimed node (403 otherwise, 404 for an
+      now needs your own profile, ADMIN in that tree, or (as MEMBER) your claimed node (403 otherwise, 404 for an
       unknown id), and <code>DELETE</code>, <code>POST</code>, <code>GET /</code>, <code>GET /:id</code> are site-admin only
       (2026-10-10, <code>56df851</code>); the <strong>dashboard hydration error</strong> for admins and moderators is gone
       (role read after mount, same commit); a fresh production backup was taken (<code>20261004_174807</code>);

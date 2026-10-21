@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, homeFor, isApiUnreachable, isSuspended, isTwoFactorRequired, isWrongPortal, portalPath, storeSession, takePortal, wrongPortalPath } from '@/lib/auth';
+import { ADMIN_MFA_SETUP_PATH, exchangeSupabaseToken, homeFor, isApiUnreachable, isSuspended, isTwoFactorRequired, isWrongPortal, portalPath, storeSession, takePortal, wrongPortalPath } from '@/lib/auth';
 import { TwoFactorPrompt } from '@/components/twoFactorPrompt';
 import { SkipLink } from '@/components/SkipLink';
 import { Navbar } from '@/components/navbar';
@@ -39,7 +39,7 @@ export default function AuthCallback() {
 					return;
 				}
 				storeSession(result);
-				router.replace(homeFor(result.user.role));
+				router.replace(result.twoFactorSetupRequired ? ADMIN_MFA_SETUP_PATH : homeFor(result.user.role));
 			} catch (err) {
 				// Say why on the login page instead of a generic "BackendError".
 				router.replace(isSuspended(err) ? `${back}?error=suspended`

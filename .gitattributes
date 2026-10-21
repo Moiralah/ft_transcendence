@@ -1,0 +1,16 @@
+# Line endings: every text file is stored and checked out with LF (21 Oct 2026).
+# Everything runs in Linux containers, and a mix of CRLF (Windows editors) and LF
+# made whole files show as changed when one editor saved over another's.
+# Windows editors handle LF fine; git converts nothing else.
+* text=auto eol=lf
+
+# Never touch these: binary files.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

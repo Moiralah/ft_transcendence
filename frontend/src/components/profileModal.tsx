@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { Button } from './button';
-import { getToken } from '@/lib/auth';
+import { getSessionId, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 import { useDialog } from '@/hooks/useDialog';
@@ -73,7 +73,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 		return;
 	}
 
-	const token = getToken();
+	const token = getSessionId();
 	if (!token) return;
 
 	if (!formData.id) {
@@ -86,11 +86,10 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
 		const form = new FormData();
 		form.append('file', file);
 
-		const res = await fetch(
+		const res = await apiFetch(
 		`${process.env.NEXT_PUBLIC_API_URL}/profile/${formData.id}/photo`,
 		{
 			method: 'POST',
-			headers: { Authorization: `Bearer ${token}` },   // no Content-Type
 			body: form,
 		},
 		);
@@ -185,7 +184,7 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
     setErrors([]);
 
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -195,11 +194,10 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/profile/${formData.id}`, {
+      const res = await apiFetch(`${API_URL}/profile/${formData.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         // Only the fields UpdateProfileDto accepts: the backend rejects any other field.
         body: JSON.stringify({

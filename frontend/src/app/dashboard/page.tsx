@@ -14,7 +14,7 @@ import { Button } from '../../components/button';
 import { useDialog } from '../../hooks/useDialog';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken, homeFor, logOut, loginPathAfter401, updateRole } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, homeFor, logOut, loginPathAfter401, updateRole, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar } from '@/components/Avatar';
 import { useAuthGate } from '@/hooks/useAuthGate';
@@ -28,8 +28,8 @@ const displayName = (u: FriendUser) =>
 
 export default function TreePage() {
   const router = useRouter();
-  //const token = getToken();
-  // Read after the first render: the server has no sessionStorage, so reading
+  //const token = getSessionId();
+  // Read after the first render: the server has no localStorage, so reading
   // it while rendering made the server and browser HTML differ for admins and
   // moderators (the Admin Panel button) and React threw a hydration error.
 //  const [role, setRole] = useState<string | null>(null);
@@ -53,6 +53,7 @@ export default function TreePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const [profileFirstName, setProfileFirstName] = useState('');
   const [profileLastName, setProfileLastName] = useState('');
@@ -121,11 +122,10 @@ useEffect(() => {
   const fetchMyProfile = async (authToken: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${apiUrl}/profile/me`, {
+      const res = await apiFetch(`${apiUrl}/profile/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
         },
       });
       if (!res.ok) {
@@ -143,15 +143,14 @@ useEffect(() => {
       }
     } catch (err) {
       console.error('Error fetching current user:', err);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
   const fetchMyTrees = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -177,15 +176,9 @@ useEffect(() => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       const [inRes, outRes] = await Promise.all([
-        fetch(`${apiUrl}/friend/requests/in`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+        apiFetch(`${apiUrl}/friend/requests/in`, {
         }),
-        fetch(`${apiUrl}/friend/requests/out`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          }
+        apiFetch(`${apiUrl}/friend/requests/out`, {
         })
       ]);
 
@@ -210,12 +203,9 @@ useEffect(() => {
 
   const fetchFriends = async (authToken: string) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend`,
         {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
         }
       );
 
@@ -235,11 +225,10 @@ useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
 
     try {
-      const res = await fetch(`${apiUrl}/trees/create`, {
+      const res = await apiFetch(`${apiUrl}/trees/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: newTreeName,
@@ -271,11 +260,10 @@ useEffect(() => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: joinName, code: joinCode }),
       });
@@ -326,13 +314,10 @@ useEffect(() => {
       params.set('page', String(page));
       params.set('limit', '10');
 
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/profile/search?${params.toString()}`,
         {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         }
       );
 
@@ -375,12 +360,11 @@ useEffect(() => {
     }
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ userIds }),
@@ -415,13 +399,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -449,13 +430,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -484,13 +462,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -520,13 +495,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -556,13 +528,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          }
         },
       );
 
@@ -655,6 +624,7 @@ useEffect(() => {
             <div className="flex flex-col items-center gap-4">
               <Avatar
                 photoUrl={myProfile?.photoUrl}
+                loading={profileLoading}
                 size={160}
                 className="outline outline-4 outline-offset-2 outline-indigo-600"
               />
@@ -680,7 +650,7 @@ useEffect(() => {
                   Settings
                 </Button>
                 {(role === 'ADMIN' || role === 'MODERATOR') && (
-                  <Button href="/admin/users" variant="secondary">
+                  <Button href={role === 'ADMIN' ? '/admin/users' : '/moderator/users'} variant="secondary">
                     {role === 'ADMIN' ? 'Admin Panel' : 'Moderation'}
                   </Button>
                 )}
@@ -718,11 +688,11 @@ useEffect(() => {
 				>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block h-2 w-2 rounded-full ${
+                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${
                       ids.has(friend.user.profileId) ? "bg-green-500" : "bg-gray-300"
                     }`}
                   />
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-slate-900 min-w-0 [overflow-wrap:anywhere] break-words">
                 {displayName(friend.user)}
                   </p>
                 </div>
@@ -1023,8 +993,13 @@ useEffect(() => {
                 <Link
                   key={tree.id}
                   href={`/canvas/${tree.slug}`}
+<<<<<<< HEAD
 				          onClick={(e) => {
                       if (!getToken()) {
+=======
+				   onClick={(e) => {
+                      if (!getSessionId()) {
+>>>>>>> 25445b00a32b5838af912d04526a1f5e8fff77bd
                       e.preventDefault();
                       router.replace('/login');
                     }
@@ -1148,10 +1123,10 @@ useEffect(() => {
                           .join(' ')}
                       </div>
                       <div className="text-sm text-slate-700 mt-1">
-                        Gender: {profile.gender || 'N/A'}
+                        Gender: {profile.hidden ? 'Private' : profile.gender || 'N/A'}
                       </div>
                       <div className="text-sm text-slate-700 mt-1">
-                        Birth Date: {profile.birthDate || 'N/A'}
+                        Birth Date: {profile.hidden ? 'Private' : profile.birthDate || 'N/A'}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

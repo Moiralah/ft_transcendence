@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken, getRole, clearSession } from '@/lib/auth';
+import { getSessionId, getRole, clearSession } from '@/lib/auth';
 
 export type AuthDecision =
   | { action: 'allow' }
@@ -36,7 +36,7 @@ export function useAuthGate(
   });
 
   useEffect(() => {
-    const token = getToken();
+    const token = getSessionId();
     const role = getRole();
     const decision = decide(token, role);
 

@@ -4,6 +4,7 @@ import {
 	UseInterceptors, UploadedFile
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
+import { TreeService } from '../tree/tree.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotGuestGuard } from '../auth/not-guest.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -30,7 +31,10 @@ interface AuthenticatedRequest {
 
 @Controller(`profile`)
 export class ProfileController {
-	constructor(private readonly profile: ProfileService) { }
+	constructor(
+		private readonly profile: ProfileService,
+		private readonly trees: TreeService,
+	) { }
 
 	@Get('me')
 	@UseGuards(JwtAuthGuard)
@@ -103,7 +107,10 @@ export class ProfileController {
 		}
 		await this.profile.assertCanEdit(req.user.id, req.user.profileId ?? null, profileId);
 		await this.profile.assertParentsAllowed(profileId, body.motherId, body.fatherId);
-		return this.profile.update(profileId, body);
+		const updated = await this.profile.update(profileId, body);
+		// Live update for the other members looking at this person's trees.
+		if (req.user.profileId) await this.trees.logProfileUpdate(req.user.profileId, profileId, 'details');
+		return updated;
 	}
 
 	@Delete(':id')
@@ -124,6 +131,8 @@ export class ProfileController {
 		@UploadedFile() file: Express.Multer.File,
 	) {
 		await this.profile.assertCanEdit(req.user.id, req.user.profileId ?? null, id);
-		return this.profile.uploadPhoto(id, file);
+		const result = await this.profile.uploadPhoto(id, file);
+		if (req.user.profileId) await this.trees.logProfileUpdate(req.user.profileId, id, 'photo');
+		return result;
 	}
 }

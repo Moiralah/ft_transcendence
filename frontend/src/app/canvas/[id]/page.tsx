@@ -12,7 +12,7 @@ import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
-import { clearSession, getRole, getToken, isGuest, loginPathAfter401 } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, isGuest, loginPathAfter401, apiFetch } from '@/lib/auth';
 import { useDialog } from '@/hooks/useDialog';
 import { useAuthGate } from '@/hooks/useAuthGate';
 import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
@@ -52,7 +52,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const slug = params.id as unknown as string;
-  //const token = getToken();
+  //const token = getSessionId();
   const isEditingRef = useRef(false);
 
   const [rootMember, setRootMember] = useState<any>();
@@ -61,6 +61,7 @@ export default function Content() {
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
+  const [joinerHintDismissed, setJoinerHintDismissed] = useState(false);
 
   type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
@@ -175,10 +176,7 @@ export default function Content() {
 
   const fetchTree = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -207,10 +205,7 @@ export default function Content() {
 
   const fetchTreeMember = async (authToken: string, treeId: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -237,10 +232,7 @@ export default function Content() {
 
     const fetchMyProfile = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -357,7 +349,8 @@ export default function Content() {
       el.removeEventListener('gesturestart', stopGesture);
       el.removeEventListener('gesturechange', stopGesture);
     };
-  }, []);
+    // The workspace only mounts once the auth gate is ready, so re-run then.
+  }, [status]);
 
   const [treeMemberModal, setTreeMemberModal] = useState(false);
   const memberDialogRef = useDialog<HTMLDivElement>(() => setTreeMemberModal(false), treeMemberModal);
@@ -377,17 +370,16 @@ export default function Content() {
     setEditTreeName(false);
 
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: currentName }),
       });
@@ -449,17 +441,16 @@ export default function Content() {
 
   const handlePending = async () => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/pending`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/pending`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       // Only tree ADMIN/MEMBER may see pending claims; a JOINER gets 403.
@@ -484,17 +475,16 @@ export default function Content() {
 
   const handleApproveClaim = async (holderMemberId: number) => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/approve`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/approve`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -512,17 +502,16 @@ export default function Content() {
 
   const handleApproveUnclaim = async (holderMemberId: number) => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/unclaim`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/unclaim`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -563,18 +552,29 @@ export default function Content() {
   );
 
   const handleKickUser = async (member: any) => {
+
+    const memberName =
+      `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'this member';
+
+    const ok = confirm(
+      `Kick ${memberName} out of the tree?\n\n` +
+      `This will:\n` +
+      `  • remove them from being a member of this tree\n` +
+      `  • release any profile they had claimed in this tree \n\n`
+    );
+    if (!ok) return;
+
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/members/${member.profileId}`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/members/${member.profileId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -594,6 +594,9 @@ export default function Content() {
     }
     setTreeMemberModal(false);
   }
+
+	const hasPendingClaim = treeType === 'JOINER' && treeView.linkId != null;
+	const showJoinerHint = treeType === 'JOINER' && !hasPendingClaim && !joinerHintDismissed;
 
   // People who joined the tree; HOLDER rows are the drawn placeholder nodes.
   const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
@@ -682,6 +685,31 @@ export default function Content() {
             </button>
           </div>
         </div>
+
+		{/* Joiner hint */}
+		{showJoinerHint && (
+		<div className="w-60 sm:w-80 rounded-xl border border-blue-200 bg-blue-50/95 backdrop-blur-sm shadow-sm p-4 m-5 mb-0">
+			<div className="flex items-start gap-3">
+			<span aria-hidden="true" className="text-xl leading-none mt-0.5">💡</span>
+			<div className="flex-1 min-w-0">
+				<p className="text-sm font-semibold text-blue-900 mb-1">
+				You're viewing as a Joiner
+				</p>
+				<p className="text-sm text-blue-800 [overflow-wrap:anywhere]">
+				Claim one of the people in the tree and wait for owner approval to start editing the family tree.
+				</p>
+			</div>
+			<button
+				type="button"
+				onClick={() => setJoinerHintDismissed(true)}
+				aria-label="Dismiss hint"
+				className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50/95 text-slate-600 hover:text-slate-900 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2"
+			>
+				<span aria-hidden="true">×</span>
+			</button>
+			</div>
+		</div>
+		)}
 
         {/* approval notification */}
 		    {pending && pending.length > 0 && (

@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { TwoFactorService } from './two-factor.service';
 import { JwtAuthGuard } from '../jwt-auth.guard';
 import { NotGuestGuard } from '../not-guest.guard';
 import { TwoFactorCodeDto, TwoFactorLoginVerifyDto } from './dto/two-factor.dto';
+import { withSessionCookie } from '../session-cookie';
 
 interface AuthenticatedRequest {
 	user: { id: string; email: string; role: string };
@@ -29,8 +31,9 @@ export class TwoFactorController {
 
 	@Post('enable')
 	@UseGuards(JwtAuthGuard, NotGuestGuard)
-	enable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto) {
-		return this.twoFactor.enable(req.user.id, body.token, req.user.role === 'ADMIN');
+	async enable(@Req() req: AuthenticatedRequest, @Body() body: TwoFactorCodeDto, @Res({ passthrough: true }) res: Response) {
+		// A fresh MFA-verified session replaces this one (see TwoFactorService.enable).
+		return withSessionCookie(res, await this.twoFactor.enable(req.user.id, body.token, req.user.role === 'ADMIN'));
 	}
 
 	@Post('disable')
@@ -43,7 +46,7 @@ export class TwoFactorController {
 	// token at this point, which JwtStrategy deliberately rejects everywhere
 	// else. The challenge token itself is verified inside the service.
 	@Post('login-verify')
-	loginVerify(@Body() body: TwoFactorLoginVerifyDto) {
-		return this.twoFactor.verifyLogin(body.challengeToken, body.code);
+	async loginVerify(@Body() body: TwoFactorLoginVerifyDto, @Res({ passthrough: true }) res: Response) {
+		return withSessionCookie(res, await this.twoFactor.verifyLogin(body.challengeToken, body.code));
 	}
 }

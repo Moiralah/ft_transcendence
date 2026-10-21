@@ -189,7 +189,6 @@ model Friendship {
   respondedAt DateTime?
 
   @@unique([requesterId, addresseeId])
-  @@index([addresseeId, status])
 }
 
 
