@@ -22,8 +22,10 @@ Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
 ## 🚀 Instructions
 
 **Prerequisites:** Docker with Docker Compose **2.24 or newer**, `make`,
-`openssl` (for the local self-signed certificates). Node is not needed on the
-host.
+`curl` and `python3` (used by `scripts/vault-init.sh`), `openssl` (for the
+local self-signed certificates), and the
+[Supabase CLI](https://supabase.com/docs/guides/cli) only for `make local`.
+Node is not needed on the host.
 
 1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
    comments in that file say where each value comes from), then run `make`.
@@ -44,7 +46,8 @@ host.
 same settings as your last `make up` or `make local`),
 `make local` (run against a local Supabase, below), `make clean` (stop and
 delete the containers' volumes), `make fclean` (also the built images) and
-`make re` (`fclean`, then `make up`). None of them touch the database.
+`make re` (`fclean`, then `make up`). None of them touch the shared
+database; `make local` pushes the schema to your local Supabase only.
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
 set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
@@ -55,7 +58,9 @@ secrets in memory only. It runs on the
 **production Supabase** (the real users' data: test on your own test trees and
 accounts), with its own JWT secret and no email password. One-time setup (your SSH
 key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
-together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html).
+together: [diagram/vault-remote-env.html](diagram/vault-remote-env.html) and
+[diagram/local-dev.html](diagram/local-dev.html). Evaluators who want to look
+inside the production Vault: [vault/EVALUATOR.md](vault/EVALUATOR.md).
 
 **Production** runs on solsys (the Vault server, HashiCorp Vault), a home
 server, behind a GCP machine that holds the public IP: browser → GCP nginx
@@ -73,7 +78,7 @@ laptop with SSH to solsys) pulls `branchsaurus` there and runs
 | **Moira** | huidris | Product Owner, Technical Lead | backend, trees as organizations, real-time, profiles |
 | **Tiara** | tching | Project Manager / Scrum Master | auth (Google, MFA), site roles and admin panel, security (WAF + Vault), deployment |
 | **Jon** | lechan | Technical Lead / Architect | frontend, design system, tree canvas, browsers, accessibility |
-| **Yiwei** | yiwei | Developer | search, friends and online status, user management and auth (with Moira and Jon), public API |
+| **Yiwei** | yiwei | Developer | search, friends and online status, user management and auth (with Moira and Jon) |
 
 | Role | Who | Responsibilities |
 |------|-----|------------------|
@@ -112,10 +117,10 @@ laptop with SSH to solsys) pulls `branchsaurus` there and runs
 | Backend | **NestJS 10**, TypeScript 5 | Modules, guards and DTO validation out of the box: every route gets the same role and input checks, which a site with personal data needs |
 | Database | **PostgreSQL** hosted by **Supabase** | Relational data (people, parents, spouses, memberships) fits SQL; Supabase gives managed Postgres plus auth, storage and realtime from one project |
 | ORM | **Prisma 7** (`PrismaPg` driver adapter) | Typed queries generated from one schema file, and transactions for changes that touch several people at once |
-| Auth | Supabase Auth (email/password, Google OAuth 2.0) + our own JWT; our own TOTP **MFA** (`otplib`, bcrypt-hashed recovery codes) | Supabase stores and hashes passwords and runs the Google flow, so we never handle raw credentials. Our JWT carries the site role, read again from the database on every request, so a suspension or role change applies at once. MFA is our own so the challenge works the same on both login paths, and site admins can be required to have it |
+| Auth | Supabase Auth (email/password, Google OAuth 2.0) + our own JWT; our own TOTP **MFA** (`otplib`, bcrypt-hashed recovery codes) | Supabase stores and hashes passwords and runs the Google flow, so we never handle raw credentials. Our JWT carries the site role, read again from the database on every request, so a suspension or role change applies at once. MFA is our own so the challenge works the same on both login paths, and site admins and moderators can be required to have it. The session token lives in an HttpOnly, Secure, SameSite=Strict cookie (page JavaScript can't read it), lasts an hour, and Logout revokes it on the server |
 | Real-time | Supabase Realtime (broadcast + presence) over WebSocket | Already part of the Supabase project: private per-tree channels for live changes and who is on a tree, one site-wide channel for friends' online status, with no extra server to run |
 | Storage | Supabase Storage (`avatars` bucket) for profile photos | Photos stay out of the database and the app server; the backend checks type and size (max 1 MB) before upload |
-| Security | ModSecurity + OWASP Core Rule Set (WAF), **HashiCorp Vault** (secrets), AppRole auth | The site is public and holds personal data: the WAF blocks common attacks before they reach either app, and Vault keeps production secrets out of `.env` files, with an audit log of every read |
+| Security | ModSecurity + OWASP Core Rule Set (WAF), **HashiCorp Vault** (secrets), AppRole auth, a strict Content Security Policy (per-request script nonce) | The site is public and holds personal data: the WAF blocks common attacks before they reach either app, Vault keeps production secrets out of `.env` files, with an audit log of every read, and the CSP only runs the scripts the page itself serves |
 | Email | Gmail SMTP via `nodemailer` (account notices, feedback form) | Free and reliable for the small volume we send: role changes, suspensions, account deletion, feedback |
 | Deployment | Docker / Docker Compose (Node 22 Alpine images), `make`; GCP nginx proxy + WireGuard to solsys (the Vault server, HashiCorp Vault) | One command starts the whole stack the same way on every machine; the GCP proxy gives a public IP and HTTPS while the app runs on our own server |
 
@@ -127,11 +132,15 @@ Prisma schema: [backend/src/prisma/schema.prisma](backend/src/prisma/schema.pris
 
 | Model | What it holds | Key relations |
 |-------|---------------|---------------|
-| `User` | site account: username, email, site `role` (ADMIN / MODERATOR / USER / GUEST), `suspended`, MFA fields | one `Profile` (the person who is you); friendships; invitations sent |
-| `RecoveryCode` | bcrypt-hashed MFA recovery codes | → `User` (cascade) |
+| `User` | site account: username, email, site `role` (MODERATOR / USER), `suspended`, MFA fields | one `Profile` (the person who is you); friendships; invitations sent |
+| `Admin` | site admin account ("Sign in as staff"), kept apart from `User`: no profile, trees or friends | added by another admin; recovery codes |
+| `Guest` | one "Try as guest" visitor: random tag, last seen | its own `Profile` (and demo tree) |
+| `RevokedToken` | sessions ended with Logout, by token id, until they would have expired | — |
+| `SiteSettings` | one row: whether "Try as guest" is on | — |
+| `RecoveryCode` | bcrypt-hashed MFA recovery codes | → `User` or `Admin` (cascade) |
 | `Tree` | a family tree: name, slug, join `code`, `isPublic` | owner → `Profile`; root → `TreeMember` |
 | `TreeMember` | a person's place in a tree: tree `role` (ADMIN / MEMBER / JOINER / HOLDER), claim status | → `Tree`, → `Profile` |
-| `Profile` | a person: names, gender, birth/death dates, photo | `mother`, `father`, `spouse` (self-relations); optional `User` |
+| `Profile` | a person: names, gender, birth date, bio, photo | `mother`, `father`, `spouse` (self-relations); optional `User` |
 | `Friendship` | friend request and its status | requester / addressee → `User` |
 | `Invitation` | invitation to a tree with a role | → `Tree`, inviter → `User` |
 | `Event` | life events on a person | → `Profile` |
@@ -150,15 +159,17 @@ touches the data.
 | Sign up / log in with email and password | `/signup`, `/login` | Moira, Jon, Yiwei, Tiara |
 | Forgot / reset password | `/forgot-password`, `/reset-password` | Tiara |
 | Log in with Google (OAuth 2.0) | `/login` → `/consent` | Tiara |
-| Multi-factor authentication (MFA): QR enrollment, 8 recovery codes, login challenge; required for site admins | `/settings` | Tiara |
+| Multi-factor authentication (MFA): QR enrollment, 8 recovery codes, login challenge; required for site admins and moderators | `/settings` | Tiara |
+| Try as guest: each click gets a fresh guest with its own demo tree (30 an hour, removed after 15 minutes idle; admins can turn it off) | `/guest` | Tiara |
 | Settings: change password, change email, delete my account (goodbye email) | `/settings` | Tiara |
 | Dashboard: my trees, create a tree, join with a code, delete / leave a tree | `/dashboard` | Jon, Moira |
 | Profile: edit, photo upload (JPEG/PNG/WebP/GIF, max 1 MB, checked by content) | dashboard, canvas | Moira, Jon, Yiwei, Tiara |
 | Tree canvas: draw the family, add parents / children / spouse, claim yourself, approve claims, remove a member | `/canvas/[id]` | Jon, Moira |
 | Who is in the tree right now (presence) and live notifications of changes | canvas | Moira, Tiara |
-| Search people with filters, sorting and pages | dashboard | Yiwei |
+| Search people by first or last name, with filters, sorting and pages (gender and birth date only shown to friends) | dashboard | Yiwei |
 | Friends: send / accept / reject / cancel / unfriend, list with online status | dashboard | Yiwei |
-| Admin panel: list users, change site roles, suspend, delete (with an email to the user) | `/admin/users` | Tiara |
+| Admin console: users (change site roles, suspend, delete, with an email to the user), every tree, admin accounts, guest access on/off | `/admin` (sign in at `/staff`) | Tiara |
+| Moderator console: users (suspend) and a read-only view of every tree; needs MFA | `/moderator` | Tiara |
 | Feedback form, Privacy Policy, Terms of Service | `/feedback`, `/privacy`, `/terms` | Tiara |
 | WAF in front of both apps, secrets from Vault | `docker-compose.yml`, `waf/`, `vault/` | Tiara |
 
@@ -178,9 +189,9 @@ listed after the table.
 | 4 | Custom design system, ≥10 reusable components | Minor | 1 | Jon | palette, typography, icons; Button, Navbar, Footer, Banner, TreeBanner, ModalBanner, Typography, Avatar, PresenceFacepile, SkipLink |
 | 5 | Support for additional browsers | Minor | 1 | Jon | Firefox, Safari, Edge (see [Browsers](#-browser-support)) |
 | 6 | Remote authentication with OAuth 2.0 (Google) | Minor | 1 | Tiara | Google sign-in through Supabase, checked end to end on production |
-| 7 | Two-factor authentication (2FA), as MFA | Minor | 1 | Tiara | TOTP, QR enrollment, 8 bcrypt-hashed recovery codes, login challenge; site admins must have it |
-| 8 | Advanced search (filters, sorting, pagination) | Minor | 1 | Yiwei | `GET /api/profile/search`: name, birth date, gender; `sortBy`, `order`; `page`, `limit` with the total |
-| 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin panel, suspend |
+| 7 | Two-factor authentication (2FA), as MFA | Minor | 1 | Tiara | TOTP, QR enrollment, 8 bcrypt-hashed recovery codes, login challenge; site admins and moderators must have it |
+| 8 | Advanced search (filters, sorting, pagination) | Minor | 1 | Yiwei | `GET /api/profile/search`: first or last name, birth date, gender (those two for friends only); `sortBy`, `order`; `page`, `limit` with the total |
+| 9 | Advanced permissions system | Major | 2 | Tiara | site roles ADMIN / MODERATOR / USER, `RolesGuard`, admin and moderator consoles, suspend |
 | 10 | Organization system (trees as organizations) | Major | 2 | Moira (UI: Jon) | create, edit, delete a tree; join by code; remove a member; leave; roles inside a tree |
 | 11 | Cybersecurity: WAF + HashiCorp Vault | Major | 2 | Tiara | ModSecurity + OWASP CRS in front of both apps; Vault in server mode for the secrets |
 | 12 | Accessibility, WCAG 2.1 AA | Major | 2 | Jon | canvas usable by keyboard, real dialogs (focus trap, Escape, focus returns), skip link, landmarks, labelled forms, a title per page; axe 0 violations, Lighthouse accessibility 100 |
@@ -205,8 +216,10 @@ listed after the table.
   sign-in removes that step. The tree holds living people's birth dates, so
   accounts get a second factor. MFA is our own TOTP (not Supabase's built-in
   MFA), so we control enrollment, recovery codes and the challenge on both
-  login paths (password and Google). Site admins can reach every account, so
-  they must have MFA: until it's on, an admin's session only reaches MFA setup.
+  login paths (password and Google). Site admins and moderators can act on
+  other people's accounts, so they must have MFA: until it's on, an admin's
+  session only reaches MFA setup, and a moderator lands on Settings instead of
+  the moderator console.
 - **Advanced search (8).** Finding a relative across a large tree needs
   filters and pages, not a scroll.
 - **Advanced permissions (9), Major.** A site with personal data needs people
@@ -253,11 +266,10 @@ listed after the table.
 
 ### Built but not claimed
 
-| Module | What exists | What is missing for the module |
-|--------|-------------|-------------------------------|
-| Public API (Major) | `X-API-Key` guard, rate limit (60 a minute), Swagger at `/docs`, GET / POST / PUT on public trees (Yiwei) | 4 endpoints, not the 5 the subject asks for, and no DELETE |
-
-SSR and the user activity analytics dashboard were dropped on 10 Oct.
+A public API (Yiwei: `X-API-Key` guard, rate limit, Swagger) had 4 endpoints,
+not the 5 the subject asks for, and no DELETE, so it was not claimed and was
+removed from the code on 18 Oct. SSR and the user activity analytics dashboard
+were dropped on 10 Oct.
 
 ---
 
@@ -292,7 +304,7 @@ Differences we found:
 ### Jon (lechan)
 - Frontend framework (Next.js) and the design system components.
 - The tree canvas: nodes, connector lines, spouses; Delete / Leave Tree
-  buttons; alive / deceased toggle.
+  buttons.
 - Browser testing; real-time collaboration on the canvas (with Moira).
 - Accessibility (WCAG 2.1 AA): the canvas by keyboard, dialogs with focus
   handling, skip link, landmarks, labels, page titles; the axe and Lighthouse
@@ -303,10 +315,11 @@ Differences we found:
 - Friends: requests, current friends, online status on the dashboard.
 - Standard user management and auth, with Moira and Jon: sign up / log in,
   profile edit and photos.
-- Public API (built, not claimed).
+- Public API (built, not claimed, removed on 18 Oct).
 
 ### Tiara (tching)
-- Google OAuth, MFA, site roles with the admin panel and suspension.
+- Google OAuth, MFA, site roles with the admin and moderator consoles and
+  suspension; Try as guest; the session cookie and the CSP.
 - Notifications (with Moira): private per-tree realtime channels.
 - Cybersecurity: WAF (ModSecurity + OWASP CRS) and HashiCorp Vault, in
   server mode on solsys with per-person logins through SSH tunnels.
@@ -349,14 +362,17 @@ were read, tested and often rewritten before being committed.
 ## 🧪 Running Supabase Locally
 
 For testing/schema changes without touching the shared dev Supabase
-project. All of this is optional — the shared `.env` values still work
-fine if you don't need this.
+project. All of this is optional: `make up` stays on the shared project.
 
-**Shortcut:** `make local` runs `supabase start` if it isn't already, reads
-its keys automatically, and brings the whole stack (`make up`) up pointed at it — handles the `host.docker.internal`
-override and key copy-pasting below for you. The steps below are what that
-script is actually doing, useful if something goes wrong or you want to do
-it by hand.
+**Use `make local`.** It runs `supabase start` if it isn't already, reads
+its keys automatically, and brings the whole stack up (`make stack`, what
+`make up` runs) pointed at it, then pushes the schema and turns on RLS. It
+handles the `host.docker.internal` override and key copy-pasting below for
+you, and writes `local` to `.stack-mode`, so later `make backend` /
+`make frontend` stay on local Supabase. The secrets it doesn't take from
+local Supabase (`JWT_SECRET`, `SMTP_PASS`) come from Vault when `VAULT_USER`
+is set, otherwise from `.env`. The steps below are what that script is
+actually doing, useful if something goes wrong or you want to do it by hand.
 
 ### 1. Start it
 Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) and
@@ -446,8 +462,10 @@ Google sign-in locally without touching the shared project:
    ```
 
 ### Going back to the shared DB
-Restore your original `.env` values and you're back on the shared project
-— nothing about local Supabase touches it.
+Run `make up`: it writes `shared` to `.stack-mode` and takes the shared
+project's values again (from Vault, or from `.env` if you edited it by hand
+above: restore your original values first). Nothing about local Supabase
+touches the shared project.
 
 ---
 
@@ -485,7 +503,8 @@ or they answer `502`. `make up`, `make backend`, `make frontend` and
 `make up` also starts a HashiCorp Vault (dev mode) and runs
 `scripts/vault-init.sh`, which:
 1. Writes `JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` into Vault's KV v2
+   `DATABASE_URL`/`DIRECT_URL`, `SUPABASE_AUTH_URL` and `SMTP_PASS` (optional:
+   without it the feedback form answers 503) into Vault's KV v2
    store at `secret/data/family-tree/backend`. Each value is taken from the
    environment when it is set there (`make up` with `VAULT_USER` set gets them
    from the solsys Vault; `local-up.sh` sets the local Supabase ones), otherwise from
@@ -515,7 +534,7 @@ calls out — a real deployment needs a persistent storage backend (file or
 Raft), TLS, and proper unsealing instead of a baked-in root token.
 
 **To verify it yourself**: `docker logs familytree-backend-1 | grep vault`
-should show `[vault] loaded 5 secrets from secret/data/family-tree/backend`.
+should show `[vault] loaded 6 secrets from secret/data/family-tree/backend`.
 If it instead says "VAULT_ADDR/VAULT_ROLE_ID/VAULT_SECRET_ID not set",
 `backend` was started without going through `make up`/`vault-init.sh`.
 
@@ -553,24 +572,27 @@ server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 - `app/settings` – MFA, change password, change email, delete account
   (old `/settings/2fa` links redirect here)
 - `app/staff` – "Sign in as staff": the admin sign-in, email and password only, no sign-up
-- `app/guest` – Try as Guest: signs in on the shared demo account
+- `app/guest` – Try as Guest: a fresh guest with its own demo tree on every click
 - `app/admin` – the admin console: overview, users (role changes, suspend, delete), every tree
-  (view, delete); moderators get users and a read-only view of every tree
+  (view, delete), admin accounts (add, remove), guest access on/off
+- `app/moderator` – the moderator console (MFA required): users (suspend) and a
+  read-only view of every tree
 - `app/feedback`, `app/privacy`, `app/terms`
 - `components/` – the design system (`Button`, `Navbar`, `Footer`, `Banner`,
   `TreeBanner`, `ModalBanner`, `Typography`, `Avatar`, `PresenceFacepile`,
   `SkipLink`) and the canvas pieces (`treeNode`, `treeBranch`, `profileModal`, …)
 
 ### Backend (NestJS, `backend/src`, every route under `/api`)
-- `api/auth` – Supabase login + our JWT, global `RolesGuard`, account changes and deletion
+- `api/auth` – Supabase login + our JWT in an HttpOnly session cookie, logout (revokes the
+  session), Try as guest, global `RolesGuard`, account changes and deletion
 - `api/auth/two-factor` – MFA (TOTP) setup / enable / disable / login-verify
-- `api/admin` – console stats and every tree: list and view (admin and moderator), delete (admin)
+- `api/admin` – console stats and every tree: list and view (admin and moderator), delete (admin);
+  admin accounts and the guest-access switch (admin)
 - `api/users` – user list (admin and moderator), role change and delete (admin), suspend (admin and moderator)
 - `api/profile` – people: CRUD, photo upload, search
 - `api/tree` – trees: create, join, members, roles, claims, delete, leave; audit log + realtime broadcast
 - `api/friend` – friend requests, friends list, online status
 - `api/feedback` – feedback form (email)
-- `api/public` – public API (not claimed)
 - `prisma/` – schema and the Prisma client (`PrismaPg` adapter)
 - `vault/load-secrets.ts` – reads the secrets from Vault at boot
 
@@ -580,4 +602,4 @@ server-mode Vault on solsys (the Vault server, HashiCorp Vault)
 - `waf/` – ModSecurity + CRS config and `test-waf.sh`
 - `vault/` – server-mode Vault scripts and setup guide
 - `scripts/` – `vault-init.sh`, `local-up.sh`, `prod-up.sh`, …
-- `diagram/` – architecture and Vault diagrams (open in a browser)
+- `diagram/` – architecture, Vault and local-dev diagrams (open in a browser)
