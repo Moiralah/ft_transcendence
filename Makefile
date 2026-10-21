@@ -150,8 +150,13 @@ fclean:
 	docker compose $(STACK) down --remove-orphans -v --rmi local
 	rm -f .stack-mode
 
-# re: everything from scratch.
-re: fclean
-	$(MAKE) --no-print-directory up
+# re: everything from scratch, in the same mode as the last `make up` or
+# `make local` (read from .stack-mode before fclean deletes it), so a
+# local-Supabase setup doesn't come back on the shared database.
+re:
+	@mode=$$(cat .stack-mode 2>/dev/null || echo shared); \
+	$(MAKE) --no-print-directory fclean && \
+	if [ "$$mode" = local ]; then $(MAKE) --no-print-directory local; \
+	else $(MAKE) --no-print-directory up; fi
 
 .PHONY: up stack local prod deploy unseal vault-login certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re

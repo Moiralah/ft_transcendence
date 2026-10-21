@@ -993,7 +993,7 @@ useEffect(() => {
                 <Link
                   key={tree.id}
                   href={`/canvas/${tree.slug}`}
-				   onClick={(e) => {
+                  onClick={(e) => {
                       if (!getSessionId()) {
                       e.preventDefault();
                       router.replace('/login');

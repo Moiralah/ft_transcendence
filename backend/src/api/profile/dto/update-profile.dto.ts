@@ -1,9 +1,9 @@
 import { IsDateString, IsInt, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { IsProfileDate } from './date-range';
 
-// The global ValidationPipe rejects any field not listed here
-// (forbidNonWhitelisted), so the profile forms send only these. Dates may be
-// '' or null: "no change".
+// The global ValidationPipe strips any field not listed here (whitelist),
+// so extra fields are dropped, not rejected. The date may be '' or null:
+// "no change".
 const hasValue = (_: unknown, value: unknown) => value !== undefined && value !== null && value !== '';
 
 export class UpdateProfileDto {
@@ -26,11 +26,6 @@ export class UpdateProfileDto {
 	@IsDateString()
 	@IsProfileDate()
 	birthDate?: string | null;
-
-	@ValidateIf(hasValue)
-	@IsDateString()
-	@IsProfileDate()
-	deathDate?: string | null;
 
 	@IsOptional()
 	@IsInt()
