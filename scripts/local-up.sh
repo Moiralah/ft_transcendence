@@ -26,8 +26,18 @@ fi
 
 echo "[local-up] reading local Supabase keys..."
 STATUS_ENV=$(supabase status -o env)
-ANON_KEY=$(echo "$STATUS_ENV" | grep -E '^(ANON_KEY|PUBLISHABLE_KEY)=' | head -1 | cut -d= -f2- | tr -d '"')
-SERVICE_ROLE_KEY=$(echo "$STATUS_ENV" | grep -E '^(SERVICE_ROLE_KEY|SECRET_KEY)=' | head -1 | cut -d= -f2- | tr -d '"')
+# The new-style keys (sb_publishable_ / sb_secret_), like production. The
+# status lists the legacy JWT keys (ANON_KEY, SERVICE_ROLE_KEY) first, so
+# take a name in order of preference, not the first line that matches; the
+# legacy names are only a fallback for an older Supabase CLI.
+status_value() {
+  for name in "$@"; do
+    value=$(echo "$STATUS_ENV" | grep -E "^$name=" | head -1 | cut -d= -f2- | tr -d '"')
+    if [ -n "$value" ]; then echo "$value"; return; fi
+  done
+}
+ANON_KEY=$(status_value PUBLISHABLE_KEY ANON_KEY)
+SERVICE_ROLE_KEY=$(status_value SECRET_KEY SERVICE_ROLE_KEY)
 
 if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
   echo "[local-up] couldn't parse keys from 'supabase status -o env' — check it" >&2
