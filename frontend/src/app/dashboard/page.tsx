@@ -53,6 +53,7 @@ export default function TreePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const [profileFirstName, setProfileFirstName] = useState('');
   const [profileLastName, setProfileLastName] = useState('');
@@ -142,6 +143,8 @@ useEffect(() => {
       }
     } catch (err) {
       console.error('Error fetching current user:', err);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -621,6 +624,7 @@ useEffect(() => {
             <div className="flex flex-col items-center gap-4">
               <Avatar
                 photoUrl={myProfile?.photoUrl}
+                loading={profileLoading}
                 size={160}
                 className="outline outline-4 outline-offset-2 outline-indigo-600"
               />
