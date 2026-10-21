@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
-import { getToken } from '@/lib/auth';
+import { getSessionId, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import type { TreeViewContext } from './treeNode';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
@@ -134,15 +134,14 @@ export function NodeProfileModal({
 
 	const handleAddChild = async () => {
 		try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) throw new Error("No token found. Please log in.");
 
 			const API_URL = process.env.NEXT_PUBLIC_API_URL;
-			const res = await fetch(`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
+			const res = await apiFetch(`${API_URL}/trees/${member.treeId}/children/${member.profileId}`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
 				},
 			});
 
@@ -179,15 +178,14 @@ export function NodeProfileModal({
 
 	const handleAddSpouse = async () => {
 		try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) throw new Error('No token found. Please log in.');
 
 			const API_URL = process.env.NEXT_PUBLIC_API_URL;
-			const res = await fetch(`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
+			const res = await apiFetch(`${API_URL}/trees/${member.treeId}/spouse/${member.profileId}`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 			});
 			if (!res.ok) {
@@ -209,16 +207,15 @@ export function NodeProfileModal({
 
 	const handleClaim = async () => {
 		try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) {
 				throw new Error("No token found. please log in");
 			}
 			const API_URL = process.env.NEXT_PUBLIC_API_URL;
-			const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
+			const res = await apiFetch(`${API_URL}/trees/${member.treeId}/claims/${member.id}`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 			});
 			if (!res.ok) {
@@ -251,15 +248,14 @@ export function NodeProfileModal({
 		if (!holderMemberId) return;
 
 		try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) throw new Error('No token found. Please log in.');
 
 			const API_URL = process.env.NEXT_PUBLIC_API_URL;
-			const res = await fetch(`${API_URL}/trees/${member.treeId}/claims/${holderMemberId}/unclaim`, {
+			const res = await apiFetch(`${API_URL}/trees/${member.treeId}/claims/${holderMemberId}/unclaim`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 			});
 			if (!res.ok) {
@@ -297,17 +293,16 @@ export function NodeProfileModal({
 		try {
 			if (!formMember?.profileId) return;
 
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) {
 				throw new Error("No token found. please log in");
 			}
 			const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-			const res = await fetch(`${API_URL}/profile/${formMember.profileId}`, {
+			const res = await apiFetch(`${API_URL}/profile/${formMember.profileId}`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 				// Only the fields UpdateProfileDto accepts: the backend rejects any other field.
 				body: JSON.stringify({
@@ -411,7 +406,7 @@ export function NodeProfileModal({
 			return;
 		}
 
-		const token = getToken();
+		const token = getSessionId();
 		if (!token) return;
 
 		setUploading(true);
@@ -419,11 +414,10 @@ export function NodeProfileModal({
 			const form = new FormData();
 			form.append('file', file);
 
-			const res = await fetch(
+			const res = await apiFetch(
 				`${process.env.NEXT_PUBLIC_API_URL}/profile/${member.profileId}/photo`,
 				{
 					method: 'POST',
-					headers: { Authorization: `Bearer ${token}` },   // ← no Content-Type!
 					body: form,
 				},
 			);

@@ -31,6 +31,9 @@ interface AvatarProps {
 	/** Accessible name when clickable, e.g. "Change photo". */
 	label?: string;
 	disabled?: boolean;
+	/** The owner's data hasn't arrived yet: show the empty circle, not the
+	 *  default placeholder, so a real photo doesn't flash in after it. */
+	loading?: boolean;
 }
 
 /**
@@ -45,13 +48,14 @@ export function Avatar({
 	onClick,
 	label = 'Change photo',
 	disabled,
+	loading,
 }: AvatarProps) {
 	const classes = [
 		'rounded-full overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center',
 		onClick && !disabled ? 'cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-600' : '',
 		className,
 	].join(' ');
-	const image = (
+	const image = loading ? null : (
 		<>
 			{/* eslint-disable-next-line @next/next/no-img-element */}
 			<img

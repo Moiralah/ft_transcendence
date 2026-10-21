@@ -1,11 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
-import { answerSessionRequests } from '@/lib/auth';
+import { watchSessionExpiry, watchSessionInOtherTabs } from '@/lib/auth';
 
-// Mounted once in the root layout: lets a logged-in tab hand its session to a
-// newly opened tab of the same site (see borrowSessionFromOtherTab in lib/auth).
+// Mounted once in the root layout. Every tab shares one session (the HttpOnly
+// cookie), so a tab follows when another one signs out or in as someone else,
+// and leaves a signed-in page when the session's hour is up.
 export function SessionShare() {
-	useEffect(() => answerSessionRequests(), []);
+	useEffect(() => {
+		const stopTabs = watchSessionInOtherTabs();
+		const stopExpiry = watchSessionExpiry();
+		return () => {
+			stopTabs();
+			stopExpiry();
+		};
+	}, []);
 	return null;
 }

@@ -28,6 +28,19 @@ async function bootstrap() {
 		}
 	}));
 
+	// CSRF backstop on top of the SameSite=Strict session cookie: a request that
+	// changes something and says it comes from another site is refused. No
+	// Origin at all (curl, server-to-server) isn't a browser on another site.
+	const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
+	app.use((req, res, next) => {
+		const origin = req.headers.origin;
+		if (origin && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !allowedOrigins.includes(origin)) {
+			res.status(403).json({ message: 'Request from another site refused.', error: 'Forbidden', statusCode: 403 });
+			return;
+		}
+		next();
+	});
+
 	app.enableCors({
 		origin: process.env.CORS_ORIGIN,
 		credentials: true,

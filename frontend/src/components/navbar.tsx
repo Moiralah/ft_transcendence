@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from './button';
 import { componentTokens } from './colorPalette';
-import { getRole, getToken, homeFor } from '@/lib/auth';
+import { getRole, getSessionId, homeFor } from '@/lib/auth';
 
 interface NavbarProps {
   brandName?: string;
@@ -37,12 +37,12 @@ export function Navbar({
   // The logo is "home": the landing page before login, the dashboard after
   // (the admin console for site admins). A guest's only page is its demo
   // tree, so its logo goes to the landing page instead.
-  // Read after mount: the session lives in sessionStorage, which the server
+  // Read after mount: the session note lives in localStorage, which the server
   // render can't see, so starting at '/' avoids a hydration mismatch.
   const [homeHref, setHomeHref] = useState('/');
   useEffect(() => {
     const role = getRole();
-    setHomeHref(getToken() && role !== 'GUEST' ? homeFor(role) : '/');
+    setHomeHref(getSessionId() && role !== 'GUEST' ? homeFor(role) : '/');
   }, []);
 
   return (

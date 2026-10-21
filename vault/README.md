@@ -36,6 +36,8 @@ same names as the Vault logins) can only forward to Vault on solsys (10.8.0.1:82
 no shell and no password. Nobody has an account on solsys. `make up` opens the tunnel by
 itself. The same steps work on a laptop and on a 42 machine.
 
+An evaluator gets the same access under the login `evaluator`: see [EVALUATOR.md](EVALUATOR.md).
+
 From Tiara you need: your Vault password (in person, never in chat) and the two public
 Supabase values for `.env`.
 

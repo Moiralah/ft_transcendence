@@ -2,7 +2,7 @@ import React from 'react';
 import { componentTokens } from './colorPalette';
 import { Typography } from './typograph';
 import { Button } from './button';
-import { getToken, isGuest } from '@/lib/auth';
+import { getSessionId, isGuest, apiFetch } from '@/lib/auth';
 import { truncateName } from '@/lib/names';
 
 interface TreeBannerProp {
@@ -42,16 +42,15 @@ export function TreeBanner({
 	const handleDeleteTree = async (treeId: number) => {
 		if (!confirm(`Delete "${name}" for everyone? This cannot be undone.`)) return;
 	    try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) {
 				console.log("Not logged in");
 				return ;
 			}
-	      	const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}`, {
+	      	const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}`, {
         	method: "DELETE",
         	headers: {
           	"Content-Type": "application/json",
-          	Authorization: `Bearer ${token}`,
         	},
 	    });
     	if (!res.ok) {
@@ -70,16 +69,15 @@ export function TreeBanner({
 	const handleLeaveTree = async (treeId: number) => {
 		if (!confirm(`Leave "${name}"?`)) return;
 	    try {
-			const token = getToken();
+			const token = getSessionId();
 			if (!token) {
 				console.log("Not logged in");
 				return ;
 			}
-	      	const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/leave`, {
+	      	const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/leave`, {
         	method: "POST",
         	headers: {
           	"Content-Type": "application/json",
-          	Authorization: `Bearer ${token}`,
         	},
 	    });
     	if (!res.ok) {

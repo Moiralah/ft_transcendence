@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import toast from 'react-hot-toast';
 import { Button } from './button';
-import { getToken } from '@/lib/auth';
+import { getSessionId, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar, PHOTO_HINT, PHOTO_TYPES, photoFileError, photoUploadError } from './Avatar';
 import { useDialog } from '@/hooks/useDialog';
@@ -74,7 +74,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		return;
 	}
 
-	const token = getToken();
+	const token = getSessionId();
 	if (!token) return;
 
 	if (!formData.id) {
@@ -87,11 +87,10 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const form = new FormData();
 		form.append('file', file);
 
-		const res = await fetch(
+		const res = await apiFetch(
 		`${process.env.NEXT_PUBLIC_API_URL}/profile/${formData.id}/photo`,
 		{
 			method: 'POST',
-			headers: { Authorization: `Bearer ${token}` },   // no Content-Type
 			body: form,
 		},
 		);
@@ -150,7 +149,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   const handleSave = async () => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. please log in");
       }
@@ -160,11 +159,10 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/profile/${formData.id}`, {
+      const res = await apiFetch(`${API_URL}/profile/${formData.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         // Only the fields UpdateProfileDto accepts: the backend rejects any other field.
         body: JSON.stringify({

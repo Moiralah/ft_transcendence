@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { SkipLink } from './SkipLink';
 import { Footer } from './footer';
-import { getRole, getToken, logOut } from '@/lib/auth';
+import { getRole, getSessionId, logOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabaseClient';
 
 const TABS = [
@@ -16,32 +16,53 @@ const TABS = [
 	{ href: '/settings', label: 'My account' },
 ];
 
-// The site admin console: its own header and tabs, none of the member app
-// (no trees of their own, no friends). Only ADMIN sessions get in; with
-// allowModerator (Users, and Trees read-only) moderators do too, with a link back to
-// their dashboard instead of the admin tabs.
-export function AdminShell({ title, allowModerator = false, children }: {
+const MODERATOR_TABS = [
+	{ href: '/dashboard', label: '← Back to dashboard' },
+	{ href: '/moderator/users', label: 'Users' },
+	{ href: '/moderator/trees', label: 'Trees' },
+];
+
+// Which console a page is in: /admin (ADMIN only) or /moderator (MODERATOR
+// only). The Users and Trees pages are shared, so they build their links
+// from this instead of hard-coding /admin.
+export function useConsoleBase(): '/admin' | '/moderator' {
+	return usePathname().startsWith('/moderator') ? '/moderator' : '/admin';
+}
+
+// The site admin console and the moderation console: their own header and
+// tabs, none of the member app (no trees of their own, no friends). /admin
+// lets in ADMIN sessions only, /moderator MODERATOR sessions only (Users,
+// and Trees read-only), with a link back to their dashboard. Each role that
+// lands in the other's console is sent to its own.
+export function AdminShell({ title, children }: {
 	title: string;
-	allowModerator?: boolean;
 	children: React.ReactNode;
 }) {
 	const router = useRouter();
 	const pathname = usePathname();
+	const base = useConsoleBase();
 	const [role, setRole] = useState<string | null>(null);
 
-	// Read after mount: the session lives in sessionStorage.
+	// Read after mount: the session note lives in localStorage.
 	useEffect(() => {
 		const r = getRole();
-		if (!getToken()) {
-			router.replace('/staff');
+		if (!getSessionId()) {
+			router.replace(base === '/admin' ? '/staff' : '/login');
 			return;
 		}
-		if (r !== 'ADMIN' && !(allowModerator && r === 'MODERATOR')) {
-			router.replace('/dashboard');
+		const wanted = base === '/admin' ? 'ADMIN' : 'MODERATOR';
+		if (r !== wanted) {
+			// The same page in the right console when there is one (an old
+			// /admin/users bookmark), else that role's home.
+			const other = r === 'ADMIN' ? '/admin' : r === 'MODERATOR' ? '/moderator' : null;
+			const rest = pathname.slice(base.length);
+			const shared = /^\/(users|trees)(\/|$)/.test(rest);
+			router.replace(other === '/admin' ? (shared ? other + rest : '/admin')
+				: other === '/moderator' && shared ? other + rest : '/dashboard');
 			return;
 		}
 		setRole(r);
-	}, [router, allowModerator]);
+	}, [router, base, pathname]);
 
 	const signOut = async () => {
 		const path = await logOut();
@@ -74,9 +95,9 @@ export function AdminShell({ title, allowModerator = false, children }: {
 						Sign out
 					</button>
 				</div>
-				<nav aria-label="Admin console" className="max-w-6xl mx-auto px-4 sm:px-6">
+				<nav aria-label={isAdmin ? 'Admin console' : 'Moderation'} className="max-w-6xl mx-auto px-4 sm:px-6">
 					<ul className="flex flex-wrap gap-1 !pl-0 list-none">
-						{(isAdmin ? TABS : [{ href: '/dashboard', label: '← Back to dashboard' }, { href: '/admin/users', label: 'Users' }, { href: '/admin/trees', label: 'Trees' }]).map((t) => {
+						{(isAdmin ? TABS : MODERATOR_TABS).map((t) => {
 							const current = t.href === '/admin' ? pathname === '/admin' : pathname.startsWith(t.href);
 							return (
 								<li key={t.href}>

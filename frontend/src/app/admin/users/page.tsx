@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import { AdminShell } from '@/components/adminShell';
 import { Button } from '@/components/button';
-import { getRole, getToken, getUserId } from '@/lib/auth';
+import { getRole, getSessionId, getUserId, apiFetch } from '@/lib/auth';
 import { adminRequest } from '@/lib/admin';
 
 interface AdminUser {
@@ -20,13 +20,14 @@ interface AdminUser {
 	profile?: { firstName: string; lastName?: string | null } | null;
 }
 
+// Also served at /moderator/users (suspend only, no role changes or deletes).
 // Not ADMIN: admins are separate accounts, added on the Admins tab. Guests
 // aren't users either (their own table); only the on/off switch is here.
 const ROLES: AdminUser['role'][] = ['MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
 	const router = useRouter();
-	const token = getToken();
+	const token = getSessionId();
 	const role = getRole();
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
@@ -40,11 +41,10 @@ export default function AdminUsersPage() {
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 	const authedFetch = (path: string, init?: RequestInit) =>
-		fetch(`${apiUrl}${path}`, {
+		apiFetch(`${apiUrl}${path}`, {
 			...init,
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
 				...(init?.headers || {}),
 			},
 		});
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
 	};
 
 	return (
-		<AdminShell title="User management" allowModerator>
+		<AdminShell title="User management">
 				{error && <div role="alert" className="text-red-700 font-semibold">{error}</div>}
 
 				{guestAccess !== null && (

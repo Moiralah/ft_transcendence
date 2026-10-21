@@ -92,7 +92,10 @@ export class TwoFactorService {
 			});
 		});
 
-		return { recoveryCodes };
+		// A new session that counts as MFA-verified (the code above proves it),
+		// so the console opens without signing in again. The frontend swaps it in.
+		const session = 'role' in user ? await this.auth.issueSession(user, true) : await this.auth.issueAdminSession(user, true);
+		return { recoveryCodes, ...session };
 	}
 
 	async disable(userId: string, token: string, admin = false) {
@@ -144,7 +147,7 @@ export class TwoFactorService {
 			|| await this.tryConsumeRecoveryCode(user.id, code, admin);
 		if (ok) {
 			this.failedAttempts.delete(user.id);
-			return 'role' in user ? this.auth.issueSession(user) : this.auth.issueAdminSession(user);
+			return 'role' in user ? this.auth.issueSession(user, true) : this.auth.issueAdminSession(user, true);
 		}
 
 		this.recordFailure(user.id);

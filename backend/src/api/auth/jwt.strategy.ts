@@ -1,10 +1,15 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { sessionTokenFrom } from './session-cookie';
 
 // The frontend matches on "must turn on MFA" to send the admin to Settings.
 export const ADMIN_MFA_REQUIRED = 'Site admins must turn on MFA before using the admin console. Set it up in Settings.';
+
+// Moderators must have MFA too, but only for the moderation endpoints
+// (RolesGuard): the rest of the app is their member account, which stays open.
+export const MODERATOR_MFA_REQUIRED = 'Moderators must turn on MFA before using the moderation console. Set it up in Settings.';
 
 export const GUEST_SESSION_ENDED = 'Your guest session ended after 15 minutes without activity.';
 
@@ -20,6 +25,10 @@ const ADMIN_MFA_SETUP_ROUTES = [
 
 export const SESSION_ENDED = 'This session was logged out. Please sign in again.';
 
+// MFA is on for the account, but this session never passed it (it was issued
+// before MFA was turned on). A 401 so the frontend sends them to sign in again.
+export const MFA_SESSION_REQUIRED = 'Please sign in again with your MFA code.';
+
 // "METHOD /path" without the global API prefix or the query string.
 function routeOf(req: any): string {
 	const prefix = '/' + (process.env.API_PREFIX || 'api');
@@ -32,7 +41,8 @@ function routeOf(req: any): string {
 export class JwtStrategy extends PassportStrategy(Strategy) {
 	constructor(private readonly prisma: PrismaService) {
 		super({
-			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+			// The HttpOnly session cookie (session-cookie.ts), not an Authorization header.
+			jwtFromRequest: sessionTokenFrom,
 			ignoreExpiration: false,
 			secretOrKey: process.env.JWT_SECRET,
 			passReqToCallback: true,
@@ -73,8 +83,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			// Site admins must have MFA. Until they turn it on, their session only
 			// reaches what setting it up needs; everything else, the admin console
 			// included, is refused.
-			if (!admin.twoFactorEnabled && !ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
-				throw new ForbiddenException(ADMIN_MFA_REQUIRED);
+			// The account having MFA isn't enough: this session must have passed it.
+			if (!ADMIN_MFA_SETUP_ROUTES.includes(routeOf(req))) {
+				if (!admin.twoFactorEnabled) throw new ForbiddenException(ADMIN_MFA_REQUIRED);
+				if (payload.mfa !== true) throw new UnauthorizedException(MFA_SESSION_REQUIRED);
 			}
 			return { id: payload.sub, email: payload.email, profileId: null, role: 'ADMIN', ...session };
 		}
@@ -105,12 +117,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		// demoted moderator loses the moderation endpoints on their next request.
 		const user = await this.prisma.user.findUnique({
 			where: { id: payload.sub },
-			select: { suspended: true, role: true },
+			select: { suspended: true, role: true, twoFactorEnabled: true },
 		});
 		if (!user || user.suspended) {
 			throw new UnauthorizedException('Your account has been suspended.');
 		}
 
-		return { id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role, ...session };
+		// mfa: read by RolesGuard, which refuses moderation to a moderator without
+		// it. mfaSession: MFA is on and this session passed it (issueSession).
+		return {
+			id: payload.sub, email: payload.email, profileId: payload.profileId, role: user.role,
+			mfa: user.twoFactorEnabled, mfaSession: user.twoFactorEnabled && payload.mfa === true, ...session,
+		};
 	}
 }

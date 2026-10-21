@@ -12,7 +12,7 @@ import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
 import { PresenceFacepile } from '@/components/PresenceFacepile';
-import { clearSession, getRole, getToken, isGuest, loginPathAfter401 } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, isGuest, loginPathAfter401, apiFetch } from '@/lib/auth';
 import { useDialog } from '@/hooks/useDialog';
 import { useAuthGate } from '@/hooks/useAuthGate';
 import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
@@ -52,7 +52,7 @@ export default function Content() {
   const params = useParams();
   const router = useRouter();
   const slug = params.id as unknown as string;
-  //const token = getToken();
+  //const token = getSessionId();
   const isEditingRef = useRef(false);
 
   const [rootMember, setRootMember] = useState<any>();
@@ -176,10 +176,7 @@ export default function Content() {
 
   const fetchTree = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/slug/${slug}`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -208,10 +205,7 @@ export default function Content() {
 
   const fetchTreeMember = async (authToken: string, treeId: number) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/${treeId}/member`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -238,10 +232,7 @@ export default function Content() {
 
     const fetchMyProfile = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -379,17 +370,16 @@ export default function Content() {
     setEditTreeName(false);
 
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: currentName }),
       });
@@ -451,17 +441,16 @@ export default function Content() {
 
   const handlePending = async () => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/pending`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/pending`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       // Only tree ADMIN/MEMBER may see pending claims; a JOINER gets 403.
@@ -486,17 +475,16 @@ export default function Content() {
 
   const handleApproveClaim = async (holderMemberId: number) => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/approve`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/approve`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -514,17 +502,16 @@ export default function Content() {
 
   const handleApproveUnclaim = async (holderMemberId: number) => {
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/unclaim`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/claims/${holderMemberId}/unclaim`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -578,17 +565,16 @@ export default function Content() {
     if (!ok) return;
 
     try {
-      const token = getToken();
+      const token = getSessionId();
       if (!token) {
         throw new Error("No token found. Please log in.");
       }
       const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const res = await fetch(`${API_URL}/trees/${treeId}/members/${member.profileId}`, {
+      const res = await apiFetch(`${API_URL}/trees/${treeId}/members/${member.profileId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {

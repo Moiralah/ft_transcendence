@@ -10,19 +10,21 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { clearSession, getRole, getToken, isGuest } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, isGuest, storeSession, apiFetch } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
-	const token = getToken();
+	const token = getSessionId();
 
 	const [loading, setLoading] = useState(true);
-	// Read after mount: the role lives in sessionStorage, which the server render can't see.
+	// Read after mount: the role lives in localStorage, which the server render can't see.
 	const [guest, setGuest] = useState(false);
 	useEffect(() => setGuest(isGuest()), []);
 	// Site admins come here from the admin console, not a dashboard.
 	const [siteAdmin, setSiteAdmin] = useState(false);
 	useEffect(() => setSiteAdmin(getRole() === 'ADMIN'), []);
+	const [moderator, setModerator] = useState(false);
+	useEffect(() => setModerator(getRole() === 'MODERATOR'), []);
 	const [enabled, setEnabled] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,8 @@ export default function SettingsPage() {
 
 	// Site admins must have MFA; the backend refuses them everything else until it's on.
 	const adminNeedsMfa = siteAdmin && !loading && !enabled;
+	// Moderators too, but only for the moderation console; the rest stays open.
+	const moderatorNeedsMfa = moderator && !loading && !enabled;
 
 	// Disable state
 	const [disabling, setDisabling] = useState(false);
@@ -43,11 +47,10 @@ export default function SettingsPage() {
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 	const authedFetch = (path: string, init?: RequestInit) =>
-		fetch(`${apiUrl}${path}`, {
+		apiFetch(`${apiUrl}${path}`, {
 			...init,
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
 				...(init?.headers || {}),
 			},
 		});
@@ -102,6 +105,9 @@ export default function SettingsPage() {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || 'Invalid code');
+			// The backend replaced the session cookie with an MFA-verified one
+			// (moderation and the admin console only accept those); note its expiry.
+			if (data.user) storeSession(data);
 			setRecoveryCodes(data.recoveryCodes);
 			setEnabled(true);
 			setEnrolling(false);
@@ -153,6 +159,13 @@ export default function SettingsPage() {
 					</div>
 				)}
 
+				{moderatorNeedsMfa && (
+					<div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+						<strong>Turn on MFA to moderate.</strong> Moderators must use MFA. The moderation console
+						opens once it&apos;s set up below.
+					</div>
+				)}
+
 				{guest ? (
 					// A guest account is a short-lived demo login, so its account settings can't be changed.
 					<section aria-labelledby="guest-heading" className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
@@ -185,10 +198,10 @@ export default function SettingsPage() {
 							))}
 						</ul>
 						<Button
-							onClick={() => (siteAdmin ? router.push('/admin') : setRecoveryCodes(null))}
+							onClick={() => (siteAdmin ? router.push('/admin') : moderator ? router.push('/moderator/users') : setRecoveryCodes(null))}
 							variant="primary"
 						>
-							{siteAdmin ? 'I\'ve saved these codes, open the admin console' : 'I\'ve saved these codes'}
+							{siteAdmin ? 'I\'ve saved these codes, open the admin console' : moderator ? 'I\'ve saved these codes, open the moderation console' : 'I\'ve saved these codes'}
 						</Button>
 					</section>
 				) : enrolling ? (
