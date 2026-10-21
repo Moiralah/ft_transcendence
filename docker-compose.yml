@@ -11,9 +11,22 @@
 # whatever the checkout folder is called (transpeed, ft_transcendence, ...).
 name: familytree
 
+# Container logs are capped instead of growing forever: at most 3 files of
+# 10 MB per container, oldest dropped first. The WAF logs are where blocked
+# requests are recorded, and the backend's mention an email address when a
+# mail fails to send, so they don't keep more history than that. Not on
+# vault: changing its config recreates the container, and production's
+# server-mode Vault comes back sealed.
+x-logging: &capped-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
 
   backend:
+    logging: *capped-logs
     build:
       context: ./backend
       # Pinned explicitly (not relying on "last stage in the Dockerfile" being the
@@ -71,6 +84,7 @@ services:
       - ./certs:/app/certs
 
   frontend:
+    logging: *capped-logs
     build:
       context: ./frontend
       target: dev
@@ -95,6 +109,7 @@ services:
   # directly (NEXT_PUBLIC_API_URL) as well as loading the frontend — a WAF
   # fronting only the frontend would inspect zero API traffic.
   waf-frontend:
+    logging: *capped-logs
     image: owasp/modsecurity-crs:nginx
     restart: unless-stopped
     environment:
@@ -118,6 +133,7 @@ services:
       - frontend
 
   waf-backend:
+    logging: *capped-logs
     image: owasp/modsecurity-crs:nginx
     restart: unless-stopped
     environment:
@@ -151,6 +167,13 @@ services:
       # with a Content-Type failed its preflight. Content-Type is the only
       # non-simple header the frontend sends (no Authorization any more).
       CORS_HEADER_ACCESS_CONTROL_ALLOW_HEADERS: "Content-Type"
+      # What a blocked request's audit entry keeps: A (time, client IP, URI),
+      # F (response headers), H (rule messages, with the matched snippet), Z.
+      # Not B, the request headers: the Cookie header is the ft_session
+      # session, and this ModSecurity can't mask one header
+      # (sanitiseRequestHeader is "not yet supported" in v3). Bodies (C, I, J)
+      # never appeared in this build's JSON entries anyway.
+      MODSEC_AUDIT_LOG_PARTS: "AFHZ"
     ports:
       - "9443:8443"
     volumes:
