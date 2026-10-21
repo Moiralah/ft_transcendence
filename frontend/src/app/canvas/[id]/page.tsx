@@ -61,6 +61,7 @@ export default function Content() {
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
+  const [joinerHintDismissed, setJoinerHintDismissed] = useState(false);
 
   type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
@@ -564,6 +565,18 @@ export default function Content() {
   );
 
   const handleKickUser = async (member: any) => {
+
+    const memberName =
+      `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'this member';
+
+    const ok = confirm(
+      `Kick ${memberName} out of the tree?\n\n` +
+      `This will:\n` +
+      `  • remove them from being a member of this tree\n` +
+      `  • release any profile they had claimed in this tree \n\n`
+    );
+    if (!ok) return;
+
     try {
       const token = getToken();
       if (!token) {
@@ -595,6 +608,9 @@ export default function Content() {
     }
     setTreeMemberModal(false);
   }
+
+	const hasPendingClaim = treeType === 'JOINER' && treeView.linkId != null;
+	const showJoinerHint = treeType === 'JOINER' && !hasPendingClaim && !joinerHintDismissed;
 
   // People who joined the tree; HOLDER rows are the drawn placeholder nodes.
   const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
@@ -683,6 +699,31 @@ export default function Content() {
             </button>
           </div>
         </div>
+
+		{/* Joiner hint */}
+		{showJoinerHint && (
+		<div className="w-60 sm:w-80 rounded-xl border border-blue-200 bg-blue-50/95 backdrop-blur-sm shadow-sm p-4 m-5 mb-0">
+			<div className="flex items-start gap-3">
+			<span aria-hidden="true" className="text-xl leading-none mt-0.5">💡</span>
+			<div className="flex-1 min-w-0">
+				<p className="text-sm font-semibold text-blue-900 mb-1">
+				You're viewing as a Joiner
+				</p>
+				<p className="text-sm text-blue-800 [overflow-wrap:anywhere]">
+				Claim one of the people in the tree and wait for owner approval to start editing the family tree.
+				</p>
+			</div>
+			<button
+				type="button"
+				onClick={() => setJoinerHintDismissed(true)}
+				aria-label="Dismiss hint"
+				className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50/95 text-slate-600 hover:text-slate-900 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2"
+			>
+				<span aria-hidden="true">×</span>
+			</button>
+			</div>
+		</div>
+		)}
 
         {/* approval notification */}
 		    {pending && pending.length > 0 && (
