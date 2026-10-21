@@ -1,7 +1,8 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { sessionTokenFrom } from './session-cookie';
 
 // The frontend matches on "must turn on MFA" to send the admin to Settings.
 export const ADMIN_MFA_REQUIRED = 'Site admins must turn on MFA before using the admin console. Set it up in Settings.';
@@ -40,7 +41,8 @@ function routeOf(req: any): string {
 export class JwtStrategy extends PassportStrategy(Strategy) {
 	constructor(private readonly prisma: PrismaService) {
 		super({
-			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+			// The HttpOnly session cookie (session-cookie.ts), not an Authorization header.
+			jwtFromRequest: sessionTokenFrom,
 			ignoreExpiration: false,
 			secretOrKey: process.env.JWT_SECRET,
 			passReqToCallback: true,

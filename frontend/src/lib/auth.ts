@@ -3,7 +3,8 @@ import { supabase } from './supabaseClient';
 const apiUrl = () => process.env.NEXT_PUBLIC_API_URL;
 
 export interface LoginSuccess {
-	accessToken: string;
+	// The token itself is in the HttpOnly session cookie, not here.
+	expiresAt: number;
 	user: { id: string; email: string; profileId: number | null; role: string };
 	// A site admin without MFA (the session only reaches MFA setup until it's
 	// on), or a moderator without it (can't moderate until it's on): land on MFA setup.
@@ -29,164 +30,106 @@ export function isTwoFactorRequired(result: LoginResult): result is TwoFactorReq
 // what actually enforces it server-side (this only gives a friendlier message).
 export const MIN_PASSWORD_LENGTH = 8;
 
-// --- The app session (our own JWT + role) ---------------------------------
-// This file is the only place that knows where the session is kept. Use
-// getToken()/getRole()/storeSession()/clearSession() instead of touching
-// browser storage directly: it moved from localStorage to sessionStorage on
-// 2026-10-01 (tab-isolated, gone when the tab closes), and code that still
-// read localStorage silently found no token and acted logged out.
-const TOKEN_KEY = 'ft_token';
-const ROLE_KEY = 'ft_role';
+// --- The app session ---------------------------------------------------------
+// The session token itself is an HttpOnly cookie the backend sets (21 Oct 2026):
+// this code never sees it, and neither would a script injected into the page.
+// What's kept here is only a readable note of who is signed in (account id,
+// role, when the session ends), for the UI: which page to show, which links.
+// It grants nothing; the backend checks the cookie on every request. Like the
+// cookie, it's shared by every tab of this browser: one session per browser.
+const SESSION_KEY = 'ft_session';
 // A guest's own demo tree (its slug): a guest's home, since guests have no dashboard.
 const GUEST_TREE_KEY = 'ft_guest_tree';
 
-export function rememberGuestTree(slug: string) {
-	sessionStorage.setItem(GUEST_TREE_KEY, slug);
-}
+interface SessionNote { id: string; role: string; expiresAt: number }
 
-export function getToken(): string | null {
+function readSession(): SessionNote | null {
 	if (typeof window === 'undefined') return null; // server render: no session
-	return sessionStorage.getItem(TOKEN_KEY);
+	try {
+		const note = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') as SessionNote | null;
+		if (note && note.expiresAt > Date.now()) return note;
+	} catch {
+		// unreadable: treat as signed out
+	}
+	return null;
 }
 
-// UX only (e.g. showing the admin link). The backend checks the role in the
-// signed JWT; editing this value grants nothing.
+// Every call to our API: sends the session cookie along (the API is another
+// origin on localhost, so the browser wouldn't by default).
+export function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+	return fetch(input, { ...init, credentials: 'include' });
+}
+
+export function rememberGuestTree(slug: string) {
+	localStorage.setItem(GUEST_TREE_KEY, slug);
+}
+
+// The signed-in account's id, or null. "Am I signed in?" for the UI; the
+// backend checks the real session (the cookie).
+export function getSessionId(): string | null {
+	return readSession()?.id ?? null;
+}
+
+// UX only (e.g. showing the admin link). The backend reads the role from the
+// database on every request; editing this value grants nothing.
 export function getRole(): string | null {
-	if (typeof window === 'undefined') return null;
-	return sessionStorage.getItem(ROLE_KEY);
+	return readSession()?.role ?? null;
 }
 
 export function storeSession(result: LoginSuccess) {
-	sessionStorage.setItem(TOKEN_KEY, result.accessToken);
-	sessionStorage.setItem(ROLE_KEY, result.user.role);
+	const note: SessionNote = { id: result.user.id, role: result.user.role, expiresAt: result.expiresAt };
+	localStorage.setItem(SESSION_KEY, JSON.stringify(note));
 }
 
 // Keeps the stored role in step with the server (from GET /profile/me), so a
 // role change made by an admin shows up without logging out and back in.
 export function updateRole(role: string) {
-	if (typeof window === 'undefined') return;
-	if (sessionStorage.getItem(TOKEN_KEY)) sessionStorage.setItem(ROLE_KEY, role);
+	const note = readSession();
+	if (note) localStorage.setItem(SESSION_KEY, JSON.stringify({ ...note, role }));
 }
 
+// Forgets the note only; the cookie is ended by the backend (logOut()), or
+// has already been refused (a 401).
 export function clearSession() {
-	sessionStorage.removeItem(TOKEN_KEY);
-	sessionStorage.removeItem(ROLE_KEY);
-	sessionStorage.removeItem(GUEST_TREE_KEY);
+	if (typeof window === 'undefined') return;
+	localStorage.removeItem(SESSION_KEY);
+	localStorage.removeItem(GUEST_TREE_KEY);
 }
 
-// The signed-in account's id (the token's `sub`), e.g. to mark "you" in the
-// admin's user list. Display only: the backend checks the real token.
-export function getUserId(): string | null {
-	const token = getToken();
-	if (!token) return null;
-	try {
-		return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub ?? null;
-	} catch {
-		return null;
-	}
-}
-
-// --- Handing the session to a new tab -------------------------------------
-// Each tab keeps its own session (above), so a new tab used to start logged
-// out. Now a new tab asks the other open tabs of this site once; a logged-in
-// tab answers with its token, and from then on the two tabs are independent
-// again (switching account in one doesn't touch the other), except that the
-// Logout button logs out every tab on that account (see logOut()).
-// BroadcastChannel only reaches tabs of this same origin.
-const SESSION_CHANNEL = 'ft-session';
-const BORROWED_AT_KEY = 'ft_borrowed_at';
-
-// Only hand over (or accept) a token that is still valid for a while, so a
-// new tab never loops between /login and a 401 on an expired session.
-function tokenStillValid(token: string, marginMs = 60_000): boolean {
-	try {
-		const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-		return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now() + marginMs;
-	} catch {
-		return false;
-	}
-}
+// The signed-in account's id, e.g. to mark "you" in the admin's user list.
+export const getUserId = getSessionId;
 
 // Where a tab goes once logged out: staff accounts sign in on /staff.
 const logoutPath = () => (getRole() === 'ADMIN' ? '/staff' : '/login');
 
-// The Logout button: ends this tab's session and every other tab's session
-// on the same account (they got the token from this one, or the other way
-// round). Tabs on another account stay logged in. Returns where to go.
-// The backend also stops accepting this token (POST /auth/logout), so a copy
-// of it left anywhere else no longer works either.
+// The Logout button: the backend stops accepting this session (POST
+// /auth/logout revokes it and clears the cookie), then every tab of this
+// browser follows (watchSessionInOtherTabs). Returns where to go.
 export async function logOut(): Promise<string> {
 	const path = logoutPath();
-	const sub = getUserId();
-	const token = getToken();
-	if (token) {
+	if (getSessionId()) {
 		// Logging out still happens here if the server can't be reached.
-		await fetch(`${apiUrl()}/auth/logout`, {
-			method: 'POST',
-			headers: { Authorization: `Bearer ${token}` },
-			keepalive: true,
-		}).catch(() => {});
-	}
-	if (sub && typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-		const channel = new BroadcastChannel(SESSION_CHANNEL);
-		channel.postMessage({ type: 'logout', sub });
-		channel.close();
+		await apiFetch(`${apiUrl()}/auth/logout`, { method: 'POST', keepalive: true }).catch(() => {});
 	}
 	clearSession();
 	return path;
 }
 
-// Runs in every tab (see components/sessionShare.tsx): answers new tabs, and
-// logs this tab out when another tab logs out of the same account.
-export function answerSessionRequests(): () => void {
-	if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return () => {};
-	const channel = new BroadcastChannel(SESSION_CHANNEL);
-	channel.onmessage = (event) => {
-		if (event.data?.type === 'logout') {
-			if (event.data.sub && event.data.sub === getUserId()) {
-				const path = logoutPath();
-				clearSession();
-				window.location.replace(path);
-			}
-			return;
-		}
-		if (event.data?.type !== 'request') return;
-		const token = getToken();
-		const role = getRole();
-		// Not a guest's: a new tab opening /login would land back on the demo tree.
-		if (token && role && role !== 'GUEST' && tokenStillValid(token)) {
-			channel.postMessage({ type: 'session', id: event.data.id, token, role });
-		}
+// Runs in every tab (components/sessionShare.tsx). All tabs share one session,
+// so when another tab signs out, or signs in as someone else, this tab
+// reloads into the new state instead of acting for the old account.
+export function watchSessionInOtherTabs(): () => void {
+	if (typeof window === 'undefined') return () => {};
+	let current = getSessionId();
+	const onStorage = (event: StorageEvent) => {
+		if (event.key !== SESSION_KEY && event.key !== null) return;
+		const now = getSessionId();
+		if (now === current) return;
+		current = now;
+		window.location.replace(now ? homeFor(getRole()) : '/login');
 	};
-	return () => channel.close();
-}
-
-// Called by /login: resolves true if another tab handed over a session.
-// At most once per 30 s per tab, so a suspended account can't loop.
-export function borrowSessionFromOtherTab(timeoutMs = 400): Promise<boolean> {
-	if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return Promise.resolve(false);
-	if (getToken()) return Promise.resolve(true);
-	const last = Number(sessionStorage.getItem(BORROWED_AT_KEY) || 0);
-	if (Date.now() - last < 30_000) return Promise.resolve(false);
-	return new Promise((resolve) => {
-		const channel = new BroadcastChannel(SESSION_CHANNEL);
-		const id = Math.random().toString(36).slice(2);
-		const finish = (ok: boolean) => {
-			clearTimeout(timer);
-			channel.close();
-			resolve(ok);
-		};
-		const timer = setTimeout(() => finish(false), timeoutMs);
-		channel.onmessage = (event) => {
-			const { type, id: replyTo, token, role } = event.data || {};
-			if (type !== 'session' || replyTo !== id || getToken() || !tokenStillValid(token)) return;
-			sessionStorage.setItem(TOKEN_KEY, token);
-			sessionStorage.setItem(ROLE_KEY, role);
-			sessionStorage.setItem(BORROWED_AT_KEY, String(Date.now()));
-			finish(true);
-		};
-		channel.postMessage({ type: 'request', id });
-	});
+	window.addEventListener('storage', onStorage);
+	return () => window.removeEventListener('storage', onStorage);
 }
 
 // --- Login errors shown to people ---------------------------------------------
@@ -282,7 +225,7 @@ export async function loginPathAfter401(res: Response): Promise<string> {
 
 export async function exchangeSupabaseToken(accessToken: string, portal: Portal = 'member'): Promise<LoginResult> {
 	try {
-		const res = await fetch(`${apiUrl()}/auth/login`, {
+		const res = await apiFetch(`${apiUrl()}/auth/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(portal === 'staff' ? { accessToken, portal } : { accessToken }),
@@ -304,7 +247,7 @@ export async function exchangeSupabaseToken(accessToken: string, portal: Portal 
 // "Try as guest": a session on a new guest account (site role GUEST) of this
 // visit's own, and the slug of its copy of the demo tree. No Supabase login involved.
 export async function loginAsGuest(): Promise<LoginSuccess & { slug: string }> {
-	const res = await fetch(`${apiUrl()}/auth/guest`, { method: 'POST' })
+	const res = await apiFetch(`${apiUrl()}/auth/guest`, { method: 'POST' })
 		.catch(() => { throw new LoginError(apiUnreachableMessage(), 0); });
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) {
@@ -319,7 +262,7 @@ export function isGuest(): boolean {
 }
 
 export async function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<LoginSuccess> {
-	const res = await fetch(`${apiUrl()}/auth/2fa/login-verify`, {
+	const res = await apiFetch(`${apiUrl()}/auth/2fa/login-verify`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ challengeToken, code }),
@@ -343,11 +286,10 @@ export interface AccountInfo {
 export class SessionExpiredError extends Error {}
 
 async function accountRequest<T>(path: string, body?: unknown, method?: 'DELETE'): Promise<T> {
-	const token = getToken();
-	if (!token) throw new SessionExpiredError('Not logged in');
-	const res = await fetch(`${apiUrl()}/auth/${path}`, {
+	if (!getSessionId()) throw new SessionExpiredError('Not logged in');
+	const res = await apiFetch(`${apiUrl()}/auth/${path}`, {
 		method: method ?? (body === undefined ? 'GET' : 'POST'),
-		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		headers: { 'Content-Type': 'application/json' },
 		body: body === undefined ? undefined : JSON.stringify(body),
 	});
 	const data = await res.json().catch(() => ({}));

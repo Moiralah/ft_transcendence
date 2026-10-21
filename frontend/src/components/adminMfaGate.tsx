@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ADMIN_MFA_SETUP_PATH, clearSession, getToken } from '@/lib/auth';
+import { ADMIN_MFA_SETUP_PATH, clearSession, getSessionId, apiFetch } from '@/lib/auth';
 
 // Site admins and moderators must have MFA; the backend refuses their console
 // until it's on. This sends one without it to Settings before the console
@@ -14,18 +14,15 @@ export function AdminMfaGate({ signInPath = '/staff', children }: { signInPath?:
 	const [attempt, setAttempt] = useState(0);
 
 	useEffect(() => {
-		const token = getToken();
+		const token = getSessionId();
 		// No session: straight to sign-in, without drawing any of the console
-		// first (the session is per-tab, so a pasted link in a new browser or
-		// tab lands here).
+		// first (a pasted link in another browser lands here).
 		if (!token) {
 			router.replace(signInPath);
 			return;
 		}
 		setState('checking');
-		fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/status`, {
-			headers: { Authorization: `Bearer ${token}` },
-		})
+		apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/2fa/status`)
 			.then(async (res) => {
 				// Session ended (logged out, suspended, removed): sign in again.
 				if (res.status === 401) {

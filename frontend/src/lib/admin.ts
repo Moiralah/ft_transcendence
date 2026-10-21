@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { apiFetch } from './auth';
 
 // Requests from the admin console (/admin). Throws with the server's message,
 // and with status 401 when the session has expired (the shell signs out then).
@@ -9,9 +9,9 @@ export class AdminRequestError extends Error {
 }
 
 export async function adminRequest<T>(path: string, init?: RequestInit): Promise<T> {
-	const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
+	const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
 		...init,
-		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...(init?.headers || {}) },
+		headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
 	}).catch(() => { throw new AdminRequestError("Can't reach the server.", 0); });
 	const data = await res.json().catch(() => ({}));
 	if (!res.ok) {

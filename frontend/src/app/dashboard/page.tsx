@@ -14,7 +14,7 @@ import { Button } from '../../components/button';
 import { useDialog } from '../../hooks/useDialog';
 import { ProfileModal, Profile } from '../../components/profileModal';
 import { supabase } from '@/lib/supabaseClient';
-import { clearSession, getRole, getToken, homeFor, logOut, loginPathAfter401, updateRole } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, homeFor, logOut, loginPathAfter401, updateRole, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
 import { Avatar } from '@/components/Avatar';
 import { useAuthGate } from '@/hooks/useAuthGate';
@@ -28,8 +28,8 @@ const displayName = (u: FriendUser) =>
 
 export default function TreePage() {
   const router = useRouter();
-  //const token = getToken();
-  // Read after the first render: the server has no sessionStorage, so reading
+  //const token = getSessionId();
+  // Read after the first render: the server has no localStorage, so reading
   // it while rendering made the server and browser HTML differ for admins and
   // moderators (the Admin Panel button) and React threw a hydration error.
 //  const [role, setRole] = useState<string | null>(null);
@@ -121,11 +121,10 @@ useEffect(() => {
   const fetchMyProfile = async (authToken: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${apiUrl}/profile/me`, {
+      const res = await apiFetch(`${apiUrl}/profile/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
         },
       });
       if (!res.ok) {
@@ -148,10 +147,7 @@ useEffect(() => {
 
   const fetchMyTrees = async (authToken: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/my-trees`, {
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -177,15 +173,9 @@ useEffect(() => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       const [inRes, outRes] = await Promise.all([
-        fetch(`${apiUrl}/friend/requests/in`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+        apiFetch(`${apiUrl}/friend/requests/in`, {
         }),
-        fetch(`${apiUrl}/friend/requests/out`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          }
+        apiFetch(`${apiUrl}/friend/requests/out`, {
         })
       ]);
 
@@ -210,12 +200,9 @@ useEffect(() => {
 
   const fetchFriends = async (authToken: string) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend`,
         {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
         }
       );
 
@@ -235,11 +222,10 @@ useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:4000/api';
 
     try {
-      const res = await fetch(`${apiUrl}/trees/create`, {
+      const res = await apiFetch(`${apiUrl}/trees/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: newTreeName,
@@ -271,11 +257,10 @@ useEffect(() => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
+      const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/trees/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: joinName, code: joinCode }),
       });
@@ -326,13 +311,10 @@ useEffect(() => {
       params.set('page', String(page));
       params.set('limit', '10');
 
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/profile/search?${params.toString()}`,
         {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         }
       );
 
@@ -375,12 +357,11 @@ useEffect(() => {
     }
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/status`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ userIds }),
@@ -415,13 +396,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${userId}`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -449,13 +427,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/accept`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -484,13 +459,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/reject`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -520,13 +492,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/request/${friendId}/cancel`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
@@ -556,13 +525,10 @@ useEffect(() => {
     if (!token) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_API_URL}/friend/${friendId}/unfriend`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          }
         },
       );
 
@@ -1024,7 +990,7 @@ useEffect(() => {
                   key={tree.id}
                   href={`/canvas/${tree.slug}`}
 				   onClick={(e) => {
-                      if (!getToken()) {
+                      if (!getSessionId()) {
                       e.preventDefault();
                       router.replace('/login');
                     }

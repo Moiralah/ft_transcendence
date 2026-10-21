@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import { AdminShell } from '@/components/adminShell';
 import { Button } from '@/components/button';
-import { getRole, getToken, getUserId } from '@/lib/auth';
+import { getRole, getSessionId, getUserId, apiFetch } from '@/lib/auth';
 import { adminRequest } from '@/lib/admin';
 
 interface AdminUser {
@@ -27,7 +27,7 @@ const ROLES: AdminUser['role'][] = ['MODERATOR', 'USER'];
 
 export default function AdminUsersPage() {
 	const router = useRouter();
-	const token = getToken();
+	const token = getSessionId();
 	const role = getRole();
 
 	const [users, setUsers] = useState<AdminUser[]>([]);
@@ -41,11 +41,10 @@ export default function AdminUsersPage() {
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 	const authedFetch = (path: string, init?: RequestInit) =>
-		fetch(`${apiUrl}${path}`, {
+		apiFetch(`${apiUrl}${path}`, {
 			...init,
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
 				...(init?.headers || {}),
 			},
 		});

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { getToken } from "@/lib/auth";
+import { apiFetch, getSessionId } from "@/lib/auth";
 
 // One app-wide presence channel, joined from the root layout (<AppPresence />)
 // so a user stays online on every page, the canvas included, not only while the
@@ -21,17 +21,16 @@ export function AppPresence() {
   const [token, setToken] = useState<string | null>(null);
   const [id, setId] = useState<number | null>(null);
 
-  // The token sits in sessionStorage with no change event, so re-read it on
+  // The session note has no change event in this tab, so re-read it on
   // each navigation: logging in or out then joins or leaves the channel.
-  useEffect(() => setToken(getToken()), [pathname]);
+  useEffect(() => setToken(getSessionId()), [pathname]);
 
   useEffect(() => {
     setId(null);
     if (!token) return;
 
     let cancelled = false;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+    apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/me`, {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((profile) => {

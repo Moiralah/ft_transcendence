@@ -10,14 +10,14 @@ import { Button } from '@/components/button';
 import { ChangePasswordForm } from '@/components/changePasswordForm';
 import { ChangeEmailForm } from '@/components/changeEmailForm';
 import { DeleteAccountForm } from '@/components/deleteAccountForm';
-import { clearSession, getRole, getToken, isGuest, storeSession } from '@/lib/auth';
+import { clearSession, getRole, getSessionId, isGuest, storeSession, apiFetch } from '@/lib/auth';
 
 export default function SettingsPage() {
 	const router = useRouter();
-	const token = getToken();
+	const token = getSessionId();
 
 	const [loading, setLoading] = useState(true);
-	// Read after mount: the role lives in sessionStorage, which the server render can't see.
+	// Read after mount: the role lives in localStorage, which the server render can't see.
 	const [guest, setGuest] = useState(false);
 	useEffect(() => setGuest(isGuest()), []);
 	// Site admins come here from the admin console, not a dashboard.
@@ -47,11 +47,10 @@ export default function SettingsPage() {
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 	const authedFetch = (path: string, init?: RequestInit) =>
-		fetch(`${apiUrl}${path}`, {
+		apiFetch(`${apiUrl}${path}`, {
 			...init,
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
 				...(init?.headers || {}),
 			},
 		});
@@ -106,9 +105,9 @@ export default function SettingsPage() {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || 'Invalid code');
-			// A new session that counts as MFA-verified: moderation and the admin
-			// console only accept those, not the session from before MFA was on.
-			if (data.accessToken) storeSession(data);
+			// The backend replaced the session cookie with an MFA-verified one
+			// (moderation and the admin console only accept those); note its expiry.
+			if (data.user) storeSession(data);
 			setRecoveryCodes(data.recoveryCodes);
 			setEnabled(true);
 			setEnrolling(false);

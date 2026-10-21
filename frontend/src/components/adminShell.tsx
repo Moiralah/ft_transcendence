@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { SkipLink } from './SkipLink';
 import { Footer } from './footer';
-import { getRole, getToken, logOut } from '@/lib/auth';
+import { getRole, getSessionId, logOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabaseClient';
 
 const TABS = [
@@ -43,10 +43,10 @@ export function AdminShell({ title, children }: {
 	const base = useConsoleBase();
 	const [role, setRole] = useState<string | null>(null);
 
-	// Read after mount: the session lives in sessionStorage.
+	// Read after mount: the session note lives in localStorage.
 	useEffect(() => {
 		const r = getRole();
-		if (!getToken()) {
+		if (!getSessionId()) {
 			router.replace(base === '/admin' ? '/staff' : '/login');
 			return;
 		}

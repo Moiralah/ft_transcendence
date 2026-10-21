@@ -145,6 +145,12 @@ services:
       MODSEC_REQ_BODY_LIMIT: "6291456"
       MODSEC_REQ_BODY_NOFILES_LIMIT: "131072"
       MODSEC_REQ_BODY_LIMIT_ACTION: "Reject"
+      # The image overwrites the backend's CORS Access-Control-Allow-Headers
+      # with "*". The session is a cookie (credentials), and with credentials a
+      # browser reads "*" as a header literally named "*", so every request
+      # with a Content-Type failed its preflight. Content-Type is the only
+      # non-simple header the frontend sends (no Authorization any more).
+      CORS_HEADER_ACCESS_CONTROL_ALLOW_HEADERS: "Content-Type"
     ports:
       - "9443:8443"
     volumes:

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
-import { getToken } from '@/lib/auth';
+import { getSessionId, apiFetch } from '@/lib/auth';
 import { truncateName } from '@/lib/names';
 
 export type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
@@ -74,16 +74,15 @@ export function TreeNode({
   // Called from the profile modal's "Remove from tree" button. Throws so the
   // modal can show what went wrong.
   const handleDeleteNode = async () => {
-    const token = getToken();
+    const token = getSessionId();
     if (!token) {
       throw new Error("No token found. please log in");
     }
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
+    const res = await apiFetch(`${API_URL}/trees/${nodeMember.treeId}/profiles/${nodeMember.id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     });
 

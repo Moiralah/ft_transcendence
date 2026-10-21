@@ -15,7 +15,7 @@ import { useAuthGate } from '@/hooks/useAuthGate';
 import { AuthGatePlaceholder } from '@/components/AuthGatePlaceholder';
 
 import { supabase } from '@/lib/supabaseClient';
-import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getToken, isGuest, clearSession } from '@/lib/auth';
+import { exchangeSupabaseToken, isTwoFactorRequired, storeSession, MIN_PASSWORD_LENGTH, getSessionId, isGuest, clearSession } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function SignupPage() {
   // throwaway session is dropped instead, so it can sign up.
 //   useEffect(() => {
 //     if (isGuest()) clearSession();
-//     if (getToken()) {
+//     if (getSessionId()) {
 //       router.replace('/dashboard');
 //     }
 //   }, [router]);
