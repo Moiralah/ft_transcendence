@@ -133,8 +133,6 @@ Prisma schema: [backend/src/prisma/schema.prisma](backend/src/prisma/schema.pris
 | `TreeMember` | a person's place in a tree: tree `role` (ADMIN / MEMBER / JOINER / HOLDER), claim status | → `Tree`, → `Profile` |
 | `Profile` | a person: names, gender, birth/death dates, photo | `mother`, `father`, `spouse` (self-relations); optional `User` |
 | `Friendship` | friend request and its status | requester / addressee → `User` |
-| `Invitation` | invitation to a tree with a role | → `Tree`, inviter → `User` |
-| `Event` | life events on a person | → `Profile` |
 | `AuditLog` | every change made in a tree (source of the live notifications) | → `Tree`, → `Profile` |
 
 Row Level Security is on for every table in Supabase's `public` schema with no
@@ -193,7 +191,7 @@ listed after the table.
 ### Why each module
 
 - **Frameworks and ORM (1–3).** A family tree is a lot of related rows
-  (people, parents, spouses, memberships). Prisma gives typed queries and
+  (people, parents, spouse, memberships). Prisma gives typed queries and
   transactions over that graph; NestJS gives guards and validation for every
   route; Next.js gives the pages and the interactive canvas in one codebase.
 - **Design system (4).** Many screens share the same banners, buttons and
