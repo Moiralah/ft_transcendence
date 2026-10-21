@@ -232,6 +232,8 @@ export function ProfileModal({ existingProfile, onClose, onSave }: ProfileModalP
       
     } catch (err: any) {
       console.error("Save error:", err.message);
+      // Show it in the modal's error banner, or the save just silently does nothing.
+      setErrors([err.message]);
     }
   };
 
@@ -342,6 +344,12 @@ return (
                     ? ({ male: 'Male', female: 'Female' } as Record<string, string>)[formData.gender?.toLowerCase() ?? ''] ?? 'Not Specified'
                     : formData[key] || 'Click to add ' + label}
                 </button>
+              )}
+              {/* The box stops typing at the limit; say so instead of just going quiet. */}
+              {key === "bio" && editingField === "bio" && (
+                <p className="px-2 pt-1 text-sm text-gray-500" aria-live="polite">
+                  {formData.bio.length}/{BIO_MAX_LENGTH} characters
+                </p>
               )}
             </div>
           </div>
