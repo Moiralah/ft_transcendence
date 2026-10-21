@@ -339,6 +339,7 @@ Differences we found:
 - [OWASP Core Rule Set](https://coreruleset.org/docs/) and
   [ModSecurity](https://github.com/owasp-modsecurity/ModSecurity)
 - [HashiCorp Vault docs](https://developer.hashicorp.com/vault/docs) (AppRole, KV v2, seal/unseal)
+- [Using a nonce with CSP](https://content-security-policy.com/nonce/) (the per-request script nonce)
 - [RFC 6238 (TOTP)](https://datatracker.ietf.org/doc/html/rfc6238), [otplib](https://github.com/yeojz/otplib)
 - [WCAG 2.1](https://www.w3.org/TR/WCAG21/)
 - [Docker Compose docs](https://docs.docker.com/compose/)
