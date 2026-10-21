@@ -43,15 +43,19 @@ const GUEST_TREE_KEY = 'ft_guest_tree';
 
 interface SessionNote { id: string; role: string; expiresAt: number }
 
-function readSession(): SessionNote | null {
+// The note as stored, ended or not.
+function storedSession(): SessionNote | null {
 	if (typeof window === 'undefined') return null; // server render: no session
 	try {
-		const note = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') as SessionNote | null;
-		if (note && note.expiresAt > Date.now()) return note;
+		return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') as SessionNote | null;
 	} catch {
-		// unreadable: treat as signed out
+		return null; // unreadable: treat as signed out
 	}
-	return null;
+}
+
+function readSession(): SessionNote | null {
+	const note = storedSession();
+	return note && note.expiresAt > Date.now() ? note : null;
 }
 
 // Every call to our API: sends the session cookie along (the API is another
@@ -115,21 +119,60 @@ export async function logOut(): Promise<string> {
 	return path;
 }
 
+// Pages a signed-out visitor can stay on: an ending session isn't a reason to
+// leave them.
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/staff', '/guest', '/consent', '/forgot-password', '/reset-password', '/privacy', '/terms', '/feedback'];
+
 // Runs in every tab (components/sessionShare.tsx). All tabs share one session,
 // so when another tab signs out, or signs in as someone else, this tab
 // reloads into the new state instead of acting for the old account.
 export function watchSessionInOtherTabs(): () => void {
 	if (typeof window === 'undefined') return () => {};
 	let current = getSessionId();
+	let endsAt = storedSession()?.expiresAt ?? 0;
 	const onStorage = (event: StorageEvent) => {
 		if (event.key !== SESSION_KEY && event.key !== null) return;
 		const now = getSessionId();
 		if (now === current) return;
+		// Signed out because the hour ran out (the note is past its end, or
+		// another tab already dropped it at the end): say so, like that tab does.
+		const stored = storedSession();
+		const expired = !now && (stored ? stored.expiresAt : endsAt) <= Date.now();
 		current = now;
-		window.location.replace(now ? homeFor(getRole()) : '/login');
+		endsAt = stored?.expiresAt ?? 0;
+		if (now) window.location.replace(homeFor(getRole()));
+		// A public page stays put; there's nothing on it to leave.
+		else if (!PUBLIC_PATHS.includes(window.location.pathname)) window.location.replace(expired ? '/login?error=expired' : '/login');
 	};
 	window.addEventListener('storage', onStorage);
 	return () => window.removeEventListener('storage', onStorage);
+}
+
+// Runs in every tab (components/sessionShare.tsx). When the session's hour is
+// up, the server already refuses the cookie; this makes the page follow at
+// once, instead of leaving it on screen until the next click fails: the note
+// is dropped and a signed-in page goes to sign-in, saying why. Checked every
+// 15 s and whenever the tab is shown again (background tabs' timers are
+// slowed, and a laptop may have slept past the end).
+export function watchSessionExpiry(): () => void {
+	if (typeof window === 'undefined') return () => {};
+	const check = () => {
+		const note = storedSession();
+		if (!note || note.expiresAt > Date.now()) return;
+		const path = note.role === 'ADMIN' ? '/staff?error=expired' : '/login?error=expired';
+		clearSession();
+		if (!PUBLIC_PATHS.includes(window.location.pathname)) window.location.replace(path);
+	};
+	const onVisible = () => {
+		if (document.visibilityState === 'visible') check();
+	};
+	check();
+	const timer = window.setInterval(check, 15_000);
+	document.addEventListener('visibilitychange', onVisible);
+	return () => {
+		window.clearInterval(timer);
+		document.removeEventListener('visibilitychange', onVisible);
+	};
 }
 
 // --- Login errors shown to people ---------------------------------------------
@@ -164,6 +207,7 @@ export function isSuspended(err: unknown): boolean {
 // /login?error=<code> -> what the login page shows.
 export function loginErrorMessage(code: string | null): string | null {
 	if (code === 'suspended') return SUSPENDED_MESSAGE;
+	if (code === 'expired') return 'Your session ended after 1 hour. Please sign in again.';
 	if (code === 'ApiUnreachable') return apiUnreachableMessage();
 	if (code === 'BackendError') return "We couldn't sign you in right now. Please try again in a moment.";
 	if (code === 'SessionError') return "Your sign-in didn't complete. Please try again.";
