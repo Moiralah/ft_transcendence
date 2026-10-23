@@ -63,6 +63,7 @@ export function NodeProfileModal({
   // What's saved on the server, to tell whether a field really changed.
   const savedRef = useRef<Member | null>(withDays(member));
   const [editName, setEditName] = useState(false);
+  const [editBio, setBio] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   // Removing someone takes two clicks: the first arms the button.
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -495,6 +496,7 @@ export function NodeProfileModal({
 			>
 				{/* Form Section */}
 				<div className="flex flex-col gap-4">
+					{/* Name */}
 					<div className="flex text-2xl">
 						{editName ? (
 							<div className="flex flex-row gap-2">
@@ -595,6 +597,70 @@ export function NodeProfileModal({
 							</select>
 						</div>
 					</div>
+
+					{/* bio */}
+                    <div className="flex flex-col text-xl font-normal gap-1">
+                        <div className="flex flex-row justify-between items-center">
+                            <div id="node-bio-label" className="text-gray-600">Bio</div>
+                            {editingField === 'bio' && (() => {
+                                const charCount = formMember?.bio?.length || 0;
+                                return (
+                                    <span className={`text-xs ${charCount > 250 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                                        {charCount} / 250 characters
+                                    </span>
+                                );
+                            })()}
+                        </div>
+                        <div className="flex-1">
+                            {editingField === 'bio' ? (
+                                <div className="flex flex-col gap-2">
+                                    <textarea
+                                        name="bio"
+                                        rows={3}
+                                        value={formMember?.bio || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            // Allow typing up to 250 characters, or allow deleting text
+                                            if (val.length <= 250 || val.length < (formMember?.bio?.length || 0)) {
+                                                setFormMember((prev) => (prev ? { ...prev, bio: val } : prev));
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Escape') {
+                                                e.preventDefault();
+                                                handleSave(formMember);
+                                                setEditingField(null);
+                                                setTimeout(() => document.getElementById('node-bio-value')?.focus());
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            handleSave(formMember);
+                                            setEditingField(null);
+                                        }}
+                                        autoFocus
+                                        aria-labelledby="node-bio-label"
+                                        className="text-xl outline-none border border-gray-300 rounded p-2 w-full focus:ring-2 focus:ring-amber-600 resize-y"
+                                    />
+                                </div>
+                            ) : (
+                                canEditFields ? (
+                                    <button
+                                        type="button"
+                                        id="node-bio-value"
+                                        onClick={() => setEditingField('bio')}
+                                        aria-labelledby="node-bio-label node-bio-value"
+                                        className="w-full rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 [overflow-wrap:anywhere]"
+                                    >
+                                        {formMember?.bio || 'Click to add bio'}
+                                    </button>
+                                ) : (
+                                    <span className="rounded text-xl px-2 py-1 cursor-default text-gray-600 [overflow-wrap:anywhere]">
+                                        {formMember?.bio || 'Not specified'}
+                                    </span>
+                                )
+                            )}
+                        </div>
+                    </div>
 				</div>
 
 				{/* Upload Photo */}

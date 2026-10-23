@@ -307,7 +307,7 @@ export default function Content() {
       e.preventDefault();
       setScale(1);
       setPan({ x: 0, y: 0 });
-    }
+      }
   };
 
   // Tabbing to a person off screen moves the view so the person is visible (WCAG 2.4.7).
@@ -789,9 +789,9 @@ export default function Content() {
       {/* Tree member modal */}
       {treeMemberModal && (
         <div
-		data-modal-open
-		className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4"
-		>
+		      data-modal-open
+		      className="fixed bg-black/50 inset-0 z-[100] flex justify-center items-center p-4"
+		    >
           <div
             ref={memberDialogRef}
             role="dialog"

@@ -249,7 +249,7 @@ useEffect(() => {
       setShowCreateModal(false);
       setNewTreeName('');
       setNewTreeDesc('');
-
+      window.location.replace(`/canvas/${data.slug}`);
       if (token) fetchMyTrees(token);
     } catch (err: any) {
       alert(`Error: ${err.message}`);
@@ -268,9 +268,11 @@ useEffect(() => {
         body: JSON.stringify({ name: joinName, code: joinCode }),
       });
       if (!res.ok) throw new Error('Join failed');
+      const data = await res.json().catch(() => ({}));
       setShowJoinModal(false);
       setJoinName('');
       setJoinCode('');
+      window.location.replace(`/canvas/${data.tree.slug}`);
       if (token) fetchMyTrees(token);
     } catch (err: any) {
       alert(err.message);
@@ -665,6 +667,46 @@ useEffect(() => {
             </p>
           </div>
         </section>
+        {/* My Trees List */}
+        <section aria-labelledby="your-trees-heading" className="space-y-4">
+          <h2 id="your-trees-heading" className="text-2xl font-bold text-slate-900">
+            Your Trees
+          </h2>
+
+          {loading ? (
+            <p className="text-slate-600" aria-live="polite">Loading your trees...</p>
+          ) : myTrees.length === 0 ? (
+            <p className="text-slate-600">You haven't joined any trees yet.</p>
+          ) : (
+            <div className="grid gap-4">
+              {myTrees.map((tree: any) => (
+                <Link
+                  key={tree.id}
+                  href={`/canvas/${tree.slug}`}
+                  onClick={(e) => {
+                      if (!getSessionId()) {
+                      e.preventDefault();
+                      router.replace('/login');
+                    }
+                  }}
+                  className="block bg-white p-4 rounded-lg shadow-sm  transition border border-slate-200 hover:border-red-600 hover:border-4 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  aria-label={`View ${tree.name} family tree`}
+                >
+                  <TreeBanner
+                    name={tree.name}
+                    description={tree.description}
+                    treeId={tree.id}
+                    userRole={tree.profileRole}
+                    userCount={tree.userCount}
+                    owner={tree.owner}
+                    code={tree.code}
+                    RenderTreeMap={() => fetchMyTrees(token)}
+                  />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 		<section
 		aria-labelledby="current-friends-heading"
 		className="w-full bg-white p-6 shadow-sm rounded-lg border border-slate-200 space-y-4"
@@ -977,46 +1019,6 @@ useEffect(() => {
         </section>
         )}
 
-        {/* My Trees List */}
-        <section aria-labelledby="your-trees-heading" className="space-y-4">
-          <h2 id="your-trees-heading" className="text-2xl font-bold text-slate-900">
-            Your Trees
-          </h2>
-
-          {loading ? (
-            <p className="text-slate-600" aria-live="polite">Loading your trees...</p>
-          ) : myTrees.length === 0 ? (
-            <p className="text-slate-600">You haven't joined any trees yet.</p>
-          ) : (
-            <div className="grid gap-4">
-              {myTrees.map((tree: any) => (
-                <Link
-                  key={tree.id}
-                  href={`/canvas/${tree.slug}`}
-                  onClick={(e) => {
-                      if (!getSessionId()) {
-                      e.preventDefault();
-                      router.replace('/login');
-                    }
-                  }}
-                  className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  aria-label={`View ${tree.name} family tree`}
-                >
-                  <TreeBanner
-                    name={tree.name}
-                    description={tree.description}
-                    treeId={tree.id}
-                    userRole={tree.profileRole}
-                    userCount={tree.userCount}
-                    owner={tree.owner}
-                    code={tree.code}
-                    RenderTreeMap={() => fetchMyTrees(token)}
-                  />
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
       </main>
 
       <footer id="footer" tabIndex={-1} className="focus:outline-none mt-auto">
