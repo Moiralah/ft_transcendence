@@ -775,7 +775,8 @@ export default function Content() {
                 allMembers={treesMember ?? []}
                 currentMember={rootMember}
                 treeView={treeView}
-                onMembersChange={updateMembers}
+                // PB Fix Old | onMembersChange={updateMembers}
+                onMembersChange={setTreesMember}
               />
             </div>
           </div>

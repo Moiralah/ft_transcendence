@@ -26,7 +26,8 @@ interface TreeBranchProp {
   allMembers?: Member[];
   currentMember?: Member;
   treeView;
-  onMembersChange?: (updatedMembers: Member[]) => void;
+  //PB Fix Old | onMembersChange?: (updatedMembers: Member[]) => void;
+  onMembersChange?: (update: Member[] | ((prev: Member[]) => Member[])) => void;
 }
 
 export function TreeBranch({
@@ -40,7 +41,7 @@ export function TreeBranch({
     children: Member[];
     spouse?: Member | null;
   }
-
+/*
   // Ensure state defaults to an array fallback
   const [localMembers, setLocalMembers] = useState<Member[]>(allMembers ?? []);
 
@@ -64,8 +65,19 @@ export function TreeBranch({
 		);
 		if (onMembersChange) onMembersChange(next);
 		return next;
-	});
-	};
+	});*/
+    // PB Fix New | The page owns the members; branches read them and send changes up.
+  const localMembers = allMembers;
+
+  const updateMembers = (update: Member[] | ((prev: Member[]) => Member[])) => {
+    if (onMembersChange) onMembersChange(update);
+  };
+
+  const handleMemberUpdate = (updated: Member) => {
+    updateMembers((prev) =>
+      prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
+    );
+  };
 
 	const {byProfileId, byId} = useMemo(() => {
 		const byProfileId = new Map<number, Member>();
@@ -105,13 +117,19 @@ export function TreeBranch({
 	// layout pixels (the canvas zoom is a CSS scale, so it's divided back out).
 	const primaryRef = useRef<HTMLDivElement>(null);
 	const childrenRowRef = useRef<HTMLDivElement>(null);
-	const [connectors, setConnectors] = useState<{ parentX: number; childXs: number[] } | null>(null);
+	// PB Fix Old | const [connectors, setConnectors] = useState<{ parentX: number; childXs: number[] } | null>(null);
+  // PB Fix New | store as atring("parentX|x1,x2,..") so react compare value not obj
+  const [connectorKey,setConnectorKey] = useState('');
+  const [keyParent, keyChildren = ''] = connectorKey.split('|');
+  const connectors = connectorKey
+            ? { parentX: Number(keyParent), childXs: keyChildren.split(',').filter(Boolean).map(Number) }
+            : null;
 
 	const measureConnectors = () => {
 		const row = childrenRowRef.current;
 		const primary = primaryRef.current;
 		if (!row || !primary) {
-			setConnectors((prev) => (prev ? null : prev));
+			setConnectorKey(''); //PB Fix | setConnectors((prev) => (prev ? null : prev));
 			return;
 		}
 		const rowRect = row.getBoundingClientRect();
@@ -126,14 +144,22 @@ export function TreeBranch({
 			.map((col) => col.querySelector('[data-tree-primary]'))
 			.filter((el): el is Element => el !== null)
 			.map(centreOf);
-		setConnectors((prev) =>
-			prev && prev.parentX === parentX && prev.childXs.join() === childXs.join()
-				? prev
-				: { parentX, childXs });
+		// PB Fix Old
+    // setConnectors((prev) =>
+		//	prev && prev.parentX === parentX && prev.childXs.join() === childXs.join()
+		//		? prev
+		//		: { parentX, childXs });
+    // PB Fix New
+    setConnectorKey(`${parentX}|${childXs.join(',')}`);
 	};
 
-	// Every render: cheap, and only sets state when a position moved.
-	useLayoutEffect(measureConnectors);
+	// PB FIx Old | Every render: cheap, and only sets state when a position moved.
+	// useLayoutEffect(measureConnectors);
+
+  //PB Fix New | Measure when the member or the node shown change.
+  useLayoutEffect(() => {
+    measureConnectors();
+  }, [localMembers, currentMember]);  
 
 	// Descendants re-render on their own, so also re-measure when sizes change.
 	const hasChildRow = Boolean(childrenRowRef.current);
@@ -196,7 +222,7 @@ const renderAddSpouse = (BranchAddMember: Member) => {
   const spouseProfileId = BranchAddMember.profileId ?? BranchAddMember.id;
   const currentProfileId = activeCurrentMember.profileId;
 
-  setLocalMembers((prevMembers) => {
+  updateMembers((prevMembers) => {
     const updatedList = prevMembers.map((m) => {
       if (m.profileId === currentProfileId) {
         return {
@@ -215,7 +241,6 @@ const renderAddSpouse = (BranchAddMember: Member) => {
       ? updatedList
       : [...updatedList, { ...BranchAddMember, spouseId: currentProfileId }];
 
-    if (onMembersChange) onMembersChange(nextState);
     return nextState;
   });
 };
@@ -224,7 +249,7 @@ const renderAddChild = (BranchAddMember: Member) => {
   const newChildId = BranchAddMember.profileId ?? BranchAddMember.id;
   const parentId = activeCurrentMember.profileId;
 
-  setLocalMembers((prevMembers) => {
+  updateMembers((prevMembers) => {
     // Get fresh active member from latest state
     const currentMemberInState = prevMembers.find((m) => m.profileId === parentId);
     const spouseIdInState = currentMemberInState?.spouseId;
@@ -251,7 +276,6 @@ const renderAddChild = (BranchAddMember: Member) => {
 	);
 	const nextState = exists ? updatedList : [...updatedList, BranchAddMember];
 
-	if (onMembersChange) onMembersChange(nextState);
 	return nextState;
 	});
 	};
