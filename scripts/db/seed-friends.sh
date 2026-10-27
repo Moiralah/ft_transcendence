@@ -3,7 +3,7 @@
 # 100). The friends are the made-up users from seed-users.sh, which this runs
 # first (it skips the ones already there). Half the friendships were "sent" by
 # this user and half "received", so both sides of FriendService.getFriends
-# are covered. LOCAL SUPABASE ONLY (`make local`).
+# are covered. LOCAL SUPABASE ONLY (`make up`).
 #
 # Usage:
 #   ./scripts/db/seed-friends.sh

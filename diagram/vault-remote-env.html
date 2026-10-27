@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vault Remote Env</title>
-<meta name="description" content="Every secret lives only in HashiCorp Vault on solsys; each teammate reaches it through their own SSH tunnel via the GCP proxy, runs the app locally with make up on the production Supabase, and make deploy updates ft.natscho.my.">
+<meta name="description" content="Every secret lives only in HashiCorp Vault on solsys; each teammate reaches it through their own SSH tunnel via the GCP proxy, runs the app locally with make production on the production Supabase, and make deploy updates ft.natscho.my.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -97,14 +97,14 @@
   <h1>Secrets in Vault: how it all ties together</h1>
   <p class="lede"><strong>Every secret lives only in Vault on solsys (the Vault server, HashiCorp Vault).</strong> Each teammate
   reaches it through <strong>their own SSH tunnel via the GCP proxy (public IP)</strong>, then builds and runs the app on their own
-  laptop with <code>make up</code> (at <code>https://localhost:8443</code>, both WAFs, on the <strong>production Supabase</strong>),
+  laptop with <code>make production</code> (at <code>https://localhost:8443</code>, both WAFs, on the <strong>production Supabase</strong>),
   and <code>make deploy</code> updates <code>https://ft.natscho.my</code>. Both get the secrets from Vault; no secret file is kept anywhere.</p>
   <div class="callout ok"><div class="ic">✅</div><div>
     <strong>Status, 2026-10-13: switched.</strong> Production's Vault on solsys now runs in <strong>server mode</strong>
     (5 shares, any 2 unlock; solsys adds its own share every minute after a restart), also on <code>10.8.0.1:8200</code>
     for the tunnels. Production's backend logs in with its AppRole and reads <code>secret/family-tree/prod</code>; the dev set
     for laptops is at <code>secret/family-tree/dev</code>. The root token is revoked, and the old public dev token
-    (<code>dev-only-root-token</code>) is refused. Tested the same evening: a full <code>make up</code> on a 42 machine
+    (<code>dev-only-root-token</code>) is refused. Tested the same evening: a full <code>make production</code> on a 42 machine
     through the <code>tching</code> tunnel, and the tunnel limits from a laptop. Still open: the clean-up in section 6.
     Since 14 Oct <code>tching-solsys</code> is merged into <code>branchsaurus</code> (<code>15f0f8c</code>), so
     <code>make deploy</code>, which pulls <code>branchsaurus</code>, deploys the server-mode setup. solsys has no <code>make</code>;
@@ -116,7 +116,7 @@
   <h2>1 · The big picture</h2>
   <p class="note">Gold lines are secrets, always coming from Vault. Blue is each person's SSH tunnel to Vault (through the GCP proxy, then WireGuard to solsys). Grey is code. Red is public website traffic. Green is the one Supabase project: the live site and every laptop use it.</p>
   <div class="card">
-  <svg viewBox="0 0 1000 620" role="img" aria-label="Big picture: team laptops run make up, open their own SSH tunnel to a restricted account on the GCP proxy, which forwards to Vault on solsys over WireGuard, fetch the dev secrets and run the app locally on the production Supabase; code goes through GitHub; make deploy updates the production stack on solsys, which reads production secrets from Vault; visitors reach ft.natscho.my through the GCP proxy">
+  <svg viewBox="0 0 1000 620" role="img" aria-label="Big picture: team laptops run make production, open their own SSH tunnel to a restricted account on the GCP proxy, which forwards to Vault on solsys over WireGuard, fetch the dev secrets and run the app locally on the production Supabase; code goes through GitHub; make deploy updates the production stack on solsys, which reads production secrets from Vault; visitors reach ft.natscho.my through the GCP proxy">
     <defs>
       <marker id="mv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
       <marker id="mb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
@@ -135,7 +135,7 @@
     <text x="34" y="66" class="lbl" fill="var(--browser)">Moira · Jon · Yiwei · Tiara</text>
     <text x="34" y="84" class="tiny" fill="var(--sub)">each with their own Vault login + SSH tunnel key</text>
     <rect x="34" y="98" width="260" height="132" rx="10" fill="var(--panel)" stroke="var(--line)"/>
-    <text x="48" y="120" class="lbl" fill="var(--browser)">$ make up</text>
+    <text x="48" y="120" class="lbl" fill="var(--browser)">$ make production</text>
     <text x="48" y="140" class="sub" fill="var(--ink)">1. own SSH tunnel, Vault login (daily)</text>
     <text x="48" y="157" class="sub" fill="var(--ink)">2. fetch DEV secrets into memory</text>
     <text x="48" y="174" class="sub" fill="var(--ink)">3. build + start, both WAFs</text>
@@ -179,7 +179,7 @@
     <text x="362" y="466" class="lbl" fill="var(--supabase)">Supabase (cloud)</text>
     <text x="362" y="486" class="sub" fill="var(--ink)">the PRODUCTION database + logins</text>
     <text x="362" y="504" class="tiny" fill="var(--sub)">not on solsys; one project for everything</text>
-    <text x="362" y="522" class="tiny" fill="var(--ink)">used by the live site AND every make up</text>
+    <text x="362" y="522" class="tiny" fill="var(--ink)">used by the live site AND every make production</text>
     <text x="362" y="540" class="tiny" fill="var(--ink)">its URLs and service key: in Vault (prod + dev)</text>
     <text x="362" y="562" class="tiny" fill="var(--sub)">laptops work on the real users' data</text>
 
@@ -215,7 +215,7 @@
     <text x="690" y="570" class="tiny" fill="var(--sub)">checkout of branchsaurus (git pull)</text>
 
     <!-- ARROWS -->
-    <!-- make up: laptop -> SSH tunnel account on GCP -> Vault -->
+    <!-- make production: laptop -> SSH tunnel account on GCP -> Vault -->
     <path d="M294,150 C326,150 330,218 362,218" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#mb)"/>
     <path d="M610,218 C642,218 642,150 674,150" stroke="var(--browser)" stroke-width="2" fill="none" marker-end="url(#mb)"/>
     <!-- secrets back to laptop -->
@@ -240,11 +240,11 @@
     <path d="M610,333 L690,333" stroke="var(--waf)" stroke-width="2" marker-end="url(#mr)"/>
     <!-- db -->
     <path d="M888,408 C888,520 670,520 630,512" stroke="var(--supabase)" stroke-width="1.8" fill="none" marker-end="url(#ms)"/>
-    <!-- laptops' make up -> the same Supabase project -->
+    <!-- laptops' make production -> the same Supabase project -->
     <path d="M294,206 C330,206 318,560 344,560" stroke="var(--supabase)" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#ms)"/>
-    <!-- make local stays as an option -->
+    <!-- make up stays as an option -->
     <rect x="16" y="522" width="296" height="74" rx="14" fill="var(--panel)" stroke="var(--line)" stroke-dasharray="5 4"/>
-    <text x="34" y="546" class="lbl" fill="var(--sub)">optional: make local</text>
+    <text x="34" y="546" class="lbl" fill="var(--sub)">optional: make up</text>
     <text x="34" y="566" class="sub" fill="var(--ink)">local Supabase, test data only</text>
     <text x="34" y="584" class="tiny" fill="var(--sub)">not the team's way of working</text>
   </svg>
@@ -261,11 +261,11 @@
   <!-- ===================== 2. COMMANDS ===================== -->
   <h2>2 · The commands</h2>
   <p class="note">Same names the team already uses, so habits don't change; <code>make deploy</code> and <code>make unseal</code> are new.
-  Without <code>VAULT_USER</code>, <code>make up</code> takes the values from <code>.env</code> instead (evaluators, 42 machines, or when Vault is down).</p>
+  Without <code>VAULT_USER</code>, <code>make production</code> takes the values from <code>.env</code> instead (evaluators, 42 machines, or when Vault is down).</p>
   <div class="cmds">
     <div class="cmd up">
       <p class="who">Anyone · on their laptop</p>
-      <p class="name">make up</p>
+      <p class="name">make production</p>
       <ol>
         <li>Opens your own SSH tunnel (<code>127.0.0.1:18201</code> → your GCP account → <code>10.8.0.1:8200</code>)</li>
         <li>Logs you in to Vault if today's token expired (your login + password)</li>
@@ -296,7 +296,7 @@
         <li>solsys adds its own share by itself (a job that checks every minute)</li>
         <li>2 of 5 shares → Vault unlocks; the backend reconnects on its own</li>
       </ol>
-      <p class="result">→ while sealed, pages load but the API is down (nobody can log in), and <code>make up</code> stops. Rehearsed:
+      <p class="result">→ while sealed, pages load but the API is down (nobody can log in), and <code>make production</code> stops. Rehearsed:
       the API was back 6 s after the second share, with no redeploy.</p>
     </div>
   </div>
@@ -335,7 +335,7 @@
     <text x="556" y="120" class="tiny" fill="var(--sub)">encrypted · persistent · logged</text>
     <text x="556" y="136" class="tiny" fill="var(--sub)">locked until unsealed</text>
     <rect x="792" y="58" width="174" height="38" rx="9" fill="var(--panel)" stroke="var(--line)"/>
-    <text x="806" y="82" class="sub" fill="var(--ink)">laptops: make up</text>
+    <text x="806" y="82" class="sub" fill="var(--ink)">laptops: make production</text>
     <rect x="792" y="112" width="174" height="38" rx="9" fill="var(--panel)" stroke="var(--line)"/>
     <text x="806" y="136" class="sub" fill="var(--ink)">production backend</text>
     <path d="M762,86 L790,78" stroke="var(--vault)" stroke-width="1.8" marker-end="url(#xv)"/>
@@ -367,7 +367,7 @@
     <strong>Access path: an SSH tunnel per person (11 Oct; was WireGuard on each laptop).</strong> Vault is never on the
     internet. Each person has their own account on the GCP proxy (public IP), named like their Vault login, that can only
     forward to Vault on solsys: no shell, no password, key file owned by root. No admin rights or VPN install needed;
-    <code>make up</code> opens the tunnel by itself. Nobody has an account on solsys.
+    <code>make production</code> opens the tunnel by itself. Nobody has an account on solsys.
   </div></div>
   <div class="callout warn"><div class="ic">🧪</div><div>
     <strong>Laptops use the production Supabase (12 Oct; was a local Supabase on each laptop).</strong>
@@ -375,7 +375,7 @@
     <strong>own <code>JWT_SECRET</code></strong> (a login made on a laptop isn't valid on ft.natscho.my) and <strong>no
     <code>SMTP_PASS</code></strong> (laptops never email real users). The accepted cost: every teammate's run works on the real
     users' data, and the service key bypasses row-level security. Mitigations: values in memory only, every read in Vault's
-    audit log, test on your own test trees and accounts, and a backup before risky tests. <code>make local</code> (local
+    audit log, test on your own test trees and accounts, and a backup before risky tests. <code>make up</code> (local
     Supabase, test data) stays as an option.
   </div></div>
   <div class="callout warn"><div class="ic">🔑</div><div>
@@ -388,7 +388,7 @@
   </div></div>
   <div class="callout warn"><div class="ic">🛟</div><div>
     <strong>Evaluation-day fallback.</strong> If solsys or the home internet fails during the evaluation, both the live
-    site and every Vault-backed <code>make up</code> stop. <code>make up</code> without <code>VAULT_USER</code> still runs the
+    site and every Vault-backed <code>make production</code> stop. <code>make production</code> without <code>VAULT_USER</code> still runs the
     app from a local <code>.env</code> (as evaluators will); keep a sealed, offline copy of what's needed for the demo (held by Tiara).
   </div></div>
 
@@ -399,7 +399,7 @@
     <thead><tr><th>Step</th><th>What</th><th>Status</th></tr></thead>
     <tbody>
       <tr><td>1</td><td>Server-mode Vault, 5 shares / 2 to unlock, policies, logins, audit log</td><td class="yes">built, rehearsed (<code>49c3e13</code>)</td></tr>
-      <tr><td>2</td><td><code>make up</code> gets the dev secrets from Vault and starts the whole stack (both WAFs); production Supabase</td><td class="yes">built (<code>08fdc13</code>, <code>6cc6d23</code>); dev set decided 12 Oct</td></tr>
+      <tr><td>2</td><td><code>make production</code> gets the dev secrets from Vault and starts the whole stack (both WAFs); production Supabase</td><td class="yes">built (<code>08fdc13</code>, <code>6cc6d23</code>); dev set decided 12 Oct</td></tr>
       <tr><td>3</td><td><code>make deploy</code>, <code>make unseal</code>, production on server-mode Vault</td><td class="yes">built, rehearsed (<code>ede2d9f</code>)</td></tr>
       <tr><td>4</td><td>One SSH tunnel account per person on the GCP proxy (tching, huidris, lechan, yiwei)</td><td class="yes">done, tested (<code>4f6154e</code>, 11 Oct)</td></tr>
       <tr><td>5</td><td>Each teammate sends their <code>.pub</code> key; Tiara adds it (<code>tunnel-key.sh add</code>)</td><td>tching ✓ (Mac + a 42 machine, 13 Oct); huidris, lechan, yiwei to do</td></tr>

@@ -37,7 +37,7 @@ services:
         DATABASE_URL: ${DATABASE_URL}
     restart: unless-stopped
     depends_on: []
-    # `make local` reaches local Supabase on the host as host.docker.internal.
+    # `make up` reaches local Supabase on the host as host.docker.internal.
     # Docker Desktop (Mac, Windows) provides that name; Docker on Linux (the 42
     # machines, Ubuntu) only has it with this mapping.
     extra_hosts:
@@ -51,7 +51,7 @@ services:
       # The browser loads the app from the WAF (:8443), so that's the origin
       # CORS has to allow. docker-compose.prod.yml sets the live site instead.
       CORS_ORIGIN: "https://localhost:8443"
-      # Browser-facing Supabase address for stored photo links; only `make local`
+      # Browser-facing Supabase address for stored photo links; only `make up`
       # sets it (see scripts/local-up.sh). Empty elsewhere = use SUPABASE_AUTH_URL.
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-}
       # Secrets come ONLY from Vault (loaded in main.ts before Nest starts),

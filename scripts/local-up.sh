@@ -1,12 +1,12 @@
 #!/bin/sh
 # Point the stack at local Supabase (`supabase start`) instead of the shared
 # dev DB, then bring up the whole stack (app + WAFs + Vault) with `make stack`
-# (what `make up` runs), so the actual Docker orchestration logic (and its
+# (what `make production` runs too), so the actual Docker orchestration logic (and its
 # dependency fixes) lives in exactly one place.
 #
 # Usage:
-#   make local    (runs this, under scripts/vault/with-secrets.sh when VAULT_USER is set)
-#   make backend / make frontend after `make local` run this with backend-stack /
+#   make / make up    (runs this, under scripts/vault/with-secrets.sh when VAULT_USER is set)
+#   make backend / make frontend after `make up` run this with backend-stack /
 #   frontend-stack: same settings, only that side is rebuilt, no schema push.
 #
 # Handles the two dependency notes documented in README > "Running Supabase Locally":

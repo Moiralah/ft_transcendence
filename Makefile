@@ -11,7 +11,10 @@ ifeq ($(origin VAULT_PORT),undefined)
 endif
 export VAULT_PORT
 
-# The one command: app + WAFs + Vault. Open the app at https://localhost:8443.
+# The one command: app + WAFs + Vault on localhost, against local Supabase
+# (`supabase start`). Open the app at https://localhost:8443. See
+# scripts/local-up.sh for what it sets. It also writes .stack-mode, so
+# `make backend` / `make frontend` stay on local Supabase.
 #
 # Teammates with a Vault login set VAULT_USER (e.g. in ~/.zshrc): the dev
 # secrets are then fetched from the solsys Vault through their own SSH tunnel
@@ -19,6 +22,16 @@ export VAULT_PORT
 # scripts/vault/lib.sh). Without VAULT_USER (an evaluator, a 42 machine) the
 # values come from .env, as before.
 up: certs
+	@if [ -n "$$VAULT_USER" ]; then \
+		./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh; \
+	else \
+		./scripts/local-up.sh; \
+	fi
+
+# Same as `up`, but against the hosted Supabase project (the shared DB that
+# https://ft.natscho.my uses) instead of local Supabase. Still runs on
+# localhost; deploying the server is `make deploy` / `make prod`.
+production: certs
 	@echo shared > .stack-mode
 	@if [ -n "$$VAULT_USER" ]; then \
 		./scripts/vault/with-secrets.sh dev -- $(MAKE) --no-print-directory stack; \
@@ -26,7 +39,8 @@ up: certs
 		$(MAKE) --no-print-directory stack; \
 	fi
 
-# What `up` runs, with the secrets already in the environment or in .env.
+# What `up` (via local-up.sh) and `production` run, with the settings already
+# in the environment or in .env.
 #
 # Order matters here: build first, then `vault` (no dependency on backend),
 # then vault-init.sh bootstraps Vault *and* starts `backend` itself with the
@@ -41,16 +55,6 @@ stack: certs
 	./scripts/vault-init.sh
 	docker compose $(STACK) up -d --no-deps frontend waf-frontend waf-backend
 	docker compose $(STACK) restart waf-frontend waf-backend
-
-# Same as `up`, but against local Supabase (`supabase start`) instead of the
-# shared dev DB — see scripts/local-up.sh for what it sets. It also writes
-# .stack-mode, so `make backend` / `make frontend` stay on local Supabase.
-local: certs
-	@if [ -n "$$VAULT_USER" ]; then \
-		./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh; \
-	else \
-		./scripts/local-up.sh; \
-	fi
 
 # Production only, run ON the server (needs docker-compose.prod.yml and the
 # server's .env) — NOT a local dev target. Builds and restarts everything; see
@@ -75,7 +79,7 @@ unseal:
 	./scripts/vault/unseal.sh
 
 # Teammates: log in to the solsys Vault only (tunnel + password, token kept
-# in ~/.vault-token), so later `make up`/`make local` don't ask again.
+# in ~/.vault-token), so later `make up`/`make production` don't ask again.
 vault-login:
 	./scripts/vault/login.sh
 
@@ -107,16 +111,16 @@ ps:
 	docker compose $(STACK) ps
 
 # Rebuild and restart one side, with the same settings as the last `make up` or
-# `make local` (read from .stack-mode): after `make local` they go through
+# `make production` (read from .stack-mode): after `make up` they go through
 # local-up.sh, so they stay on local Supabase instead of picking up .env's
 # shared database; with VAULT_USER set they get the secrets from Vault, like
 # `make up`. backend goes through vault-init.sh, so it keeps its Vault
 # credentials; then the WAF in front of it is restarted (see `stack`).
 backend frontend: certs
-	@mode=$$(cat .stack-mode 2>/dev/null || echo shared); \
+	@mode=$$(cat .stack-mode 2>/dev/null || echo local); \
 	if [ "$$mode" = local ]; then run="./scripts/local-up.sh $@-stack"; \
 	else run="$(MAKE) --no-print-directory $@-stack"; fi; \
-	echo "[make $@] same settings as the last 'make $$( [ "$$mode" = local ] && echo local || echo up )'"; \
+	echo "[make $@] same settings as the last 'make $$( [ "$$mode" = local ] && echo up || echo production )'"; \
 	if [ -n "$$VAULT_USER" ]; then ./scripts/vault/with-secrets.sh dev -- $$run; else $$run; fi
 
 # What `backend` / `frontend` run, with the settings already in place.
@@ -151,12 +155,12 @@ fclean:
 	rm -f .stack-mode
 
 # re: everything from scratch, in the same mode as the last `make up` or
-# `make local` (read from .stack-mode before fclean deletes it), so a
+# `make production` (read from .stack-mode before fclean deletes it), so a
 # local-Supabase setup doesn't come back on the shared database.
 re:
-	@mode=$$(cat .stack-mode 2>/dev/null || echo shared); \
+	@mode=$$(cat .stack-mode 2>/dev/null || echo local); \
 	$(MAKE) --no-print-directory fclean && \
-	if [ "$$mode" = local ]; then $(MAKE) --no-print-directory local; \
+	if [ "$$mode" = shared ]; then $(MAKE) --no-print-directory production; \
 	else $(MAKE) --no-print-directory up; fi
 
-.PHONY: up stack local prod deploy unseal vault-login certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re
+.PHONY: up stack production prod deploy unseal vault-login certs down build logs ps backend frontend backend-stack frontend-stack backend-shell frontend-shell clean fclean re

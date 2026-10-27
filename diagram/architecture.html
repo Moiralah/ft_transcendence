@@ -131,7 +131,7 @@
     The browser talks to <strong>two</strong> different backends for auth — Supabase directly,
     then our own API through a WAF — which is the part that trips people up. It also keeps one more direct line
     to Supabase open: a <strong>Realtime</strong> WebSocket for who&apos;s online in a tree, friends&apos; online status and live change notices. Everything else is
-    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code> against the shared dev database, or <code>make local</code> against a local Supabase; both at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
+    one path: browser → WAF → our backend → Postgres (locally with <code>make up</code> against a local Supabase, or <code>make production</code> against the shared Supabase project; both at <code>https://localhost:8443</code>). In production there&apos;s one extra hop in front: a GCP VM terminates HTTPS and forwards over a WireGuard tunnel to the home server <code>solsys</code>, where the containers run. Separately, the backend pulls its own
     secrets from Vault once at boot, before any of that.
   </p>
 
@@ -184,7 +184,7 @@
       <rect x="480" y="46" width="230" height="112" rx="14" fill="var(--supabase-soft)" stroke="var(--supabase)" stroke-width="1.5"/>
       <text x="502" y="76" class="box-label" fill="var(--supabase)">Supabase</text>
       <text x="502" y="94" class="box-sub" fill="var(--ink)">Auth (GoTrue) · Realtime · Storage</text>
-      <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 (make local) · project.supabase.co</text>
+      <text x="502" y="112" class="box-sub mono" fill="var(--sub)">:54321 (make up) · project.supabase.co</text>
       <text x="502" y="130" class="box-sub" fill="var(--sub)">issues its own access token</text>
       <text x="502" y="148" class="box-sub" fill="var(--ext)" font-style="italic">external — not self-hosted</text>
 

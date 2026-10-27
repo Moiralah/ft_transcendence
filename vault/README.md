@@ -12,7 +12,7 @@ Both use the **production Supabase** (decided 2026-10-12): the dev set holds the
 database URLs, auth URL and service key as production, with its **own `JWT_SECRET`** (so a
 login made on a laptop is not valid on ft.natscho.my) and **no `SMTP_PASS`** (a laptop
 never emails real users; the feedback form answers "temporarily unavailable"). So every
-teammate's `make up` works on the real users' data: test on your own test trees and
+teammate's `make production` works on the real users' data: test on your own test trees and
 accounts. Vault's audit log records every read, and the values stay in memory only.
 Removing someone then also means rotating the database password and the service key.
 
@@ -22,9 +22,9 @@ The unseal key is split into 5 shares (Tiara, solsys, Yiwei, Jon, Moira); any 2 
 
 | Command | Where | What it does |
 |---|---|---|
-| `make up` | your laptop, `VAULT_USER` set | opens your SSH tunnel, logs in to Vault (password once a day), loads the dev secrets into memory, starts the app, both WAFs and the local Vault at https://localhost:8443 |
-| `make up` | without `VAULT_USER` (evaluators, anyone without a login) | the same stack, values from `.env` |
-| `make local` | any machine | like `make up`, on a local Supabase (test data only); not the team's way of working |
+| `make` / `make up` | your laptop, `VAULT_USER` set | opens your SSH tunnel, logs in to Vault (password once a day), loads the dev secrets into memory, starts the app, both WAFs and the local Vault at https://localhost:8443, on a local Supabase (test data only) |
+| `make` / `make up` | without `VAULT_USER` (evaluators, anyone without a login) | the same stack, values from `.env` |
+| `make production` | same as above | like `make up`, but on the hosted (production) Supabase project: real users' data |
 | `make deploy` | your laptop (needs SSH to solsys) | pulls `branchsaurus` on solsys and runs `./scripts/prod-up.sh` there |
 | `make unseal` | any share holder's laptop | type your share after solsys restarts (through your SSH tunnel); solsys adds its own (cron, every minute) |
 

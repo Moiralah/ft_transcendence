@@ -24,12 +24,14 @@ Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
 **Prerequisites:** Docker with Docker Compose **2.24 or newer**, `make`,
 `curl` and `python3` (used by `scripts/vault-init.sh`), `openssl` (for the
 local self-signed certificates), and the
-[Supabase CLI](https://supabase.com/docs/guides/cli) only for `make local`.
+[Supabase CLI](https://supabase.com/docs/guides/cli) for `make` (local Supabase).
 Node is not needed on the host.
 
 1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
    comments in that file say where each value comes from), then run `make`.
-   `make` (same as `make up`) starts everything: the app, both WAFs and Vault.
+   `make` (same as `make up`) starts everything on localhost: the app, both
+   WAFs and Vault, against a local Supabase (below). `make production` does the
+   same against the hosted Supabase project instead.
 2. **Approve the backend certificate:** open https://localhost:9443 in a new tab
    and accept the self-signed certificate. The page then shows
    `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`: that's
@@ -43,19 +45,19 @@ Node is not needed on the host.
 
 `make down` stops everything. Other targets: `make logs`, `make ps`,
 `make build`, `make backend` / `make frontend` (rebuild one side, with the
-same settings as your last `make up` or `make local`),
-`make local` (run against a local Supabase, below), `make clean` (stop and
+same settings as your last `make up` or `make production`),
+`make production` (run against the hosted Supabase project), `make clean` (stop and
 delete the containers' volumes), `make fclean` (also the built images) and
-`make re` (`fclean`, then `make up`, or `make local` if that was your last
+`make re` (`fclean`, then `make up`, or `make production` if that was your last
 one). None of them touch the shared
-database; `make local` pushes the schema to your local Supabase only.
+database; `make up` pushes the schema to your local Supabase only.
 
 **Team members with a Vault login** leave the secret lines in `.env` empty and
 set `VAULT_USER` once to your intra login (e.g. `export VAULT_USER=huidris` in
-`~/.zshrc`). `make up`
-then opens your own SSH tunnel to the Vault on solsys (the Vault server,
-HashiCorp Vault), asks your Vault password (once a day), and keeps the dev
-secrets in memory only. It runs on the
+`~/.zshrc`). `make up` / `make production`
+then open your own SSH tunnel to the Vault on solsys (the Vault server,
+HashiCorp Vault), ask your Vault password (once a day), and keep the dev
+secrets in memory only. `make production` runs on the
 **production Supabase** (the real users' data: test on your own test trees and
 accounts), with its own JWT secret and no email password. One-time setup (your SSH
 key and Vault login, from Tiara): [vault/README.md](vault/README.md); how it fits
@@ -362,11 +364,11 @@ were read, tested and often rewritten before being committed.
 ## 🧪 Running Supabase Locally
 
 For testing/schema changes without touching the shared dev Supabase
-project. All of this is optional: `make up` stays on the shared project.
+project. This is what `make` / `make up` does; `make production` uses the shared project instead.
 
-**Use `make local`.** It runs `supabase start` if it isn't already, reads
+**Use `make` (or `make up`).** It runs `supabase start` if it isn't already, reads
 its keys automatically, and brings the whole stack up (`make stack`, what
-`make up` runs) pointed at it, then pushes the schema and turns on RLS. It
+`make production` runs too) pointed at it, then pushes the schema and turns on RLS. It
 handles the `host.docker.internal` override and key copy-pasting below for
 you, and writes `local` to `.stack-mode`, so later `make backend` /
 `make frontend` stay on local Supabase. The secrets it doesn't take from
@@ -404,7 +406,7 @@ publishable one: the publishable key is enough to sign people in, but not for
 admin actions such as removing a deleted user's Supabase login.)
 
 ### 3. Push the schema
-`make local` does this for you after the containers start
+`make up` does this for you after the containers start
 (`npx prisma db push` inside the backend container, so the host needs no Node; a
 re-run with no schema change does nothing). By hand:
 ```bash
@@ -462,7 +464,7 @@ Google sign-in locally without touching the shared project:
    ```
 
 ### Going back to the shared DB
-Run `make up`: it writes `shared` to `.stack-mode` and takes the shared
+Run `make production`: it writes `shared` to `.stack-mode` and takes the shared
 project's values again (from Vault, or from `.env` if you edited it by hand
 above: restore your original values first). Nothing about local Supabase
 touches the shared project.

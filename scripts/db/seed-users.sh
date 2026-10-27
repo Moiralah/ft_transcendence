@@ -4,7 +4,7 @@
 # AuthService.createUser plus a profile edit. The first is always Sierra James;
 # the rest get made-up names from a fixed seed, so every run makes the same
 # people. Emails are first.last@example.com (a number is added on a clash),
-# all with the same password. LOCAL SUPABASE ONLY (`make local`).
+# all with the same password. LOCAL SUPABASE ONLY (`make up`).
 #
 # Usage:
 #   ./scripts/db/seed-users.sh
@@ -19,7 +19,7 @@ PASSWORD="${PASSWORD:-Test1234!}"
 DB_CONTAINER=supabase_db_transpeed
 
 STATUS_ENV=$(supabase status -o env 2>/dev/null) || {
-  echo "[seed] local Supabase isn't running; start it with make local" >&2
+  echo "[seed] local Supabase isn't running; start it with make up" >&2
   exit 1
 }
 status_value() { echo "$STATUS_ENV" | grep -E "^$1=" | head -1 | cut -d= -f2- | tr -d '"'; }

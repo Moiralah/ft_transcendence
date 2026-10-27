@@ -432,7 +432,7 @@ export class ProfileService {
 
 		// The link is built from SUPABASE_AUTH_URL, the address the backend
 		// reaches Supabase on. Locally that's host.docker.internal, which the
-		// browser can't resolve, so `make local` sets SUPABASE_PUBLIC_URL to the
+		// browser can't resolve, so `make up` sets SUPABASE_PUBLIC_URL to the
 		// browser's address (127.0.0.1). Unset on prod: the URL is already public.
 		const publicBase = this.config.get<string>('SUPABASE_PUBLIC_URL');
 		const photoUrl = publicBase

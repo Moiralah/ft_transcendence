@@ -1,6 +1,6 @@
 #!/bin/sh
 # Log in to Vault and nothing else: opens your SSH tunnel, asks for your
-# password and keeps the token (lib.sh), so the next `make up`/`make local`
+# password and keeps the token (lib.sh), so the next `make up`/`make production`
 # doesn't prompt. If today's token is still valid it just says so.
 #
 #   [VAULT_USER=<login>] scripts/vault/login.sh

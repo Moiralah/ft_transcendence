@@ -3,7 +3,7 @@
 # deep. Each generation is one couple with CHILDREN children (default 1, a
 # straight line); the last child carries the line on, the others are leaves
 # with no spouse or children. For checking how the tree page copes with a very
-# deep (and, with CHILDREN=100, very wide) tree. LOCAL SUPABASE ONLY (`make local`), never the cloud DB.
+# deep (and, with CHILDREN=100, very wide) tree. LOCAL SUPABASE ONLY (`make up`), never the cloud DB.
 #
 # Usage:
 #   ./scripts/db/seed-100-generations.sh
@@ -13,7 +13,7 @@
 # The rows match what the app itself makes: User + profile like
 # AuthService.createUser, the tree like TreeService.createTree, and the
 # couples and children like addSpouseNode / addChildNode (HOLDER members).
-# Stops if the email already has a login; `supabase db reset` + `make local`
+# Stops if the email already has a login; `supabase db reset` + `make up`
 # starts over from an empty database.
 set -e
 cd "$(dirname "$0")/../.."
@@ -25,7 +25,7 @@ CHILDREN="${CHILDREN:-1}"
 DB_CONTAINER=supabase_db_transpeed
 
 STATUS_ENV=$(supabase status -o env 2>/dev/null) || {
-  echo "[seed] local Supabase isn't running; start it with make local" >&2
+  echo "[seed] local Supabase isn't running; start it with make up" >&2
   exit 1
 }
 status_value() { echo "$STATUS_ENV" | grep -E "^$1=" | head -1 | cut -d= -f2- | tr -d '"'; }

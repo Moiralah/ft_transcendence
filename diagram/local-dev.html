@@ -143,7 +143,7 @@
     Companion to <code>architecture.html</code>, which shows production on <code>solsys</code>. Here everything runs on
     the one computer: Docker for our four containers (WAF ×2, frontend, backend) plus a dev-mode Vault, and the
     Supabase CLI for a local copy of Supabase (Auth, Realtime, Storage, Postgres, a mail catcher). <strong>Nothing goes to solsys
-    or ft.natscho.my</strong>, and with <code>make local</code> nothing touches production data either.
+    or ft.natscho.my</strong>, and with <code>make up</code> nothing touches production data either.
     The only things that can leave the machine are optional: Google sign-in, and the shared <code>.env</code>
     route in red below. <strong>Part 2</strong> shows the setup since the Vault switch (13 Oct), where the secrets come from
     the Vault on solsys instead of a <code>.env</code> file.
@@ -176,7 +176,7 @@
 
       <!-- Docker group -->
       <rect x="262" y="46" width="484" height="290" rx="14" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
-      <text x="278" y="66" class="group-title" fill="var(--sub)">docker · make local</text>
+      <text x="278" y="66" class="group-title" fill="var(--sub)">docker · make up</text>
 
       <rect x="278" y="80" width="200" height="60" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
       <text x="292" y="105" class="box-label" fill="var(--waf)">waf-frontend :8443</text>
@@ -211,7 +211,7 @@
       <rect x="530" y="404" width="200" height="72" rx="10" fill="var(--db-soft)" stroke="var(--db)" stroke-width="1.4"/>
       <text x="544" y="429" class="box-label" fill="var(--db)">Postgres :54322</text>
       <text x="544" y="447" class="box-sub" fill="var(--ink)">test data only</text>
-      <text x="544" y="462" class="box-sub" fill="var(--sub)">schema pushed by make local-*</text>
+      <text x="544" y="462" class="box-sub" fill="var(--sub)">schema pushed by make up-*</text>
 
       <rect x="278" y="510" width="200" height="72" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>
       <text x="292" y="535" class="box-label" fill="var(--ink)">Studio :54323</text>
@@ -241,7 +241,7 @@
       <text x="796" y="430" class="box-label" fill="var(--waf)">cloud Supabase</text>
       <text x="796" y="448" class="box-sub" fill="var(--ink)">= production data (real users)</text>
       <text x="796" y="465" class="box-sub" fill="var(--ink)">reached only if you run with the</text>
-      <text x="796" y="480" class="box-sub" fill="var(--ink)">shared .env (make up)</text>
+      <text x="796" y="480" class="box-sub" fill="var(--ink)">shared .env (make production)</text>
       <text x="796" y="495" class="box-sub" fill="var(--waf)">avoid on a shared machine</text>
 
       <!-- 1: Chrome -> waf-frontend -> frontend -->
@@ -312,7 +312,7 @@
   <h2>Two ways to start it</h2>
   <div class="tablewrap">
     <table>
-      <thead><tr><th></th><th><code>make local</code> (recommended)</th><th><code>make up</code> with the shared <code>.env</code></th></tr></thead>
+      <thead><tr><th></th><th><code>make up</code> (recommended)</th><th><code>make production</code> (shared Supabase)</th></tr></thead>
       <tbody>
         <tr><td>Database</td><td class="good">local Postgres on this computer, test data</td><td class="bad">cloud Supabase = production (real users)</td></tr>
         <tr><td>Sign-in accounts</td><td>local Supabase Auth; sign up fresh test users</td><td>the real accounts</td></tr>
@@ -330,7 +330,7 @@
     <ol>
       <li>Docker running. If your home folder has a small quota, keep Docker's data in your <code>goinfre</code>: the images need a few GB.</li>
       <li>The Supabase CLI (or use <code>npx supabase</code> wherever the steps say <code>supabase</code>).</li>
-      <li><code>make local</code>: makes the certificates, starts local Supabase, starts our containers, and pushes the
+      <li><code>make up</code>: makes the certificates, starts local Supabase, starts our containers, and pushes the
         database schema (from inside the backend container, so no Node needed on the machine).</li>
       <li>Open <code>https://localhost:9443/api</code> once and accept the certificate warning, then <code>https://localhost:8443</code> and accept it again.</li>
       <li>Sign up a test user. The confirmation email (if any) is in Mailpit.</li>
@@ -343,23 +343,23 @@
     fails quietly and login looks broken. Accept <code>:9443</code> too (step 4).
   </div></div>
   <div class="callout"><div class="ic">⚠️</div><div>
-    <strong>Since the Vault switch (part 2, 13 Oct).</strong> With <code>VAULT_USER</code> set, a team member's <code>make up</code> fetches the
+    <strong>Since the Vault switch (part 2, 13 Oct).</strong> With <code>VAULT_USER</code> set, a team member's <code>make production</code> fetches the
     secrets from the Vault on solsys through their own SSH tunnel (no admin rights needed) and works on the production Supabase.
     For the evaluations, Tiara runs it from a personal 42 session as <code>tching</code> (tested 13 Oct): the <code>.env</code> there holds only
     public settings. Evaluators on their own don't set <code>VAULT_USER</code>: <code>make up</code> then reads <code>.env</code>, and
-    <code>make local</code> stays the safe choice (local Vault, local Supabase).
+    <code>make up</code> stays the safe choice (local Vault, local Supabase).
   </div></div>
   <div class="callout ok"><div class="ic">✅</div><div>
     <strong>Evaluation note: one command.</strong> The subject asks for one command to run the project.
-    <code>make local</code> is that command without touching production data: since 11 Oct it also pushes the schema
+    <code>make up</code> is that command without touching production data: since 11 Oct it also pushes the schema
     into the empty local database, so a fresh machine needs only Docker and the Supabase CLI.
   </div></div>
 
 
   <h2>2 · Since the Vault switch (13 Oct; on <code>branchsaurus</code> since 14 Oct)</h2>
   <p class="lede">
-    For team members. Same <code>make up</code> as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file.
-    With <code>VAULT_USER</code> set, <code>make up</code> opens the person's <strong>own SSH tunnel</strong> through the GCP proxy
+    For team members. Same <code>make production</code> as part 1, with one difference: the secrets no longer sit in a <code>.env</code> file.
+    With <code>VAULT_USER</code> set, <code>make production</code> opens the person's <strong>own SSH tunnel</strong> through the GCP proxy
     (public IP) to the <strong>Vault on solsys</strong> (the Vault server, HashiCorp Vault), reads the <strong>dev</strong> secrets into
     memory for that one run, and starts the whole stack locally on the <strong>production Supabase</strong> (decided 12 Oct). solsys
     only hands out secrets: the build and the running app stay on the computer, and the production stack can't be reached from it.
@@ -368,7 +368,7 @@
   <div class="diagram-card">
     <svg viewBox="0 0 1010 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pTitle pDesc">
       <title id="pTitle">Planned local setup with Vault on solsys</title>
-      <desc id="pDesc">On the computer, make up opens the person's own SSH tunnel to their restricted account on the GCP proxy, which forwards over WireGuard to the Vault on solsys (10.8.0.1:8200). It logs in with the person's own Vault password and reads the dev secrets into memory only: the production Supabase keys, a JWT secret of their own, no email password. The local Docker stack (both WAFs, frontend, backend, local Vault) starts with them on https://localhost:8443 and uses the production Supabase project in the cloud. The production stack on solsys is not reachable. Every read is recorded in Vault's audit log.</desc>
+      <desc id="pDesc">On the computer, make production opens the person's own SSH tunnel to their restricted account on the GCP proxy, which forwards over WireGuard to the Vault on solsys (10.8.0.1:8200). It logs in with the person's own Vault password and reads the dev secrets into memory only: the production Supabase keys, a JWT secret of their own, no email password. The local Docker stack (both WAFs, frontend, backend, local Vault) starts with them on https://localhost:8443 and uses the production Supabase project in the cloud. The production stack on solsys is not reachable. Every read is recorded in Vault's audit log.</desc>
       <defs>
         <marker id="pB" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--browser)"/></marker>
         <marker id="pV" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--vault)"/></marker>
@@ -382,7 +382,7 @@
       <text x="28" y="34" class="group-title" fill="var(--sub)">this computer · a team member's laptop</text>
 
       <rect x="28" y="52" width="210" height="100" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.6"/>
-      <text x="44" y="78" class="box-label" fill="var(--browser)">$ make up</text>
+      <text x="44" y="78" class="box-label" fill="var(--browser)">$ make production</text>
       <text x="44" y="98" class="box-sub" fill="var(--ink)">a. open own SSH tunnel</text>
       <text x="44" y="114" class="box-sub" fill="var(--ink)">b. log in: own password</text>
       <text x="44" y="130" class="box-sub" fill="var(--ink)">c. read the dev secrets</text>
@@ -418,7 +418,7 @@
       <rect x="44" y="440" width="394" height="74" rx="10" fill="var(--waf-soft)" stroke="var(--waf)" stroke-width="1.4"/>
       <text x="58" y="464" class="box-label" fill="var(--waf)">WAFs · :8443 pages · :9443 API</text>
       <text x="58" y="482" class="box-sub" fill="var(--ink)">ModSecurity + OWASP CRS, paranoia level 2, same rules as production</text>
-      <text x="58" y="498" class="box-sub" fill="var(--sub)">started by every make up</text>
+      <text x="58" y="498" class="box-sub" fill="var(--sub)">started by every make production</text>
       <rect x="28" y="560" width="426" height="48" rx="12" fill="var(--browser-soft)" stroke="var(--browser)" stroke-width="1.4"/>
       <text x="44" y="580" class="box-label" fill="var(--browser)">Chrome → https://localhost:8443</text>
       <text x="44" y="598" class="box-sub" fill="var(--ink)">signs in with the real Supabase accounts</text>
@@ -488,7 +488,7 @@
   </div>
 
   <div class="steps">
-    <div class="step"><div class="n vault">1</div><p><code>make up</code> opens the person's own SSH tunnel (their account on the GCP proxy can only forward to
+    <div class="step"><div class="n vault">1</div><p><code>make production</code> opens the person's own SSH tunnel (their account on the GCP proxy can only forward to
       <code>10.8.0.1:8200</code>), checks Vault answers and is unsealed, then logs in with the person's <strong>own</strong> Vault password
       (once a day; the token is kept in <code>~/.vault-token</code>, owner-only) and reads <code>secret/family-tree/dev</code>. Vault records the read in its audit log.</p></div>
     <div class="step"><div class="n vault">2</div><p>The dev secrets come back <strong>into memory only</strong>, for this one command: the production Supabase URLs and
@@ -510,7 +510,7 @@
         <tr><td>Removing someone</td><td>change every secret they had</td><td>delete their Vault user and GCP account, rotate the database password and service key, re-make the unseal shares</td></tr>
         <tr><td>Needs solsys and the internet</td><td>no</td><td class="bad">yes, to start (then works until the next start)</td></tr>
         <tr><td>Needs admin rights</td><td>no</td><td class="good">no (plain ssh)</td></tr>
-        <tr><td>Evaluators, 42 machines</td><td><code>make up</code> or <code>make local</code></td><td>Tiara's own 42 session: <code>make up</code> as <code>tching</code>; otherwise without <code>VAULT_USER</code> (values from <code>.env</code>), or <code>make local</code></td></tr>
+        <tr><td>Evaluators, 42 machines</td><td><code>make up</code> or <code>make production</code></td><td>Tiara's own 42 session: <code>make production</code> as <code>tching</code>; otherwise without <code>VAULT_USER</code> (values from <code>.env</code>), or <code>make up</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -518,14 +518,14 @@
   <div class="callout"><div class="ic">⚠️</div><div>
     <strong>When the Vault route can't be used</strong>
     <ul>
-      <li><strong>No key yet or tunnel refused</strong>: <code>make up</code> stops with “SSH tunnel failed. Has Tiara added your SSH key?”.
-        Unset <code>VAULT_USER</code> to run from <code>.env</code>, or use <code>make local</code> (local Supabase, test data).</li>
+      <li><strong>No key yet or tunnel refused</strong>: <code>make production</code> stops with “SSH tunnel failed. Has Tiara added your SSH key?”.
+        Unset <code>VAULT_USER</code> to run from <code>.env</code>, or use <code>make up</code> (local Supabase, test data).</li>
       <li><strong>solsys restarted</strong>: Vault is sealed until 2 of the 5 share holders run <code>make unseal</code> (solsys adds its own share by itself, so one teammate is enough).</li>
       <li><strong>solsys, home internet or the GCP proxy down</strong>: same fallback; the live site is down too in that case.</li>
       <li><strong>Checked 13 Oct:</strong> outgoing SSH (port 22) to ft.natscho.my works from the 42 campus network (u80z04s04).
         On a new machine the first connection asks to confirm the server's key: accept only <code>SHA256:teGq/ElfqZAFyQoJ04Q7Z6fZbKrYtYXOcgr10b077Bg</code>.</li>
-      <li><strong><code>make up</code> skips Vault</strong> (“from the environment: (none)”, then “JWT_SECRET is empty”): <code>VAULT_USER</code>
-        isn't set in that terminal. Run <code>VAULT_USER=&lt;login&gt; VAULT_SSH_KEY=~/.ssh/ft_vault make up</code>, or reload <code>~/.zshrc</code>.</li>
+      <li><strong><code>make production</code> skips Vault</strong> (“from the environment: (none)”, then “JWT_SECRET is empty”): <code>VAULT_USER</code>
+        isn't set in that terminal. Run <code>VAULT_USER=&lt;login&gt; VAULT_SSH_KEY=~/.ssh/ft_vault make production</code>, or reload <code>~/.zshrc</code>.</li>
       <li><strong>Found on the first 42 run, fixed 13 Oct:</strong> the WAFs crash-looped on the 0600 TLS key (<code>make certs</code> now makes it
         readable, <code>c246fe4</code>), and the frontend WAF blocked the canvas page's chunk at paranoia level 2 (rule 932130 on
         <code>[id]</code>; a narrow exclusion under <code>/_next/static/</code>, <code>fda4dbf</code>).</li>

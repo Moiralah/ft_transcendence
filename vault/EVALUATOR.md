@@ -1,6 +1,6 @@
 # Vault login for an evaluator
 
-How to give an evaluator their own login to the Vault on solsys, so that their `make local`
+How to give an evaluator their own login to the Vault on solsys, so that their `make up`
 takes its secrets from Vault and not from `.env`. It is the same access a teammate has
 ([README.md](README.md), "Your access"), under the name `evaluator`, removed after the evals.
 
@@ -27,7 +27,7 @@ The login is two parts with the same name, `evaluator`:
   own password. A token lasts 12 hours (24 at most).
 
 **Be aware:** the dev secret set holds the production database URLs and the Supabase
-service-role key (see the top of [README.md](README.md)). With `make local` the app doesn't
+service-role key (see the top of [README.md](README.md)). With `make up` the app doesn't
 use them (local-up.sh replaces them with the local Supabase), but they are loaded into memory
 on the eval machine, and anyone who reads them from the shell can reach the real data. Only
 `JWT_SECRET` from Vault is actually used. Vault's audit log records every read. If the eval
@@ -108,7 +108,7 @@ machine.
 ## B. At the eval (the evaluator, with Tiara)
 
 The eval machine needs Docker, `make`, `curl`, `python3`, `ssh`, and the Supabase CLI
-(`make local` starts a local Supabase). On a 42 machine, paste the commands as they are:
+(`make up` starts a local Supabase). On a 42 machine, paste the commands as they are:
 none of them have `#` comments, which break pasting into zsh.
 
 ### B1. Clone and an `.env` with no secrets
@@ -137,7 +137,7 @@ account has no shell.
 ### B3. Run it
 
 ```sh
-VAULT_USER=evaluator VAULT_SSH_KEY=~/.ssh/ft_vault make local
+VAULT_USER=evaluator VAULT_SSH_KEY=~/.ssh/ft_vault make up
 ```
 
 Expect, in order:
@@ -156,7 +156,7 @@ https://localhost:8443 in Chrome (Safari blocks the local Supabase calls; see RE
 
 ### B4. What else to show
 
-- Without the login, the same command stops: `make local` with no `VAULT_USER` gives
+- Without the login, the same command stops: `make up` with no `VAULT_USER` gives
   `[vault-init] ERROR: JWT_SECRET is empty`. Nothing secret is in the repo or in `.env`.
 - Inside the stack, the backend reads its own secrets from the local Vault through AppRole
   (`scripts/vault-init.sh`), read-only, on exactly one path.
