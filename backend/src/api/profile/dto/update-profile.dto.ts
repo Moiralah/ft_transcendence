@@ -1,4 +1,5 @@
 import { IsDateString, IsInt, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsClean, IsCleanName } from '../../clean-text';
 import { IsProfileDate } from './date-range';
 
 // The global ValidationPipe strips any field not listed here (whitelist),
@@ -10,11 +11,13 @@ export class UpdateProfileDto {
 	@IsOptional()
 	@IsString()
 	@MaxLength(100)
+	@IsCleanName()
 	firstName?: string;
 
 	@IsOptional()
 	@IsString()
 	@MaxLength(100)
+	@IsCleanName()
 	lastName?: string | null;
 
 	@IsOptional()
@@ -38,5 +41,6 @@ export class UpdateProfileDto {
 	@IsOptional()
 	@IsString()
 	@MaxLength(250)
+	@IsClean()
 	bio?: string | null;
 }
