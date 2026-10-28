@@ -145,7 +145,8 @@ export function NodeProfileModal({
 
 			if (!res.ok) {
 				if (res.status === 401) throw new Error("Session expired. Please log in again.");
-				throw new Error(`Failed to add child: ${res.statusText}`);
+				const data = await res.json().catch(() => ({}));
+				throw new Error(data.message || `Failed to add child: ${res.statusText}`);
 			}
 
 			const rawResponseBody = await res.json();
@@ -171,6 +172,7 @@ export function NodeProfileModal({
 			}
 		} catch (err: any) {
 			console.error("Save error:", err.message);
+			toast.error(err.message);
 		}
 	};
 
@@ -188,7 +190,8 @@ export function NodeProfileModal({
 			});
 			if (!res.ok) {
 				if (res.status === 401) throw new Error('Session expired. Please log in again.');
-				throw new Error(`Failed to update profile: ${res.statusText}`);
+				const data = await res.json().catch(() => ({}));
+				throw new Error(data.message || `Failed to add spouse: ${res.statusText}`);
 			}
 
 			const rawResponseBody = await res.json();
@@ -200,6 +203,7 @@ export function NodeProfileModal({
 			if (onClose) onClose();
 		} catch (err: any) {
 			console.error('Save error:', err.message);
+			toast.error(err.message);
 		}
 	};
 

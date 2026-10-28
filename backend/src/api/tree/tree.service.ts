@@ -10,6 +10,12 @@ import { broadcastAudit, treeChannel } from './tree-realtime';
 const ASSIGNABLE_ROLES = ['ADMIN', 'MEMBER', 'JOINER'] as const;
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
+// Most people (nodes) one tree can hold, so a script can't grow a tree
+// without end. Guests get a smaller cap: their demo tree starts with about 10.
+// To turn a cap off, set it to 0.
+const MAX_TREE_NODES = 500;
+const MAX_GUEST_TREE_NODES = 30;
+
 const displayName = (
 	p: { firstName?: string | null; lastName?: string | null } | null | undefined,
 ): string =>
@@ -509,6 +515,8 @@ export class TreeService {
 			if (!parent) {
 				throw new NotFoundException('Parent profile not found.');
 			}
+			// The child, plus a new spouse when the parent has none yet.
+			await this.assertRoomForNodes(tx, treeId, requesterProfileId, parent.spouseId ? 1 : 2);
 
 			let spouseId = parent.spouseId;
 			let spouseCreated = false
@@ -601,6 +609,7 @@ export class TreeService {
 		}
 
 		return this.prisma.$transaction(async (tx) => {
+			await this.assertRoomForNodes(tx, treeId, requesterProfileId, 1);
 			let partner = await tx.profile.findUnique({ where: { id: partnerProfileId } });
 			if (!partner) {
 				throw new NotFoundException('Partner profile not found.');
@@ -639,6 +648,18 @@ export class TreeService {
 
 			return rows.map((r) => this.mapMemberRow(r));
 		});
+	}
+
+	// Refuses the add when it would take the tree past its cap (see
+	// MAX_TREE_NODES). Counts the tree's HOLDER rows, one per person shown.
+	private async assertRoomForNodes(tx: Pick<PrismaService, 'guest' | 'treeMember'>, treeId: number, requesterProfileId: number, adding: number) {
+		const isGuest = !!(await tx.guest.findUnique({ where: { profileId: requesterProfileId } }));
+		const max = isGuest ? MAX_GUEST_TREE_NODES : MAX_TREE_NODES;
+		if (max <= 0) return;
+		const count = await tx.treeMember.count({ where: { treeId, role: 'HOLDER' } });
+		if (count + adding > max) {
+			throw new BadRequestException(`This tree has reached the limit of ${max} people.`);
+		}
 	}
 
 	// A MEMBER's "own node" is whichever HOLDER node they've claimed (their
