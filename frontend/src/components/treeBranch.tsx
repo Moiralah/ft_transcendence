@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { TreeNode } from './treeNode';
 
 
@@ -30,7 +30,66 @@ interface TreeBranchProp {
   onMembersChange?: (update: Member[] | ((prev: Member[]) => Member[])) => void;
 }
 
-export function TreeBranch({
+// Lookups by profileId and by id, built once per members array and shared by
+// every branch (each branch used to build its own, for every render).
+const indexCache = new WeakMap<Member[], { byProfileId: Map<number, Member>; byId: Map<number, Member> }>();
+function indexOf(members: Member[]) {
+	let index = indexCache.get(members);
+	if (!index) {
+		const byProfileId = new Map<number, Member>();
+		const byId = new Map<number, Member>();
+		for (const m of members) {
+			byId.set(m.id, m);
+			if (m.profileId != null) byProfileId.set(m.profileId, m);
+		}
+		index = { byProfileId, byId };
+		indexCache.set(members, index);
+	}
+	return index;
+}
+
+// Every member object a branch's output depends on, in a fixed order: the
+// person, the placeholder that owns their place, who's shown on it, the spouse,
+// and the same for each child's branch. Follows the lookups TreeBranchView makes.
+function subtreeMembers(members: Member[], current?: Member): (Member | undefined)[] {
+	const { byProfileId, byId } = indexOf(members);
+	const out: (Member | undefined)[] = [];
+	const seen = new Set<number>();
+	const claimantOf = (m?: Member) => (m?.linkId != null ? byId.get(m.linkId) : undefined);
+	const visit = (m?: Member) => {
+		out.push(m);
+		if (!m) return;
+		let holder = m;
+		const linked = m.role !== 'HOLDER' ? claimantOf(m) : undefined;
+		if (linked?.role === 'HOLDER' && linked.claim === 'ACCEPTED') holder = linked;
+		holder = byId.get(holder.id) ?? holder;
+		if (seen.has(holder.id)) return;
+		seen.add(holder.id);
+		const shown = holder.profileId != null ? byProfileId.get(holder.profileId) : undefined;
+		const spouse = holder.spouseId ? byProfileId.get(holder.spouseId) : undefined;
+		out.push(holder, shown, claimantOf(shown), spouse, claimantOf(spouse));
+		for (const childId of holder.childrenIds ?? []) visit(byProfileId.get(childId));
+	};
+	visit(current);
+	return out;
+}
+
+// A branch re-renders only when one of its own people changed. The members
+// list is a new array after any change, but the page keeps the same object for
+// everyone who didn't change, so this skips every other branch, and the whole
+// tree while the canvas is only panned or zoomed.
+function sameBranch(prev: TreeBranchProp, next: TreeBranchProp): boolean {
+	if (prev.currentMember !== next.currentMember || prev.treeView !== next.treeView
+		|| prev.onMembersChange !== next.onMembersChange) return false;
+	if (prev.allMembers === next.allMembers) return true;
+	const a = subtreeMembers(prev.allMembers ?? [], prev.currentMember);
+	const b = subtreeMembers(next.allMembers ?? [], next.currentMember);
+	return a.length === b.length && a.every((m, i) => m === b[i]);
+}
+
+export const TreeBranch = React.memo(TreeBranchView, sameBranch);
+
+function TreeBranchView({
   allMembers = [],
   currentMember,
   treeView,
@@ -79,15 +138,7 @@ export function TreeBranch({
     );
   };
 
-	const {byProfileId, byId} = useMemo(() => {
-		const byProfileId = new Map<number, Member>();
-		const byId = new Map<number, Member>();
-		for (const m of localMembers) {
-			byId.set(m.id, m);
-  			if (m.profileId != null) byProfileId.set(m.profileId, m);
-		}
-	return { byProfileId, byId };
-	}, [localMembers]);
+	const { byProfileId, byId } = indexOf(localMembers);
 
 	const getMember = (targetId?: number | null): Member | undefined => {
 		if (!targetId)
@@ -280,16 +331,18 @@ const renderAddChild = (BranchAddMember: Member) => {
 	});
 	};
 
-  const renderRemove = (targetId) => {
+  // From the latest list, not this render's: a skipped (memo) branch may hold
+  // an older one, and replacing the list with it would undo newer changes.
+  const renderRemove = (targetId) => updateMembers((localMembers) => {
 
     const targetMember = localMembers.find(
       (m) => m.profileId === targetId
     );
-    if (!targetMember) return;
+    if (!targetMember) return localMembers;
 
     if (!targetMember.spouseId)
     {
-      const updatedList = localMembers.map((m) => {
+      return localMembers.map((m) => {
         const isFather = m.profileId && m.profileId === targetMember.fatherId;
         const isMother = m.profileId && m.profileId === targetMember.motherId;
 
@@ -302,10 +355,9 @@ const renderAddChild = (BranchAddMember: Member) => {
         return m;
       })
       .filter((m) => (m.profileId ?? m.id) !== targetId);
-      updateMembers(updatedList);
     }
     else {
-      const updatedList = localMembers.map((m) => {
+      return localMembers.map((m) => {
         const isSpouse = m.profileId && m.profileId === targetMember.spouseId;
 
         if (isSpouse) {
@@ -317,9 +369,8 @@ const renderAddChild = (BranchAddMember: Member) => {
         return m;
       })
       .filter((m) => (m.profileId ?? m.id) !== targetId);
-      updateMembers(updatedList);
     }
-  };
+  });
 
 	const canDelete =
 		treeView.viewType === 'ADMIN' || treeView.viewType === 'MEMBER';
@@ -359,7 +410,6 @@ const renderAddChild = (BranchAddMember: Member) => {
           when the spouse card is the taller one. */}
       <div ref={primaryRef} data-tree-primary className="relative self-stretch flex flex-col items-center justify-center">
         <TreeNode
-          members={localMembers}
           currentMember={getLinkMember(activeCurrentMember.profileId)}
           NodeAddChild={renderAddChild}
           NodeAddSpouse={renderAddSpouse}
@@ -372,16 +422,15 @@ const renderAddChild = (BranchAddMember: Member) => {
             middle of the column, behind the card, so it still meets the card's
             bottom edge when a taller spouse card leaves space under it. */}
         {children.length > 0 && (
-          <div className="absolute top-1/2 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-black z-0"></div>
+          <div className="absolute top-1/2 bottom-0 left-1/2 -translate-x-1/2 w-[var(--tree-line,2px)] bg-black z-0"></div>
         )}
       </div>
 
       {spouse && (
         <div className="flex items-center">
-          <span className="w-8 h-0.5 bg-black"></span>
+          <span className="w-8 h-[var(--tree-line,2px)] bg-black"></span>
           <TreeNode
-            members={localMembers}
-            currentMember={getLinkMember(spouse.profileId)}
+              currentMember={getLinkMember(spouse.profileId)}
             NodeAddChild={renderAddChild}
             NodeAddSpouse={renderAddSpouse}
             NodeRemove={(deletedId) => renderRemove(deletedId)}
@@ -405,9 +454,9 @@ const renderAddChild = (BranchAddMember: Member) => {
             const right = Math.max(...xs);
             return (
               <>
-                <div className="absolute top-0 h-0.5 bg-black" style={{ left: left - 1, width: right - left + 2 }} />
+                <div className="absolute top-0 h-[var(--tree-line,2px)] bg-black" style={{ left: `calc(${left}px - var(--tree-line,2px) / 2)`, width: `calc(${right - left}px + var(--tree-line,2px))` }} />
                 {connectors.childXs.map((x, i) => (
-                  <div key={i} className="absolute top-0 h-10 w-0.5 bg-black" style={{ left: x - 1 }} />
+                  <div key={i} className="absolute top-0 h-10 w-[var(--tree-line,2px)] bg-black" style={{ left: `calc(${x}px - var(--tree-line,2px) / 2)` }} />
                 ))}
               </>
             );
@@ -418,7 +467,7 @@ const renderAddChild = (BranchAddMember: Member) => {
                 allMembers={localMembers}
                 treeView={treeView}
                 currentMember={child}
-                onMembersChange={updateMembers}
+                onMembersChange={onMembersChange}
               />
             </div>
           ))}

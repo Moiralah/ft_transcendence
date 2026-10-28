@@ -416,6 +416,11 @@ export class TreeService {
 			);
 		}
 
+		// Nothing actually changes: no write, and no UPDATE_TREE notification.
+		const changed = (Object.keys(data) as (keyof typeof data)[])
+			.some((key) => data[key] !== undefined && data[key] !== tree[key]);
+		if (!changed) return tree;
+
 		const updatedTree = await this.prisma.tree.update({
 			where: { id: treeId },
 			data: {

@@ -19,4 +19,6 @@
 	.card { max-width: 360px; margin: 80px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
 	.error { color: #dc2626; font-size: 13px; margin-top: 8px; }
 	.success { color: #16a34a; font-size: 13px; margin-top: 8px; }
+	/* The × that closes a dialog, top right. */
+	.btn-close { @apply w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2; }
 }

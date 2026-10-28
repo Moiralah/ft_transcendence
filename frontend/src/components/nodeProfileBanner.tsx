@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { getSessionId, apiFetch } from '@/lib/auth';
 import { MIN_PROFILE_DATE, todayDate } from '@/lib/dates';
@@ -352,12 +353,13 @@ export function NodeProfileModal({
 	};
 
 	// Leaving a field: save it if it changed since the window opened or the last save.
-	const saveIfChanged = (field: 'birthDate' | 'name') => {
+	// Every save is broadcast to the tree as a notification, so an unchanged field isn't sent.
+	const saveIfChanged = (field: 'birthDate' | 'name' | 'bio') => {
 		const was = savedRef.current;
 		if (!formMember || !was) return;
 		const changed = field === 'name'
 			? formMember.firstName !== was.firstName || (formMember.lastName ?? '') !== (was.lastName ?? '')
-			: (formMember.birthDate ?? '') !== (was.birthDate ?? '');
+			: (formMember[field] ?? '') !== (was[field] ?? '');
 		if (changed) handleSave(formMember);
 	};
 
@@ -478,6 +480,14 @@ export function NodeProfileModal({
 	// another real user's row; the server refuses that too.
 	const canEditFields = isUnclaimedHolder && canAddOrSave;
 
+	// A real person sits on this node (same rule as treeNode's isRealUserNode):
+	// a claimed placeholder, or someone's own membership row. Its details come
+	// from that person's profile, which only they can change.
+	const isRealUserNode = isHolder ? member.claim === 'ACCEPTED' : true;
+	const isMyOwnNode = isRealUserNode && (isHolder
+		? member.linkId === treeView.memberId
+		: member.profileId != null && member.profileId === treeView.viewId);
+
 	if (!mounted) return null;
 
 	return ReactDOM.createPortal(
@@ -495,15 +505,76 @@ export function NodeProfileModal({
 				aria-modal="true"
 				aria-labelledby={titleId}
 				tabIndex={-1}
-				className="flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto focus:outline-none"
+				className="relative flex flex-col gap-8 bg-white rounded-xl w-full max-w-3xl p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto focus:outline-none"
 				onClick={(e) => e.stopPropagation()}
 			>
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onClose();
+					}}
+					aria-label="Close"
+					className="btn-close absolute top-3 right-3 p-0 text-2xl"
+				>
+					<span aria-hidden="true">×</span>
+				</button>
+
 				{/* Form Section */}
 				<div className="flex flex-col gap-4">
+
+				{/* Upload Photo */}
+				<div className="flex flex-col justify-center items-center gap-4 ">
+					<Avatar
+						photoUrl={formMember?.photoUrl}
+						size={96}
+						className={`outline outline-2 outline-offset-2 outline-indigo-600 ${canEditFields ? '' : 'opacity-80'
+							}`}
+						label={`Change photo of ${`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'this person'}`}
+						disabled={!canEditFields}
+						onClick={() => {
+							if (canEditFields) fileInputRef.current?.click();
+						}}
+					/>
+
+					{uploading && <div className="flex text-sm text-gray-500">Uploading…</div>}
+
+					{isRealUserNode ? (
+						<p className="text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-center">
+							{isMyOwnNode ? (
+								<>Update your <Link href="/dashboard" className="font-semibold underline hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-amber-600 rounded">profile page</Link> if you want to see a change here.</>
+							) : (
+								'You cannot edit another real user profile.'
+							)}
+						</p>
+					) : (
+						<p className="flex text-xs text-gray-500 text-center">{PHOTO_HINT}</p>
+					)}
+					{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
+
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept={PHOTO_TYPES}
+						className="hidden"
+						disabled={!canEditFields}
+						onChange={handlePhotoUpload}
+					/>
+				</div>
 					{/* Name */}
-					<div className="flex text-2xl">
+					<div className="flex items-center min-h-12 text-2xl font-bold">
 						{editName ? (
-							<div className="flex flex-row gap-2">
+							// Saves when focus leaves both inputs, not when it moves between them.
+							<div
+								className="grid grid-cols-2 gap-2 w-full"
+								onBlur={(e) => {
+									if (!e.currentTarget.contains(e.relatedTarget as Node | null)) handleNameBlur();
+								}}
+							>
+								{/* The dialog keeps its accessible title while the name is being edited. */}
+								<h2 id={titleId} className="sr-only">
+									{`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
+								</h2>
 								<input
 									type="text"
 									name="firstName"
@@ -511,8 +582,9 @@ export function NodeProfileModal({
 									onChange={handleChange}
 									onKeyDown={handleKeyDown}
 									autoFocus
-									aria-label="Edit First Name"
-									className="min-w-48 flex flex-row border rounded px-2 py-1 text-base outline-none border-blue-500"
+									placeholder="First name"
+									aria-label="First name"
+									className="min-w-0 text-2xl font-bold text-gray-900 placeholder:font-normal placeholder:text-gray-400 border border-gray-300 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-amber-600"
 								/>
 								<input
 									type="text"
@@ -520,27 +592,27 @@ export function NodeProfileModal({
 									value={formMember?.lastName || ''}
 									onChange={handleChange}
 									onKeyDown={handleKeyDown}
-									onBlur={handleNameBlur}
-									aria-label="Edit Last Name"
-									className="min-w-48 flex flex-row border rounded px-2 py-1 text-base outline-none border-blue-500"
+									placeholder="Last name"
+									aria-label="Last name"
+									className="min-w-0 text-2xl font-bold text-gray-900 placeholder:font-normal placeholder:text-gray-400 border border-gray-300 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-amber-600"
 								/>
 							</div>
 						) : (
-							<div className="flex flex-row font-bold justify-between items-center gap-2 h-12 w-full">
-								<h2 id={titleId} className="min-w-0 text-2xl [overflow-wrap:anywhere]">
-									{`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
-								</h2>
-								{canEditFields && (
+							<h2 id={titleId} className="min-w-0 text-2xl [overflow-wrap:anywhere]">
+								{canEditFields ? (
 									<button
 										type="button"
 										id="node-edit-name"
-										className="flex w-auto shrink-0 px-3 py-1 text-sm text-gray-900 bg-gray-100 border border-gray-300 rounded hover:bg-gray-100 cursor-pointer font-normal focus:outline-none focus:ring-2 focus:ring-amber-600"
+										title="Click to edit name"
 										onClick={() => setEditName(true)}
+										className="-mx-2 w-auto rounded px-2 py-1 min-w-0 text-2xl text-left font-bold text-gray-900 bg-transparent cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 [overflow-wrap:anywhere]"
 									>
-										Edit Name
+										{`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'}
 									</button>
+								) : (
+									`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'Unnamed Member'
 								)}
-							</div>
+							</h2>
 						)}
 					</div>
 
@@ -603,101 +675,71 @@ export function NodeProfileModal({
 					</div>
 
 					{/* bio */}
-                    <div className="flex flex-col text-xl font-normal gap-1">
-                        <div className="flex flex-row justify-between items-center">
-                            <div id="node-bio-label" className="text-gray-600">Bio</div>
-                            {editingField === 'bio' && (() => {
-                                const charCount = formMember?.bio?.length || 0;
-                                return (
-                                    <span className={`text-xs ${charCount > 250 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                                        {charCount} / 250 characters
-                                    </span>
-                                );
-                            })()}
-                        </div>
-                        <div className="flex-1">
-                            {editingField === 'bio' ? (
-                                <div className="flex flex-col gap-2">
-                                    <textarea
-                                        name="bio"
-                                        rows={3}
-                                        value={formMember?.bio || ''}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            // Allow typing up to 250 characters, or allow deleting text
-                                            if (val.length <= 250 || val.length < (formMember?.bio?.length || 0)) {
-                                                setFormMember((prev) => (prev ? { ...prev, bio: val } : prev));
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Escape') {
-                                                e.preventDefault();
-                                                handleSave(formMember);
-                                                setEditingField(null);
-                                                setTimeout(() => document.getElementById('node-bio-value')?.focus());
-                                            }
-                                        }}
-                                        onBlur={() => {
-                                            handleSave(formMember);
-                                            setEditingField(null);
-                                        }}
-                                        autoFocus
-                                        aria-labelledby="node-bio-label"
-                                        className="text-xl outline-none border border-gray-300 rounded p-2 w-full focus:ring-2 focus:ring-amber-600 resize-y"
-                                    />
-                                </div>
-                            ) : (
-                                canEditFields ? (
-                                    <button
-                                        type="button"
-                                        id="node-bio-value"
-                                        onClick={() => setEditingField('bio')}
-                                        aria-labelledby="node-bio-label node-bio-value"
-                                        className="w-full rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 [overflow-wrap:anywhere]"
-                                    >
-                                        {formMember?.bio || 'Click to add bio'}
-                                    </button>
-                                ) : (
-                                    <span className="rounded text-xl px-2 py-1 cursor-default text-gray-600 [overflow-wrap:anywhere]">
-                                        {formMember?.bio || 'Not specified'}
-                                    </span>
-                                )
-                            )}
-                        </div>
-                    </div>
-				</div>
-
-				{/* Upload Photo */}
-				<div className="flex flex-col justify-center items-center gap-2 ">
-					<Avatar
-						photoUrl={formMember?.photoUrl}
-						size={96}
-						className={`outline outline-2 outline-offset-2 outline-indigo-600 ${canEditFields ? '' : 'opacity-80'
-							}`}
-						label={`Change photo of ${`${formMember?.firstName || ''} ${formMember?.lastName || ''}`.trim() || 'this person'}`}
-						disabled={!canEditFields}
-						onClick={() => {
-							if (canEditFields) fileInputRef.current?.click();
-						}}
-					/>
-
-					{uploading && <div className="flex text-sm text-gray-500">Uploading…</div>}
-
-					<p className="flex text-xs text-gray-500 text-center">{PHOTO_HINT}</p>
-					{photoError && <p role="alert" className="text-sm text-red-600">{photoError}</p>}
-
-					<input
-						ref={fileInputRef}
-						type="file"
-						accept={PHOTO_TYPES}
-						className="hidden"
-						disabled={!canEditFields}
-						onChange={handlePhotoUpload}
-					/>
+					<div className="flex flex-row text-xl font-normal items-baseline">
+						<div id="node-bio-label" className="flex w-40 shrink-0 text-gray-600">Bio</div>
+						<div className="flex-1 min-w-0">
+							{editingField === 'bio' ? (
+								<div className="flex flex-col gap-1">
+									<textarea
+										name="bio"
+										rows={3}
+										value={formMember?.bio || ''}
+										onChange={(e) => {
+											const val = e.target.value;
+											// Allow typing up to 250 characters, or allow deleting text
+											if (val.length <= 250 || val.length < (formMember?.bio?.length || 0)) {
+												setFormMember((prev) => (prev ? { ...prev, bio: val } : prev));
+											}
+										}}
+										onKeyDown={(e) => {
+											if (e.key === 'Escape') {
+												e.preventDefault();
+												saveIfChanged('bio');
+												setEditingField(null);
+												setTimeout(() => document.getElementById('node-bio-value')?.focus());
+											}
+										}}
+										onBlur={() => {
+											saveIfChanged('bio');
+											setEditingField(null);
+										}}
+										autoFocus
+										aria-labelledby="node-bio-label"
+										className="text-xl outline-none border border-gray-300 rounded px-2 py-1 w-full focus:ring-2 focus:ring-amber-600 resize-y"
+									/>
+									{(() => {
+										const charCount = formMember?.bio?.length || 0;
+										return (
+											<span className={`self-end text-xs ${charCount > 250 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+												{charCount} / 250 characters
+											</span>
+										);
+									})()}
+								</div>
+							) : (
+								canEditFields ? (
+									<button
+										type="button"
+										id="node-bio-value"
+										onClick={() => setEditingField('bio')}
+										aria-labelledby="node-bio-label node-bio-value"
+										className="w-auto max-w-full rounded text-xl text-left text-gray-900 bg-transparent px-2 py-1 cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-600 [overflow-wrap:anywhere]"
+									>
+										{formMember?.bio || 'Click to add bio'}
+									</button>
+								) : (
+									<span className="rounded text-xl px-2 py-1 cursor-default text-gray-600 [overflow-wrap:anywhere]">
+										{formMember?.bio || 'Not specified'}
+									</span>
+								)
+							)}
+						</div>
+					</div>
 				</div>
 
 				{/* Action Buttons */}
 				{deleteError && <p role="alert" className="text-sm text-red-600 -mb-4">{deleteError}</p>}
+				{(onDelete || isMyClaimOnThisNode || canClaimThisNode) && (
 				<div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t pt-4">
 
 					{onDelete && (
@@ -715,18 +757,6 @@ export function NodeProfileModal({
 							{deleting ? 'Removing…' : confirmDelete ? 'Click again to remove' : 'Remove from tree'}
 						</button>
 					)}
-
-					{/* cancel button */}
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onClose();
-						}}
-						className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-					>
-						Close
-					</button>
 
 					{(isMyClaimOnThisNode || canClaimThisNode) && (
 						<button
@@ -747,6 +777,7 @@ export function NodeProfileModal({
 						</button>
 					)}
 				</div>
+				)}
 
 				{/* Family Section */}
 				<div className="flex flex-col gap-2 border-t pt-4">

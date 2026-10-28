@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar';
 import { SkipLink } from '@/components/SkipLink';
 import { Footer } from '@/components/footer';
 import { TreeBranch } from '@/components/treeBranch';
+import { TreeMembersContext } from '@/components/treeNode';
 import { truncateName } from '@/lib/names';
 import { useTreeNotifications } from '@/hooks/notification';
 import { useTreePresence } from '@/hooks/useTreePresence';
@@ -61,7 +62,8 @@ export default function Content() {
   const [treesMember, setTreesMember] = useState<any[]>([]);
   const [searchMember, setSearchMember] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null)
-  const [joinerHintDismissed, setJoinerHintDismissed] = useState(false);
+  // Which hint was closed: a new one (e.g. the claim got approved) shows again.
+  const [dismissedHint, setDismissedHint] = useState<string | null>(null);
 
   type TreeVisibility = 'PUBLIC' | 'ADMIN' | 'MEMBER' | 'JOINER';
 
@@ -156,17 +158,40 @@ export default function Content() {
     setTreesMember(updatedMembers);
   };
 
+  // A refetch keeps the old object for everyone whose data didn't change, and
+  // the old list when nothing did, so only the branches with a changed person
+  // re-render (TreeBranch's memo) and an unchanged refetch renders nothing.
+  const reconcileMembers = (prev: any[], next: any[]) => {
+    const old = new Map(prev.map((m) => [m.id, m]));
+    let changed = prev.length !== next.length;
+    const merged = next.map((m, i) => {
+      const was = old.get(m.id);
+      if (was && JSON.stringify(was) === JSON.stringify(m)) {
+        if (prev[i] !== was) changed = true;
+        return was;
+      }
+      changed = true;
+      return m;
+    });
+    return changed ? merged : prev;
+  };
+
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isAnyModalOpen = () =>
 	typeof document !== 'undefined' &&
 	document.querySelector('[data-modal-open]') !== null;
 
-	const refetchAll = useCallback(() => {
-	if (isAnyModalOpen()) return;
+	const refetchAll = useCallback(function refetch() {
 	if (!token || !treeId) return;
 
 	if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
 	refetchTimerRef.current = setTimeout(() => {
+		// Not while a window is open (a refetch could reset a form being typed
+		// in), but not dropped either: try again until it's closed.
+		if (isAnyModalOpen()) {
+			refetch();
+			return;
+		}
 		fetchTreeMember(token, treeId);
     handlePending();
 	}, 400);
@@ -224,7 +249,7 @@ export default function Content() {
         throw new Error(`Failed to fetch trees member: ${res.statusText}`);
       }
       const data = await res.json();
-      setTreesMember(data);
+      setTreesMember((prev) => reconcileMembers(prev, data));
     } catch (err: any) {
       console.error('Error fetching tree members:', err);
     }
@@ -364,10 +389,17 @@ export default function Content() {
   // Guests can't rename their demo tree (the API refuses it too).
   const [guest, setGuest] = useState(false);
   useEffect(() => setGuest(isGuest()), []);
+  // Only the owner may rename the tree (the API refuses everyone else too).
+  const canRenameTree = !guest && tree?.ownerId != null && tree.ownerId === myProfile?.id;
 
   const handleSaveTreeName = async () => {
     const currentName = name.trim() || "my tree";
     setEditTreeName(false);
+    // Unchanged: no save, so no "updated the tree" notification for everyone.
+    if (currentName === tree?.name) {
+      setName(tree.name);
+      return;
+    }
 
     try {
       const token = getSessionId();
@@ -398,6 +430,8 @@ export default function Content() {
       }
       const updatedTree = await res.json();
       setName(updatedTree.name);
+      // Keep tree.name current: it's what the next rename is compared with.
+      setTree((prev: any) => (prev ? { ...prev, name: updatedTree.name } : prev));
     } catch (err: any) {
       console.error("Save error:", err.message);
       toast.error(err.message);
@@ -596,7 +630,58 @@ export default function Content() {
   }
 
 	const hasPendingClaim = treeType === 'JOINER' && treeView.linkId != null;
-	const showJoinerHint = treeType === 'JOINER' && !hasPendingClaim && !joinerHintDismissed;
+
+	// What to do next, by role. A guest can't invite anyone to the demo tree,
+	// so a guest admin gets the Member steps.
+	const buildSteps = [
+		"Start creating family using the 'Add Child' or 'Add Spouse' button.",
+	];
+	const hint: { key: string; title: string; steps: React.ReactNode[] } | null =
+		treeType === 'ADMIN' && !guest ? {
+			key: 'owner',
+			title: "You're viewing as the Owner",
+			steps: [
+				...buildSteps,
+				'Invite your family to the tree to help create the family tree.',
+				<>
+					Provide below details for them to join the tree:
+					<ul className="list-disc pl-4 mt-1 space-y-0.5">
+						<li>
+							Tree Name:{' '}
+							<span className="font-semibold text-blue-900 [overflow-wrap:anywhere]">{name || tree?.name}</span>
+						</li>
+						{tree?.code && (
+							<li>
+								Join Code:{' '}
+								<span className="font-mono font-semibold text-blue-900">{tree.code}</span>
+							</li>
+						)}
+					</ul>
+				</>,
+				'Approve their claim on one of the people you created in the tree to start editing the tree.',
+			],
+		}
+		: treeType === 'ADMIN' || treeType === 'MEMBER' ? {
+			key: 'member',
+			title: "You're viewing as a Member",
+			steps: [
+				...buildSteps,
+				"Edit the people's profiles.",
+				'Add a profile picture for each of them.',
+			],
+		}
+		: treeType === 'JOINER' && hasPendingClaim ? {
+			key: 'pending',
+			title: "You're viewing as a Joiner",
+			steps: ['Pending member approval from the owner.'],
+		}
+		: treeType === 'JOINER' ? {
+			key: 'joiner',
+			title: "You're viewing as a Joiner",
+			steps: ['Claim one of the people in the tree and wait for owner approval to start editing the family tree.'],
+		}
+		: null;
+	const showHint = hint !== null && dismissedHint !== hint.key;
 
   // People who joined the tree; HOLDER rows are the drawn placeholder nodes.
   const memberCount = treesMember.filter((member: any) => member.role !== 'HOLDER').length;
@@ -626,7 +711,7 @@ export default function Content() {
           {/* Top Row: Editable Title + Home Button */}
           <div className="flex flex-row w-full items-center justify-between gap-2">
             <div className="min-h-12 min-w-0 flex flex-1 items-center">
-              {guest ? (
+              {!canRenameTree ? (
                 <div
                   className="flex min-h-12 min-w-0 items-center px-3 py-2 text-lg font-semibold text-gray-800 [overflow-wrap:anywhere]"
                   title={name || "my tree"}
@@ -686,22 +771,26 @@ export default function Content() {
           </div>
         </div>
 
-		{/* Joiner hint */}
-		{showJoinerHint && (
+		{/* Role hint: what to do next */}
+		{showHint && (
 		<div className="w-60 sm:w-80 rounded-xl border border-blue-200 bg-blue-50/95 backdrop-blur-sm shadow-sm p-4 m-5 mb-0">
 			<div className="flex items-start gap-3">
 			<span aria-hidden="true" className="text-xl leading-none mt-0.5">💡</span>
 			<div className="flex-1 min-w-0">
 				<p className="text-sm font-semibold text-blue-900 mb-1">
-				You're viewing as a Joiner
+				{hint.title}
 				</p>
-				<p className="text-sm text-blue-800 [overflow-wrap:anywhere]">
-				Claim one of the people in the tree and wait for owner approval to start editing the family tree.
-				</p>
+				{hint.steps.length === 1 ? (
+				<p className="text-sm text-blue-800 [overflow-wrap:anywhere]">{hint.steps[0]}</p>
+				) : (
+				<ol className="list-decimal pl-4 space-y-1 text-sm text-blue-800 [overflow-wrap:anywhere]">
+					{hint.steps.map((step, i) => <li key={i}>{step}</li>)}
+				</ol>
+				)}
 			</div>
 			<button
 				type="button"
-				onClick={() => setJoinerHintDismissed(true)}
+				onClick={() => setDismissedHint(hint.key)}
 				aria-label="Dismiss hint"
 				className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50/95 text-slate-600 hover:text-slate-900 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2"
 			>
@@ -768,16 +857,22 @@ export default function Content() {
             className="pt-44 lg:pt-10 origin-top"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+              // Connector thickness (treeBranch.tsx). 2px lines scaled down to
+              // 0.3 are under a screen pixel and the browser drops some of them,
+              // so they get thicker as you zoom out: never thinner than 1.5px on screen.
+              ['--tree-line' as string]: `${Math.max(2, 1.5 / scale)}px`,
             }}
           >
             <div>
-              <TreeBranch
-                allMembers={treesMember ?? []}
-                currentMember={rootMember}
-                treeView={treeView}
-                // PB Fix Old | onMembersChange={updateMembers}
-                onMembersChange={setTreesMember}
-              />
+              <TreeMembersContext.Provider value={treesMember}>
+                <TreeBranch
+                  allMembers={treesMember}
+                  currentMember={rootMember}
+                  treeView={treeView}
+                  // PB Fix Old | onMembersChange={updateMembers}
+                  onMembersChange={setTreesMember}
+                />
+              </TreeMembersContext.Provider>
             </div>
           </div>
         </div>
@@ -799,9 +894,17 @@ export default function Content() {
             aria-modal="true"
             aria-labelledby="tree-member-title"
             tabIndex={-1}
-            className="flex flex-col bg-white rounded-xl w-full max-w-xl gap-4 p-8 shadow-2xl focus:outline-none"
+            className="relative flex flex-col bg-white rounded-xl w-full max-w-xl gap-4 p-8 shadow-2xl focus:outline-none"
           >
-            <h2 id="tree-member-title" className="flex text-2xl font-bold">
+            <button
+              type="button"
+              onClick={() => setTreeMemberModal(false)}
+              aria-label="Close"
+              className="btn-close absolute top-3 right-3 p-0 text-2xl"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+            <h2 id="tree-member-title" className="flex pr-10 text-2xl font-bold">
               {`Tree member (${treesMember.filter((member: any) => member.role !== 'HOLDER').length})`}
             </h2>
 
@@ -858,16 +961,6 @@ export default function Content() {
                 </div>
                 );
               })}
-            </div>
-
-            <div className="flex justify-end mt-4">
-              <button
-                type="button"
-                className="w-24 h-10 bg-white hover:bg-gray-50 border border-black shadow text-black focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
-                onClick={() => setTreeMemberModal(false)}
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { NodeProfileModal } from './nodeProfileBanner';
 import { getSessionId, apiFetch } from '@/lib/auth';
 import { truncateName } from '@/lib/names';
@@ -32,6 +32,11 @@ export interface Member {
   childrenIds?: number[];
 }
 
+// The tree's whole member list, for the profile window (family names). A
+// context, not a prop, so branches whose people didn't change can skip
+// re-rendering (TreeBranch's memo) and an open window still sees the latest list.
+export const TreeMembersContext = createContext<Member[]>([]);
+
 const formatDate = (date: string | Date) => {
   try {
     return new Date(date).toLocaleDateString();
@@ -41,7 +46,6 @@ const formatDate = (date: string | Date) => {
 };
 
 interface TreeNodeProp {
-  members: Member[];
   currentMember?: Member;
   NodeAddSpouse: (addMember: Member) => void;
   NodeAddChild: (addMember: Member) => void;
@@ -52,7 +56,6 @@ interface TreeNodeProp {
 }
 
 export function TreeNode({
-  members,
   currentMember,
   NodeAddChild,
   NodeAddSpouse,
@@ -61,12 +64,11 @@ export function TreeNode({
   treeView,
   showDeleteButton = true,
 }: TreeNodeProp) {
-  const [nodeMember, setNodeMember] = useState<Member | undefined>(currentMember);
+  // No copy in local state: every change goes into the tree's member list
+  // (NodeUpdate) and comes back as currentMember, in the same render.
+  const nodeMember = currentMember;
+  const members = useContext(TreeMembersContext);
   const [nodeProfileModal, setNodeProfileModal] = useState(false);
-
-  useEffect(() => {
-    setNodeMember(currentMember);
-  }, [currentMember]);
 
   if (!nodeMember) return null;
 
@@ -163,30 +165,24 @@ export function TreeNode({
           onDelete={showDeleteButton ? handleDeleteNode : undefined}
 
           onClaim={(updatedMembers: Member[]) => {
-			if (updatedMembers[0]) setNodeMember(updatedMembers[0]);
 			updatedMembers.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
 			setNodeProfileModal(false);
           }}
 
           onUnclaim={(updatedMembers: Member[]) => {
-			if (updatedMembers[0]) setNodeMember(updatedMembers[0]);
 			updatedMembers.forEach((u) => { if (NodeUpdate) NodeUpdate(u); });
 			setNodeProfileModal(false);
           }}
 
           onSave={(updatedMember: Member) => {
-            setNodeMember(updatedMember);
-            // Also into the tree's member list: the card is re-filled from that
-            // list whenever it changes (a photo upload, adding a child...), so
-            // without this the saved gender or birth date would snap back.
+            // Into the tree's member list, which the card is drawn from.
             if (NodeUpdate) NodeUpdate(updatedMember);
             // Fields save one at a time now, so the window stays open.
           }}
 
 		  	onPhotoUpdated={(updatedMember: Member) => {
-			// Only the photo changed (the window sends id, profileId and photoUrl),
-			// so merge it in rather than replacing the whole person.
-			setNodeMember((prev) => (prev ? { ...prev, ...updatedMember } : updatedMember));
+			// Only the photo changed (the window sends id, profileId and
+			// photoUrl); NodeUpdate merges it into the person.
 			if (NodeUpdate) NodeUpdate(updatedMember);
 			// modal stays open — user can keep editing
 			}}
