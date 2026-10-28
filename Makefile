@@ -53,7 +53,7 @@ stack: certs
 	docker compose $(STACK) build
 	docker compose $(STACK) up -d vault
 	./scripts/vault-init.sh
-	docker compose $(STACK) up -d --no-deps frontend waf-frontend waf-backend
+	docker compose $(STACK) up -d -V --no-deps frontend waf-frontend waf-backend
 	docker compose $(STACK) restart waf-frontend waf-backend
 
 # Production only, run ON the server (needs docker-compose.prod.yml and the
@@ -131,7 +131,7 @@ backend-stack:
 	docker compose $(STACK) restart waf-backend
 
 frontend-stack:
-	docker compose $(STACK) up -d --build --no-deps frontend
+	docker compose $(STACK) up -d --build -V --no-deps frontend
 	docker compose $(STACK) restart waf-frontend
 
 backend-shell:

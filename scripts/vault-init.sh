@@ -148,12 +148,15 @@ done
 COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.yml}"
 
 echo "[vault-init] starting backend with AppRole credentials..."
+# -V: fresh node_modules volume from the image each start, so a newly added
+# package is there without an npm install in the container (no-op in prod,
+# which has no such volume).
 DATABASE_URL="$DATABASE_URL_DOCKER" \
 DIRECT_URL="$DIRECT_URL_DOCKER" \
 SUPABASE_AUTH_URL="$SUPABASE_AUTH_URL_DOCKER" \
 VAULT_ADDR="http://vault:8200" \
 VAULT_ROLE_ID="$ROLE_ID" \
 VAULT_SECRET_ID="$SECRET_ID" \
-  docker compose $COMPOSE_FILES up -d backend
+  docker compose $COMPOSE_FILES up -d -V backend
 
 echo "[vault-init] done."
