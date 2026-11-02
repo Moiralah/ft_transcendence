@@ -52,8 +52,20 @@ install_supabase() {
 	export PATH
 	case ":$ORIGINAL_PATH:" in
 		*":$BIN_DIR:"*) ;;
-		*) echo "[deps] add $BIN_DIR to your PATH (e.g. in ~/.bashrc) so 'supabase' works in new shells" ;;
+		*) add_to_zshrc ;;
 	esac
+}
+
+# New shells need ~/.local/bin on PATH. Add it to ~/.zshrc once (the 42 machines
+# use zsh); the file is only appended to, never rewritten.
+add_to_zshrc() {
+	line='export PATH="$HOME/.local/bin:$PATH"'
+	if [ -f "$HOME/.zshrc" ] && grep -qF '.local/bin' "$HOME/.zshrc"; then
+		echo "[deps] ~/.zshrc already puts ~/.local/bin on PATH; open a new terminal to use supabase"
+		return
+	fi
+	printf '\n# Added by scripts/install-deps.sh (Supabase CLI)\n%s\n' "$line" >> "$HOME/.zshrc"
+	echo "[deps] added ~/.local/bin to PATH in ~/.zshrc; open a new terminal (or run: source ~/.zshrc)"
 }
 
 if ! command -v supabase >/dev/null 2>&1; then
