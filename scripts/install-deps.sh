@@ -14,7 +14,6 @@ set -e
 missing=0
 SUPABASE_CLI_VERSION=2.117.0
 BIN_DIR=${HOME}/.local/bin
-ORIGINAL_PATH=$PATH
 need() {
 	if ! command -v "$1" >/dev/null 2>&1; then
 		echo "[deps] missing: $1 ($2)" >&2
@@ -50,10 +49,6 @@ install_supabase() {
 	rm -rf "$dir"
 	PATH="$BIN_DIR:$PATH"
 	export PATH
-	case ":$ORIGINAL_PATH:" in
-		*":$BIN_DIR:"*) ;;
-		*) add_to_zshrc ;;
-	esac
 }
 
 # New shells need ~/.local/bin on PATH. Add it to ~/.zshrc once (the 42 machines
@@ -72,6 +67,11 @@ if ! command -v supabase >/dev/null 2>&1; then
 	install_supabase
 fi
 need supabase "Supabase CLI"
+# `make` puts ~/.local/bin on PATH, so supabase can be found there while a new
+# shell still can't see it. Make sure ~/.zshrc has the line whenever the binary is there.
+if [ -x "$BIN_DIR/supabase" ]; then
+	add_to_zshrc
+fi
 
 need docker "Docker"
 if command -v docker >/dev/null 2>&1; then
