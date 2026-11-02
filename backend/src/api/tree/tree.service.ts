@@ -37,7 +37,7 @@ export class TreeService {
 	// every profile with user that join the tree will have their own tree member table
 	// when they claim one node. their profile will be linked via Tree member table
 	// the frontend node will show their user.profile data instead of made-up.profile
-	// Onwer can delete tree or transfer ownership to admin
+	// Owner can delete tree
 	// Admin can do anything, change root profile
 	// Member can approved claim profile add new made-up profile delete profile
 	// Joiner can claim node and view only - once node is claim he become Member
@@ -1079,7 +1079,7 @@ export class TreeService {
 		}
 		// Bug fix: was comparing tree.ownerId (a Profile id) against a user id.
 		if (tree.ownerId === profileId) {
-			throw new ForbiddenException('Owner cannot leave their own tree. Transfer ownership first.');
+			throw new ForbiddenException('The owner can\'t leave their own tree. You can delete the tree instead.');
 		}
 
 		const member = await this.prisma.treeMember.findUnique({

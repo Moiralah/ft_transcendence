@@ -167,6 +167,12 @@ services:
       # with a Content-Type failed its preflight. Content-Type is the only
       # non-simple header the frontend sends (no Authorization any more).
       CORS_HEADER_ACCESS_CONTROL_ALLOW_HEADERS: "Content-Type"
+      # The image also stamps every 403 with Access-Control-Allow-Origin "*",
+      # over the backend's own value. With credentials a browser refuses that
+      # response, so the page never read the 403's message ("Your account has
+      # been suspended") and said it couldn't reach the server instead.
+      # docker-compose.prod.yml sets the live site instead.
+      CORS_HEADER_403_ALLOW_ORIGIN: "https://localhost:8443"
       # What a blocked request's audit entry keeps: A (time, client IP, URI),
       # F (response headers), H (rule messages, with the matched snippet), Z.
       # Not B, the request headers: the Cookie header is the ft_session

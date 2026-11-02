@@ -67,6 +67,11 @@ services:
     environment:
       BACKEND: "http://frontend:3000"
 
+  waf-backend:
+    environment:
+      # Same origin as CORS_ORIGIN above; see docker-compose.yml.
+      CORS_HEADER_403_ALLOW_ORIGIN: "https://ft.natscho.my"
+
   vault:
     ports: !override
       - "127.0.0.1:8200:8200"
