@@ -39,9 +39,10 @@ services:
     depends_on: []
     # `make up` reaches local Supabase on the host as host.docker.internal.
     # Docker Desktop (Mac, Windows) provides that name; Docker on Linux (the 42
-    # machines, Ubuntu) only has it with this mapping.
+    # machines, Ubuntu) only has it with this mapping. Rootless Docker needs a
+    # different address, which scripts/local-up.sh sets as HOST_GATEWAY.
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:${HOST_GATEWAY:-host-gateway}"
     environment:
       # Logs and server-side times in Malaysia time (GMT+8), like the host.
       TZ: ${TZ:-Asia/Kuala_Lumpur}

@@ -58,6 +58,20 @@ export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
 # vault-init.sh takes each value from the environment before .env, so these
 # win over a .env (or Vault dev secrets) that point at the cloud project.
 
+# On rootless Docker, host-gateway is an address inside Docker's own network
+# namespace, not this machine, so containers get "connection refused" on the
+# Supabase ports. This machine's LAN address does reach them, because Supabase
+# publishes its ports on 0.0.0.0.
+if docker info --format '{{.SecurityOptions}}' 2>/dev/null | grep -q rootless; then
+  HOST_GATEWAY=$(ip route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p')
+  if [ -z "$HOST_GATEWAY" ]; then
+    echo "[local-up] rootless Docker, but couldn't find this machine's LAN address" >&2
+    exit 1
+  fi
+  export HOST_GATEWAY
+  echo "[local-up] rootless Docker: host.docker.internal -> $HOST_GATEWAY"
+fi
+
 echo local > .stack-mode
 echo "[local-up] make $TARGET against local Supabase..."
 make --no-print-directory "$TARGET"
