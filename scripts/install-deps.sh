@@ -1,7 +1,7 @@
 #!/bin/sh
-# Installs what `make up` needs on the host and checks the rest: the Supabase
+# Installs what `make local` needs on the host and checks the rest: the Supabase
 # CLI (local Supabase), plus docker, compose 2.24+, curl, python3 and openssl.
-# Run by `make up` before anything else; safe to re-run, does nothing for
+# Run by `make local` before anything else; safe to re-run, does nothing for
 # tools that are already installed.
 #
 #   ./scripts/install-deps.sh
