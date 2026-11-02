@@ -147,6 +147,7 @@ frontend-shell:
 # node_modules copies), which `down` leaves behind.
 clean:
 	docker compose $(STACK) down --remove-orphans -v
+	supabase stop
 
 # fclean: clean, plus the images built for this project and .stack-mode, so the
 # next `make` rebuilds from scratch. certs/ stays, so the browsers keep
@@ -154,6 +155,7 @@ clean:
 fclean:
 	docker compose $(STACK) down --remove-orphans -v --rmi local
 	rm -f .stack-mode
+	supabase stop
 
 # re: everything from scratch, in the same mode as the last `make up` or
 # `make production` (read from .stack-mode before fclean deletes it), so a
