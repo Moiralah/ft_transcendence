@@ -22,6 +22,7 @@ export VAULT_PORT
 # scripts/vault/lib.sh). Without VAULT_USER (an evaluator, a 42 machine) the
 # values come from .env, as before.
 up: certs
+	./scripts/install-deps.sh
 	supabase start
 	@if [ -n "$$VAULT_USER" ]; then \
 		./scripts/vault/with-secrets.sh dev -- ./scripts/local-up.sh; \

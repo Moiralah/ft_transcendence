@@ -25,7 +25,9 @@ Website inspiration: https://www.mysimplefamilytree.com/ & https://www.geni.com
 `curl` and `python3` (used by `scripts/vault-init.sh`), `openssl` (for the
 local self-signed certificates), and the
 [Supabase CLI](https://supabase.com/docs/guides/cli) for `make` (local Supabase).
-Node is not needed on the host.
+`make` checks for these first (`scripts/install-deps.sh`) and installs the Supabase
+CLI for you: with Homebrew, or on Linux from the latest `.deb`/`.rpm` release (asks
+for sudo). Node is not needed on the host.
 
 1. **Clone the repository**, copy `.env.example` to `.env` and fill it in (the
    comments in that file say where each value comes from), then run `make`.
