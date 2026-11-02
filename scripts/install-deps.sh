@@ -7,11 +7,14 @@
 #   ./scripts/install-deps.sh
 #
 # Supabase CLI: Homebrew when it exists (macOS, Linux with Homebrew), otherwise
-# the .deb or .rpm package from the latest GitHub release (Linux, asks for sudo).
+# the pinned release binary from GitHub into ~/.local/bin (Linux, no sudo).
 # https://supabase.com/docs/guides/cli/getting-started
 set -e
 
 missing=0
+SUPABASE_CLI_VERSION=2.117.0
+BIN_DIR=${HOME}/.local/bin
+ORIGINAL_PATH=$PATH
 need() {
 	if ! command -v "$1" >/dev/null 2>&1; then
 		echo "[deps] missing: $1 ($2)" >&2
@@ -25,6 +28,8 @@ install_supabase() {
 		brew install supabase/tap/supabase
 		return
 	fi
+	# No Homebrew: the release tarball holds one binary, installed to
+	# ~/.local/bin, so no root or sudo is needed (42 machines).
 	if [ "$(uname -s)" != Linux ]; then
 		echo "[deps] Homebrew is needed to install the Supabase CLI on this system:" >&2
 		echo "       https://brew.sh  then run: brew install supabase/tap/supabase" >&2
@@ -33,31 +38,22 @@ install_supabase() {
 	case "$(uname -m)" in
 		x86_64) arch=amd64 ;;
 		aarch64|arm64) arch=arm64 ;;
-		*) echo "[deps] no Supabase CLI package for $(uname -m); see https://supabase.com/docs/guides/cli/getting-started" >&2; exit 1 ;;
+		*) echo "[deps] no Supabase CLI build for $(uname -m); see https://github.com/supabase/cli/releases" >&2; exit 1 ;;
 	esac
-	if command -v dpkg >/dev/null 2>&1; then ext=deb
-	elif command -v rpm >/dev/null 2>&1; then ext=rpm
-	else
-		echo "[deps] no dpkg or rpm here; install the CLI by hand: https://github.com/supabase/cli/releases" >&2
-		exit 1
-	fi
-	echo "[deps] installing the Supabase CLI from the latest GitHub release (.$ext)..."
-	url=$(curl -fsSL https://api.github.com/repos/supabase/cli/releases/latest | python3 -c '
-import json, re, sys
-ext, arch = sys.argv[1], sys.argv[2]
-for asset in json.load(sys.stdin)["assets"]:
-    if re.search(r"linux_" + arch + r"\." + ext + r"$", asset["name"]):
-        print(asset["browser_download_url"])
-        break
-' "$ext" "$arch")
-	if [ -z "$url" ]; then
-		echo "[deps] no .$ext package found in the latest release; see https://github.com/supabase/cli/releases" >&2
-		exit 1
-	fi
-	pkg=$(mktemp "${TMPDIR:-/tmp}/supabase-cli.XXXXXX.$ext")
-	curl -fsSL -o "$pkg" "$url"
-	if [ "$ext" = deb ]; then sudo dpkg -i "$pkg"; else sudo rpm -i "$pkg"; fi
-	rm -f "$pkg"
+	echo "[deps] installing the Supabase CLI $SUPABASE_CLI_VERSION to $BIN_DIR (no sudo)..."
+	dir=$(mktemp -d "${TMPDIR:-/tmp}/supabase-cli.XXXXXX")
+	curl -fsSL -o "$dir/supabase.tar.gz" \
+		"https://github.com/supabase/cli/releases/download/v$SUPABASE_CLI_VERSION/supabase_${SUPABASE_CLI_VERSION}_linux_$arch.tar.gz"
+	tar -xzf "$dir/supabase.tar.gz" -C "$dir" supabase
+	mkdir -p "$BIN_DIR"
+	mv "$dir/supabase" "$BIN_DIR/supabase"
+	rm -rf "$dir"
+	PATH="$BIN_DIR:$PATH"
+	export PATH
+	case ":$ORIGINAL_PATH:" in
+		*":$BIN_DIR:"*) ;;
+		*) echo "[deps] add $BIN_DIR to your PATH (e.g. in ~/.bashrc) so 'supabase' works in new shells" ;;
+	esac
 }
 
 if ! command -v supabase >/dev/null 2>&1; then

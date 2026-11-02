@@ -2,6 +2,10 @@
 # (two WAFs and Vault), all in docker-compose.yml.
 STACK = -f docker-compose.yml
 
+# scripts/install-deps.sh puts the Supabase CLI in ~/.local/bin when there is no
+# Homebrew (no sudo on 42 machines). Recipes here need it on PATH too.
+export PATH := $(HOME)/.local/bin:$(PATH)
+
 # Host port of the local Vault. On Windows (WSL), Hyper-V reserves blocks of
 # ports that often cover 8200 (`netsh interface ipv4 show excludedportrange
 # protocol=tcp`), and Docker then fails with "ports are not available", so WSL
